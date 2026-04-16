@@ -4,6 +4,8 @@ import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import FieldWrapper from "~/components/ui/wrappers/field-wrapper";
 
+
+
 export default function Register() {
   return (
     <CardContainer
@@ -36,6 +38,7 @@ export default function Register() {
           <Input
             id="password"
             name="password"
+            type="password"
             autoComplete="new-password"
             required
           />
@@ -47,6 +50,7 @@ export default function Register() {
           <Input
             id="password_confirmation"
             name="password_confirmation"
+            type="password"
             required
           />
         </FieldWrapper>
