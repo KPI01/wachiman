@@ -28,6 +28,8 @@ export async function getUserByUsername(username: string) {
   try {
     return prisma.user.findUnique({
       where: {
+        isActive: true,
+        isTrashed: false,
         username,
       },
     });
