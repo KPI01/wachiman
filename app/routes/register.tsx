@@ -1,12 +1,39 @@
-import { Form } from "react-router";
+import { performance } from "node:perf_hooks";
+import { Form, redirect } from "react-router";
 import CardContainer from "~/components/containers/card-container";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import FieldWrapper from "~/components/ui/wrappers/field-wrapper";
+import type { Route } from "./+types/register";
+import { registerSchema } from "~/lib/schemas/auth";
+import z from "zod";
+import { createUser } from "~/lib/database/user";
 
+export async function action({ request }: Route.ActionArgs) {
+  const start = performance.now();
 
+  try {
+    const rawFormData = await request.formData();
+    const jsonData = Object.fromEntries(rawFormData);
+    const { error, data } = await registerSchema.safeParseAsync(jsonData);
 
-export default function Register() {
+    if (error) {
+      return { errors: z.treeifyError(error) };
+    }
+
+    await createUser(data);
+
+    return redirect("/login");
+  } finally {
+    console.log(
+      `[/register] register.action took ${(performance.now() - start).toFixed(2)}ms`,
+    );
+  }
+}
+
+export default function Register({ actionData }: Route.ComponentProps) {
+  if (actionData?.errors) console.error(actionData.errors);
+
   return (
     <CardContainer
       className="min-w-lg"
@@ -45,11 +72,11 @@ export default function Register() {
         </FieldWrapper>
         <FieldWrapper
           label="Confirmación de contraseña"
-          htmlFor="password_confirmation"
+          htmlFor="passwordConfirmation"
         >
           <Input
-            id="password_confirmation"
-            name="password_confirmation"
+            id="passwordConfirmation"
+            name="passwordConfirmation"
             type="password"
             required
           />
