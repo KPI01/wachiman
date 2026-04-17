@@ -35,7 +35,27 @@ export async function getUserByUsername(username: string) {
     });
   } finally {
     console.log(
-      `[getUserByUsername] getUserByUsername took ${(performance.now() - start).toFixed(2)}ms`,
+      `[getUserByUsername] ${(performance.now() - start).toFixed(2)}ms`,
     );
+  }
+}
+
+export async function getUsers(
+  isActive: boolean = true,
+  isTrashed: boolean = false,
+) {
+  const start = performance.now();
+
+  try {
+    const users = await prisma.user.findMany({
+      where: {
+        isActive,
+        isTrashed,
+      },
+    });
+
+    return users;
+  } finally {
+    console.log(`[getUsers] ${(performance.now() - start).toFixed(2)}ms`);
   }
 }

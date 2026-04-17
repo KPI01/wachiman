@@ -18,5 +18,10 @@ export default [
   route("logout", "routes/logout.tsx"),
 
   // Admin
-  route("admin", "routes/admin/layout.tsx", [index("routes/admin/home.tsx")]),
+  route("admin", "routes/admin/layout.tsx", [
+    index("routes/admin/home.tsx"),
+
+    // Gestion de usuarios
+    route("users", "routes/admin/users/index.tsx"),
+  ]),
 ] satisfies RouteConfig;

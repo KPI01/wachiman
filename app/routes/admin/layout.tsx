@@ -3,7 +3,12 @@ import { UserRole } from "../../../generated/prisma/enums";
 import { requireRole } from "~/middleware/require-role";
 import { requireSession } from "~/middleware/require-session";
 import type { Route } from "./+types/layout";
-import Logout from "../logout";
+import { SidebarInset, SidebarProvider } from "~/components/ui/sidebar";
+import AppSidebar, { type SidebarLinkItem } from "~/components/app-sidebar";
+
+const SIDEBAR_ITEMS: Array<SidebarLinkItem> = [
+  { label: "Usuarios", href: "/admin/users" },
+];
 
 export const middleware: Route.MiddlewareFunction[] = [
   requireSession,
@@ -16,10 +21,11 @@ export async function loader() {
 
 export default function AdminLayout() {
   return (
-    <div>
-      Este es el layout del administrador
-      <Logout />
-      <Outlet />
-    </div>
+    <SidebarProvider>
+      <AppSidebar items={SIDEBAR_ITEMS} />
+      <SidebarInset className="p-2 max-w-full overflow-auto">
+        <Outlet />
+      </SidebarInset>
+    </SidebarProvider>
   );
 }
