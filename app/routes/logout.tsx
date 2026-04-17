@@ -16,8 +16,10 @@ export async function action({ request }: Route.ActionArgs) {
 
 export default function Logout() {
   return (
-    <Form method="post" action="/logout">
-      <Button type="submit">Cerrar sesión</Button>
+    <Form method="post" action="/logout" className="w-full">
+      <Button type="submit" variant="ghost" className="w-full">
+        Cerrar sesión
+      </Button>
     </Form>
   );
 }

@@ -26,6 +26,7 @@ interface AppSidebarProps extends ComponentProps<typeof Sidebar> {
 
 export default function AppSidebar({ items, ...props }: AppSidebarProps) {
   const someHasSubItems = items.some((item) => Object.hasOwn(item, "children"));
+
   return (
     <Sidebar collapsible="offcanvas" {...props}>
       <SidebarHeader>

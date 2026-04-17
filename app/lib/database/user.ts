@@ -12,6 +12,7 @@ export async function createUser(data: Prisma.UserCreateInput) {
       data: {
         fullName: data.fullName,
         username: data.username,
+        role: data.role,
         password: hashedPassword,
       },
     });

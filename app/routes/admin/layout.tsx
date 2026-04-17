@@ -23,7 +23,7 @@ export default function AdminLayout() {
   return (
     <SidebarProvider>
       <AppSidebar items={SIDEBAR_ITEMS} />
-      <SidebarInset className="p-2 max-w-full overflow-auto">
+      <SidebarInset className="p-6 max-w-full overflow-auto">
         <Outlet />
       </SidebarInset>
     </SidebarProvider>
