@@ -42,7 +42,11 @@ export default function IndexUsers({ loaderData }: Route.ComponentProps) {
 
         <CreateUser />
       </div>
-      <DataTable columns={userColumns} data={loaderData.users ?? []} />
+      <DataTable
+        columns={userColumns}
+        data={loaderData.users ?? []}
+        globalFilterColumns={["fullName", "username"]}
+      />
     </div>
   );
 }

@@ -119,7 +119,11 @@ export default function DataTable<TData>({
               <Input
                 placeholder={
                   filterPlaceholder ??
-                  getGlobalFilterPlaceholder(searchableColumnIds, columnLabels)
+                  getGlobalFilterPlaceholder(
+                    table,
+                    searchableColumnIds,
+                    columnLabels,
+                  )
                 }
                 value={globalFilter}
                 onChange={(event) => setGlobalFilter(event.target.value)}
@@ -410,19 +414,22 @@ function matchesGlobalFilter<TData>(
   });
 }
 
-function getGlobalFilterPlaceholder(
+function getGlobalFilterPlaceholder<TData>(
+  table: TanstackTable<TData>,
   columnIds: string[],
   columnLabels?: Partial<Record<string, string>>,
 ) {
   const labels = columnIds.map((columnId) => {
-    if (columnLabels?.[columnId]) {
-      return columnLabels[columnId] as string;
+    const column = table.getColumn(columnId);
+
+    if (column) {
+      return getColumnLabel(column, columnLabels).toLowerCase();
     }
 
     return columnId.replace(/[_-]+/g, " ").toLowerCase();
   });
 
-  return `Buscar por ${labels.join(", ")}...`;
+  return `buscar por ${labels.join(", ")}...`;
 }
 
 function getColumnLabel<TData>(
