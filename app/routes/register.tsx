@@ -8,6 +8,17 @@ import type { Route } from "./+types/register";
 import { registerSchema } from "~/lib/schemas/auth";
 import z from "zod";
 import { createUser } from "~/lib/database/user";
+import { getSessionUser, getUserRedirectPath } from "~/lib/session";
+
+export async function loader({ request }: Route.LoaderArgs) {
+  const user = await getSessionUser(request);
+
+  if (user) {
+    throw redirect(getUserRedirectPath(user.role));
+  }
+
+  return null;
+}
 
 export async function action({ request }: Route.ActionArgs) {
   const start = performance.now();
@@ -25,9 +36,7 @@ export async function action({ request }: Route.ActionArgs) {
 
     return redirect("/login");
   } finally {
-    console.log(
-      `[/register] register.action took ${(performance.now() - start).toFixed(2)}ms`,
-    );
+    console.log(`[/register] ${(performance.now() - start).toFixed(2)}ms`);
   }
 }
 

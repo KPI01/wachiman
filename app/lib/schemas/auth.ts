@@ -26,7 +26,7 @@ export const registerSchema = z
     async (data) => {
       const userExists = (await getUserByUsername(data.username)) !== null;
 
-      return userExists;
+      return !userExists;
     },
     {
       error: USER_ALREADY_EXISTS,

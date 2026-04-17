@@ -7,8 +7,18 @@ import FieldWrapper from "~/components/ui/wrappers/field-wrapper";
 import type { Route } from "./+types/login";
 import { loginSchema } from "~/lib/schemas/auth";
 import z from "zod";
-import { createSession } from "~/lib/session";
+import { createSession, getSessionUser, getUserRedirectPath } from "~/lib/session";
 import { getUserByUsername } from "~/lib/database/user";
+
+export async function loader({ request }: Route.LoaderArgs) {
+  const user = await getSessionUser(request);
+
+  if (user) {
+    throw redirect(getUserRedirectPath(user.role));
+  }
+
+  return null;
+}
 
 export async function action({ request }: Route.ActionArgs) {
   const start = performance.now();
@@ -17,12 +27,15 @@ export async function action({ request }: Route.ActionArgs) {
     const rawFormData = await request.formData();
     const jsonData = Object.fromEntries(rawFormData);
 
+    // TODO: doble consulta a BD, buscar optimizar
+    // consulta 1
     const { error, data } = await loginSchema.safeParseAsync(jsonData);
 
     if (error) {
       return { errors: z.treeifyError(error) };
     }
 
+    // consulta 2
     const user = await getUserByUsername(data.username);
 
     if (!user) {
@@ -43,7 +56,7 @@ export async function action({ request }: Route.ActionArgs) {
       },
     });
 
-    return redirect("/", {
+    return redirect(getUserRedirectPath(user.role), {
       headers: {
         "Set-Cookie": sessionCookie,
       },

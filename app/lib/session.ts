@@ -1,10 +1,26 @@
 import { performance } from "node:perf_hooks";
 import { createCookieSessionStorage } from "react-router";
+import { UserRole, type UserRole as UserRoleType } from "../../generated/prisma/enums";
 
 type SessionPayload = Record<string, unknown>;
 
+export type SessionUser = {
+  fullName: string;
+  username: string;
+  role: UserRoleType | null;
+};
+
+export function getUserRedirectPath(role: SessionUser["role"]) {
+  if (role === UserRole.ADMIN) {
+    return "/admin";
+  }
+
+  return "/home";
+}
+
 const SESSION_SECRET = process.env.SESSION_SECRET ?? "dev-session-secret";
 const SESSION_NAME = "wachiman-session";
+const USER_ROLES = new Set(Object.values(UserRole));
 
 const sessionStorage = createCookieSessionStorage<SessionPayload>({
   cookie: {
@@ -48,6 +64,41 @@ export async function addSessionData(request: Request, data: SessionPayload) {
     return await sessionStorage.commitSession(session);
   } finally {
     console.log(`[addSessionData] ${(performance.now() - start).toFixed(2)}ms`);
+  }
+}
+
+function isSessionUser(value: unknown): value is SessionUser {
+  if (typeof value !== "object" || value === null) {
+    return false;
+  }
+
+  const user = value as Record<string, unknown>;
+
+  return (
+    typeof user.fullName === "string" &&
+    typeof user.username === "string" &&
+    (user.role === null ||
+      (typeof user.role === "string" && USER_ROLES.has(user.role as UserRoleType)))
+  );
+}
+
+export async function getSessionUser(request: Request) {
+  const start = performance.now();
+
+  try {
+    const session = await sessionStorage.getSession(
+      request.headers.get("Cookie"),
+    );
+
+    const user = session.get("user");
+
+    if (!isSessionUser(user)) {
+      return null;
+    }
+
+    return user;
+  } finally {
+    console.log(`[getSessionUser] ${(performance.now() - start).toFixed(2)}ms`);
   }
 }
 

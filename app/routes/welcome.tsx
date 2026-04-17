@@ -1,6 +1,18 @@
-import { Link } from "react-router";
+import { Link, redirect } from "react-router";
+import type { Route } from "./+types/welcome";
 import CardContainer from "~/components/containers/card-container";
-import { Button, buttonVariants } from "~/components/ui/button";
+import { buttonVariants } from "~/components/ui/button";
+import { getSessionUser, getUserRedirectPath } from "~/lib/session";
+
+export async function loader({ request }: Route.LoaderArgs) {
+  const user = await getSessionUser(request);
+
+  if (user) {
+    throw redirect(getUserRedirectPath(user.role));
+  }
+
+  return null;
+}
 
 export default function Welcome() {
   return (
