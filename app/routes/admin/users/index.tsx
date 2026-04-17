@@ -19,7 +19,8 @@ export async function action({ request }: Route.ActionArgs) {
   try {
     const rawFormData = await request.formData();
     const jsonData = Object.fromEntries(rawFormData);
-    const { error, data } = await createUserSchema.safeParseAsync(jsonData);
+    const { error, data, success } =
+      await createUserSchema.safeParseAsync(jsonData);
 
     if (error) {
       return { errors: z.treeifyError(error) };
@@ -27,7 +28,7 @@ export async function action({ request }: Route.ActionArgs) {
 
     await createUser(data);
 
-    return redirect("/login");
+    return { success };
   } finally {
     console.log(`[/admin/users] ${(performance.now() - start).toFixed(2)}ms`);
   }

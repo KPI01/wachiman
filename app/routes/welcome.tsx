@@ -25,9 +25,6 @@ export default function Welcome() {
         <Link to="/login" className={buttonVariants({ variant: "default" })}>
           Ir al login
         </Link>
-        <Link to="/register" className={buttonVariants({ variant: "outline" })}>
-          Ir al registro
-        </Link>
       </div>
     </CardContainer>
   );

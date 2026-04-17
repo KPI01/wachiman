@@ -5,7 +5,10 @@ import {
   AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
+  AlertDialogDescription,
   AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
   AlertDialogTrigger,
 } from "~/components/ui/alert-dialog";
 import { buttonVariants } from "~/components/ui/button";
@@ -20,7 +23,7 @@ import {
 import FieldWrapper from "~/components/ui/wrappers/field-wrapper";
 import type { UserRole } from "../../../../generated/prisma/client";
 
-const USER_ROLES: Record<UserRole, string> = {
+export const USER_ROLES: Record<UserRole, string> = {
   ADMIN: "Administrador",
   MANAGEMENT: "Gestión",
   USER: "Usuario",
@@ -34,6 +37,12 @@ export default function CreateUser() {
         Crear usuario
       </AlertDialogTrigger>
       <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Alta de Usuario</AlertDialogTitle>
+          <AlertDialogDescription>
+            Ingresa los datos del usuario para almacenarlos en el sistema.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
         <Form
           id="create-user"
           method="post"
@@ -56,7 +65,7 @@ export default function CreateUser() {
               <SelectTrigger>
                 <SelectValue placeholder="Rol para el usuario..." />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent position="popper">
                 {(Object.keys(USER_ROLES) as UserRole[]).map((role, ix) => (
                   <SelectItem key={ix} value={role}>
                     {USER_ROLES[role]}
@@ -87,7 +96,7 @@ export default function CreateUser() {
           </FieldWrapper>
         </Form>
         <AlertDialogFooter>
-          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+          <AlertDialogCancel variant="destructive">Cancelar</AlertDialogCancel>
           <AlertDialogAction type="submit" form="create-user">
             Enviar
           </AlertDialogAction>

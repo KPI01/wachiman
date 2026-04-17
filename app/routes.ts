@@ -10,7 +10,6 @@ export default [
   layout("routes/layout.tsx", [
     index("routes/welcome.tsx"),
     route("login", "routes/login.tsx"),
-    route("register", "routes/register.tsx"),
     route("unauthorized", "routes/unauthorized.tsx"),
   ]),
 
@@ -23,5 +22,6 @@ export default [
 
     // Gestion de usuarios
     route("users", "routes/admin/users/index.tsx"),
+    route("users/:userId", "routes/admin/users/detail.tsx"),
   ]),
 ] satisfies RouteConfig;

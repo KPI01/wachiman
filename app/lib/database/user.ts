@@ -41,6 +41,22 @@ export async function getUserByUsername(username: string) {
   }
 }
 
+export async function getUserById(id: string) {
+  const start = performance.now();
+
+  try {
+    return prisma.user.findUnique({
+      where: {
+        isActive: true,
+        isTrashed: false,
+        id,
+      },
+    });
+  } finally {
+    console.log(`[getUserById] ${(performance.now() - start).toFixed(2)}ms`);
+  }
+}
+
 export async function getUsers(
   isActive: boolean = true,
   isTrashed: boolean = false,
@@ -58,5 +74,38 @@ export async function getUsers(
     return users;
   } finally {
     console.log(`[getUsers] ${(performance.now() - start).toFixed(2)}ms`);
+  }
+}
+
+export async function updateUser(id: string, data: Prisma.UserUpdateInput) {
+  const start = performance.now();
+
+  try {
+    const updatedUser = await prisma.user.update({
+      where: { id },
+      data,
+    });
+
+    return updatedUser;
+  } finally {
+    console.log(`[updateUser] ${(performance.now() - start).toFixed(2)}ms`);
+  }
+}
+
+export async function trashUser(id: string) {
+  const start = performance.now();
+
+  try {
+    const trashedUser = await prisma.user.update({
+      where: { id },
+      data: {
+        isActive: false,
+        isTrashed: true,
+      },
+    });
+
+    return trashedUser;
+  } finally {
+    console.log(`[trashUser] ${(performance.now() - start).toFixed(2)}ms`);
   }
 }
