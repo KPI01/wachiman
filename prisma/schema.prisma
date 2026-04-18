@@ -32,8 +32,10 @@ model User {
   isTrashed Boolean?  @default(false)
   role      UserRole? @default(ACCESS_REQUESTER)
 
-  siteId String
-  site   Site   @relation(fields: [siteId], references: [id])
+  siteId       String
+  site         Site       @relation(fields: [siteId], references: [id])
+  departmentId String
+  department   Department @relation(fields: [departmentId], references: [id])
 
   @@index([username])
 }
@@ -45,6 +47,18 @@ model Site {
   name      String
   slug      String   @unique
   address   String?
+
+  users User[]
+
+  @@index([slug])
+}
+
+model Department {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  name      String
+  slug      String   @unique
 
   users User[]
 
