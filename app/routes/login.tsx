@@ -7,7 +7,11 @@ import FieldWrapper from "~/components/ui/wrappers/field-wrapper";
 import type { Route } from "./+types/login";
 import { loginSchema } from "~/lib/schemas/auth";
 import z from "zod";
-import { createSession, getSessionUser, getUserRedirectPath } from "~/lib/session";
+import {
+  createSession,
+  getSessionUser,
+  getUserRedirectPath,
+} from "~/lib/session";
 import { getUserByUsername } from "~/lib/database/user";
 
 export async function loader({ request }: Route.LoaderArgs) {
@@ -36,7 +40,7 @@ export async function action({ request }: Route.ActionArgs) {
     }
 
     // consulta 2
-    const user = await getUserByUsername(data.username);
+    const user = await getUserByUsername(data.username, { site: true });
 
     if (!user) {
       return {
@@ -53,6 +57,10 @@ export async function action({ request }: Route.ActionArgs) {
         fullName: user.fullName,
         username: user.username,
         role: user.role,
+      },
+      site: {
+        id: user.site.id,
+        name: user.site.name,
       },
     });
 

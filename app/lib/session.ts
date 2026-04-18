@@ -1,6 +1,9 @@
 import { performance } from "node:perf_hooks";
 import { createCookieSessionStorage } from "react-router";
-import { UserRole, type UserRole as UserRoleType } from "../../generated/prisma/enums";
+import {
+  UserRole,
+  type UserRole as UserRoleType,
+} from "../../generated/prisma/enums";
 
 type SessionPayload = Record<string, unknown>;
 
@@ -78,7 +81,8 @@ function isSessionUser(value: unknown): value is SessionUser {
     typeof user.fullName === "string" &&
     typeof user.username === "string" &&
     (user.role === null ||
-      (typeof user.role === "string" && USER_ROLES.has(user.role as UserRoleType)))
+      (typeof user.role === "string" &&
+        USER_ROLES.has(user.role as UserRoleType)))
   );
 }
 
@@ -112,7 +116,7 @@ export async function destroySession(request: Request) {
 
     return await sessionStorage.destroySession(session);
   } finally {
-    console.log(`[destroySession]${(performance.now() - start).toFixed(2)}ms`);
+    console.log(`[destroySession] ${(performance.now() - start).toFixed(2)}ms`);
   }
 }
 

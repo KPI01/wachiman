@@ -40,16 +40,30 @@ export async function createUser(data: CreateUserInput) {
   }
 }
 
-export async function getUserByUsername(username: string) {
+export async function getUserByUsername(
+  username: string,
+  relations: { site: boolean } = { site: false },
+) {
   const start = performance.now();
 
   try {
+
     return prisma.user.findUnique({
       where: {
         isActive: true,
         isTrashed: false,
         username,
       },
+      include: relations.site
+        ? {
+            site: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          }
+        : undefined,
     });
   } finally {
     console.log(
