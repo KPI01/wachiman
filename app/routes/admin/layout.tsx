@@ -12,6 +12,7 @@ const SIDEBAR_ITEMS: Array<SidebarLinkItem> = [
     children: [
       { label: "Usuarios", href: "/admin/users" },
       { label: "Centros", href: "/admin/sites" },
+      { label: "Departamentos", href: "/admin/departments" },
     ],
   },
 ];

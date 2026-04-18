@@ -1,12 +1,12 @@
 import { createColumnHelper } from "@tanstack/react-table";
-import type { Site, User } from "../../../generated/prisma/client";
+import type { Department, Site, User } from "../../../generated/prisma/client";
 import { formatTimestamp } from "../utils";
 import { UserDetails } from "~/routes/admin/users/detail";
 import TrashUser from "~/routes/admin/users/trash";
 
 const userColHelper = createColumnHelper<User>();
 
-export function getUserColumns(sites: Site[]) {
+export function getUserColumns(sites: Site[], departments: Department[]) {
   return [
     userColHelper.accessor("fullName", {
       header: "Nombre completo",
@@ -27,7 +27,11 @@ export function getUserColumns(sites: Site[]) {
       id: "actions",
       cell: ({ row }) => (
         <div className="flex gap-3 items-center justify-end">
-          <UserDetails user={row.original} sites={sites} />
+          <UserDetails
+            user={row.original}
+            sites={sites}
+            departments={departments}
+          />
           <TrashUser userId={row.original.id} />
         </div>
       ),

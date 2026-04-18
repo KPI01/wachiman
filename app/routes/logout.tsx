@@ -3,6 +3,7 @@ import { Button } from "~/components/ui/button";
 import type { Route } from "./+types/logout";
 import { requireSession } from "~/middleware/require-session";
 import { destroySession } from "~/lib/session";
+import { LogOutIcon } from "lucide-react";
 
 export const middleware: Route.MiddlewareFunction[] = [requireSession];
 
@@ -18,6 +19,7 @@ export default function Logout() {
   return (
     <Form method="post" action="/logout" className="w-full">
       <Button type="submit" variant="ghost" className="w-full">
+        <LogOutIcon />
         Cerrar sesión
       </Button>
     </Form>

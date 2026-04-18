@@ -27,5 +27,9 @@ export default [
     // Gestion de centros
     route("sites", "routes/admin/sites/index.tsx"),
     route("sites/:siteId", "routes/admin/sites/detail.tsx"),
+
+    // Gestion de departamentos
+    route("departments", "routes/admin/departments/index.tsx"),
+    route("departments/:departmentId", "routes/admin/departments/detail.tsx"),
   ]),
 ] satisfies RouteConfig;

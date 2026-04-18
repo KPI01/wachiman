@@ -3,12 +3,24 @@ import type { Prisma } from "../../../generated/prisma/client";
 import { hashText } from "../hash";
 import { prisma } from "../prisma";
 
+type GetUserByUsernameWithSite = Prisma.UserGetPayload<{
+  include: {
+    site: {
+      select: {
+        id: true;
+        name: true;
+      };
+    };
+  };
+}>;
+
 type CreateUserInput = {
   fullName: string;
   username: string;
   role?: Prisma.UserCreateInput["role"];
   password: string;
   siteId: string;
+  departmentId: string;
 };
 
 type UpdateUserInput = {
@@ -17,6 +29,7 @@ type UpdateUserInput = {
   role?: Prisma.UserUpdateInput["role"];
   isActive?: boolean;
   siteId?: string;
+  departmentId?: string;
 };
 
 export async function createUser(data: CreateUserInput) {
@@ -31,6 +44,7 @@ export async function createUser(data: CreateUserInput) {
         role: data.role,
         password: hashedPassword,
         siteId: data.siteId,
+        departmentId: data.departmentId,
       },
     });
 
@@ -40,6 +54,14 @@ export async function createUser(data: CreateUserInput) {
   }
 }
 
+export async function getUserByUsername(
+  username: string,
+  relations: { site: true },
+): Promise<GetUserByUsernameWithSite | null>;
+export async function getUserByUsername(
+  username: string,
+  relations?: { site: false },
+): Promise<Prisma.UserGetPayload<object> | null>;
 export async function getUserByUsername(
   username: string,
   relations: { site: boolean } = { site: false },
@@ -120,6 +142,7 @@ export async function updateUser(id: string, data: UpdateUserInput) {
         role: data.role,
         isActive: data.isActive,
         siteId: data.siteId,
+        departmentId: data.departmentId,
       },
     });
 

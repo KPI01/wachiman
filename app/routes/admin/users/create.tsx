@@ -21,14 +21,15 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import FieldWrapper from "~/components/ui/wrappers/field-wrapper";
-import type { Site, UserRole } from "../../../../generated/prisma/client";
+import type { Department, Site, UserRole } from "../../../../generated/prisma/client";
 import { USER_ROLES } from "~/lib/models/user";
 
 type CreateUserProps = {
   sites: Site[];
+  departments: Department[];
 };
 
-export default function CreateUser({ sites }: CreateUserProps) {
+export default function CreateUser({ sites, departments }: CreateUserProps) {
   return (
     <AlertDialog>
       <AlertDialogTrigger className={buttonVariants({ variant: "default" })}>
@@ -68,6 +69,20 @@ export default function CreateUser({ sites }: CreateUserProps) {
                 {sites.map((site) => (
                   <SelectItem key={site.id} value={site.id}>
                     {site.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </FieldWrapper>
+          <FieldWrapper label="Departamento" htmlFor="departmentId">
+            <Select name="departmentId" defaultValue={departments[0]?.id}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Departamento para el usuario..." />
+              </SelectTrigger>
+              <SelectContent position="popper">
+                {departments.map((department) => (
+                  <SelectItem key={department.id} value={department.id}>
+                    {department.name}
                   </SelectItem>
                 ))}
               </SelectContent>

@@ -6,11 +6,16 @@ import CreateUser from "./create";
 import z from "zod";
 import { createUserSchema } from "~/lib/schemas/user";
 import { getSites } from "~/lib/database/site";
+import { getDepartments } from "~/lib/database/department";
 
 export async function loader() {
-  const [users, sites] = await Promise.all([getUsers(), getSites()]);
+  const [users, sites, departments] = await Promise.all([
+    getUsers(),
+    getSites(),
+    getDepartments(),
+  ]);
 
-  return { users, sites };
+  return { users, sites, departments };
 }
 
 export async function action({ request }: Route.ActionArgs) {
@@ -40,10 +45,16 @@ export default function IndexUsers({ loaderData }: Route.ComponentProps) {
       <div className="flex justify-between items-center">
         <h2 className="text-3xl font-bold">Usuarios</h2>
 
-        <CreateUser sites={loaderData.sites ?? []} />
+        <CreateUser
+          sites={loaderData.sites ?? []}
+          departments={loaderData.departments ?? []}
+        />
       </div>
       <DataTable
-        columns={getUserColumns(loaderData.sites ?? [])}
+        columns={getUserColumns(
+          loaderData.sites ?? [],
+          loaderData.departments ?? [],
+        )}
         data={loaderData.users ?? []}
         globalFilterColumns={["fullName", "username"]}
       />

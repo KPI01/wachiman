@@ -1,5 +1,6 @@
 import z from "zod";
 import {
+  DEPARTMENT_DOESNT_EXISTS,
   PASSWORDS_MUST_BE_EQUAL,
   SITE_DOESNT_EXISTS,
   STRING_TYPE_REQUIRED_MSG,
@@ -7,6 +8,7 @@ import {
 } from "./messages";
 import { getUserById, getUserByUsername } from "../database/user";
 import { getSiteById } from "../database/site";
+import { getDepartmentById } from "../database/department";
 import { prisma } from "../prisma";
 import { UserRole } from "../../../generated/prisma/enums";
 
@@ -15,6 +17,7 @@ export const createUserSchema = z
     fullName: z.string(STRING_TYPE_REQUIRED_MSG),
     username: z.string(STRING_TYPE_REQUIRED_MSG),
     siteId: z.string(STRING_TYPE_REQUIRED_MSG),
+    departmentId: z.string(STRING_TYPE_REQUIRED_MSG),
     role: z.enum(UserRole).optional().default("ACCESS_REQUESTER"),
     password: z.string(
       STRING_TYPE_REQUIRED_MSG,
@@ -39,6 +42,10 @@ export const createUserSchema = z
   .refine(async (data) => (await getSiteById(data.siteId)) !== null, {
     error: SITE_DOESNT_EXISTS,
     path: ["siteId"],
+  })
+  .refine(async (data) => (await getDepartmentById(data.departmentId)) !== null, {
+    error: DEPARTMENT_DOESNT_EXISTS,
+    path: ["departmentId"],
   });
 
 export const updateUserSchema = z
@@ -47,6 +54,7 @@ export const updateUserSchema = z
     fullName: z.string(STRING_TYPE_REQUIRED_MSG),
     username: z.string(STRING_TYPE_REQUIRED_MSG),
     siteId: z.string(STRING_TYPE_REQUIRED_MSG),
+    departmentId: z.string(STRING_TYPE_REQUIRED_MSG),
     role: z.enum(UserRole).optional().default("ACCESS_REQUESTER"),
     isActive: z.preprocess((value) => value === "on", z.boolean()),
   })
@@ -78,6 +86,10 @@ export const updateUserSchema = z
   .refine(async (data) => (await getSiteById(data.siteId)) !== null, {
     error: SITE_DOESNT_EXISTS,
     path: ["siteId"],
+  })
+  .refine(async (data) => (await getDepartmentById(data.departmentId)) !== null, {
+    error: DEPARTMENT_DOESNT_EXISTS,
+    path: ["departmentId"],
   });
 
 export const trashUserSchema = z.object({

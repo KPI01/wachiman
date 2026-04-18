@@ -10,7 +10,12 @@ import {
   AlertDialogTrigger,
 } from "~/components/ui/alert-dialog";
 import { buttonVariants } from "~/components/ui/button";
-import type { Site, User, UserRole } from "../../../../generated/prisma/client";
+import type {
+  Department,
+  Site,
+  User,
+  UserRole,
+} from "../../../../generated/prisma/client";
 import { Form, redirect } from "react-router";
 import { Checkbox } from "~/components/ui/checkbox";
 import FieldWrapper from "~/components/ui/wrappers/field-wrapper";
@@ -67,9 +72,10 @@ export async function action({ request }: Route.ActionArgs) {
 type UserDetailsProps = {
   user: User;
   sites: Site[];
+  departments: Department[];
 };
 
-export function UserDetails({ user, sites }: UserDetailsProps) {
+export function UserDetails({ user, sites, departments }: UserDetailsProps) {
   const formId = `user-form-${user.id}`;
 
   return (
@@ -113,6 +119,20 @@ export function UserDetails({ user, sites }: UserDetailsProps) {
                 {sites.map((site) => (
                   <SelectItem key={site.id} value={site.id}>
                     {site.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </FieldWrapper>
+          <FieldWrapper label="Departamento" htmlFor="departmentId">
+            <Select name="departmentId" defaultValue={user.departmentId}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Departamento para el usuario..." />
+              </SelectTrigger>
+              <SelectContent position="popper">
+                {departments.map((department) => (
+                  <SelectItem key={department.id} value={department.id}>
+                    {department.name}
                   </SelectItem>
                 ))}
               </SelectContent>

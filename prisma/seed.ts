@@ -25,7 +25,9 @@ async function main() {
   const username = process.env.ADMIN_USERNAME ?? "admin";
   const password = process.env.ADMIN_PASSWORD;
   const siteName = process.env.SITE_NAME ?? "Sitio principal";
-  const siteSlug = process.env.SITE_SLUG ?? "principal";
+  const siteSlug = process.env.SITE_SLUG ?? "PRINCIPAL";
+  const departmentName = process.env.DEPARTMENT_NAME ?? "General";
+  const departmentSlug = process.env.DEPARTMENT_SLUG ?? "GENERAL";
 
   if (!connectionString) {
     throw new Error("DATABASE_URL no esta definido");
@@ -50,6 +52,17 @@ async function main() {
       },
     });
 
+    const department = await prisma.department.upsert({
+      where: { slug: departmentSlug },
+      update: {
+        name: departmentName,
+      },
+      create: {
+        name: departmentName,
+        slug: departmentSlug,
+      },
+    });
+
     const hashedPassword = await hashText(password);
 
     await prisma.user.upsert({
@@ -61,6 +74,7 @@ async function main() {
         isActive: true,
         isTrashed: false,
         siteId: site.id,
+        departmentId: department.id,
       },
       create: {
         fullName,
@@ -70,10 +84,12 @@ async function main() {
         isActive: true,
         isTrashed: false,
         siteId: site.id,
+        departmentId: department.id,
       },
     });
 
     console.log(`Site principal preparado: ${site.slug}`);
+    console.log(`Departamento inicial preparado: ${department.slug}`);
     console.log(`Admin inicial preparado: ${username}`);
   } finally {
     await prisma.$disconnect();
