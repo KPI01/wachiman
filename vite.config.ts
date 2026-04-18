@@ -7,4 +7,9 @@ export default defineConfig({
   resolve: {
     tsconfigPaths: true,
   },
+  server: {
+    fs: {
+      allow: ["/home/kpi01/Dev/wachiman"],
+    },
+  },
 });

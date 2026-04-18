@@ -24,19 +24,32 @@ async function main() {
   const fullName = process.env.ADMIN_FULL_NAME ?? "Administrador";
   const username = process.env.ADMIN_USERNAME ?? "admin";
   const password = process.env.ADMIN_PASSWORD;
+  const siteName = process.env.SITE_NAME ?? "Sitio principal";
+  const siteSlug = process.env.SITE_SLUG ?? "principal";
 
   if (!connectionString) {
     throw new Error("DATABASE_URL no esta definido");
   }
 
   if (!password) {
-    throw new Error("SEED_ADMIN_PASSWORD no esta definido");
+    throw new Error("ADMIN_PASSWORD no esta definido");
   }
 
   const adapter = new PrismaBetterSqlite3({ url: connectionString });
   const prisma = new PrismaClient({ adapter });
 
   try {
+    const site = await prisma.site.upsert({
+      where: { slug: siteSlug },
+      update: {
+        name: siteName,
+      },
+      create: {
+        name: siteName,
+        slug: siteSlug,
+      },
+    });
+
     const hashedPassword = await hashText(password);
 
     await prisma.user.upsert({
@@ -47,6 +60,7 @@ async function main() {
         role: "ADMIN",
         isActive: true,
         isTrashed: false,
+        siteId: site.id,
       },
       create: {
         fullName,
@@ -55,9 +69,11 @@ async function main() {
         role: "ADMIN",
         isActive: true,
         isTrashed: false,
+        siteId: site.id,
       },
     });
 
+    console.log(`Site principal preparado: ${site.slug}`);
     console.log(`Admin inicial preparado: ${username}`);
   } finally {
     await prisma.$disconnect();

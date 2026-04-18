@@ -23,5 +23,9 @@ export default [
     // Gestion de usuarios
     route("users", "routes/admin/users/index.tsx"),
     route("users/:userId", "routes/admin/users/detail.tsx"),
+
+    // Gestion de centros
+    route("sites", "routes/admin/sites/index.tsx"),
+    route("sites/:siteId", "routes/admin/sites/detail.tsx"),
   ]),
 ] satisfies RouteConfig;

@@ -43,8 +43,10 @@ model Site {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   name      String
-  slug      String
+  slug      String   @unique
   address   String?
 
   users User[]
+
+  @@index([slug])
 }
