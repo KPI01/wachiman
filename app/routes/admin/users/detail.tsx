@@ -22,11 +22,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import { USER_ROLES } from "./create";
 import type { Route } from "./+types/detail";
 import { trashUserSchema, updateUserSchema } from "~/lib/schemas/user";
 import z from "zod";
 import { trashUser, updateUser } from "~/lib/database/user";
+import { USER_ROLES } from "~/lib/models/user";
 
 export async function action({ request }: Route.ActionArgs) {
   if (request.method === "PATCH") {
@@ -49,7 +49,8 @@ export async function action({ request }: Route.ActionArgs) {
   if (request.method === "DELETE") {
     const rawFormData = await request.formData();
     const jsonData = Object.fromEntries(rawFormData);
-    const { success, error, data } = await trashUserSchema.safeParseAsync(jsonData);
+    const { success, error, data } =
+      await trashUserSchema.safeParseAsync(jsonData);
 
     if (!success) {
       return { errors: z.treeifyError(error) };

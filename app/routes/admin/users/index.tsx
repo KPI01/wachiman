@@ -5,7 +5,6 @@ import { userColumns } from "~/lib/columns/user";
 import CreateUser from "./create";
 import z from "zod";
 import { createUserSchema } from "~/lib/schemas/user";
-import { redirect } from "react-router";
 
 export async function loader() {
   const users = await getUsers();

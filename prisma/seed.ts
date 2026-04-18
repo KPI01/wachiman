@@ -21,9 +21,9 @@ async function hashText(text: string) {
 
 async function main() {
   const connectionString = process.env.DATABASE_URL;
-  const fullName = process.env.SEED_ADMIN_FULL_NAME ?? "Administrador";
-  const username = process.env.SEED_ADMIN_USERNAME ?? "admin";
-  const password = process.env.SEED_ADMIN_PASSWORD;
+  const fullName = process.env.ADMIN_FULL_NAME ?? "Administrador";
+  const username = process.env.ADMIN_USERNAME ?? "admin";
+  const password = process.env.ADMIN_PASSWORD;
 
   if (!connectionString) {
     throw new Error("DATABASE_URL no esta definido");

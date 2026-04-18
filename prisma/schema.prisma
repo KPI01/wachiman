@@ -14,8 +14,11 @@ datasource db {
 
 enum UserRole {
   ADMIN
-  MANAGEMENT
-  USER
+  ACCESS_REQUESTER
+  ACCESS_OPERATOR
+  ACCESS_APPROVER
+  ACCESS_MONITOR
+  SECURITY_MANAGER
 }
 
 model User {
@@ -27,7 +30,7 @@ model User {
   password  String
   isActive  Boolean?  @default(true)
   isTrashed Boolean?  @default(false)
-  role      UserRole? @default(USER)
+  role      UserRole? @default(ACCESS_REQUESTER)
 
   @@index([username])
 }

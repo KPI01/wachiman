@@ -22,13 +22,7 @@ import {
 } from "~/components/ui/select";
 import FieldWrapper from "~/components/ui/wrappers/field-wrapper";
 import type { UserRole } from "../../../../generated/prisma/client";
-
-export const USER_ROLES: Record<UserRole, string> = {
-  ADMIN: "Administrador",
-  MANAGEMENT: "Gestión",
-  USER: "Usuario",
-};
-
+import { USER_ROLES } from "~/lib/models/user";
 export default function CreateUser() {
   return (
     <AlertDialog>
@@ -61,7 +55,7 @@ export default function CreateUser() {
             />
           </FieldWrapper>
           <FieldWrapper label="Rol de usuario" htmlFor="role">
-            <Select defaultValue="USER">
+            <Select defaultValue="ACCESS_REQUESTER">
               <SelectTrigger>
                 <SelectValue placeholder="Rol para el usuario..." />
               </SelectTrigger>
