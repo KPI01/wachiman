@@ -7,7 +7,10 @@ import { SidebarInset, SidebarProvider } from "~/components/ui/sidebar";
 import AppSidebar, { type SidebarLinkItem } from "~/components/app-sidebar";
 
 const SIDEBAR_ITEMS: Array<SidebarLinkItem> = [
-  { label: "Usuarios", href: "/admin/users" },
+  {
+    label: "Autenticación",
+    children: [{ label: "Usuarios", href: "/admin/users" }],
+  },
 ];
 
 export const middleware: Route.MiddlewareFunction[] = [

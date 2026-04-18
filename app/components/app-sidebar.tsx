@@ -1,4 +1,5 @@
 import Logout from "~/routes/logout";
+import { ChevronDown } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -13,47 +14,86 @@ import {
 } from "./ui/sidebar";
 import type { ComponentProps } from "react";
 import { NavLink } from "react-router";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "./ui/collapsible";
 
-export type SidebarLinkItem = {
+type SidebarLink = {
   label: string;
   href: string;
-  children?: SidebarLinkItem[];
 };
+
+type SidebarGroupLinks = {
+  label: string;
+  children: SidebarLink[];
+};
+
+export type SidebarLinkItem = SidebarLink | SidebarGroupLinks;
 
 interface AppSidebarProps extends ComponentProps<typeof Sidebar> {
   items: Array<SidebarLinkItem>;
 }
 
-export default function AppSidebar({ items, ...props }: AppSidebarProps) {
-  const someHasSubItems = items.some((item) => Object.hasOwn(item, "children"));
+function hasChildren(item: SidebarLinkItem): item is SidebarGroupLinks {
+  return "children" in item;
+}
 
+export default function AppSidebar({ items, ...props }: AppSidebarProps) {
   return (
     <Sidebar collapsible="offcanvas" {...props}>
       <SidebarHeader>
         <span className="font-bold text-xl">Wachiman app</span>
       </SidebarHeader>
       <SidebarContent className="px-2">
-        {items.length > 0 ? (
-          someHasSubItems ? (
-            "Con subelementos"
-          ) : (
-            <SidebarGroup>
-              <SidebarGroupContent>
-                <SidebarMenu>
-                  {items.map((item, ix) => (
-                    <NavLink key={ix} to={item.href}>
-                      <SidebarMenuItem key={ix}>
-                        <SidebarMenuButton>{item.label}</SidebarMenuButton>
+        {items.length > 0
+          ? items.map((item) =>
+              hasChildren(item) ? (
+                <Collapsible
+                  key={item.label}
+                  defaultOpen
+                  className="group/collapsible"
+                >
+                  <SidebarGroup>
+                    <SidebarGroupLabel asChild>
+                      <CollapsibleTrigger>
+                        <span className="font-semibold text-sm">
+                          {item.label}
+                        </span>
+                        <ChevronDown className="ml-auto transition-transform group-data-[state=open]/collapsible:rotate-180" />
+                      </CollapsibleTrigger>
+                    </SidebarGroupLabel>
+                    <CollapsibleContent>
+                      <SidebarGroupContent>
+                        <SidebarMenu>
+                          {item.children.map((child) => (
+                            <SidebarMenuItem key={child.href}>
+                              <SidebarMenuButton asChild>
+                                <NavLink to={child.href}>{child.label}</NavLink>
+                              </SidebarMenuButton>
+                            </SidebarMenuItem>
+                          ))}
+                        </SidebarMenu>
+                      </SidebarGroupContent>
+                    </CollapsibleContent>
+                  </SidebarGroup>
+                </Collapsible>
+              ) : (
+                <SidebarGroup key={item.href}>
+                  <SidebarGroupContent>
+                    <SidebarMenu>
+                      <SidebarMenuItem>
+                        <SidebarMenuButton asChild>
+                          <NavLink to={item.href}>{item.label}</NavLink>
+                        </SidebarMenuButton>
                       </SidebarMenuItem>
-                    </NavLink>
-                  ))}
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
-          )
-        ) : (
-          "Sin elementos"
-        )}
+                    </SidebarMenu>
+                  </SidebarGroupContent>
+                </SidebarGroup>
+              ),
+            )
+          : "Sin elementos"}
       </SidebarContent>
       <SidebarFooter className="w-full items-center">
         <Logout />
