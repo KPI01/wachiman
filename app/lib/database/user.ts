@@ -3,7 +3,23 @@ import type { Prisma } from "../../../generated/prisma/client";
 import { hashText } from "../hash";
 import { prisma } from "../prisma";
 
-export async function createUser(data: Prisma.UserCreateInput) {
+type CreateUserInput = {
+  fullName: string;
+  username: string;
+  role?: Prisma.UserCreateInput["role"];
+  password: string;
+  siteId: string;
+};
+
+type UpdateUserInput = {
+  fullName?: string;
+  username?: string;
+  role?: Prisma.UserUpdateInput["role"];
+  isActive?: boolean;
+  siteId?: string;
+};
+
+export async function createUser(data: CreateUserInput) {
   const start = performance.now();
 
   try {
@@ -14,6 +30,7 @@ export async function createUser(data: Prisma.UserCreateInput) {
         username: data.username,
         role: data.role,
         password: hashedPassword,
+        siteId: data.siteId,
       },
     });
 
@@ -23,16 +40,30 @@ export async function createUser(data: Prisma.UserCreateInput) {
   }
 }
 
-export async function getUserByUsername(username: string) {
+export async function getUserByUsername(
+  username: string,
+  relations: { site: boolean } = { site: false },
+) {
   const start = performance.now();
 
   try {
+
     return prisma.user.findUnique({
       where: {
         isActive: true,
         isTrashed: false,
         username,
       },
+      include: relations.site
+        ? {
+            site: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          }
+        : undefined,
     });
   } finally {
     console.log(
@@ -77,13 +108,19 @@ export async function getUsers(
   }
 }
 
-export async function updateUser(id: string, data: Prisma.UserUpdateInput) {
+export async function updateUser(id: string, data: UpdateUserInput) {
   const start = performance.now();
 
   try {
     const updatedUser = await prisma.user.update({
       where: { id },
-      data,
+      data: {
+        fullName: data.fullName,
+        username: data.username,
+        role: data.role,
+        isActive: data.isActive,
+        siteId: data.siteId,
+      },
     });
 
     return updatedUser;

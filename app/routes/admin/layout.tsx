@@ -8,8 +8,11 @@ import AppSidebar, { type SidebarLinkItem } from "~/components/app-sidebar";
 
 const SIDEBAR_ITEMS: Array<SidebarLinkItem> = [
   {
-    label: "Autenticación",
-    children: [{ label: "Usuarios", href: "/admin/users" }],
+    label: "Maestros",
+    children: [
+      { label: "Usuarios", href: "/admin/users" },
+      { label: "Centros", href: "/admin/sites" },
+    ],
   },
 ];
 
