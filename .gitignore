@@ -7,3 +7,9 @@
 /build/
 
 /generated/prisma
+
+# Database
+*.db
+
+# Worktrees
+/.worktrees/
