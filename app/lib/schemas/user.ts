@@ -41,7 +41,7 @@ export const updateUserSchema = z
     username: z.string(STRING_TYPE_REQUIRED_MSG),
     role: z.enum(UserRole).optional().default("ACCESS_REQUESTER"),
     isActive: z.preprocess((value) => value === "on", z.boolean()),
-  })
+  })  
   .refine(
     async (data) => {
       const user = await getUserById(data.id);

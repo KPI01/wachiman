@@ -22,7 +22,7 @@ enum UserRole {
 }
 
 model User {
-  id        String    @id @default(cuid())
+  id        String    @id @default(uuid())
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   fullName  String
@@ -32,5 +32,19 @@ model User {
   isTrashed Boolean?  @default(false)
   role      UserRole? @default(ACCESS_REQUESTER)
 
+  siteId String
+  site   Site   @relation(fields: [siteId], references: [id])
+
   @@index([username])
+}
+
+model Site {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  name      String
+  slug      String
+  address   String?
+
+  users User[]
 }
