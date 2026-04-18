@@ -1,10 +1,12 @@
 import z from "zod";
 import {
   PASSWORDS_MUST_BE_EQUAL,
+  SITE_DOESNT_EXISTS,
   STRING_TYPE_REQUIRED_MSG,
   USER_ALREADY_EXISTS,
 } from "./messages";
 import { getUserById, getUserByUsername } from "../database/user";
+import { getSiteById } from "../database/site";
 import { prisma } from "../prisma";
 import { UserRole } from "../../../generated/prisma/enums";
 
@@ -12,6 +14,7 @@ export const createUserSchema = z
   .object({
     fullName: z.string(STRING_TYPE_REQUIRED_MSG),
     username: z.string(STRING_TYPE_REQUIRED_MSG),
+    siteId: z.string(STRING_TYPE_REQUIRED_MSG),
     role: z.enum(UserRole).optional().default("ACCESS_REQUESTER"),
     password: z.string(
       STRING_TYPE_REQUIRED_MSG,
@@ -32,16 +35,21 @@ export const createUserSchema = z
       error: USER_ALREADY_EXISTS,
       path: ["username"],
     },
-  );
+  )
+  .refine(async (data) => (await getSiteById(data.siteId)) !== null, {
+    error: SITE_DOESNT_EXISTS,
+    path: ["siteId"],
+  });
 
 export const updateUserSchema = z
   .object({
     id: z.string(STRING_TYPE_REQUIRED_MSG),
     fullName: z.string(STRING_TYPE_REQUIRED_MSG),
     username: z.string(STRING_TYPE_REQUIRED_MSG),
+    siteId: z.string(STRING_TYPE_REQUIRED_MSG),
     role: z.enum(UserRole).optional().default("ACCESS_REQUESTER"),
     isActive: z.preprocess((value) => value === "on", z.boolean()),
-  })  
+  })
   .refine(
     async (data) => {
       const user = await getUserById(data.id);
@@ -66,7 +74,11 @@ export const updateUserSchema = z
       error: USER_ALREADY_EXISTS,
       path: ["username"],
     },
-  );
+  )
+  .refine(async (data) => (await getSiteById(data.siteId)) !== null, {
+    error: SITE_DOESNT_EXISTS,
+    path: ["siteId"],
+  });
 
 export const trashUserSchema = z.object({
   id: z.string(STRING_TYPE_REQUIRED_MSG),

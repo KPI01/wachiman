@@ -11,23 +11,20 @@ const requiredString = z
   .trim()
   .min(1, STRING_REQUIRED_MSG);
 
-const optionalString = z.preprocess(
-  (value) => {
-    if (typeof value !== "string") {
-      return value;
-    }
+const optionalString = z.preprocess((value) => {
+  if (typeof value !== "string") {
+    return value;
+  }
 
-    const trimmedValue = value.trim();
+  const trimmedValue = value.trim();
 
-    return trimmedValue.length ? trimmedValue : undefined;
-  },
-  z.string(STRING_TYPE_REQUIRED_MSG).optional(),
-);
+  return trimmedValue.length ? trimmedValue : undefined;
+}, z.string(STRING_TYPE_REQUIRED_MSG).optional());
 
 export const createSiteSchema = z
   .object({
     name: requiredString,
-    slug: requiredString,
+    slug: requiredString.transform((str) => str.toUpperCase()),
     address: optionalString,
   })
   .refine(

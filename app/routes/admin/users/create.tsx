@@ -21,9 +21,14 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import FieldWrapper from "~/components/ui/wrappers/field-wrapper";
-import type { UserRole } from "../../../../generated/prisma/client";
+import type { Site, UserRole } from "../../../../generated/prisma/client";
 import { USER_ROLES } from "~/lib/models/user";
-export default function CreateUser() {
+
+type CreateUserProps = {
+  sites: Site[];
+};
+
+export default function CreateUser({ sites }: CreateUserProps) {
   return (
     <AlertDialog>
       <AlertDialogTrigger className={buttonVariants({ variant: "default" })}>
@@ -54,9 +59,23 @@ export default function CreateUser() {
               required
             />
           </FieldWrapper>
+          <FieldWrapper label="Centro" htmlFor="siteId">
+            <Select name="siteId" defaultValue={sites[0]?.id}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Centro para el usuario..." />
+              </SelectTrigger>
+              <SelectContent position="popper">
+                {sites.map((site) => (
+                  <SelectItem key={site.id} value={site.id}>
+                    {site.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </FieldWrapper>
           <FieldWrapper label="Rol de usuario" htmlFor="role">
-            <Select defaultValue="ACCESS_REQUESTER">
-              <SelectTrigger>
+            <Select name="role" defaultValue="ACCESS_REQUESTER">
+              <SelectTrigger className="w-full">
                 <SelectValue placeholder="Rol para el usuario..." />
               </SelectTrigger>
               <SelectContent position="popper">

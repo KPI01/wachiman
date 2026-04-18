@@ -39,7 +39,7 @@ export default function CreateSite() {
             <Input id="name" name="name" required />
           </FieldWrapper>
           <FieldWrapper label="Slug" htmlFor="slug">
-            <Input id="slug" name="slug" required />
+            <Input id="slug" name="slug" className="uppercase" required />
           </FieldWrapper>
           <FieldWrapper label="Direccion" htmlFor="address">
             <Input id="address" name="address" />

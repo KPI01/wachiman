@@ -10,7 +10,7 @@ import {
   AlertDialogTrigger,
 } from "~/components/ui/alert-dialog";
 import { buttonVariants } from "~/components/ui/button";
-import type { User, UserRole } from "../../../../generated/prisma/client";
+import type { Site, User, UserRole } from "../../../../generated/prisma/client";
 import { Form, redirect } from "react-router";
 import { Checkbox } from "~/components/ui/checkbox";
 import FieldWrapper from "~/components/ui/wrappers/field-wrapper";
@@ -66,9 +66,10 @@ export async function action({ request }: Route.ActionArgs) {
 
 type UserDetailsProps = {
   user: User;
+  sites: Site[];
 };
 
-export function UserDetails({ user }: UserDetailsProps) {
+export function UserDetails({ user, sites }: UserDetailsProps) {
   const formId = `user-form-${user.id}`;
 
   return (
@@ -103,9 +104,23 @@ export function UserDetails({ user }: UserDetailsProps) {
               defaultValue={user.username}
             />
           </FieldWrapper>
+          <FieldWrapper label="Centro" htmlFor="siteId">
+            <Select name="siteId" defaultValue={user.siteId}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Centro para el usuario..." />
+              </SelectTrigger>
+              <SelectContent position="popper">
+                {sites.map((site) => (
+                  <SelectItem key={site.id} value={site.id}>
+                    {site.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </FieldWrapper>
           <FieldWrapper label="Rol de usuario" htmlFor="role">
             <Select name="role" defaultValue={user.role as string}>
-              <SelectTrigger>
+              <SelectTrigger className="w-full">
                 <SelectValue placeholder="Rol para el usuario..." />
               </SelectTrigger>
               <SelectContent position="popper">
