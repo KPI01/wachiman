@@ -5,13 +5,13 @@ import { useRef, useState } from "react";
 import { Button } from "~/components/ui/button";
 
 type AccessLogSignatureProps = {
-  inputName: string;
   onSignatureChange?: (hasSignature: boolean) => void;
+  onSignaturePayloadChange?: (payload: string) => void;
 };
 
 export default function AccessLogSignature({
-  inputName,
   onSignatureChange,
+  onSignaturePayloadChange,
 }: AccessLogSignatureProps) {
   const signatureRef = useRef<SignatureRef>(null);
   const [strokes, setStrokes] = useState<number[][][]>([]);
@@ -20,15 +20,11 @@ export default function AccessLogSignature({
     signatureRef.current?.clear();
     setStrokes([]);
     onSignatureChange?.(false);
+    onSignaturePayloadChange?.("");
   }
 
   return (
     <div className="space-y-3">
-      <input
-        type="hidden"
-        name={inputName}
-        value={strokes.length ? JSON.stringify({ strokes }) : ""}
-      />
       <div className="rounded-xl border bg-muted/30 p-3">
         <div className="mb-3 flex items-center justify-between gap-3">
           <div className="flex items-center gap-2 text-sm font-medium">
@@ -50,7 +46,13 @@ export default function AccessLogSignature({
               return;
             }
 
-            setStrokes((currentStrokes) => [...currentStrokes, points]);
+            setStrokes((currentStrokes) => {
+              const nextStrokes = [...currentStrokes, points];
+
+              onSignaturePayloadChange?.(JSON.stringify({ strokes: nextStrokes }));
+
+              return nextStrokes;
+            });
             onSignatureChange?.(true);
           }}
         />

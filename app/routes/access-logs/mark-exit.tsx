@@ -23,6 +23,7 @@ export default function MarkAccessLogExit({
   const fetcher = useFetcher<{ errors?: unknown }>();
   const [open, setOpen] = useState(false);
   const [hasSignature, setHasSignature] = useState(false);
+  const [exitSignaturePayload, setExitSignaturePayload] = useState("");
 
   useEffect(() => {
     if (fetcher.state !== "idle" || !fetcher.data || fetcher.data.errors) {
@@ -31,6 +32,7 @@ export default function MarkAccessLogExit({
 
     setOpen(false);
     setHasSignature(false);
+    setExitSignaturePayload("");
   }, [fetcher.data, fetcher.state]);
 
   return (
@@ -41,6 +43,7 @@ export default function MarkAccessLogExit({
 
         if (nextOpen) {
           setHasSignature(false);
+          setExitSignaturePayload("");
         }
       }}
     >
@@ -62,10 +65,15 @@ export default function MarkAccessLogExit({
           action={`/access-log/${accessLogId}`}
           className="space-y-4"
         >
+          <input
+            type="hidden"
+            name="exitSignaturePayload"
+            value={exitSignaturePayload}
+          />
           <AccessLogSignature
             key={`exit-signature-${open}-${accessLogId}`}
-            inputName="exitSignaturePayload"
             onSignatureChange={setHasSignature}
+            onSignaturePayloadChange={setExitSignaturePayload}
           />
         </fetcher.Form>
         <AlertDialogFooter>

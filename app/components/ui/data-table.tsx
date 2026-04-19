@@ -60,6 +60,8 @@ interface DataTableProps<TData> {
   data: TData[];
   globalFilterColumns?: string[];
   filterPlaceholder?: string;
+  showGlobalFilter?: boolean;
+  showColumnVisibility?: boolean;
   pageSizeOptions?: number[];
   columnLabels?: Partial<Record<string, string>>;
   empty?: Partial<{
@@ -73,6 +75,8 @@ export default function DataTable<TData>({
   data,
   globalFilterColumns,
   filterPlaceholder,
+  showGlobalFilter = true,
+  showColumnVisibility = true,
   pageSizeOptions = [10, 20, 30, 40, 50],
   columnLabels,
   empty,
@@ -115,7 +119,7 @@ export default function DataTable<TData>({
       {data.length > 0 ? (
         <>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            {searchableColumnIds.length ? (
+            {showGlobalFilter && searchableColumnIds.length ? (
               <Input
                 placeholder={
                   filterPlaceholder ??
@@ -132,7 +136,9 @@ export default function DataTable<TData>({
             ) : (
               <div />
             )}
-            <DataTableViewOptions table={table} columnLabels={columnLabels} />
+            {showColumnVisibility ? (
+              <DataTableViewOptions table={table} columnLabels={columnLabels} />
+            ) : null}
           </div>
 
           <div className="overflow-hidden rounded-md border">

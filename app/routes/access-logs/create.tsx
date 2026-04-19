@@ -1,7 +1,6 @@
 import { PlusIcon } from "lucide-react";
 import {
   AlertDialog,
-  AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
@@ -21,10 +20,16 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { Checkbox } from "~/components/ui/checkbox";
-import { Form } from "react-router";
-import { useRef, useState } from "react";
+import { useFetcher } from "react-router";
+import { useEffect, useRef, useState } from "react";
 import type { Site } from "../../../generated/prisma/client";
 import AccessLogSignature from "~/components/models/access-logs/access-log-signature";
+
+type FetcherErrors = {
+  errors?: {
+    properties?: Record<string, { errors?: string[] }>;
+  };
+};
 
 type AccessLogSiteOption = Pick<Site, "id" | "name">;
 
@@ -43,13 +48,15 @@ function getDefaultEntryTimestamp() {
 
 export default function CreateAccessLog({
   sites,
-  actionPath = "/admin/access-logs",
+  actionPath = "/access-logs",
   lockedSiteId,
 }: CreateAccessLogProps) {
+  const fetcher = useFetcher<FetcherErrors & { success?: boolean }>();
   const [open, setOpen] = useState(false);
   const [withVehicle, setWithVehicle] = useState(false);
   const [step, setStep] = useState<"details" | "signature">("details");
   const [hasSignature, setHasSignature] = useState(false);
+  const [entrySignaturePayload, setEntrySignaturePayload] = useState("");
   const [pendingFormEntries, setPendingFormEntries] = useState<
     [string, string][]
   >([]);
@@ -58,6 +65,23 @@ export default function CreateAccessLog({
   );
   const formRef = useRef<HTMLFormElement>(null);
   const selectedSiteId = lockedSiteId ?? sites[0]?.id;
+  const errorEntries = Object.entries(fetcher.data?.errors?.properties ?? {})
+    .flatMap(([, value]) => value.errors ?? [])
+    .filter(Boolean);
+
+  useEffect(() => {
+    if (fetcher.state !== "idle" || !fetcher.data || fetcher.data.errors) {
+      return;
+    }
+
+    setOpen(false);
+    setWithVehicle(false);
+    setEntryTimestamp(getDefaultEntryTimestamp());
+    setStep("details");
+    setHasSignature(false);
+    setEntrySignaturePayload("");
+    setPendingFormEntries([]);
+  }, [fetcher.data, fetcher.state]);
 
   return (
     <AlertDialog
@@ -70,6 +94,7 @@ export default function CreateAccessLog({
           setEntryTimestamp(getDefaultEntryTimestamp());
           setStep("details");
           setHasSignature(false);
+          setEntrySignaturePayload("");
           setPendingFormEntries([]);
         }
       }}
@@ -97,7 +122,7 @@ export default function CreateAccessLog({
             )}
           </AlertDialogDescription>
         </AlertDialogHeader>
-        <Form
+        <fetcher.Form
           ref={formRef}
           id="create-access-log"
           method="post"
@@ -242,6 +267,16 @@ export default function CreateAccessLog({
             </>
           ) : (
             <div className="md:col-span-2 space-y-4">
+              {errorEntries.length > 0 ? (
+                <div className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+                  {errorEntries[0]}
+                </div>
+              ) : null}
+              <input
+                type="hidden"
+                name="entrySignaturePayload"
+                value={entrySignaturePayload}
+              />
               {pendingFormEntries.map(([name, value], index) => (
                 <input
                   key={`${name}-${index}`}
@@ -252,12 +287,12 @@ export default function CreateAccessLog({
               ))}
               <AccessLogSignature
                 key={`entry-signature-${open}`}
-                inputName="entrySignaturePayload"
                 onSignatureChange={setHasSignature}
+                onSignaturePayloadChange={setEntrySignaturePayload}
               />
             </div>
           )}
-        </Form>
+        </fetcher.Form>
         <AlertDialogFooter className="shrink-0">
           <AlertDialogCancel variant="destructive">Cancelar</AlertDialogCancel>
           {step === "details" ? (
@@ -288,13 +323,13 @@ export default function CreateAccessLog({
               >
                 Volver
               </Button>
-              <AlertDialogAction
+              <Button
                 type="submit"
                 form="create-access-log"
-                disabled={!hasSignature}
+                disabled={!hasSignature || fetcher.state !== "idle"}
               >
-                Enviar
-              </AlertDialogAction>
+                {fetcher.state === "submitting" ? "Enviando..." : "Enviar"}
+              </Button>
             </>
           )}
         </AlertDialogFooter>

@@ -78,7 +78,7 @@ export async function createAccessLog(data: CreateAccessLogInput) {
           })
         : null;
 
-        return await tx.accessLog.create({
+      return await tx.accessLog.create({
         data: {
           entryTimestamp: data.entryTimestamp,
           entrySignatureEnvelope: data.entrySignatureEnvelope,
@@ -97,8 +97,12 @@ export async function createAccessLog(data: CreateAccessLogInput) {
         },
       });
     });
+  } catch (e) {
+    console.error("[createAccessLog][error] ", String(e));
   } finally {
-    console.log(`[createAccessLog] ${(performance.now() - start).toFixed(2)}ms`);
+    console.log(
+      `[createAccessLog] ${(performance.now() - start).toFixed(2)}ms`,
+    );
   }
 }
 
@@ -145,7 +149,9 @@ export async function markAccessLogExit(data: MarkAccessLogExitInput) {
 
     return result.count > 0;
   } finally {
-    console.log(`[markAccessLogExit] ${(performance.now() - start).toFixed(2)}ms`);
+    console.log(
+      `[markAccessLogExit] ${(performance.now() - start).toFixed(2)}ms`,
+    );
   }
 }
 
@@ -213,6 +219,8 @@ export async function getAccessLogById(id: string) {
       },
     });
   } finally {
-    console.log(`[getAccessLogById] ${(performance.now() - start).toFixed(2)}ms`);
+    console.log(
+      `[getAccessLogById] ${(performance.now() - start).toFixed(2)}ms`,
+    );
   }
 }
