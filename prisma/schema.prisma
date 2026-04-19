@@ -32,11 +32,12 @@ model User {
   isTrashed Boolean?  @default(false)
   role      UserRole? @default(ACCESS_REQUESTER)
 
-  siteId       String
-  site         Site        @relation(fields: [siteId], references: [id])
-  departmentId String
-  department   Department  @relation(fields: [departmentId], references: [id])
-  accessLogs   AccessLog[]
+  siteId               String
+  site                 Site        @relation(fields: [siteId], references: [id])
+  departmentId         String
+  department           Department  @relation(fields: [departmentId], references: [id])
+  createdAccesLogs     AccessLog[] @relation("createdBy")
+  accessLogsMarkedExit AccessLog[] @relation("exitRecordedBy")
 
   @@index([username])
 }
@@ -70,7 +71,9 @@ model Department {
 model AccessLog {
   id                     String    @id @default(uuid())
   entryTimestamp         DateTime
+  entrySignatureEnvelope Json
   exitTimestamp          DateTime?
+  exitSignatureEnvelope  Json
   companyNameSnapshot    String
   firstNameSnapshot      String
   middleNameSnapshot     String?
@@ -82,9 +85,11 @@ model AccessLog {
   visitReason            String
 
   siteId             String
-  site               Site             @relation(fields: [siteId], references: [id])
+  site               Site              @relation(fields: [siteId], references: [id])
   createdById        String
-  createdBy          User             @relation(fields: [createdById], references: [id])
+  createdBy          User              @relation(name: "createdBy", fields: [createdById], references: [id])
+  exitRecordedById   String
+  exitRecordedBy     User              @relation(name: "exitRecordedBy", fields: [exitRecordedById], references: [id])
   vehicleAccessLogId String?
   vehicleAccessLog   AccessLogVehicle? @relation(fields: [vehicleAccessLogId], references: [id])
 }

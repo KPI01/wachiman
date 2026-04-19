@@ -66,9 +66,7 @@ export async function action({ request }: Route.ActionArgs) {
 
     return { success };
   } finally {
-    console.log(
-      `[/access-logs] ${(performance.now() - start).toFixed(2)}ms`,
-    );
+    console.log(`[/access-logs] ${(performance.now() - start).toFixed(2)}ms`);
   }
 }
 
