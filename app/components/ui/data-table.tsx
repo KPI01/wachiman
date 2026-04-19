@@ -369,9 +369,9 @@ function getSearchableColumnIds<TData>(
   const availableColumnIds = columns.flatMap((column) => getColumnIds(column));
 
   if (globalFilterColumns?.length) {
-    return globalFilterColumns
-      .slice(0, 3)
-      .filter((columnId) => availableColumnIds.includes(columnId));
+    return globalFilterColumns.filter((columnId) =>
+      availableColumnIds.includes(columnId),
+    );
   }
 
   return availableColumnIds.slice(0, 1);

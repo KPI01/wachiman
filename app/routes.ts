@@ -31,5 +31,8 @@ export default [
     // Gestion de departamentos
     route("departments", "routes/admin/departments/index.tsx"),
     route("departments/:departmentId", "routes/admin/departments/detail.tsx"),
+
+    // Gestion de accesos
+    route("access-logs", "routes/admin/access-logs/index.tsx"),
   ]),
 ] satisfies RouteConfig;

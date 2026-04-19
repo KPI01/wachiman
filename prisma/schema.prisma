@@ -85,8 +85,8 @@ model AccessLog {
   site               Site             @relation(fields: [siteId], references: [id])
   createdById        String
   createdBy          User             @relation(fields: [createdById], references: [id])
-  vehicleAccessLogId String
-  vehicleAccessLog   AccessLogVehicle @relation(fields: [vehicleAccessLogId], references: [id])
+  vehicleAccessLogId String?
+  vehicleAccessLog   AccessLogVehicle? @relation(fields: [vehicleAccessLogId], references: [id])
 }
 
 model AccessLogVehicle {

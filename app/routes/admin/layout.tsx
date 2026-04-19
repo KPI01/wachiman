@@ -15,6 +15,10 @@ const SIDEBAR_ITEMS: Array<SidebarLinkItem> = [
       { label: "Departamentos", href: "/admin/departments" },
     ],
   },
+  {
+    label: "Eventos",
+    children: [{ label: "Registros de acceso", href: "/admin/access-logs" }],
+  },
 ];
 
 export const middleware: Route.MiddlewareFunction[] = [
