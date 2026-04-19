@@ -73,7 +73,7 @@ model AccessLog {
   entryTimestamp         DateTime
   entrySignatureEnvelope Json
   exitTimestamp          DateTime?
-  exitSignatureEnvelope  Json
+  exitSignatureEnvelope  Json?
   companyNameSnapshot    String
   firstNameSnapshot      String
   middleNameSnapshot     String?
@@ -88,8 +88,8 @@ model AccessLog {
   site               Site              @relation(fields: [siteId], references: [id])
   createdById        String
   createdBy          User              @relation(name: "createdBy", fields: [createdById], references: [id])
-  exitRecordedById   String
-  exitRecordedBy     User              @relation(name: "exitRecordedBy", fields: [exitRecordedById], references: [id])
+  exitRecordedById   String?
+  exitRecordedBy     User?             @relation(name: "exitRecordedBy", fields: [exitRecordedById], references: [id])
   vehicleAccessLogId String?
   vehicleAccessLog   AccessLogVehicle? @relation(fields: [vehicleAccessLogId], references: [id])
 }
