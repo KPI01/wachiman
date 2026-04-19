@@ -33,9 +33,10 @@ model User {
   role      UserRole? @default(ACCESS_REQUESTER)
 
   siteId       String
-  site         Site       @relation(fields: [siteId], references: [id])
+  site         Site        @relation(fields: [siteId], references: [id])
   departmentId String
-  department   Department @relation(fields: [departmentId], references: [id])
+  department   Department  @relation(fields: [departmentId], references: [id])
+  accessLogs   AccessLog[]
 
   @@index([username])
 }
@@ -48,7 +49,8 @@ model Site {
   slug      String   @unique
   address   String?
 
-  users User[]
+  users      User[]
+  accessLogs AccessLog[]
 
   @@index([slug])
 }
@@ -63,4 +65,35 @@ model Department {
   users User[]
 
   @@index([slug])
+}
+
+model AccessLog {
+  id                     String    @id @default(uuid())
+  entryTimestamp         DateTime
+  exitTimestamp          DateTime?
+  companyNameSnapshot    String
+  firstNameSnapshot      String
+  middleNameSnapshot     String?
+  lastNameSnapshot       String
+  secondLastNameSnapshot String?
+  phoneNumber            String?
+  legalIdSnapshot        String
+  withVehicle            Boolean   @default(false)
+  visitReason            String
+
+  siteId             String
+  site               Site             @relation(fields: [siteId], references: [id])
+  createdById        String
+  createdBy          User             @relation(fields: [createdById], references: [id])
+  vehicleAccessLogId String
+  vehicleAccessLog   AccessLogVehicle @relation(fields: [vehicleAccessLogId], references: [id])
+}
+
+model AccessLogVehicle {
+  id            String      @id @default(uuid())
+  typeSnapshot  String
+  brandSnapshot String?
+  modelSnapshot String?
+  plateSnapshot String
+  accessLogs    AccessLog[]
 }
