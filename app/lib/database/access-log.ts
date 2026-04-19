@@ -127,3 +127,33 @@ export async function getAccessLogs() {
     console.log(`[getAccessLogs] ${(performance.now() - start).toFixed(2)}ms`);
   }
 }
+
+export async function getAccessLogById(id: string) {
+  const start = performance.now();
+
+  try {
+    return await prisma.accessLog.findUnique({
+      where: {
+        id,
+      },
+      include: {
+        site: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        createdBy: {
+          select: {
+            id: true,
+            fullName: true,
+            username: true,
+          },
+        },
+        vehicleAccessLog: true,
+      },
+    });
+  } finally {
+    console.log(`[getAccessLogById] ${(performance.now() - start).toFixed(2)}ms`);
+  }
+}

@@ -1,6 +1,6 @@
 import { createColumnHelper } from "@tanstack/react-table";
-import { Form } from "react-router";
-import { Button } from "~/components/ui/button";
+import { Link } from "react-router";
+import MarkAccessLogExit from "~/routes/access-log/mark-exit";
 import { formatTimestamp } from "../utils";
 import type { AccessLogListItem } from "../database/access-log";
 
@@ -51,6 +51,14 @@ export const accessLogColumns = [
   accessLogColHelper.accessor(getFullName, {
     id: "fullNameSnapshot",
     header: "Nombre completo",
+    cell: ({ row, getValue }) => (
+      <Link
+        to={`/admin/access-logs/${row.original.id}`}
+        className="underline-offset-4 hover:underline"
+      >
+        {getValue()}
+      </Link>
+    ),
   }),
   accessLogColHelper.accessor("legalIdSnapshot", {
     header: "Documento",
@@ -82,13 +90,9 @@ export const accessLogColumns = [
       }
 
       return (
-        <Form method="post" className="flex justify-end">
-          <input type="hidden" name="intent" value="mark-exit" />
-          <input type="hidden" name="accessLogId" value={row.original.id} />
-          <Button type="submit" size="sm" variant="outline">
-            Marcar salida
-          </Button>
-        </Form>
+        <div className="flex justify-end">
+          <MarkAccessLogExit accessLogId={row.original.id} />
+        </div>
       );
     },
   }),

@@ -2,17 +2,10 @@ import z from "zod";
 import type { Route } from "./+types";
 import DataTable from "~/components/ui/data-table";
 import { accessLogColumns } from "~/lib/columns/access-log";
-import {
-  createAccessLog,
-  getAccessLogs,
-  markAccessLogExit,
-} from "~/lib/database/access-log";
+import { createAccessLog, getAccessLogs } from "~/lib/database/access-log";
 import { getSites } from "~/lib/database/site";
 import { getUserByUsername } from "~/lib/database/user";
-import {
-  createAccessLogSchema,
-  markAccessLogExitSchema,
-} from "~/lib/schemas/access-log";
+import { createAccessLogSchema } from "~/lib/schemas/access-log";
 import { getSessionUser } from "~/lib/session";
 import CreateAccessLog from "./create";
 
@@ -28,18 +21,6 @@ export async function action({ request }: Route.ActionArgs) {
   try {
     const rawFormData = await request.formData();
     const jsonData = Object.fromEntries(rawFormData);
-
-    if (jsonData.intent === "mark-exit") {
-      const { data, error, success } = markAccessLogExitSchema.safeParse(jsonData);
-
-      if (error) {
-        return { errors: z.treeifyError(error) };
-      }
-
-      await markAccessLogExit(data.accessLogId);
-
-      return { success };
-    }
 
     const { error, data, success } =
       await createAccessLogSchema.safeParseAsync(jsonData);

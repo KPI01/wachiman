@@ -49,7 +49,3 @@ export const createAccessLogSchema = z
       });
     }
   });
-
-export const markAccessLogExitSchema = z.object({
-  accessLogId: requiredString,
-});

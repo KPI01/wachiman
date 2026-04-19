@@ -15,6 +15,7 @@ export default [
 
   // Protegidas genericas
   route("logout", "routes/logout.tsx"),
+  route("access-log/:id", "routes/access-log/detail.tsx"),
 
   // Admin
   route("admin", "routes/admin/layout.tsx", [
@@ -34,5 +35,6 @@ export default [
 
     // Gestion de accesos
     route("access-logs", "routes/admin/access-logs/index.tsx"),
+    route("access-logs/:id", "routes/admin/access-logs/detail.tsx"),
   ]),
 ] satisfies RouteConfig;
