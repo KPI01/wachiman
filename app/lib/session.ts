@@ -13,9 +13,18 @@ export type SessionUser = {
   role: UserRoleType | null;
 };
 
+export type SessionSite = {
+  id: string;
+  name: string;
+};
+
 export function getUserRedirectPath(role: SessionUser["role"]) {
   if (role === UserRole.ADMIN) {
     return "/admin";
+  }
+
+  if (role === UserRole.ACCESS_OPERATOR) {
+    return "/operator";
   }
 
   return "/home";
@@ -86,6 +95,16 @@ function isSessionUser(value: unknown): value is SessionUser {
   );
 }
 
+function isSessionSite(value: unknown): value is SessionSite {
+  if (typeof value !== "object" || value === null) {
+    return false;
+  }
+
+  const site = value as Record<string, unknown>;
+
+  return typeof site.id === "string" && typeof site.name === "string";
+}
+
 export async function getSessionUser(request: Request) {
   const start = performance.now();
 
@@ -103,6 +122,26 @@ export async function getSessionUser(request: Request) {
     return user;
   } finally {
     console.log(`[getSessionUser] ${(performance.now() - start).toFixed(2)}ms`);
+  }
+}
+
+export async function getSessionSite(request: Request) {
+  const start = performance.now();
+
+  try {
+    const session = await sessionStorage.getSession(
+      request.headers.get("Cookie"),
+    );
+
+    const site = session.get("site");
+
+    if (!isSessionSite(site)) {
+      return null;
+    }
+
+    return site;
+  } finally {
+    console.log(`[getSessionSite] ${(performance.now() - start).toFixed(2)}ms`);
   }
 }
 

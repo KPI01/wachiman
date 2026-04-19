@@ -36,4 +36,9 @@ export default [
     // Gestion de accesos
     route("access-logs", "routes/access-logs/index.tsx"),
   ]),
+
+  // Operador de accesos
+  route("operator", "routes/operator/layout.tsx", [
+    index("routes/operator/home.tsx"),
+  ]),
 ] satisfies RouteConfig;

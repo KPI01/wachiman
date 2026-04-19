@@ -1,12 +1,8 @@
-import z from "zod";
 import DataTable from "~/components/ui/data-table";
-import { encryptValue } from "~/lib/crypt";
+import { handleCreateAccessLog } from "~/lib/access-log-action";
 import { accessLogColumns } from "~/lib/columns/access-log";
-import { createAccessLog, getAccessLogs } from "~/lib/database/access-log";
+import { getAccessLogs } from "~/lib/database/access-log";
 import { getSites } from "~/lib/database/site";
-import { getUserByUsername } from "~/lib/database/user";
-import { createAccessLogSchema } from "~/lib/schemas/access-log";
-import { getSessionUser } from "~/lib/session";
 import CreateAccessLog from "./create";
 import type { Route } from "./+types/index";
 
@@ -20,55 +16,7 @@ export async function action({ request }: Route.ActionArgs) {
   const start = performance.now();
 
   try {
-    const rawFormData = await request.formData();
-    const jsonData = Object.fromEntries(rawFormData);
-
-    const { error, data, success } =
-      await createAccessLogSchema.safeParseAsync(jsonData);
-
-    if (error) {
-      return { errors: z.treeifyError(error) };
-    }
-
-    const sessionUser = await getSessionUser(request);
-
-    if (!sessionUser) {
-      throw new Response("Unauthorized", { status: 401 });
-    }
-
-    const createdBy = await getUserByUsername(sessionUser.username);
-
-    if (!createdBy) {
-      throw new Response("Unauthorized", { status: 401 });
-    }
-
-    await createAccessLog({
-      entryTimestamp: data.entryTimestamp,
-      entrySignatureEnvelope: encryptValue(
-        JSON.stringify(data.entrySignaturePayload),
-      ),
-      companyNameSnapshot: data.companyNameSnapshot,
-      firstNameSnapshot: data.firstNameSnapshot,
-      middleNameSnapshot: data.middleNameSnapshot,
-      lastNameSnapshot: data.lastNameSnapshot,
-      secondLastNameSnapshot: data.secondLastNameSnapshot,
-      phoneNumber: data.phoneNumber,
-      legalIdSnapshot: data.legalIdSnapshot,
-      visitReason: data.visitReason,
-      siteId: data.siteId,
-      withVehicle: data.withVehicle,
-      createdById: createdBy.id,
-      vehicle: data.withVehicle
-        ? {
-            typeSnapshot: data.vehicleTypeSnapshot ?? "",
-            brandSnapshot: data.vehicleBrandSnapshot,
-            modelSnapshot: data.vehicleModelSnapshot,
-            plateSnapshot: data.vehiclePlateSnapshot ?? "",
-          }
-        : undefined,
-    });
-
-    return { success };
+    return await handleCreateAccessLog(request);
   } finally {
     console.log(`[/access-logs] ${(performance.now() - start).toFixed(2)}ms`);
   }

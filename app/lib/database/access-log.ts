@@ -21,6 +21,25 @@ export type AccessLogListItem = Prisma.AccessLogGetPayload<{
   };
 }>;
 
+type AccessLogTimestampField = "entryTimestamp" | "exitTimestamp";
+
+type AccessLogDateFilter =
+  | {
+      date: Date;
+      from?: never;
+      to?: never;
+    }
+  | {
+      date?: never;
+      from: Date;
+      to: Date;
+    };
+
+type GetAccessLogsInput = {
+  siteId?: string;
+  timestampField?: AccessLogTimestampField;
+} & AccessLogDateFilter;
+
 type CreateAccessLogInput = {
   entryTimestamp: Date;
   entrySignatureEnvelope: Prisma.InputJsonValue;
@@ -87,7 +106,25 @@ type MarkAccessLogExitInput = {
   accessLogId: string;
   exitSignatureEnvelope: Prisma.InputJsonValue;
   exitRecordedById: string;
+  siteId?: string;
 };
+
+function getTimestampRangeFilter(filter: GetAccessLogsInput) {
+  if (filter.date) {
+    const start = new Date(filter.date);
+    start.setHours(0, 0, 0, 0);
+
+    const end = new Date(start);
+    end.setDate(end.getDate() + 1);
+
+    return { gte: start, lt: end };
+  }
+
+  return {
+    gte: filter.from,
+    lte: filter.to,
+  };
+}
 
 export async function markAccessLogExit(data: MarkAccessLogExitInput) {
   const start = performance.now();
@@ -97,6 +134,7 @@ export async function markAccessLogExit(data: MarkAccessLogExitInput) {
       where: {
         id: data.accessLogId,
         exitTimestamp: null,
+        ...(data.siteId ? { siteId: data.siteId } : {}),
       },
       data: {
         exitTimestamp: new Date(),
@@ -111,11 +149,19 @@ export async function markAccessLogExit(data: MarkAccessLogExitInput) {
   }
 }
 
-export async function getAccessLogs() {
+export async function getAccessLogs(input?: GetAccessLogsInput) {
   const start = performance.now();
 
   try {
+    const timestampField = input?.timestampField ?? "entryTimestamp";
+
     return await prisma.accessLog.findMany({
+      where: input
+        ? {
+            ...(input.siteId ? { siteId: input.siteId } : {}),
+            [timestampField]: getTimestampRangeFilter(input),
+          }
+        : undefined,
       include: {
         site: {
           select: {

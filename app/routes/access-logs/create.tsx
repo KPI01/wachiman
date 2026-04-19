@@ -26,8 +26,12 @@ import { useRef, useState } from "react";
 import type { Site } from "../../../generated/prisma/client";
 import AccessLogSignature from "~/components/models/access-logs/access-log-signature";
 
+type AccessLogSiteOption = Pick<Site, "id" | "name">;
+
 type CreateAccessLogProps = {
-  sites: Site[];
+  sites: AccessLogSiteOption[];
+  actionPath?: string;
+  lockedSiteId?: string;
 };
 
 function getDefaultEntryTimestamp() {
@@ -37,7 +41,11 @@ function getDefaultEntryTimestamp() {
   return new Date(now.getTime() - timezoneOffset).toISOString().slice(0, 16);
 }
 
-export default function CreateAccessLog({ sites }: CreateAccessLogProps) {
+export default function CreateAccessLog({
+  sites,
+  actionPath = "/admin/access-logs",
+  lockedSiteId,
+}: CreateAccessLogProps) {
   const [open, setOpen] = useState(false);
   const [withVehicle, setWithVehicle] = useState(false);
   const [step, setStep] = useState<"details" | "signature">("details");
@@ -49,6 +57,7 @@ export default function CreateAccessLog({ sites }: CreateAccessLogProps) {
     getDefaultEntryTimestamp,
   );
   const formRef = useRef<HTMLFormElement>(null);
+  const selectedSiteId = lockedSiteId ?? sites[0]?.id;
 
   return (
     <AlertDialog
@@ -92,13 +101,22 @@ export default function CreateAccessLog({ sites }: CreateAccessLogProps) {
           ref={formRef}
           id="create-access-log"
           method="post"
-          action="/admin/access-logs"
+          action={actionPath}
           className="grid min-h-0 gap-4 overflow-y-auto p-2 md:grid-cols-2"
         >
           {step === "details" ? (
             <>
               <FieldWrapper label="Centro" htmlFor="siteId">
-                <Select name="siteId" defaultValue={sites[0]?.id}>
+                {lockedSiteId ? (
+                  <input type="hidden" name="siteId" value={lockedSiteId} />
+                ) : null}
+                <Select
+                  name={lockedSiteId ? undefined : "siteId"}
+                  {...(lockedSiteId
+                    ? { value: selectedSiteId }
+                    : { defaultValue: selectedSiteId })}
+                  disabled={Boolean(lockedSiteId)}
+                >
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Centro para el acceso..." />
                   </SelectTrigger>
@@ -121,7 +139,7 @@ export default function CreateAccessLog({ sites }: CreateAccessLogProps) {
                   type="datetime-local"
                   value={entryTimestamp}
                   onChange={(event) => setEntryTimestamp(event.target.value)}
-                  required
+                  readOnly
                 />
               </FieldWrapper>
               <FieldWrapper label="DNI/NIE *" htmlFor="legalIdSnapshot">
