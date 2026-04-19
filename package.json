@@ -6,6 +6,7 @@
     "build": "react-router build",
     "db:seed": "tsx prisma/seed.ts",
     "dev": "react-router dev",
+    "env:set-encryption-key": "tsx scripts/set-encryption-key.ts",
     "start": "react-router-serve ./build/server/index.js",
     "typecheck": "react-router typegen && tsc"
   },
@@ -20,6 +21,7 @@
     "@react-router/node": "7.14.0",
     "@react-router/serve": "7.14.0",
     "@tanstack/react-table": "^8.21.3",
+    "@uiw/react-signature": "^1.3.4",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",

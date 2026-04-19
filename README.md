@@ -34,6 +34,20 @@ npm run dev
 
 Your application will be available at `http://localhost:5173`.
 
+### Environment setup
+
+Generate or replace `ENCRIPTION_KEY` in `.env`:
+
+```bash
+npm run env:set-encryption-key
+```
+
+Set a specific key or use a different env file:
+
+```bash
+npm run env:set-encryption-key -- --key "<base64-key>" --env .env.local
+```
+
 ## Building for Production
 
 Create a production build:

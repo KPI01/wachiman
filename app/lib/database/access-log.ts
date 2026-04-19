@@ -23,6 +23,7 @@ export type AccessLogListItem = Prisma.AccessLogGetPayload<{
 
 type CreateAccessLogInput = {
   entryTimestamp: Date;
+  entrySignatureEnvelope: Prisma.InputJsonValue;
   companyNameSnapshot: string;
   firstNameSnapshot: string;
   middleNameSnapshot?: string;
@@ -58,9 +59,10 @@ export async function createAccessLog(data: CreateAccessLogInput) {
           })
         : null;
 
-      return await tx.accessLog.create({
+        return await tx.accessLog.create({
         data: {
           entryTimestamp: data.entryTimestamp,
+          entrySignatureEnvelope: data.entrySignatureEnvelope,
           companyNameSnapshot: data.companyNameSnapshot,
           firstNameSnapshot: data.firstNameSnapshot,
           middleNameSnapshot: data.middleNameSnapshot,
@@ -81,18 +83,29 @@ export async function createAccessLog(data: CreateAccessLogInput) {
   }
 }
 
-export async function markAccessLogExit(accessLogId: string) {
+type MarkAccessLogExitInput = {
+  accessLogId: string;
+  exitSignatureEnvelope: Prisma.InputJsonValue;
+  exitRecordedById: string;
+};
+
+export async function markAccessLogExit(data: MarkAccessLogExitInput) {
   const start = performance.now();
 
   try {
-    return await prisma.accessLog.update({
+    const result = await prisma.accessLog.updateMany({
       where: {
-        id: accessLogId,
+        id: data.accessLogId,
+        exitTimestamp: null,
       },
       data: {
         exitTimestamp: new Date(),
+        exitSignatureEnvelope: data.exitSignatureEnvelope,
+        exitRecordedById: data.exitRecordedById,
       },
     });
+
+    return result.count > 0;
   } finally {
     console.log(`[markAccessLogExit] ${(performance.now() - start).toFixed(2)}ms`);
   }

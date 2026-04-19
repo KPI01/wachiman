@@ -77,7 +77,11 @@ export const accessLogColumns = [
     header: "Acciones",
     cell: ({ row }) => {
       if (row.original.exitTimestamp) {
-        return <span className="text-muted-foreground">Salida registrada</span>;
+        return (
+          <span className="text-muted-foreground sr-only">
+            Salida registrada
+          </span>
+        );
       }
 
       return (

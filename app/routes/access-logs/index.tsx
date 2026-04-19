@@ -1,5 +1,6 @@
 import z from "zod";
 import DataTable from "~/components/ui/data-table";
+import { encryptValue } from "~/lib/crypt";
 import { accessLogColumns } from "~/lib/columns/access-log";
 import { createAccessLog, getAccessLogs } from "~/lib/database/access-log";
 import { getSites } from "~/lib/database/site";
@@ -43,6 +44,9 @@ export async function action({ request }: Route.ActionArgs) {
 
     await createAccessLog({
       entryTimestamp: data.entryTimestamp,
+      entrySignatureEnvelope: encryptValue(
+        JSON.stringify(data.entrySignaturePayload),
+      ),
       companyNameSnapshot: data.companyNameSnapshot,
       firstNameSnapshot: data.firstNameSnapshot,
       middleNameSnapshot: data.middleNameSnapshot,
@@ -91,6 +95,7 @@ export default function IndexAccessLogs({ loaderData }: Route.ComponentProps) {
           title: "No hay accesos registrados",
           description: "Los registros de acceso creados apareceran aqui.",
         }}
+        filterPlaceholder="Escribe aqui para empezar a buscar..."
       />
     </div>
   );
