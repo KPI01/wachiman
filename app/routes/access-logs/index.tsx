@@ -1,5 +1,4 @@
 import z from "zod";
-import type { Route } from "./+types";
 import DataTable from "~/components/ui/data-table";
 import { accessLogColumns } from "~/lib/columns/access-log";
 import { createAccessLog, getAccessLogs } from "~/lib/database/access-log";
@@ -8,6 +7,7 @@ import { getUserByUsername } from "~/lib/database/user";
 import { createAccessLogSchema } from "~/lib/schemas/access-log";
 import { getSessionUser } from "~/lib/session";
 import CreateAccessLog from "./create";
+import type { Route } from "./+types/index";
 
 export async function loader() {
   const [accessLogs, sites] = await Promise.all([getAccessLogs(), getSites()]);
@@ -67,7 +67,7 @@ export async function action({ request }: Route.ActionArgs) {
     return { success };
   } finally {
     console.log(
-      `[/admin/access-logs] ${(performance.now() - start).toFixed(2)}ms`,
+      `[/access-logs] ${(performance.now() - start).toFixed(2)}ms`,
     );
   }
 }

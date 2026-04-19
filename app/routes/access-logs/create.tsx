@@ -1,5 +1,4 @@
 import { PlusIcon } from "lucide-react";
-import type { Site } from "../../../../generated/prisma/client";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,6 +23,7 @@ import {
 import { Checkbox } from "~/components/ui/checkbox";
 import { Form } from "react-router";
 import { useState } from "react";
+import type { Site } from "../../../generated/prisma/client";
 
 type CreateAccessLogProps = {
   sites: Site[];
