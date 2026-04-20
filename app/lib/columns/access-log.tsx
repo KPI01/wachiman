@@ -2,6 +2,17 @@ import { createColumnHelper } from "@tanstack/react-table";
 import MarkAccessLogExit from "~/routes/access-logs/mark-exit";
 import { formatTimestamp } from "../utils";
 import type { AccessLogListItem } from "../database/access-log";
+import {
+  Popover,
+  PopoverAnchor,
+  PopoverContent,
+  PopoverTitle,
+  PopoverTrigger,
+} from "~/components/ui/popover";
+import { Button, buttonVariants } from "~/components/ui/button";
+import { InfoIcon } from "lucide-react";
+import FieldWrapper from "~/components/ui/wrappers/field-wrapper";
+import { Input } from "~/components/ui/input";
 
 const accessLogColHelper = createColumnHelper<AccessLogListItem>();
 
@@ -57,12 +68,39 @@ export const accessLogColumns = [
   accessLogColHelper.accessor("companyNameSnapshot", {
     header: "Empresa",
   }),
-  accessLogColHelper.accessor(getVehicleDetails, {
-    id: "vehicleDetails",
+  accessLogColHelper.display({
+    id: "vehicleAccessLog",
     header: "Vehiculo",
-  }),
-  accessLogColHelper.accessor("visitReason", {
-    header: "Motivo",
+    cell: ({ row }) => {
+      if (!row.original.vehicleAccessLogId) return "-";
+      return (
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="secondary">
+              <InfoIcon />
+              {row.original.vehicleAccessLog?.plateSnapshot}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent side="top">
+            <PopoverTitle>Datos del vehículo</PopoverTitle>
+            <ul className="[&>li>span]:font-bold">
+              <li id="vehicleTypeSnapshot">
+                <span>Tipo:</span>{" "}
+                {row.original.vehicleAccessLog?.typeSnapshot ?? "-"}
+              </li>
+              <li id="vehicleBrandSnapshot">
+                <span>Marca:</span>{" "}
+                {row.original.vehicleAccessLog?.brandSnapshot ?? "-"}
+              </li>
+              <li id="vehicleModelSnapshot">
+                <span>Marca:</span>{" "}
+                {row.original.vehicleAccessLog?.modelSnapshot ?? "-"}
+              </li>
+            </ul>
+          </PopoverContent>
+        </Popover>
+      );
+    },
   }),
   accessLogColHelper.accessor((accessLog) => accessLog.site.name, {
     id: "siteName",
@@ -75,20 +113,27 @@ export const accessLogColumns = [
   accessLogColHelper.display({
     id: "actions",
     header: "Acciones",
-    cell: ({ row }) => {
-      if (row.original.exitTimestamp) {
-        return (
+    cell: ({ row }) => (
+      <div className="flex justify-end">
+        {row.original.exitTimestamp ? (
           <span className="text-muted-foreground sr-only">
             Salida registrada
           </span>
-        );
-      }
-
-      return (
-        <div className="flex justify-end">
+        ) : (
           <MarkAccessLogExit accessLogId={row.original.id} />
-        </div>
-      );
-    },
+        )}
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="secondary" size="sm">
+              <InfoIcon />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent side="left">
+            <PopoverTitle>Razón de la visita</PopoverTitle>
+            <span>{row.original.visitReason}</span>
+          </PopoverContent>
+        </Popover>
+      </div>
+    ),
   }),
 ];
