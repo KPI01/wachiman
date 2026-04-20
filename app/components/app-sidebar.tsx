@@ -1,5 +1,4 @@
-import Logout from "~/routes/logout";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, LogOutIcon } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -13,12 +12,13 @@ import {
   SidebarMenuItem,
 } from "./ui/sidebar";
 import type { ComponentProps } from "react";
-import { NavLink } from "react-router";
+import { Form, NavLink } from "react-router";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from "./ui/collapsible";
+import { Button } from "./ui/button";
 
 type SidebarLink = {
   label: string;
@@ -96,7 +96,12 @@ export default function AppSidebar({ items, ...props }: AppSidebarProps) {
           : "Sin elementos"}
       </SidebarContent>
       <SidebarFooter className="w-full items-center">
-        <Logout />
+        <Form method="post" action="/logout" className="w-full">
+          <Button type="submit" variant="ghost" className="w-full">
+            <LogOutIcon />
+            Cerrar sesión
+          </Button>
+        </Form>
       </SidebarFooter>
     </Sidebar>
   );

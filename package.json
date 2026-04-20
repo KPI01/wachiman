@@ -4,11 +4,14 @@
   "type": "module",
   "scripts": {
     "build": "react-router build",
-    "db:seed": "tsx prisma/seed.ts",
     "dev": "react-router dev",
-    "env:set-encryption-key": "tsx scripts/set-encryption-key.ts",
     "start": "react-router-serve ./build/server/index.js",
-    "typecheck": "react-router typegen && tsc"
+    "typecheck": "react-router typegen && tsc",
+    "orm:generate": "pnpm prisma generate",
+    "db:migrate": "pnpm prisma migrate",
+    "db:seed": "tsx prisma/seed.ts",
+    "db:reset": "pnpm prisma migrate reset",
+    "env:set-encryption-key": "tsx scripts/set-encryption-key.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
