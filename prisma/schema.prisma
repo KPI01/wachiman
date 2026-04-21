@@ -85,13 +85,14 @@ model AccessLog {
   visitReason            String
 
   siteId             String
-  site               Site              @relation(fields: [siteId], references: [id])
+  site               Site               @relation(fields: [siteId], references: [id])
   createdById        String
-  createdBy          User              @relation(name: "createdBy", fields: [createdById], references: [id])
+  createdBy          User               @relation(name: "createdBy", fields: [createdById], references: [id])
   exitRecordedById   String?
-  exitRecordedBy     User?             @relation(name: "exitRecordedBy", fields: [exitRecordedById], references: [id])
+  exitRecordedBy     User?              @relation(name: "exitRecordedBy", fields: [exitRecordedById], references: [id])
   vehicleAccessLogId String?
-  vehicleAccessLog   AccessLogVehicle? @relation(fields: [vehicleAccessLogId], references: [id])
+  vehicleAccessLog   AccessLogVehicle?  @relation(fields: [vehicleAccessLogId], references: [id])
+  accessRequestLogs  AccessRequestLog[]
 }
 
 model AccessLogVehicle {
@@ -101,4 +102,58 @@ model AccessLogVehicle {
   modelSnapshot String?
   plateSnapshot String
   accessLogs    AccessLog[]
+}
+
+model AccessRequest {
+  id                    String                 @id @default(cuid())
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+  expectedStartDate     DateTime
+  expectedEndDate       DateTime?
+  status                String
+  accessRequestPersons  AccessRequestPerson[]
+  accessRequestVehicles AccessRequestVehicle[]
+  accessRequestLogs     AccessRequestLog[]
+}
+
+model AccessRequestLog {
+  id String @id @default(uuid())
+
+  accessLogId            String
+  accessLog              AccessLog            @relation(fields: [accessLogId], references: [id])
+  accessRequestId        String
+  accessRequest          AccessRequest        @relation(fields: [accessRequestId], references: [id])
+  accessRequestPersonId  String
+  accessRequestPerson    AccessRequestPerson  @relation(fields: [accessRequestPersonId], references: [id])
+  accessRequestVehicleId String
+  accessRequestVehicle   AccessRequestVehicle @relation(fields: [accessRequestVehicleId], references: [id])
+}
+
+model AccessRequestPerson {
+  id                     String   @id @default(uuid())
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+  firstNameSnapshot      String
+  middleNameSnapshot     String?
+  lastNameSnapshot       String
+  secondLastNameSnapshot String?
+  legalIdSnapshot        String
+
+  accessRequestId   String
+  accessRequest     AccessRequest      @relation(fields: [accessRequestId], references: [id])
+  accessRequestLogs AccessRequestLog[]
+}
+
+model AccessRequestVehicle {
+  id            String   @id @default(uuid())
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  typeSnapshot  String
+  brandSnapshot String?
+  modelSnapshot String?
+  plateSnapshot String
+
+  accessRequestId   String
+  accessRequest     AccessRequest      @relation(fields: [accessRequestId], references: [id])
+  accessRequestLogs AccessRequestLog[]
 }
