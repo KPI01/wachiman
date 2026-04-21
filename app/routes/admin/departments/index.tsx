@@ -4,7 +4,7 @@ import { departmentColumns } from "~/lib/columns/department";
 import {
   createDepartment,
   getDepartments,
-} from "~/lib/database/department";
+} from "~/lib/database/department.server";
 import { createDepartmentSchema } from "~/lib/schemas/department";
 import type { Route } from "./+types";
 import CreateDepartment from "./create";

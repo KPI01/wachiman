@@ -1,4 +1,4 @@
-import { createSite, getSites } from "~/lib/database/site";
+import { createSite, getSites } from "~/lib/database/site.server";
 import type { Route } from "./+types";
 import DataTable from "~/components/ui/data-table";
 import { siteColumns } from "~/lib/columns/site";

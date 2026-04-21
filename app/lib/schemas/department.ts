@@ -1,6 +1,6 @@
 import z from "zod";
 import { DEPARTMENT_ALREADY_EXISTS } from "./messages";
-import { getDepartmentById, getDepartmentBySlug } from "../database/department";
+import { getDepartmentById, getDepartmentBySlug } from "../database/department.server";
 import { requiredString } from "./generic";
 
 export const createDepartmentSchema = z

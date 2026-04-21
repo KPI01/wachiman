@@ -2,7 +2,7 @@ import { Link, redirect } from "react-router";
 import type { Route } from "./+types/welcome";
 import CardContainer from "~/components/containers/card-container";
 import { buttonVariants } from "~/components/ui/button";
-import { getSessionUser, getUserRedirectPath } from "~/lib/session";
+import { getSessionUser, getUserRedirectPath } from "~/lib/session.server";
 
 export async function loader({ request }: Route.LoaderArgs) {
   const user = await getSessionUser(request);

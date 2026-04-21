@@ -17,7 +17,7 @@ import FieldWrapper from "~/components/ui/wrappers/field-wrapper";
 import {
   deleteDepartment,
   updateDepartment,
-} from "~/lib/database/department";
+} from "~/lib/database/department.server";
 import {
   deleteDepartmentSchema,
   updateDepartmentSchema,

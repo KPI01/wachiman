@@ -1,6 +1,6 @@
 import z from "zod";
 import { SITE_ALREADY_EXISTS } from "./messages";
-import { getSiteById, getSiteBySlug } from "../database/site";
+import { getSiteById, getSiteBySlug } from "../database/site.server";
 import { optionalString, requiredString } from "./generic";
 
 export const createSiteSchema = z

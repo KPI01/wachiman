@@ -6,10 +6,10 @@ import {
   STRING_TYPE_REQUIRED_MSG,
   USER_ALREADY_EXISTS,
 } from "./messages";
-import { getUserById, getUserByUsername } from "../database/user";
-import { getSiteById } from "../database/site";
-import { getDepartmentById } from "../database/department";
-import { prisma } from "../prisma";
+import { getUserById, getUserByUsername } from "../database/user.server";
+import { getSiteById } from "../database/site.server";
+import { getDepartmentById } from "../database/department.server";
+import { prisma } from "../prisma.server";
 import { UserRole } from "../../../generated/prisma/enums";
 
 export const createUserSchema = z

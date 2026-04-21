@@ -1,6 +1,6 @@
 import { performance } from "node:perf_hooks";
 import type { Prisma } from "../../../generated/prisma/client";
-import { prisma } from "../prisma";
+import { prisma } from "../prisma.server";
 
 export async function createDepartment(data: Prisma.DepartmentCreateInput) {
   const start = performance.now();

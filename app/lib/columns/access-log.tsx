@@ -1,7 +1,7 @@
 import { createColumnHelper } from "@tanstack/react-table";
 import MarkAccessLogExit from "~/routes/access-logs/mark-exit";
 import { formatTimestamp } from "../utils";
-import type { AccessLogListItem } from "../database/access-log";
+import type { AccessLogListItem } from "../database/access-log.server";
 
 const accessLogColHelper = createColumnHelper<AccessLogListItem>();
 

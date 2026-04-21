@@ -1,10 +1,10 @@
 import z from "zod";
 import { UserRole } from "../../../generated/prisma/enums";
-import { encryptValue } from "~/lib/crypt";
-import { createAccessLog } from "~/lib/database/access-log";
-import { getUserByUsername } from "~/lib/database/user";
+import { encryptValue } from "~/lib/crypt.server";
+import { createAccessLog } from "~/lib/database/access-log.server";
+import { getUserByUsername } from "~/lib/database/user.server";
 import { createAccessLogSchema } from "~/lib/schemas/access-log";
-import { getSessionSite, getSessionUser } from "~/lib/session";
+import { getSessionSite, getSessionUser } from "~/lib/session.server";
 
 type HandleCreateAccessLogOptions = {
   restrictToSessionSite?: boolean;

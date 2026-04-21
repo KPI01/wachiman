@@ -6,8 +6,8 @@ import {
   USER_ALREADY_EXISTS,
   USER_DOESNT_EXISTS,
 } from "./messages";
-import { getUserByUsername } from "../database/user";
-import { validateHashedText } from "../hash";
+import { getUserByUsername } from "../database/user.server";
+import { validateHashedText } from "../hash.server";
 
 export const loginSchema = z
   .object({

@@ -1,12 +1,12 @@
-import { createUser, getUsers } from "~/lib/database/user";
+import { createUser, getUsers } from "~/lib/database/user.server";
 import type { Route } from "./+types";
 import DataTable from "~/components/ui/data-table";
 import { getUserColumns } from "~/lib/columns/user";
 import CreateUser from "./create";
 import z from "zod";
 import { createUserSchema } from "~/lib/schemas/user";
-import { getSites } from "~/lib/database/site";
-import { getDepartments } from "~/lib/database/department";
+import { getSites } from "~/lib/database/site.server";
+import { getDepartments } from "~/lib/database/department.server";
 
 export async function loader() {
   const [users, sites, departments] = await Promise.all([

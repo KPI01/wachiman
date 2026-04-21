@@ -1,5 +1,5 @@
 import z from "zod";
-import { getSiteById } from "../database/site";
+import { getSiteById } from "../database/site.server";
 import { optionalString, requiredString } from "./generic";
 import { SITE_DOESNT_EXISTS } from "./messages";
 

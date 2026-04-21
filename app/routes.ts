@@ -16,11 +16,10 @@ export default [
   
   // Autenticacion
   ...prefix("auth", [
-    route("logout", "routes/auth/logout.tsx")
-  ])
+    route("logout", "routes/auth/logout.tsx"),
+  ]),
 
   // Protegidas genericas
-  route("logout", "routes/actions/auth/logout.tsx"),
   route("access-log/:id", "routes/access-log.tsx"),
   route("access-logs", "routes/access-logs/index.tsx"),
 

@@ -17,7 +17,7 @@ import { Input } from "~/components/ui/input";
 import type { Route } from "./+types/detail";
 import z from "zod";
 import { deleteSiteSchema, updateSiteSchema } from "~/lib/schemas/site";
-import { deleteSite, updateSite } from "~/lib/database/site";
+import { deleteSite, updateSite } from "~/lib/database/site.server";
 
 export async function action({ request }: Route.ActionArgs) {
   if (request.method === "PATCH") {

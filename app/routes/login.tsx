@@ -11,8 +11,8 @@ import {
   createSession,
   getSessionUser,
   getUserRedirectPath,
-} from "~/lib/session";
-import { getUserByUsername } from "~/lib/database/user";
+} from "~/lib/session.server";
+import { getUserByUsername } from "~/lib/database/user.server";
 
 export async function loader({ request }: Route.LoaderArgs) {
   const user = await getSessionUser(request);

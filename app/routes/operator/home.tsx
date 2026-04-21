@@ -1,9 +1,9 @@
 import DataTable from "~/components/ui/data-table";
 import CreateAccessLog from "~/routes/access-logs/create";
 import { accessLogColumns } from "~/lib/columns/access-log";
-import { getAccessLogs } from "~/lib/database/access-log";
+import { getAccessLogs } from "~/lib/database/access-log.server";
 import { formatTimestamp } from "~/lib/utils";
-import { getSessionSite } from "~/lib/session";
+import { getSessionSite } from "~/lib/session.server";
 import type { Route } from "./+types/home";
 
 export async function loader({ request }: Route.LoaderArgs) {

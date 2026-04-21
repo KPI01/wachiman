@@ -1,11 +1,11 @@
 import { redirect } from "react-router";
 import { UserRole } from "../../generated/prisma/enums";
 import type { Route } from "./+types/access-log";
-import { encryptValue } from "~/lib/crypt";
-import { markAccessLogExit } from "~/lib/database/access-log";
+import { encryptValue } from "~/lib/crypt.server";
+import { markAccessLogExit } from "~/lib/database/access-log.server";
 import { markAccessLogExitSchema } from "~/lib/schemas/access-log";
-import { getSessionSite, getSessionUser } from "~/lib/session";
-import { getUserByUsername } from "~/lib/database/user";
+import { getSessionSite, getSessionUser } from "~/lib/session.server";
+import { getUserByUsername } from "~/lib/database/user.server";
 import z from "zod";
 
 export async function loader({ request }: Route.LoaderArgs) {
