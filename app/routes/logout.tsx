@@ -1,13 +1,23 @@
 import { Form, redirect } from "react-router";
 import { Button } from "~/components/ui/button";
 import type { Route } from "./+types/logout";
-import { requireSession } from "~/middleware/require-session";
-import { destroySession } from "~/lib/session";
+import { destroySession, getSessionUser } from "~/lib/session";
 import { LogOutIcon } from "lucide-react";
 
-export const middleware: Route.MiddlewareFunction[] = [requireSession];
+export async function loader({ request }: Route.LoaderArgs) {
+  const user = await getSessionUser(request);
+  if (!user) {
+    throw redirect("/login");
+  }
+  return null;
+}
 
 export async function action({ request }: Route.ActionArgs) {
+  const user = await getSessionUser(request);
+  if (!user) {
+    throw redirect("/login");
+  }
+
   return redirect("/login", {
     headers: {
       "Set-Cookie": await destroySession(request),

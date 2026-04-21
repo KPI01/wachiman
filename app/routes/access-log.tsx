@@ -6,10 +6,15 @@ import { markAccessLogExit } from "~/lib/database/access-log";
 import { markAccessLogExitSchema } from "~/lib/schemas/access-log";
 import { getSessionSite, getSessionUser } from "~/lib/session";
 import { getUserByUsername } from "~/lib/database/user";
-import { requireSession } from "~/middleware/require-session";
 import z from "zod";
 
-export const middleware: Route.MiddlewareFunction[] = [requireSession];
+export async function loader({ request }: Route.LoaderArgs) {
+  const user = await getSessionUser(request);
+  if (!user) {
+    throw redirect("/login");
+  }
+  return null;
+}
 
 function getReturnPath(request: Request, fallbackPath: string) {
   const referer = request.headers.get("Referer");

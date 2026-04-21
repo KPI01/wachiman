@@ -1,7 +1,6 @@
-import { Outlet } from "react-router";
+import { Outlet, redirect } from "react-router";
 import { UserRole } from "../../../generated/prisma/enums";
-import { requireRole } from "~/middleware/require-role";
-import { requireSession } from "~/middleware/require-session";
+import { getSessionUser } from "~/lib/session";
 import type { Route } from "./+types/layout";
 import { SidebarInset, SidebarProvider } from "~/components/ui/sidebar";
 import AppSidebar, { type SidebarLinkItem } from "~/components/app-sidebar";
@@ -21,12 +20,17 @@ const SIDEBAR_ITEMS: Array<SidebarLinkItem> = [
   },
 ];
 
-export const middleware: Route.MiddlewareFunction[] = [
-  requireSession,
-  requireRole([UserRole.ADMIN]),
-];
+export async function loader({ request }: Route.LoaderArgs) {
+  const user = await getSessionUser(request);
 
-export async function loader() {
+  if (!user) {
+    throw redirect("/login");
+  }
+
+  if (!user.role || user.role !== UserRole.ADMIN) {
+    throw redirect("/unauthorized");
+  }
+
   return null;
 }
 
