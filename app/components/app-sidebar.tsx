@@ -1,5 +1,6 @@
-import Logout from "~/routes/logout";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, LogOutIcon } from "lucide-react";
+import { Form } from "react-router";
+import { Button } from "~/components/ui/button";
 import {
   Sidebar,
   SidebarContent,
@@ -96,7 +97,12 @@ export default function AppSidebar({ items, ...props }: AppSidebarProps) {
           : "Sin elementos"}
       </SidebarContent>
       <SidebarFooter className="w-full items-center">
-        <Logout />
+        <Form method="post" action="/logout" className="w-full">
+          <Button type="submit" variant="ghost" className="w-full">
+            <LogOutIcon />
+            Cerrar sesión
+          </Button>
+        </Form>
       </SidebarFooter>
     </Sidebar>
   );

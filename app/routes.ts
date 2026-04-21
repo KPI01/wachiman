@@ -2,6 +2,7 @@ import {
   type RouteConfig,
   index,
   layout,
+  prefix,
   route,
 } from "@react-router/dev/routes";
 
@@ -12,9 +13,14 @@ export default [
     route("login", "routes/login.tsx"),
     route("unauthorized", "routes/unauthorized.tsx"),
   ]),
+  
+  // Autenticacion
+  ...prefix("auth", [
+    route("logout", "routes/auth/logout.tsx")
+  ])
 
   // Protegidas genericas
-  route("logout", "routes/logout.tsx"),
+  route("logout", "routes/actions/auth/logout.tsx"),
   route("access-log/:id", "routes/access-log.tsx"),
   route("access-logs", "routes/access-logs/index.tsx"),
 

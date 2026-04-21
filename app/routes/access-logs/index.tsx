@@ -10,7 +10,7 @@ export async function loader({ request }: Route.LoaderArgs) {
   if (!user) {
     throw redirect("/login");
   }
-  if (![UserRole.ADMIN, UserRole.ACCESS_OPERATOR].includes(user.role)) {
+  if (!user.role || (user.role !== UserRole.ADMIN && user.role !== UserRole.ACCESS_OPERATOR)) {
     throw redirect("/unauthorized");
   }
   return null;
@@ -21,7 +21,7 @@ export async function action({ request }: Route.ActionArgs) {
   if (!user) {
     throw redirect("/login");
   }
-  if (![UserRole.ADMIN, UserRole.ACCESS_OPERATOR].includes(user.role)) {
+  if (!user.role || (user.role !== UserRole.ADMIN && user.role !== UserRole.ACCESS_OPERATOR)) {
     throw redirect("/unauthorized");
   }
 
