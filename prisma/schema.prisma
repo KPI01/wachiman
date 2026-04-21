@@ -21,6 +21,16 @@ enum UserRole {
   SECURITY_MANAGER
 }
 
+enum AccessRequestStatus {
+  PENDING_APPROVAL
+  APPROVED
+  REJECTED
+  IN_PROGRESS
+  COMPLETED
+  EXPIRED
+  CANCELLED
+}
+
 model User {
   id        String    @id @default(uuid())
   createdAt DateTime  @default(now())
@@ -105,12 +115,13 @@ model AccessLogVehicle {
 }
 
 model AccessRequest {
-  id                    String                 @id @default(cuid())
-  createdAt             DateTime               @default(now())
-  updatedAt             DateTime               @updatedAt
-  expectedStartDate     DateTime
-  expectedEndDate       DateTime?
-  status                String
+  id                String              @id @default(cuid())
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  expectedStartDate DateTime
+  expectedEndDate   DateTime?
+  status            AccessRequestStatus @default(PENDING_APPROVAL)
+
   accessRequestPersons  AccessRequestPerson[]
   accessRequestVehicles AccessRequestVehicle[]
   accessRequestLogs     AccessRequestLog[]
