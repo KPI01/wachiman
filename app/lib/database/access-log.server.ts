@@ -35,12 +35,12 @@ type AccessLogDateFilter =
       to: Date;
     };
 
-type GetAccessLogsInput = {
+export type GetAccessLogsInput = {
   siteId?: string;
   timestampField?: AccessLogTimestampField;
 } & AccessLogDateFilter;
 
-type CreateAccessLogInput = {
+export type CreateAccessLogInput = {
   entryTimestamp: Date;
   entrySignatureEnvelope: Prisma.InputJsonValue;
   companyNameSnapshot: string;
@@ -62,165 +62,197 @@ type CreateAccessLogInput = {
   };
 };
 
-export async function createAccessLog(data: CreateAccessLogInput) {
-  const start = performance.now();
-
-  try {
-    return await prisma.$transaction(async (tx) => {
-      const vehicleAccessLog = data.withVehicle
-        ? await tx.accessLogVehicle.create({
-            data: {
-              typeSnapshot: data.vehicle?.typeSnapshot ?? "",
-              brandSnapshot: data.vehicle?.brandSnapshot,
-              modelSnapshot: data.vehicle?.modelSnapshot,
-              plateSnapshot: data.vehicle?.plateSnapshot ?? "",
-            },
-          })
-        : null;
-
-      return await tx.accessLog.create({
-        data: {
-          entryTimestamp: data.entryTimestamp,
-          entrySignatureEnvelope: data.entrySignatureEnvelope,
-          companyNameSnapshot: data.companyNameSnapshot,
-          firstNameSnapshot: data.firstNameSnapshot,
-          middleNameSnapshot: data.middleNameSnapshot,
-          lastNameSnapshot: data.lastNameSnapshot,
-          secondLastNameSnapshot: data.secondLastNameSnapshot,
-          phoneNumber: data.phoneNumber,
-          legalIdSnapshot: data.legalIdSnapshot,
-          withVehicle: data.withVehicle,
-          visitReason: data.visitReason,
-          siteId: data.siteId,
-          createdById: data.createdById,
-          vehicleAccessLogId: vehicleAccessLog?.id,
-        },
-      });
-    });
-  } catch (e) {
-    console.error("[createAccessLog][error] ", String(e));
-  } finally {
-    console.log(
-      `[createAccessLog] ${(performance.now() - start).toFixed(2)}ms`,
-    );
-  }
-}
-
-type MarkAccessLogExitInput = {
+export type MarkAccessLogExitInput = {
   accessLogId: string;
   exitSignatureEnvelope: Prisma.InputJsonValue;
   exitRecordedById: string;
   siteId?: string;
 };
 
-function getTimestampRangeFilter(filter: GetAccessLogsInput) {
-  if (filter.date) {
-    const start = new Date(filter.date);
-    start.setHours(0, 0, 0, 0);
-
-    const end = new Date(start);
-    end.setDate(end.getDate() + 1);
-
-    return { gte: start, lt: end };
-  }
-
-  return {
-    gte: filter.from,
-    lte: filter.to,
+export class AccessLogEntity {
+  private static DEFAULT_INCLUDE = {
+    site: {
+      select: {
+        id: true,
+        name: true,
+      },
+    },
+    createdBy: {
+      select: {
+        id: true,
+        fullName: true,
+        username: true,
+      },
+    },
+    vehicleAccessLog: true,
   };
-}
 
-export async function markAccessLogExit(data: MarkAccessLogExitInput) {
-  const start = performance.now();
+  private static getTimestampRangeFilter(filter: GetAccessLogsInput) {
+    if (filter.date) {
+      const start = new Date(filter.date);
+      start.setHours(0, 0, 0, 0);
 
-  try {
-    const result = await prisma.accessLog.updateMany({
-      where: {
-        id: data.accessLogId,
-        exitTimestamp: null,
-        ...(data.siteId ? { siteId: data.siteId } : {}),
-      },
+      const end = new Date(start);
+      end.setDate(end.getDate() + 1);
+
+      return { gte: start, lt: end };
+    }
+
+    return {
+      gte: filter.from,
+      lte: filter.to,
+    };
+  }
+
+  private static async createAccessWithVehicle(
+    tx: Prisma.TransactionClient,
+    vehicleData: NonNullable<CreateAccessLogInput["vehicle"]>,
+  ) {
+    return await tx.accessLogVehicle.create({
       data: {
-        exitTimestamp: new Date(),
-        exitSignatureEnvelope: data.exitSignatureEnvelope,
-        exitRecordedById: data.exitRecordedById,
+        typeSnapshot: vehicleData.typeSnapshot ?? "",
+        brandSnapshot: vehicleData.brandSnapshot,
+        modelSnapshot: vehicleData.modelSnapshot,
+        plateSnapshot: vehicleData.plateSnapshot ?? "",
       },
     });
-
-    return result.count > 0;
-  } finally {
-    console.log(
-      `[markAccessLogExit] ${(performance.now() - start).toFixed(2)}ms`,
-    );
   }
-}
 
-export async function getAccessLogs(input?: GetAccessLogsInput) {
-  const start = performance.now();
+  public static async create(data: CreateAccessLogInput) {
+    const start = performance.now();
 
-  try {
-    const timestampField = input?.timestampField ?? "entryTimestamp";
+    try {
+      return await prisma.$transaction(async (tx) => {
+        const vehicleAccessLog = data.withVehicle
+          ? await this.createAccessWithVehicle(tx, data.vehicle!)
+          : null;
 
-    return await prisma.accessLog.findMany({
-      where: input
-        ? {
-            ...(input.siteId ? { siteId: input.siteId } : {}),
-            [timestampField]: getTimestampRangeFilter(input),
-          }
-        : undefined,
-      include: {
-        site: {
-          select: {
-            id: true,
-            name: true,
+        return await tx.accessLog.create({
+          data: {
+            entryTimestamp: data.entryTimestamp,
+            entrySignatureEnvelope: data.entrySignatureEnvelope,
+            companyNameSnapshot: data.companyNameSnapshot,
+            firstNameSnapshot: data.firstNameSnapshot,
+            middleNameSnapshot: data.middleNameSnapshot,
+            lastNameSnapshot: data.lastNameSnapshot,
+            secondLastNameSnapshot: data.secondLastNameSnapshot,
+            phoneNumber: data.phoneNumber,
+            legalIdSnapshot: data.legalIdSnapshot,
+            withVehicle: data.withVehicle,
+            visitReason: data.visitReason,
+            siteId: data.siteId,
+            createdById: data.createdById,
+            vehicleAccessLogId: vehicleAccessLog?.id,
           },
-        },
-        createdBy: {
-          select: {
-            id: true,
-            fullName: true,
-            username: true,
-          },
-        },
-        vehicleAccessLog: true,
-      },
-      orderBy: {
-        entryTimestamp: "desc",
-      },
-    });
-  } finally {
-    console.log(`[getAccessLogs] ${(performance.now() - start).toFixed(2)}ms`);
+        });
+      });
+    } catch (e) {
+      console.error("[AccessLog.create][error] ", String(e));
+    } finally {
+      console.log(
+        `[AccessLog.create] ${(performance.now() - start).toFixed(2)}ms`,
+      );
+    }
   }
-}
 
-export async function getAccessLogById(id: string) {
-  const start = performance.now();
+  public static async markExit(data: MarkAccessLogExitInput) {
+    const start = performance.now();
 
-  try {
-    return await prisma.accessLog.findUnique({
-      where: {
-        id,
-      },
-      include: {
-        site: {
-          select: {
-            id: true,
-            name: true,
-          },
+    try {
+      const result = await prisma.accessLog.updateMany({
+        where: {
+          id: data.accessLogId,
+          exitTimestamp: null,
+          ...(data.siteId ? { siteId: data.siteId } : {}),
         },
-        createdBy: {
-          select: {
-            id: true,
-            fullName: true,
-            username: true,
-          },
+        data: {
+          exitTimestamp: new Date(),
+          exitSignatureEnvelope: data.exitSignatureEnvelope,
+          exitRecordedById: data.exitRecordedById,
         },
-        vehicleAccessLog: true,
-      },
-    });
-  } finally {
-    console.log(
-      `[getAccessLogById] ${(performance.now() - start).toFixed(2)}ms`,
-    );
+      });
+
+      return result.count > 0;
+    } finally {
+      console.log(
+        `[AccessLog.markExit] ${(performance.now() - start).toFixed(2)}ms`,
+      );
+    }
+  }
+
+  public static async findMany(input?: GetAccessLogsInput) {
+    const start = performance.now();
+
+    try {
+      const timestampField = input?.timestampField ?? "entryTimestamp";
+
+      return await prisma.accessLog.findMany({
+        where: input
+          ? {
+              ...(input.siteId ? { siteId: input.siteId } : {}),
+              [timestampField]: this.getTimestampRangeFilter(input),
+            }
+          : undefined,
+        include: this.DEFAULT_INCLUDE,
+        orderBy: {
+          entryTimestamp: "desc",
+        },
+      });
+    } finally {
+      console.log(
+        `[AccessLog.findMany] ${(performance.now() - start).toFixed(2)}ms`,
+      );
+    }
+  }
+
+  public static async findById(id: string) {
+    const start = performance.now();
+
+    try {
+      return await prisma.accessLog.findUnique({
+        where: {
+          id,
+        },
+        include: this.DEFAULT_INCLUDE,
+      });
+    } finally {
+      console.log(
+        `[AccessLog.findById] ${(performance.now() - start).toFixed(2)}ms`,
+      );
+    }
+  }
+
+  public static async hasVehicle(accessLogId: string): Promise<boolean> {
+    const start = performance.now();
+
+    try {
+      const accessLog = await prisma.accessLog.findUnique({
+        where: { id: accessLogId },
+        select: { vehicleAccessLogId: true },
+      });
+
+      return accessLog?.vehicleAccessLogId != null;
+    } finally {
+      console.log(
+        `[AccessLog.hasVehicle] ${(performance.now() - start).toFixed(2)}ms`,
+      );
+    }
+  }
+
+  public static async getVehicle(accessLogId: string) {
+    const start = performance.now();
+
+    try {
+      const accessLog = await prisma.accessLog.findUnique({
+        where: { id: accessLogId },
+        select: { vehicleAccessLog: true },
+      });
+
+      return accessLog?.vehicleAccessLog ?? null;
+    } finally {
+      console.log(
+        `[AccessLog.getVehicle] ${(performance.now() - start).toFixed(2)}ms`,
+      );
+    }
   }
 }

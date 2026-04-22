@@ -14,10 +14,7 @@ import {
 import { buttonVariants } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import FieldWrapper from "~/components/ui/wrappers/field-wrapper";
-import {
-  deleteDepartment,
-  updateDepartment,
-} from "~/lib/database/department.server";
+import { DepartmentEntity } from "~/lib/database/department.server";
 import {
   deleteDepartmentSchema,
   updateDepartmentSchema,
@@ -38,7 +35,7 @@ export async function action({ request }: Route.ActionArgs) {
 
     const { id, ...dataWithoutId } = data;
 
-    await updateDepartment(id, dataWithoutId);
+    await DepartmentEntity.update(id, dataWithoutId);
 
     return redirect("/admin/departments");
   }
@@ -53,7 +50,7 @@ export async function action({ request }: Route.ActionArgs) {
       return { errors: z.treeifyError(error) };
     }
 
-    await deleteDepartment(data.id);
+    await DepartmentEntity.delete(data.id);
 
     return redirect("/admin/departments");
   }

@@ -1,12 +1,12 @@
 import DataTable from "~/components/ui/data-table";
 import { accessLogColumns } from "~/lib/columns/access-log";
-import { getAccessLogs } from "~/lib/database/access-log.server";
-import { getSites } from "~/lib/database/site.server";
+import { AccessLogEntity } from "~/lib/database/access-log.server";
+import { SiteEntity } from "~/lib/database/site.server";
 import CreateAccessLog from "../../access-logs/create";
 import type { Route } from "./+types/index";
 
 export async function loader() {
-  const [accessLogs, sites] = await Promise.all([getAccessLogs(), getSites()]);
+  const [accessLogs, sites] = await Promise.all([AccessLogEntity.findMany(), SiteEntity.findMany()]);
 
   return { accessLogs, sites };
 }

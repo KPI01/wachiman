@@ -12,7 +12,7 @@ import {
   getSessionUser,
   getUserRedirectPath,
 } from "~/lib/session.server";
-import { getUserByUsername } from "~/lib/database/user.server";
+import { UserEntity } from "~/lib/database/user.server";
 
 export async function loader({ request }: Route.LoaderArgs) {
   const user = await getSessionUser(request);
@@ -40,7 +40,7 @@ export async function action({ request }: Route.ActionArgs) {
     }
 
     // consulta 2
-    const user = await getUserByUsername(data.username, { site: true });
+    const user = await UserEntity.getByUsername(data.username, { site: true });
 
     if (!user) {
       return {

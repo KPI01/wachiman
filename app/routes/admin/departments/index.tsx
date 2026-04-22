@@ -1,16 +1,13 @@
 import z from "zod";
 import DataTable from "~/components/ui/data-table";
 import { departmentColumns } from "~/lib/columns/department";
-import {
-  createDepartment,
-  getDepartments,
-} from "~/lib/database/department.server";
+import { DepartmentEntity } from "~/lib/database/department.server";
 import { createDepartmentSchema } from "~/lib/schemas/department";
 import type { Route } from "./+types";
 import CreateDepartment from "./create";
 
 export async function loader() {
-  const departments = await getDepartments();
+  const departments = await DepartmentEntity.findAll();
 
   return { departments };
 }
@@ -28,7 +25,7 @@ export async function action({ request }: Route.ActionArgs) {
       return { errors: z.treeifyError(error) };
     }
 
-    await createDepartment(data);
+    await DepartmentEntity.create(data);
 
     return { success };
   } finally {

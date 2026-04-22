@@ -1,8 +1,8 @@
 import z from "zod";
 import { UserRole } from "../../../generated/prisma/enums";
 import { encryptValue } from "~/lib/crypt.server";
-import { createAccessLog } from "~/lib/database/access-log.server";
-import { getUserByUsername } from "~/lib/database/user.server";
+import { AccessLogEntity } from "~/lib/database/access-log.server";
+import { UserEntity } from "~/lib/database/user.server";
 import { createAccessLogSchema } from "~/lib/schemas/access-log";
 import { getSessionSite, getSessionUser } from "~/lib/session.server";
 
@@ -53,7 +53,7 @@ export async function handleCreateAccessLog(
     return { errors: z.treeifyError(error) };
   }
 
-  const createdBy = await getUserByUsername(sessionUser.username);
+  const createdBy = await UserEntity.getByUsername(sessionUser.username);
 
   if (!createdBy) {
     console.log("[handleCreateAccessLog][createdBy not found] end");
@@ -66,7 +66,7 @@ export async function handleCreateAccessLog(
     siteId = lockedSiteId;
   }
 
-  await createAccessLog({
+  await AccessLogEntity.create({
     entryTimestamp: data.entryTimestamp,
     entrySignatureEnvelope: encryptValue(
       JSON.stringify(data.entrySignaturePayload),

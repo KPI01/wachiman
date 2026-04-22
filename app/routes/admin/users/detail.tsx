@@ -30,7 +30,7 @@ import {
 import type { Route } from "./+types/detail";
 import { trashUserSchema, updateUserSchema } from "~/lib/schemas/user";
 import z from "zod";
-import { trashUser, updateUser } from "~/lib/database/user.server";
+import { UserEntity } from "~/lib/database/user.server";
 import { USER_ROLES } from "~/lib/models/user";
 
 export async function action({ request }: Route.ActionArgs) {
@@ -46,7 +46,7 @@ export async function action({ request }: Route.ActionArgs) {
 
     const { id, ...dataWithoutId } = data;
 
-    await updateUser(id, dataWithoutId);
+    await UserEntity.update(id, dataWithoutId);
 
     return redirect("/admin/users");
   }
@@ -61,7 +61,7 @@ export async function action({ request }: Route.ActionArgs) {
       return { errors: z.treeifyError(error) };
     }
 
-    await trashUser(data.id);
+    await UserEntity.trash(data.id);
 
     return redirect("/admin/users");
   }

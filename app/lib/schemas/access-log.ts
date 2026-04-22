@@ -1,5 +1,5 @@
 import z from "zod";
-import { getSiteById } from "../database/site.server";
+import { SiteEntity } from "../database/site.server";
 import { optionalString, requiredString } from "./generic";
 import { SITE_DOESNT_EXISTS } from "./messages";
 
@@ -48,7 +48,7 @@ export const createAccessLogSchema = z
     vehicleModelSnapshot: optionalString,
     vehiclePlateSnapshot: optionalString,
   })
-  .refine(async (data) => (await getSiteById(data.siteId)) !== null, {
+  .refine(async (data) => (await SiteEntity.findById(data.siteId)) !== null, {
     error: SITE_DOESNT_EXISTS,
     path: ["siteId"],
   })

@@ -2,10 +2,10 @@ import { redirect } from "react-router";
 import { UserRole } from "../../generated/prisma/enums";
 import type { Route } from "./+types/access-log";
 import { encryptValue } from "~/lib/crypt.server";
-import { markAccessLogExit } from "~/lib/database/access-log.server";
+import { AccessLogEntity } from "~/lib/database/access-log.server";
 import { markAccessLogExitSchema } from "~/lib/schemas/access-log";
 import { getSessionSite, getSessionUser } from "~/lib/session.server";
-import { getUserByUsername } from "~/lib/database/user.server";
+import { UserEntity } from "~/lib/database/user.server";
 import z from "zod";
 
 export async function loader({ request }: Route.LoaderArgs) {
@@ -47,7 +47,7 @@ export async function action({ params, request }: Route.ActionArgs) {
     throw new Response("Unauthorized", { status: 401 });
   }
 
-  const exitRecordedBy = await getUserByUsername(sessionUser.username);
+  const exitRecordedBy = await UserEntity.getByUsername(sessionUser.username);
 
   if (!exitRecordedBy) {
     throw new Response("Unauthorized", { status: 401 });
@@ -62,7 +62,7 @@ export async function action({ params, request }: Route.ActionArgs) {
     throw new Response("Unauthorized", { status: 401 });
   }
 
-  const wasExitRecorded = await markAccessLogExit({
+  const wasExitRecorded = await AccessLogEntity.markExit({
     accessLogId: params.id,
     exitSignatureEnvelope: encryptValue(
       JSON.stringify(data.exitSignaturePayload),

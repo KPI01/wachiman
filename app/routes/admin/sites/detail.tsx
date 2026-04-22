@@ -17,7 +17,7 @@ import { Input } from "~/components/ui/input";
 import type { Route } from "./+types/detail";
 import z from "zod";
 import { deleteSiteSchema, updateSiteSchema } from "~/lib/schemas/site";
-import { deleteSite, updateSite } from "~/lib/database/site.server";
+import { SiteEntity } from "~/lib/database/site.server";
 
 export async function action({ request }: Route.ActionArgs) {
   if (request.method === "PATCH") {
@@ -31,7 +31,7 @@ export async function action({ request }: Route.ActionArgs) {
 
     const { id, ...dataWithoutId } = data;
 
-    await updateSite(id, dataWithoutId);
+    await SiteEntity.update(id, dataWithoutId);
 
     return redirect("/admin/sites");
   }
@@ -45,7 +45,7 @@ export async function action({ request }: Route.ActionArgs) {
       return { errors: z.treeifyError(error) };
     }
 
-    await deleteSite(data.id);
+    await SiteEntity.delete(data.id);
 
     return redirect("/admin/sites");
   }
