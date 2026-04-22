@@ -6,9 +6,9 @@ import {
   STRING_TYPE_REQUIRED_MSG,
   USER_ALREADY_EXISTS,
 } from "./messages";
-import { getUserById, getUserByUsername } from "../database/user.server";
-import { getSiteById } from "../database/site.server";
-import { getDepartmentById } from "../database/department.server";
+import { UserEntity } from "../database/user.server";
+import { SiteEntity } from "../database/site.server";
+import { DepartmentEntity } from "../database/department.server";
 import { prisma } from "../prisma.server";
 import { UserRole } from "../../../generated/prisma/enums";
 
@@ -30,7 +30,7 @@ export const createUserSchema = z
   })
   .refine(
     async (data) => {
-      const userExists = (await getUserByUsername(data.username)) !== null;
+      const userExists = (await UserEntity.getByUsername(data.username)) !== null;
 
       return !userExists;
     },
@@ -39,11 +39,11 @@ export const createUserSchema = z
       path: ["username"],
     },
   )
-  .refine(async (data) => (await getSiteById(data.siteId)) !== null, {
+  .refine(async (data) => (await SiteEntity.findById(data.siteId)) !== null, {
     error: SITE_DOESNT_EXISTS,
     path: ["siteId"],
   })
-  .refine(async (data) => (await getDepartmentById(data.departmentId)) !== null, {
+  .refine(async (data) => (await DepartmentEntity.findById(data.departmentId)) !== null, {
     error: DEPARTMENT_DOESNT_EXISTS,
     path: ["departmentId"],
   });
@@ -60,7 +60,7 @@ export const updateUserSchema = z
   })
   .refine(
     async (data) => {
-      const user = await getUserById(data.id);
+      const user = await UserEntity.getById(data.id);
       if (user) {
         // Query que luego tengo que centralizar
         const userNameExists =
@@ -83,11 +83,11 @@ export const updateUserSchema = z
       path: ["username"],
     },
   )
-  .refine(async (data) => (await getSiteById(data.siteId)) !== null, {
+  .refine(async (data) => (await SiteEntity.findById(data.siteId)) !== null, {
     error: SITE_DOESNT_EXISTS,
     path: ["siteId"],
   })
-  .refine(async (data) => (await getDepartmentById(data.departmentId)) !== null, {
+  .refine(async (data) => (await DepartmentEntity.findById(data.departmentId)) !== null, {
     error: DEPARTMENT_DOESNT_EXISTS,
     path: ["departmentId"],
   });

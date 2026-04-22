@@ -1,4 +1,5 @@
 import { InfoIcon } from "lucide-react";
+import { useState } from "react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -11,13 +12,14 @@ import {
 } from "~/components/ui/alert-dialog";
 import { buttonVariants } from "~/components/ui/button";
 import type { Site } from "../../../../generated/prisma/client";
-import { Form, redirect } from "react-router";
+import { useFetcher } from "react-router";
 import FieldWrapper from "~/components/ui/wrappers/field-wrapper";
 import { Input } from "~/components/ui/input";
 import type { Route } from "./+types/detail";
 import z from "zod";
 import { deleteSiteSchema, updateSiteSchema } from "~/lib/schemas/site";
-import { deleteSite, updateSite } from "~/lib/database/site.server";
+import { SiteEntity } from "~/lib/database/site.server";
+import { getFieldErrors } from "~/lib/utils/zod-errors";
 
 export async function action({ request }: Route.ActionArgs) {
   if (request.method === "PATCH") {
@@ -31,9 +33,9 @@ export async function action({ request }: Route.ActionArgs) {
 
     const { id, ...dataWithoutId } = data;
 
-    await updateSite(id, dataWithoutId);
+    await SiteEntity.update(id, dataWithoutId);
 
-    return redirect("/admin/sites");
+    return { success: true };
   }
 
   if (request.method === "DELETE") {
@@ -45,9 +47,9 @@ export async function action({ request }: Route.ActionArgs) {
       return { errors: z.treeifyError(error) };
     }
 
-    await deleteSite(data.id);
+    await SiteEntity.delete(data.id);
 
-    return redirect("/admin/sites");
+    return { success: true };
   }
 
   return null;
@@ -58,10 +60,14 @@ type SiteDetailsProps = {
 };
 
 export function SiteDetails({ site }: SiteDetailsProps) {
+  const [open, setOpen] = useState(false);
+  const patchFetcher = useFetcher<{ errors?: unknown }>();
+  const patchErrors = patchFetcher.data?.errors;
+
   const formId = `site-form-${site.id}`;
 
   return (
-    <AlertDialog>
+    <AlertDialog open={open} onOpenChange={setOpen}>
       <AlertDialogTrigger className={buttonVariants({ variant: "secondary" })}>
         <InfoIcon />
       </AlertDialogTrigger>
@@ -69,27 +75,39 @@ export function SiteDetails({ site }: SiteDetailsProps) {
         <AlertDialogHeader>
           <AlertDialogTitle>Ficha de Centro</AlertDialogTitle>
         </AlertDialogHeader>
-        <Form
+        <patchFetcher.Form
           id={formId}
           method="patch"
           action={`/admin/sites/${site.id}`}
           className="space-y-4"
         >
           <Input name="id" defaultValue={site.id} type="hidden" />
-          <FieldWrapper label="Nombre" htmlFor={`name-${site.id}`}>
+          <FieldWrapper
+            label="Nombre"
+            htmlFor={`name-${site.id}`}
+            errors={getFieldErrors(patchErrors, "name")}
+          >
             <Input id={`name-${site.id}`} name="name" defaultValue={site.name} />
           </FieldWrapper>
-          <FieldWrapper label="Slug" htmlFor={`slug-${site.id}`}>
+          <FieldWrapper
+            label="Slug"
+            htmlFor={`slug-${site.id}`}
+            errors={getFieldErrors(patchErrors, "slug")}
+          >
             <Input id={`slug-${site.id}`} name="slug" defaultValue={site.slug} />
           </FieldWrapper>
-          <FieldWrapper label="Direccion" htmlFor={`address-${site.id}`}>
+          <FieldWrapper
+            label="Direccion"
+            htmlFor={`address-${site.id}`}
+            errors={getFieldErrors(patchErrors, "address")}
+          >
             <Input
               id={`address-${site.id}`}
               name="address"
               defaultValue={site.address ?? ""}
             />
           </FieldWrapper>
-        </Form>
+        </patchFetcher.Form>
         <AlertDialogFooter>
           <AlertDialogCancel variant="destructive">Cancelar</AlertDialogCancel>
           <AlertDialogAction type="submit" form={formId}>

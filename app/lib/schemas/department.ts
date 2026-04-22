@@ -1,6 +1,6 @@
 import z from "zod";
 import { DEPARTMENT_ALREADY_EXISTS } from "./messages";
-import { getDepartmentById, getDepartmentBySlug } from "../database/department.server";
+import { DepartmentEntity } from "../database/department.server";
 import { requiredString } from "./generic";
 
 export const createDepartmentSchema = z
@@ -10,7 +10,7 @@ export const createDepartmentSchema = z
   })
   .refine(
     async (data) => {
-      const departmentExists = (await getDepartmentBySlug(data.slug)) !== null;
+      const departmentExists = (await DepartmentEntity.findBySlug(data.slug)) !== null;
 
       return !departmentExists;
     },
@@ -28,13 +28,13 @@ export const updateDepartmentSchema = z
   })
   .refine(
     async (data) => {
-      const department = await getDepartmentById(data.id);
+      const department = await DepartmentEntity.findById(data.id);
 
       if (!department) {
         return false;
       }
 
-      const departmentWithSameSlug = await getDepartmentBySlug(
+      const departmentWithSameSlug = await DepartmentEntity.findBySlug(
         data.slug,
         data.id,
       );

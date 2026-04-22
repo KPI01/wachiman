@@ -12,7 +12,8 @@ import {
   getSessionUser,
   getUserRedirectPath,
 } from "~/lib/session.server";
-import { getUserByUsername } from "~/lib/database/user.server";
+import { UserEntity } from "~/lib/database/user.server";
+import { getFieldErrors } from "~/lib/utils/zod-errors";
 
 export async function loader({ request }: Route.LoaderArgs) {
   const user = await getSessionUser(request);
@@ -40,7 +41,7 @@ export async function action({ request }: Route.ActionArgs) {
     }
 
     // consulta 2
-    const user = await getUserByUsername(data.username, { site: true });
+    const user = await UserEntity.getByUsername(data.username, { site: true });
 
     if (!user) {
       return {
@@ -75,8 +76,6 @@ export async function action({ request }: Route.ActionArgs) {
 }
 
 export default function Login({ actionData }: Route.ComponentProps) {
-  if (actionData?.errors) console.error(actionData.errors);
-
   return (
     <CardContainer
       title="Inicio de sesión"
@@ -88,7 +87,11 @@ export default function Login({ actionData }: Route.ComponentProps) {
       }
     >
       <Form id="login-form" method="post" className="space-y-4" action="/login">
-        <FieldWrapper label="Nombre de usuario" htmlFor="username">
+        <FieldWrapper
+          label="Nombre de usuario"
+          htmlFor="username"
+          errors={getFieldErrors(actionData?.errors, "username")}
+        >
           <Input
             id="username"
             name="username"
@@ -97,7 +100,11 @@ export default function Login({ actionData }: Route.ComponentProps) {
           />
         </FieldWrapper>
 
-        <FieldWrapper label="Contraseña" htmlFor="password">
+        <FieldWrapper
+          label="Contraseña"
+          htmlFor="password"
+          errors={getFieldErrors(actionData?.errors, "password")}
+        >
           <Input
             id="password"
             name="password"

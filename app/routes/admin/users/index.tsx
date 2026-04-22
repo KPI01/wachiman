@@ -1,18 +1,18 @@
-import { createUser, getUsers } from "~/lib/database/user.server";
+import { UserEntity } from "~/lib/database/user.server";
 import type { Route } from "./+types";
 import DataTable from "~/components/ui/data-table";
 import { getUserColumns } from "~/lib/columns/user";
 import CreateUser from "./create";
 import z from "zod";
 import { createUserSchema } from "~/lib/schemas/user";
-import { getSites } from "~/lib/database/site.server";
-import { getDepartments } from "~/lib/database/department.server";
+import { SiteEntity } from "~/lib/database/site.server";
+import { DepartmentEntity } from "~/lib/database/department.server";
 
 export async function loader() {
   const [users, sites, departments] = await Promise.all([
-    getUsers(),
-    getSites(),
-    getDepartments(),
+    UserEntity.getAll(),
+    SiteEntity.findMany(),
+    DepartmentEntity.findAll(),
   ]);
 
   return { users, sites, departments };
@@ -31,7 +31,7 @@ export async function action({ request }: Route.ActionArgs) {
       return { errors: z.treeifyError(error) };
     }
 
-    await createUser(data);
+    await UserEntity.create(data);
 
     return { success };
   } finally {
@@ -39,7 +39,7 @@ export async function action({ request }: Route.ActionArgs) {
   }
 }
 
-export default function IndexUsers({ loaderData }: Route.ComponentProps) {
+export default function IndexUsers({ loaderData, actionData }: Route.ComponentProps) {
   return (
     <div className="grid space-y-6">
       <div className="flex justify-between items-center">
@@ -48,6 +48,7 @@ export default function IndexUsers({ loaderData }: Route.ComponentProps) {
         <CreateUser
           sites={loaderData.sites ?? []}
           departments={loaderData.departments ?? []}
+          errors={actionData?.errors}
         />
       </div>
       <DataTable

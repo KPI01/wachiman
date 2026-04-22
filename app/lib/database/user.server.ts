@@ -32,140 +32,141 @@ type UpdateUserInput = {
   departmentId?: string;
 };
 
-export async function createUser(data: CreateUserInput) {
-  const start = performance.now();
+export class UserEntity {
+  public static async create(data: CreateUserInput) {
+    const start = performance.now();
 
-  try {
-    const hashedPassword = await hashText(data.password);
-    const user = await prisma.user.create({
-      data: {
-        fullName: data.fullName,
-        username: data.username,
-        role: data.role,
-        password: hashedPassword,
-        siteId: data.siteId,
-        departmentId: data.departmentId,
-      },
-    });
+    try {
+      const hashedPassword = await hashText(data.password);
+      const user = await prisma.user.create({
+        data: {
+          fullName: data.fullName,
+          username: data.username,
+          role: data.role,
+          password: hashedPassword,
+          siteId: data.siteId,
+          departmentId: data.departmentId,
+        },
+      });
 
-    return user;
-  } finally {
-    console.log(`[createUser] ${(performance.now() - start).toFixed(2)}ms`);
+      return user;
+    } finally {
+      console.log(`[UserEntity.create] ${(performance.now() - start).toFixed(2)}ms`);
+    }
   }
-}
 
-export async function getUserByUsername(
-  username: string,
-  relations: { site: true },
-): Promise<GetUserByUsernameWithSite | null>;
-export async function getUserByUsername(
-  username: string,
-  relations?: { site: false },
-): Promise<Prisma.UserGetPayload<object> | null>;
-export async function getUserByUsername(
-  username: string,
-  relations: { site: boolean } = { site: false },
-) {
-  const start = performance.now();
+  public static async getByUsername(
+    username: string,
+    relations: { site: true },
+  ): Promise<GetUserByUsernameWithSite | null>;
+  public static async getByUsername(
+    username: string,
+    relations?: { site: false },
+  ): Promise<Prisma.UserGetPayload<object> | null>;
+  public static async getByUsername(
+    username: string,
+    relations: { site: boolean } = { site: false },
+  ) {
+    const start = performance.now();
 
-  try {
-
-    return prisma.user.findUnique({
-      where: {
-        isActive: true,
-        isTrashed: false,
-        username,
-      },
-      include: relations.site
-        ? {
-            site: {
-              select: {
-                id: true,
-                name: true,
+    try {
+      return prisma.user.findUnique({
+        where: {
+          isActive: true,
+          isTrashed: false,
+          username,
+        },
+        include: relations.site
+          ? {
+              site: {
+                select: {
+                  id: true,
+                  name: true,
+                },
               },
-            },
-          }
-        : undefined,
-    });
-  } finally {
-    console.log(
-      `[getUserByUsername] ${(performance.now() - start).toFixed(2)}ms`,
-    );
+            }
+          : undefined,
+      });
+    } finally {
+      console.log(
+        `[UserEntity.getByUsername] ${(performance.now() - start).toFixed(2)}ms`,
+      );
+    }
   }
-}
 
-export async function getUserById(id: string) {
-  const start = performance.now();
+  public static async getById(id: string) {
+    const start = performance.now();
 
-  try {
-    return prisma.user.findUnique({
-      where: {
-        isActive: true,
-        isTrashed: false,
-        id,
-      },
-    });
-  } finally {
-    console.log(`[getUserById] ${(performance.now() - start).toFixed(2)}ms`);
+    try {
+      return prisma.user.findUnique({
+        where: {
+          isActive: true,
+          isTrashed: false,
+          id,
+        },
+      });
+    } finally {
+      console.log(`[UserEntity.getById] ${(performance.now() - start).toFixed(2)}ms`);
+    }
   }
-}
 
-export async function getUsers(
-  isActive: boolean = true,
-  isTrashed: boolean = false,
-) {
-  const start = performance.now();
+  public static async getAll(
+    isActive: boolean = true,
+    isTrashed: boolean = false,
+  ) {
+    const start = performance.now();
 
-  try {
-    const users = await prisma.user.findMany({
-      where: {
-        isActive,
-        isTrashed,
-      },
-    });
+    try {
+      const users = await prisma.user.findMany({
+        where: {
+          isActive,
+          isTrashed,
+        },
+      });
 
-    return users;
-  } finally {
-    console.log(`[getUsers] ${(performance.now() - start).toFixed(2)}ms`);
+      return users;
+    } finally {
+      console.log(`[UserEntity.getAll] ${(performance.now() - start).toFixed(2)}ms`);
+    }
   }
-}
 
-export async function updateUser(id: string, data: UpdateUserInput) {
-  const start = performance.now();
+  public static async update(id: string, data: UpdateUserInput) {
+    const start = performance.now();
 
-  try {
-    const updatedUser = await prisma.user.update({
-      where: { id },
-      data: {
-        fullName: data.fullName,
-        username: data.username,
-        role: data.role,
-        isActive: data.isActive,
-        siteId: data.siteId,
-        departmentId: data.departmentId,
-      },
-    });
+    try {
+      const updatedUser = await prisma.user.update({
+        where: { id },
+        data: {
+          fullName: data.fullName,
+          username: data.username,
+          role: data.role,
+          isActive: data.isActive,
+          siteId: data.siteId,
+          departmentId: data.departmentId,
+        },
+      });
 
-    return updatedUser;
-  } finally {
-    console.log(`[updateUser] ${(performance.now() - start).toFixed(2)}ms`);
+      return updatedUser;
+    } finally {
+      console.log(`[UserEntity.update] ${(performance.now() - start).toFixed(2)}ms`);
+    }
   }
-}
 
-export async function trashUser(id: string) {
-  const start = performance.now();
+  public static async trash(id: string) {
+    const start = performance.now();
 
-  try {
-    const trashedUser = await prisma.user.update({
-      where: { id },
-      data: {
-        isActive: false,
-        isTrashed: true,
-      },
-    });
+    try {
+      const trashedUser = await prisma.user.update({
+        where: { id },
+        data: {
+          isActive: false,
+          isTrashed: true,
+        },
+      });
 
-    return trashedUser;
-  } finally {
-    console.log(`[trashUser] ${(performance.now() - start).toFixed(2)}ms`);
+      return trashedUser;
+    } finally {
+      console.log(`[UserEntity.trash] ${(performance.now() - start).toFixed(2)}ms`);
+    }
   }
 }

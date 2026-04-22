@@ -1,4 +1,4 @@
-import { createSite, getSites } from "~/lib/database/site.server";
+import { SiteEntity } from "~/lib/database/site.server";
 import type { Route } from "./+types";
 import DataTable from "~/components/ui/data-table";
 import { siteColumns } from "~/lib/columns/site";
@@ -7,7 +7,7 @@ import z from "zod";
 import { createSiteSchema } from "~/lib/schemas/site";
 
 export async function loader() {
-  const sites = await getSites();
+  const sites = await SiteEntity.findMany();
 
   return { sites };
 }
@@ -24,7 +24,7 @@ export async function action({ request }: Route.ActionArgs) {
       return { errors: z.treeifyError(error) };
     }
 
-    await createSite(data);
+    await SiteEntity.create(data);
 
     return { success };
   } finally {
@@ -32,13 +32,13 @@ export async function action({ request }: Route.ActionArgs) {
   }
 }
 
-export default function IndexSites({ loaderData }: Route.ComponentProps) {
+export default function IndexSites({ loaderData, actionData }: Route.ComponentProps) {
   return (
     <div className="grid space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-3xl font-bold">Centros</h2>
 
-        <CreateSite />
+        <CreateSite errors={actionData?.errors} />
       </div>
       <DataTable
         columns={siteColumns}

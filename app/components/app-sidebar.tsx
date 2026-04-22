@@ -97,7 +97,7 @@ export default function AppSidebar({ items, ...props }: AppSidebarProps) {
           : "Sin elementos"}
       </SidebarContent>
       <SidebarFooter className="w-full items-center">
-        <Form method="post" action="/logout" className="w-full">
+        <Form method="post" action="/auth/logout" className="w-full">
           <Button type="submit" variant="ghost" className="w-full">
             <LogOutIcon />
             Cerrar sesión

@@ -1,6 +1,6 @@
 import z from "zod";
 import { SITE_ALREADY_EXISTS } from "./messages";
-import { getSiteById, getSiteBySlug } from "../database/site.server";
+import { SiteEntity } from "../database/site.server";
 import { optionalString, requiredString } from "./generic";
 
 export const createSiteSchema = z
@@ -11,7 +11,7 @@ export const createSiteSchema = z
   })
   .refine(
     async (data) => {
-      const siteExists = (await getSiteBySlug(data.slug)) !== null;
+      const siteExists = (await SiteEntity.findBySlug(data.slug)) !== null;
 
       return !siteExists;
     },
@@ -30,13 +30,13 @@ export const updateSiteSchema = z
   })
   .refine(
     async (data) => {
-      const site = await getSiteById(data.id);
+      const site = await SiteEntity.findById(data.id);
 
       if (!site) {
         return false;
       }
 
-      const siteWithSameSlug = await getSiteBySlug(data.slug, data.id);
+      const siteWithSameSlug = await SiteEntity.findBySlug(data.slug, data.id);
 
       return siteWithSameSlug === null;
     },

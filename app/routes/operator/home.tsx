@@ -1,7 +1,7 @@
 import DataTable from "~/components/ui/data-table";
 import CreateAccessLog from "~/routes/access-logs/create";
 import { accessLogColumns } from "~/lib/columns/access-log";
-import { getAccessLogs } from "~/lib/database/access-log.server";
+import { AccessLogEntity } from "~/lib/database/access-log.server";
 import { formatTimestamp } from "~/lib/utils";
 import { getSessionSite } from "~/lib/session.server";
 import type { Route } from "./+types/home";
@@ -13,7 +13,7 @@ export async function loader({ request }: Route.LoaderArgs) {
     throw new Response("Unauthorized", { status: 401 });
   }
 
-  const accessLogs = await getAccessLogs({
+  const accessLogs = await AccessLogEntity.findMany({
     siteId: sessionSite.id,
     timestampField: "entryTimestamp",
     date: new Date(),

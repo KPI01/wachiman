@@ -2,112 +2,111 @@ import { performance } from "node:perf_hooks";
 import type { Prisma } from "../../../generated/prisma/client";
 import { prisma } from "../prisma.server";
 
-export async function createDepartment(data: Prisma.DepartmentCreateInput) {
-  const start = performance.now();
+export class DepartmentEntity {
+  static async create(data: Prisma.DepartmentCreateInput) {
+    const start = performance.now();
 
-  try {
-    const department = await prisma.department.create({
-      data: {
-        name: data.name,
-        slug: data.slug,
-      },
-    });
+    try {
+      const department = await prisma.department.create({
+        data: {
+          name: data.name,
+          slug: data.slug,
+        },
+      });
 
-    return department;
-  } finally {
-    console.log(
-      `[createDepartment] ${(performance.now() - start).toFixed(2)}ms`,
-    );
+      return department;
+    } finally {
+      console.log(
+        `[DepartmentEntity.create] ${(performance.now() - start).toFixed(2)}ms`,
+      );
+    }
   }
-}
 
-export async function getDepartmentById(id: string) {
-  const start = performance.now();
+  static async findById(id: string) {
+    const start = performance.now();
 
-  try {
-    return prisma.department.findUnique({
-      where: { id },
-    });
-  } finally {
-    console.log(
-      `[getDepartmentById] ${(performance.now() - start).toFixed(2)}ms`,
-    );
+    try {
+      return prisma.department.findUnique({
+        where: { id },
+      });
+    } finally {
+      console.log(
+        `[DepartmentEntity.findById] ${(performance.now() - start).toFixed(2)}ms`,
+      );
+    }
   }
-}
 
-export async function getDepartmentBySlug(slug: string, excludedId?: string) {
-  const start = performance.now();
+  static async findBySlug(slug: string, excludedId?: string) {
+    const start = performance.now();
 
-  try {
-    return prisma.department.findFirst({
-      where: {
-        slug,
-        ...(excludedId
-          ? {
-              NOT: {
-                id: excludedId,
-              },
-            }
-          : {}),
-      },
-    });
-  } finally {
-    console.log(
-      `[getDepartmentBySlug] ${(performance.now() - start).toFixed(2)}ms`,
-    );
+    try {
+      return prisma.department.findFirst({
+        where: {
+          slug,
+          ...(excludedId
+            ? {
+                NOT: {
+                  id: excludedId,
+                },
+              }
+            : {}),
+        },
+      });
+    } finally {
+      console.log(
+        `[DepartmentEntity.findBySlug] ${(performance.now() - start).toFixed(2)}ms`,
+      );
+    }
   }
-}
 
-export async function getDepartments() {
-  const start = performance.now();
+  static async findAll() {
+    const start = performance.now();
 
-  try {
-    const departments = await prisma.department.findMany({
-      orderBy: {
-        createdAt: "desc",
-      },
-    });
+    try {
+      const departments = await prisma.department.findMany({
+        orderBy: {
+          createdAt: "desc",
+        },
+      });
 
-    return departments;
-  } finally {
-    console.log(
-      `[getDepartments] ${(performance.now() - start).toFixed(2)}ms`,
-    );
+      return departments;
+    } finally {
+      console.log(
+        `[DepartmentEntity.findAll] ${(performance.now() - start).toFixed(2)}ms`,
+      );
+    }
   }
-}
 
-export async function updateDepartment(
-  id: string,
-  data: Prisma.DepartmentUpdateInput,
-) {
-  const start = performance.now();
+  static async update(id: string, data: Prisma.DepartmentUpdateInput) {
+    const start = performance.now();
 
-  try {
-    const updatedDepartment = await prisma.department.update({
-      where: { id },
-      data,
-    });
+    try {
+      const updatedDepartment = await prisma.department.update({
+        where: { id },
+        data,
+      });
 
-    return updatedDepartment;
-  } finally {
-    console.log(
-      `[updateDepartment] ${(performance.now() - start).toFixed(2)}ms`,
-    );
+      return updatedDepartment;
+    } finally {
+      console.log(
+        `[DepartmentEntity.update] ${(performance.now() - start).toFixed(2)}ms`,
+      );
+    }
   }
-}
 
-export async function deleteDepartment(id: string) {
-  const start = performance.now();
+  static async delete(id: string) {
+    const start = performance.now();
 
-  try {
-    const deletedDepartment = await prisma.department.delete({
-      where: { id },
-    });
+    try {
+      const deletedDepartment = await prisma.department.delete({
+        where: { id },
+      });
 
-    return deletedDepartment;
-  } finally {
-    console.log(
-      `[deleteDepartment] ${(performance.now() - start).toFixed(2)}ms`,
-    );
+      return deletedDepartment;
+    } finally {
+      console.log(
+        `[DepartmentEntity.delete] ${(performance.now() - start).toFixed(2)}ms`,
+      );
+    }
   }
 }

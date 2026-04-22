@@ -6,7 +6,7 @@ import {
   USER_ALREADY_EXISTS,
   USER_DOESNT_EXISTS,
 } from "./messages";
-import { getUserByUsername } from "../database/user.server";
+import { UserEntity } from "../database/user.server";
 import { validateHashedText } from "../hash.server";
 
 export const loginSchema = z
@@ -16,7 +16,7 @@ export const loginSchema = z
   })
   .refine(
     async (data) => {
-      const userExists = (await getUserByUsername(data.username)) !== null;
+      const userExists = (await UserEntity.getByUsername(data.username)) !== null;
       return userExists;
     },
     {
@@ -26,7 +26,7 @@ export const loginSchema = z
   )
   .refine(
     async (data) => {
-      const user = await getUserByUsername(data.username);
+      const user = await UserEntity.getByUsername(data.username);
 
       if (user) {
         const passwordIsValid = await validateHashedText(

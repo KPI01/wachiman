@@ -1,16 +1,13 @@
 import z from "zod";
 import DataTable from "~/components/ui/data-table";
 import { departmentColumns } from "~/lib/columns/department";
-import {
-  createDepartment,
-  getDepartments,
-} from "~/lib/database/department.server";
+import { DepartmentEntity } from "~/lib/database/department.server";
 import { createDepartmentSchema } from "~/lib/schemas/department";
 import type { Route } from "./+types";
 import CreateDepartment from "./create";
 
 export async function loader() {
-  const departments = await getDepartments();
+  const departments = await DepartmentEntity.findAll();
 
   return { departments };
 }
@@ -28,7 +25,7 @@ export async function action({ request }: Route.ActionArgs) {
       return { errors: z.treeifyError(error) };
     }
 
-    await createDepartment(data);
+    await DepartmentEntity.create(data);
 
     return { success };
   } finally {
@@ -38,13 +35,13 @@ export async function action({ request }: Route.ActionArgs) {
   }
 }
 
-export default function IndexDepartments({ loaderData }: Route.ComponentProps) {
+export default function IndexDepartments({ loaderData, actionData }: Route.ComponentProps) {
   return (
     <div className="grid space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-3xl font-bold">Departamentos</h2>
 
-        <CreateDepartment />
+        <CreateDepartment errors={actionData?.errors} />
       </div>
       <DataTable
         columns={departmentColumns}

@@ -1,5 +1,5 @@
 import type { ComponentProps, ReactNode } from "react";
-import { Field } from "../field";
+import { Field, FieldDescription } from "../field";
 import { Label } from "../label";
 
 interface FieldWrapperProps {
@@ -7,6 +7,7 @@ interface FieldWrapperProps {
   label: string;
   htmlFor: ComponentProps<typeof Label>["htmlFor"];
   children: ReactNode;
+  errors?: string[];
 }
 
 export default function FieldWrapper({
@@ -14,11 +15,22 @@ export default function FieldWrapper({
   htmlFor,
   label,
   children,
+  errors,
 }: FieldWrapperProps) {
+  const hasErrors = errors && errors.length > 0;
+
   return (
-    <Field orientation={orientation}>
+    <Field
+      orientation={orientation}
+      data-invalid={hasErrors ? "true" : undefined}
+    >
       <Label htmlFor={htmlFor}>{label}</Label>
       {children}
+      {hasErrors && (
+        <FieldDescription className="text-destructive">
+          {errors[0]}
+        </FieldDescription>
+      )}
     </Field>
   );
 }

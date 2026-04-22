@@ -14,8 +14,13 @@ import {
 import { buttonVariants } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import FieldWrapper from "~/components/ui/wrappers/field-wrapper";
+import { getFieldErrors } from "~/lib/utils/zod-errors";
 
-export default function CreateDepartment() {
+type CreateDepartmentProps = {
+  errors?: unknown;
+};
+
+export default function CreateDepartment({ errors }: CreateDepartmentProps) {
   return (
     <AlertDialog>
       <AlertDialogTrigger className={buttonVariants({ variant: "default" })}>
@@ -35,10 +40,18 @@ export default function CreateDepartment() {
           action="/admin/departments"
           className="space-y-4"
         >
-          <FieldWrapper label="Nombre" htmlFor="name">
+          <FieldWrapper
+            label="Nombre"
+            htmlFor="name"
+            errors={getFieldErrors(errors, "name")}
+          >
             <Input id="name" name="name" required />
           </FieldWrapper>
-          <FieldWrapper label="Slug" htmlFor="slug">
+          <FieldWrapper
+            label="Slug"
+            htmlFor="slug"
+            errors={getFieldErrors(errors, "slug")}
+          >
             <Input id="slug" name="slug" className="uppercase" required />
           </FieldWrapper>
         </Form>
