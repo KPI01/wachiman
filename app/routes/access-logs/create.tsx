@@ -24,8 +24,9 @@ import { useFetcher } from "react-router";
 import { useEffect, useRef, useState } from "react";
 import type { Site } from "../../../generated/prisma/client";
 import AccessLogSignature from "~/components/models/access-logs/access-log-signature";
+import { getFieldErrors } from "~/lib/utils/zod-errors";
 
-type FetcherErrors = {
+ type FetcherErrors = {
   errors?: {
     properties?: Record<string, { errors?: string[] }>;
   };
@@ -65,9 +66,6 @@ export default function CreateAccessLog({
   );
   const formRef = useRef<HTMLFormElement>(null);
   const selectedSiteId = lockedSiteId ?? sites[0]?.id;
-  const errorEntries = Object.entries(fetcher.data?.errors?.properties ?? {})
-    .flatMap(([, value]) => value.errors ?? [])
-    .filter(Boolean);
 
   useEffect(() => {
     if (fetcher.state !== "idle" || !fetcher.data || fetcher.data.errors) {
@@ -131,7 +129,11 @@ export default function CreateAccessLog({
         >
           {step === "details" ? (
             <>
-              <FieldWrapper label="Centro" htmlFor="siteId">
+              <FieldWrapper
+                label="Centro"
+                htmlFor="siteId"
+                errors={getFieldErrors(fetcher.data?.errors, "siteId")}
+              >
                 {lockedSiteId ? (
                   <input type="hidden" name="siteId" value={lockedSiteId} />
                 ) : null}
@@ -157,6 +159,7 @@ export default function CreateAccessLog({
               <FieldWrapper
                 label="Fecha y hora de ingreso"
                 htmlFor="entryTimestamp"
+                errors={getFieldErrors(fetcher.data?.errors, "entryTimestamp")}
               >
                 <Input
                   id="entryTimestamp"
@@ -167,7 +170,11 @@ export default function CreateAccessLog({
                   readOnly
                 />
               </FieldWrapper>
-              <FieldWrapper label="DNI/NIE *" htmlFor="legalIdSnapshot">
+              <FieldWrapper
+                label="DNI/NIE *"
+                htmlFor="legalIdSnapshot"
+                errors={getFieldErrors(fetcher.data?.errors, "legalIdSnapshot")}
+              >
                 <Input
                   id="legalIdSnapshot"
                   name="legalIdSnapshot"
@@ -175,43 +182,65 @@ export default function CreateAccessLog({
                   required
                 />
               </FieldWrapper>
-              <FieldWrapper label="Primer nombre *" htmlFor="firstNameSnapshot">
+              <FieldWrapper
+                label="Primer nombre *"
+                htmlFor="firstNameSnapshot"
+                errors={getFieldErrors(fetcher.data?.errors, "firstNameSnapshot")}
+              >
                 <Input
                   id="firstNameSnapshot"
                   name="firstNameSnapshot"
                   required
                 />
               </FieldWrapper>
-              <FieldWrapper label="Segundo nombre" htmlFor="middleNameSnapshot">
+              <FieldWrapper
+                label="Segundo nombre"
+                htmlFor="middleNameSnapshot"
+                errors={getFieldErrors(fetcher.data?.errors, "middleNameSnapshot")}
+              >
                 <Input id="middleNameSnapshot" name="middleNameSnapshot" />
               </FieldWrapper>
               <FieldWrapper
                 label="Primer apellido *"
                 htmlFor="lastNameSnapshot"
+                errors={getFieldErrors(fetcher.data?.errors, "lastNameSnapshot")}
               >
                 <Input id="lastNameSnapshot" name="lastNameSnapshot" required />
               </FieldWrapper>
               <FieldWrapper
                 label="Segundo apellido"
                 htmlFor="secondLastNameSnapshot"
+                errors={getFieldErrors(fetcher.data?.errors, "secondLastNameSnapshot")}
               >
                 <Input
                   id="secondLastNameSnapshot"
                   name="secondLastNameSnapshot"
                 />
               </FieldWrapper>
-              <FieldWrapper label="Empresa *" htmlFor="companyNameSnapshot">
+              <FieldWrapper
+                label="Empresa *"
+                htmlFor="companyNameSnapshot"
+                errors={getFieldErrors(fetcher.data?.errors, "companyNameSnapshot")}
+              >
                 <Input
                   id="companyNameSnapshot"
                   name="companyNameSnapshot"
                   required
                 />
               </FieldWrapper>
-              <FieldWrapper label="Telefono" htmlFor="phoneNumber">
+              <FieldWrapper
+                label="Telefono"
+                htmlFor="phoneNumber"
+                errors={getFieldErrors(fetcher.data?.errors, "phoneNumber")}
+              >
                 <Input id="phoneNumber" name="phoneNumber" />
               </FieldWrapper>
               <div className="md:col-span-2">
-                <FieldWrapper label="Motivo de visita *" htmlFor="visitReason">
+                <FieldWrapper
+                  label="Motivo de visita *"
+                  htmlFor="visitReason"
+                  errors={getFieldErrors(fetcher.data?.errors, "visitReason")}
+                >
                   <Input id="visitReason" name="visitReason" required />
                 </FieldWrapper>
               </div>
@@ -234,19 +263,28 @@ export default function CreateAccessLog({
                   <FieldWrapper
                     label="Tipo de vehiculo *"
                     htmlFor="vehicleTypeSnapshot"
+                    errors={getFieldErrors(fetcher.data?.errors, "vehicleTypeSnapshot")}
                   >
                     <Input
                       id="vehicleTypeSnapshot"
                       name="vehicleTypeSnapshot"
                     />
                   </FieldWrapper>
-                  <FieldWrapper label="Marca" htmlFor="vehicleBrandSnapshot">
+                  <FieldWrapper
+                    label="Marca"
+                    htmlFor="vehicleBrandSnapshot"
+                    errors={getFieldErrors(fetcher.data?.errors, "vehicleBrandSnapshot")}
+                  >
                     <Input
                       id="vehicleBrandSnapshot"
                       name="vehicleBrandSnapshot"
                     />
                   </FieldWrapper>
-                  <FieldWrapper label="Modelo" htmlFor="vehicleModelSnapshot">
+                  <FieldWrapper
+                    label="Modelo"
+                    htmlFor="vehicleModelSnapshot"
+                    errors={getFieldErrors(fetcher.data?.errors, "vehicleModelSnapshot")}
+                  >
                     <Input
                       id="vehicleModelSnapshot"
                       name="vehicleModelSnapshot"
@@ -255,6 +293,7 @@ export default function CreateAccessLog({
                   <FieldWrapper
                     label="Matrícula *"
                     htmlFor="vehiclePlateSnapshot"
+                    errors={getFieldErrors(fetcher.data?.errors, "vehiclePlateSnapshot")}
                   >
                     <Input
                       id="vehiclePlateSnapshot"
@@ -267,11 +306,6 @@ export default function CreateAccessLog({
             </>
           ) : (
             <div className="md:col-span-2 space-y-4">
-              {errorEntries.length > 0 ? (
-                <div className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">
-                  {errorEntries[0]}
-                </div>
-              ) : null}
               <input
                 type="hidden"
                 name="entrySignaturePayload"

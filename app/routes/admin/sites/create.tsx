@@ -14,8 +14,13 @@ import {
 import { buttonVariants } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import FieldWrapper from "~/components/ui/wrappers/field-wrapper";
+import { getFieldErrors } from "~/lib/utils/zod-errors";
 
-export default function CreateSite() {
+type CreateSiteProps = {
+  errors?: unknown;
+};
+
+export default function CreateSite({ errors }: CreateSiteProps) {
   return (
     <AlertDialog>
       <AlertDialogTrigger className={buttonVariants({ variant: "default" })}>
@@ -35,13 +40,25 @@ export default function CreateSite() {
           action="/admin/sites"
           className="space-y-4"
         >
-          <FieldWrapper label="Nombre" htmlFor="name">
+          <FieldWrapper
+            label="Nombre"
+            htmlFor="name"
+            errors={getFieldErrors(errors, "name")}
+          >
             <Input id="name" name="name" required />
           </FieldWrapper>
-          <FieldWrapper label="Slug" htmlFor="slug">
+          <FieldWrapper
+            label="Slug"
+            htmlFor="slug"
+            errors={getFieldErrors(errors, "slug")}
+          >
             <Input id="slug" name="slug" className="uppercase" required />
           </FieldWrapper>
-          <FieldWrapper label="Direccion" htmlFor="address">
+          <FieldWrapper
+            label="Direccion"
+            htmlFor="address"
+            errors={getFieldErrors(errors, "address")}
+          >
             <Input id="address" name="address" />
           </FieldWrapper>
         </Form>

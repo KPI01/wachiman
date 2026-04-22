@@ -23,13 +23,15 @@ import {
 import FieldWrapper from "~/components/ui/wrappers/field-wrapper";
 import type { Department, Site, UserRole } from "../../../../generated/prisma/client";
 import { USER_ROLES } from "~/lib/models/user";
+import { getFieldErrors } from "~/lib/utils/zod-errors";
 
 type CreateUserProps = {
   sites: Site[];
   departments: Department[];
+  errors?: unknown;
 };
 
-export default function CreateUser({ sites, departments }: CreateUserProps) {
+export default function CreateUser({ sites, departments, errors }: CreateUserProps) {
   return (
     <AlertDialog>
       <AlertDialogTrigger className={buttonVariants({ variant: "default" })}>
@@ -49,10 +51,18 @@ export default function CreateUser({ sites, departments }: CreateUserProps) {
           action="/admin/users"
           className="space-y-4"
         >
-          <FieldWrapper label="Nombre completo" htmlFor="fullName">
+          <FieldWrapper
+            label="Nombre completo"
+            htmlFor="fullName"
+            errors={getFieldErrors(errors, "fullName")}
+          >
             <Input id="fullName" name="fullName" autoComplete="name" required />
           </FieldWrapper>
-          <FieldWrapper label="Nombre de inicio de sesión" htmlFor="username">
+          <FieldWrapper
+            label="Nombre de inicio de sesión"
+            htmlFor="username"
+            errors={getFieldErrors(errors, "username")}
+          >
             <Input
               id="username"
               name="username"
@@ -60,7 +70,11 @@ export default function CreateUser({ sites, departments }: CreateUserProps) {
               required
             />
           </FieldWrapper>
-          <FieldWrapper label="Centro" htmlFor="siteId">
+          <FieldWrapper
+            label="Centro"
+            htmlFor="siteId"
+            errors={getFieldErrors(errors, "siteId")}
+          >
             <Select name="siteId" defaultValue={sites[0]?.id}>
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Centro para el usuario..." />
@@ -74,7 +88,11 @@ export default function CreateUser({ sites, departments }: CreateUserProps) {
               </SelectContent>
             </Select>
           </FieldWrapper>
-          <FieldWrapper label="Departamento" htmlFor="departmentId">
+          <FieldWrapper
+            label="Departamento"
+            htmlFor="departmentId"
+            errors={getFieldErrors(errors, "departmentId")}
+          >
             <Select name="departmentId" defaultValue={departments[0]?.id}>
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Departamento para el usuario..." />
@@ -88,7 +106,11 @@ export default function CreateUser({ sites, departments }: CreateUserProps) {
               </SelectContent>
             </Select>
           </FieldWrapper>
-          <FieldWrapper label="Rol de usuario" htmlFor="role">
+          <FieldWrapper
+            label="Rol de usuario"
+            htmlFor="role"
+            errors={getFieldErrors(errors, "role")}
+          >
             <Select name="role" defaultValue="ACCESS_REQUESTER">
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Rol para el usuario..." />
@@ -102,7 +124,11 @@ export default function CreateUser({ sites, departments }: CreateUserProps) {
               </SelectContent>
             </Select>
           </FieldWrapper>
-          <FieldWrapper label="Contraseña" htmlFor="password">
+          <FieldWrapper
+            label="Contraseña"
+            htmlFor="password"
+            errors={getFieldErrors(errors, "password")}
+          >
             <Input
               id="password"
               name="password"
@@ -114,6 +140,7 @@ export default function CreateUser({ sites, departments }: CreateUserProps) {
           <FieldWrapper
             label="Confirmación de contraseña"
             htmlFor="passwordConfirmation"
+            errors={getFieldErrors(errors, "passwordConfirmation")}
           >
             <Input
               id="passwordConfirmation"

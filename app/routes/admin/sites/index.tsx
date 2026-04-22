@@ -32,13 +32,13 @@ export async function action({ request }: Route.ActionArgs) {
   }
 }
 
-export default function IndexSites({ loaderData }: Route.ComponentProps) {
+export default function IndexSites({ loaderData, actionData }: Route.ComponentProps) {
   return (
     <div className="grid space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-3xl font-bold">Centros</h2>
 
-        <CreateSite />
+        <CreateSite errors={actionData?.errors} />
       </div>
       <DataTable
         columns={siteColumns}

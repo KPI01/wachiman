@@ -39,7 +39,7 @@ export async function action({ request }: Route.ActionArgs) {
   }
 }
 
-export default function IndexUsers({ loaderData }: Route.ComponentProps) {
+export default function IndexUsers({ loaderData, actionData }: Route.ComponentProps) {
   return (
     <div className="grid space-y-6">
       <div className="flex justify-between items-center">
@@ -48,6 +48,7 @@ export default function IndexUsers({ loaderData }: Route.ComponentProps) {
         <CreateUser
           sites={loaderData.sites ?? []}
           departments={loaderData.departments ?? []}
+          errors={actionData?.errors}
         />
       </div>
       <DataTable
