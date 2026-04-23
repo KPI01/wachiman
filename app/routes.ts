@@ -41,6 +41,10 @@ export default [
 
     // Gestion de accesos
     route("access-logs", "routes/admin/access-logs/index.tsx"),
+
+    // Gestion de accesos planificados
+    route("planned-accesses", "routes/admin/planned-accesses/index.tsx"),
+    route("planned-accesses/:plannedAccessId", "routes/admin/planned-accesses/detail.tsx"),
   ]),
 
   // Operador de accesos
