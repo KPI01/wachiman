@@ -5,7 +5,7 @@
 
 generator client {
   provider = "prisma-client"
-  output   = "../generated/prisma"
+  output   = "./generated/prisma"
 }
 
 datasource db {
@@ -21,7 +21,7 @@ enum UserRole {
   SECURITY_MANAGER
 }
 
-enum AccessRequestStatus {
+enum PlannedAccessStatus {
   PENDING_APPROVAL
   APPROVED
   REJECTED
@@ -102,7 +102,7 @@ model AccessLog {
   exitRecordedBy     User?              @relation(name: "exitRecordedBy", fields: [exitRecordedById], references: [id])
   vehicleAccessLogId String?
   vehicleAccessLog   AccessLogVehicle?  @relation(fields: [vehicleAccessLogId], references: [id])
-  accessRequestLogs  AccessRequestLog[]
+  plannedAccessLogs  PlannedAccessLog[]
 }
 
 model AccessLogVehicle {
@@ -114,33 +114,33 @@ model AccessLogVehicle {
   accessLogs    AccessLog[]
 }
 
-model AccessRequest {
+model PlannedAccess {
   id                String              @id @default(cuid())
   createdAt         DateTime            @default(now())
   updatedAt         DateTime            @updatedAt
   expectedStartDate DateTime
   expectedEndDate   DateTime?
-  status            AccessRequestStatus @default(PENDING_APPROVAL)
+  status            PlannedAccessStatus @default(PENDING_APPROVAL)
 
-  accessRequestPersons  AccessRequestPerson[]
-  accessRequestVehicles AccessRequestVehicle[]
-  accessRequestLogs     AccessRequestLog[]
+  plannedAccessPersons  PlannedAccessPerson[]
+  plannedAccessVehicles PlannedAccessVehicle[]
+  plannedAccessLogs     PlannedAccessLog[]
 }
 
-model AccessRequestLog {
+model PlannedAccessLog {
   id String @id @default(uuid())
 
   accessLogId            String
   accessLog              AccessLog            @relation(fields: [accessLogId], references: [id])
-  accessRequestId        String
-  accessRequest          AccessRequest        @relation(fields: [accessRequestId], references: [id])
-  accessRequestPersonId  String
-  accessRequestPerson    AccessRequestPerson  @relation(fields: [accessRequestPersonId], references: [id])
-  accessRequestVehicleId String
-  accessRequestVehicle   AccessRequestVehicle @relation(fields: [accessRequestVehicleId], references: [id])
+  plannedAccessId        String
+  plannedAccess          PlannedAccess        @relation(fields: [plannedAccessId], references: [id])
+  plannedAccessPersonId  String
+  plannedAccessPerson    PlannedAccessPerson  @relation(fields: [plannedAccessPersonId], references: [id])
+  plannedAccessVehicleId String
+  plannedAccessVehicle   PlannedAccessVehicle @relation(fields: [plannedAccessVehicleId], references: [id])
 }
 
-model AccessRequestPerson {
+model PlannedAccessPerson {
   id                     String   @id @default(uuid())
   createdAt              DateTime @default(now())
   updatedAt              DateTime @updatedAt
@@ -150,12 +150,12 @@ model AccessRequestPerson {
   secondLastNameSnapshot String?
   legalIdSnapshot        String
 
-  accessRequestId   String
-  accessRequest     AccessRequest      @relation(fields: [accessRequestId], references: [id])
-  accessRequestLogs AccessRequestLog[]
+  plannedAccessId   String
+  plannedAccess     PlannedAccess      @relation(fields: [plannedAccessId], references: [id])
+  plannedAccessLogs PlannedAccessLog[]
 }
 
-model AccessRequestVehicle {
+model PlannedAccessVehicle {
   id            String   @id @default(uuid())
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
@@ -164,7 +164,7 @@ model AccessRequestVehicle {
   modelSnapshot String?
   plateSnapshot String
 
-  accessRequestId   String
-  accessRequest     AccessRequest      @relation(fields: [accessRequestId], references: [id])
-  accessRequestLogs AccessRequestLog[]
+  plannedAccessId   String
+  plannedAccess     PlannedAccess      @relation(fields: [plannedAccessId], references: [id])
+  plannedAccessLogs PlannedAccessLog[]
 }

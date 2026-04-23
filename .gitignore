@@ -6,7 +6,7 @@
 /.react-router/
 /build/
 
-/generated/prisma
+/*/generated/prisma
 
 # Database
 *.db
