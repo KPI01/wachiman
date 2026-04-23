@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { PlannedAccessEntity } from "~/lib/database/planned-access.server";
 import { UserEntity } from "~/lib/database/user.server";
 import type { Route } from "./+types";
@@ -5,7 +6,29 @@ import DataTable from "~/components/ui/data-table";
 import { getPlannedAccessColumns } from "~/lib/columns/planned-access";
 import CreatePlannedAccess from "./create";
 import z from "zod";
-import { createPlannedAccessSchema } from "~/lib/schemas/planned-access";
+import {
+  createPlannedAccessSchema,
+  updatePlannedAccessSchema,
+} from "~/lib/schemas/planned-access";
+
+function parseFormDataArrays<T extends Record<string, string>>(
+  formData: FormData,
+  prefix: string,
+  fields: string[],
+): T[] {
+  const items: T[] = [];
+  let i = 0;
+  while (formData.has(`${prefix}[${i}][${fields[0]}]`)) {
+    const item = {} as Record<string, string>;
+    for (const field of fields) {
+      const value = formData.get(`${prefix}[${i}][${field}]`);
+      item[field] = typeof value === "string" ? value : "";
+    }
+    items.push(item as T);
+    i++;
+  }
+  return items;
+}
 
 export async function loader() {
   const [plannedAccesses, users] = await Promise.all([
@@ -20,8 +43,70 @@ export async function action({ request }: Route.ActionArgs) {
   const start = performance.now();
 
   try {
+    if (request.method === "PATCH") {
+      const rawFormData = await request.formData();
+      const jsonData = Object.fromEntries(rawFormData);
+      const { success, error, data } =
+        await updatePlannedAccessSchema.safeParseAsync(jsonData);
+
+      if (!success) {
+        return { errors: z.treeifyError(error) };
+      }
+
+      const { id, ...dataWithoutId } = data;
+
+      await PlannedAccessEntity.update(id, dataWithoutId);
+
+      const persons = parseFormDataArrays(rawFormData, "persons", [
+        "firstNameSnapshot",
+        "middleNameSnapshot",
+        "lastNameSnapshot",
+        "secondLastNameSnapshot",
+        "legalIdSnapshot",
+      ]);
+
+      const vehicles = parseFormDataArrays(rawFormData, "vehicles", [
+        "typeSnapshot",
+        "brandSnapshot",
+        "modelSnapshot",
+        "plateSnapshot",
+      ]);
+
+      if (persons.length > 0) {
+        await PlannedAccessEntity.addPersons(id, persons);
+      }
+
+      if (vehicles.length > 0) {
+        await PlannedAccessEntity.addVehicles(id, vehicles);
+      }
+
+      return { success: true };
+    }
+
     const rawFormData = await request.formData();
-    const jsonData = Object.fromEntries(rawFormData);
+
+    const persons = parseFormDataArrays(rawFormData, "persons", [
+      "firstNameSnapshot",
+      "middleNameSnapshot",
+      "lastNameSnapshot",
+      "secondLastNameSnapshot",
+      "legalIdSnapshot",
+    ]);
+
+    const vehicles = parseFormDataArrays(rawFormData, "vehicles", [
+      "typeSnapshot",
+      "brandSnapshot",
+      "modelSnapshot",
+      "plateSnapshot",
+    ]);
+
+    const jsonData = {
+      expectedStartDate: rawFormData.get("expectedStartDate"),
+      expectedEndDate: rawFormData.get("expectedEndDate"),
+      persons,
+      vehicles,
+    };
+
     const { error, data, success } =
       await createPlannedAccessSchema.safeParseAsync(jsonData);
 
@@ -33,27 +118,29 @@ export async function action({ request }: Route.ActionArgs) {
 
     return { success };
   } finally {
-    console.log(`[/admin/planned-accesses] ${(performance.now() - start).toFixed(2)}ms`);
+    console.log(
+      `[/admin/planned-accesses] ${(performance.now() - start).toFixed(2)}ms`,
+    );
   }
 }
 
-export default function IndexPlannedAccesses({ loaderData, actionData }: Route.ComponentProps) {
+export default function IndexPlannedAccesses({
+  loaderData,
+  actionData,
+}: Route.ComponentProps) {
+  const columns = useMemo(() => getPlannedAccessColumns(), []);
+
   return (
     <div className="grid space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-3xl font-bold">Accesos planificados</h2>
+        <h2 className="text-3xl font-bold">Solicitudes de Acceso</h2>
 
-        <CreatePlannedAccess
-          users={loaderData.users ?? []}
-          errors={actionData?.errors}
-        />
+        <CreatePlannedAccess errors={actionData?.errors} />
       </div>
       <DataTable
-        columns={getPlannedAccessColumns(
-          loaderData.users ?? [],
-        )}
+        columns={columns}
         data={loaderData.plannedAccesses ?? []}
-        globalFilterColumns={["status", "approvedBy.fullName"]}
+        globalFilterColumns={["status"]}
       />
     </div>
   );

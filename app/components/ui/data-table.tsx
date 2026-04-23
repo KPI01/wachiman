@@ -193,7 +193,8 @@ export default function DataTable<TData>({
             <EmptyHeader>
               <EmptyTitle>{empty?.title ?? "No hay datos"}</EmptyTitle>
               <EmptyDescription>
-                {empty?.description ?? "No se han encontrado datos para mostrar"}
+                {empty?.description ??
+                  "No se han encontrado datos para mostrar"}
               </EmptyDescription>
             </EmptyHeader>
           </Empty>
@@ -213,7 +214,8 @@ export function DataTablePagination<TData>({
   return (
     <div className="flex flex-col gap-4 px-2 sm:flex-row sm:items-center sm:justify-between">
       <div className="text-sm text-muted-foreground">
-        {table.getFilteredRowModel().rows.length} resultado(s) de {table.getCoreRowModel().rows.length}
+        {table.getFilteredRowModel().rows.length} resultado(s) de{" "}
+        {table.getCoreRowModel().rows.length}
       </div>
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-end">
@@ -241,7 +243,8 @@ export function DataTablePagination<TData>({
         </div>
 
         <div className="flex items-center justify-center text-sm font-medium sm:min-w-28">
-          Pagina {table.getState().pagination.pageIndex + 1} de {table.getPageCount() || 1}
+          Pagina {table.getState().pagination.pageIndex + 1} de{" "}
+          {table.getPageCount() || 1}
         </div>
 
         <div className="flex items-center gap-2">
@@ -396,7 +399,11 @@ function getColumnIds<TData>(column: ColumnDef<TData, any>): string[] {
     return [column.accessorKey];
   }
 
-  if ("accessorFn" in column && "id" in column && typeof column.id === "string") {
+  if (
+    "accessorFn" in column &&
+    "id" in column &&
+    typeof column.id === "string"
+  ) {
     return [column.id];
   }
 
@@ -408,7 +415,9 @@ function matchesGlobalFilter<TData>(
   columnIds: string[],
   filterValue: unknown,
 ) {
-  const searchTerm = String(filterValue ?? "").trim().toLowerCase();
+  const searchTerm = String(filterValue ?? "")
+    .trim()
+    .toLowerCase();
 
   if (!searchTerm) {
     return true;
@@ -416,7 +425,9 @@ function matchesGlobalFilter<TData>(
 
   return columnIds.some((columnId) => {
     const value = row.getValue(columnId);
-    return String(value ?? "").toLowerCase().includes(searchTerm);
+    return String(value ?? "")
+      .toLowerCase()
+      .includes(searchTerm);
   });
 }
 
@@ -435,7 +446,7 @@ function getGlobalFilterPlaceholder<TData>(
     return columnId.replace(/[_-]+/g, " ").toLowerCase();
   });
 
-  return `buscar por ${labels.join(", ")}...`;
+  return `Buscar por ${labels.join(", ")}...`;
 }
 
 function getColumnLabel<TData>(

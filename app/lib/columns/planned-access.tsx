@@ -1,20 +1,23 @@
 import { createColumnHelper } from "@tanstack/react-table";
-import type { PlannedAccess, User } from "../../../prisma/generated/prisma/client";
+import type {
+  PlannedAccess,
+  PlannedAccessPerson,
+  PlannedAccessVehicle,
+  User,
+} from "../../../prisma/generated/prisma/client";
 import { formatTimestamp } from "../utils";
 import { PlannedAccessDetails } from "~/routes/admin/planned-accesses/detail";
-import { PLANNED_ACCESS_STATUS_LABELS } from "~/lib/models/planned-access";
+import PlannedAccessStatusBadge from "~/components/models/planned-accesses/status-badge";
 
 interface PlannedAccessRow extends PlannedAccess {
   approvedBy?: Pick<User, "id" | "fullName"> | null;
-  _count?: {
-    plannedAccessPersons: number;
-    plannedAccessVehicles: number;
-  };
+  plannedAccessPersons?: PlannedAccessPerson[];
+  plannedAccessVehicles?: PlannedAccessVehicle[];
 }
 
 const plannedAccessColHelper = createColumnHelper<PlannedAccessRow>();
 
-export function getPlannedAccessColumns(users: Pick<User, "id" | "fullName">[]) {
+export function getPlannedAccessColumns() {
   return [
     plannedAccessColHelper.accessor("expectedStartDate", {
       header: "Inicio previsto",
@@ -30,19 +33,19 @@ export function getPlannedAccessColumns(users: Pick<User, "id" | "fullName">[]) 
     }),
     plannedAccessColHelper.accessor("status", {
       header: "Estado",
-      cell: ({ getValue }) => PLANNED_ACCESS_STATUS_LABELS[getValue()],
+      cell: ({ getValue }) => <PlannedAccessStatusBadge status={getValue()} />,
     }),
     plannedAccessColHelper.accessor("approvedBy.fullName", {
       header: "Aprobado por",
       cell: ({ row }) => row.original.approvedBy?.fullName ?? "-",
     }),
-    plannedAccessColHelper.accessor("_count.plannedAccessPersons", {
+    plannedAccessColHelper.accessor("plannedAccessPersons", {
       header: "Personas",
-      cell: ({ row }) => row.original._count?.plannedAccessPersons ?? 0,
+      cell: ({ row }) => row.original.plannedAccessPersons?.length ?? 0,
     }),
-    plannedAccessColHelper.accessor("_count.plannedAccessVehicles", {
+    plannedAccessColHelper.accessor("plannedAccessVehicles", {
       header: "Vehiculos",
-      cell: ({ row }) => row.original._count?.plannedAccessVehicles ?? 0,
+      cell: ({ row }) => row.original.plannedAccessVehicles?.length ?? 0,
     }),
     plannedAccessColHelper.accessor("createdAt", {
       header: "Creación",
@@ -53,10 +56,7 @@ export function getPlannedAccessColumns(users: Pick<User, "id" | "fullName">[]) 
       id: "actions",
       cell: ({ row }) => (
         <div className="flex gap-3 items-center justify-end">
-          <PlannedAccessDetails
-            plannedAccess={row.original}
-            users={users}
-          />
+          <PlannedAccessDetails plannedAccess={row.original} />
         </div>
       ),
     }),

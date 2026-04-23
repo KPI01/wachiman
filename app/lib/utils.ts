@@ -9,7 +9,7 @@ export function cn(...inputs: ClassValue[]) {
 
 export function formatTimestamp({
   date,
-  template = "DD/MM/yyyy",
+  template = "dd/MM/yyyy",
 }: {
   date: Date;
   template?: string;

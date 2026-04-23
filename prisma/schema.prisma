@@ -132,8 +132,8 @@ model PlannedAccess {
   status            PlannedAccessStatus @default(PENDING_APPROVAL)
   approvedAt        DateTime?
 
-  approvedById String
-  approvedBy   User   @relation(fields: [approvedById], references: [id])
+  approvedById String?
+  approvedBy   User?   @relation(fields: [approvedById], references: [id])
 
   plannedAccessPersons  PlannedAccessPerson[]
   plannedAccessVehicles PlannedAccessVehicle[]
