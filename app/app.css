@@ -12,15 +12,6 @@
         "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
 }
 
-html,
-body {
-    @apply bg-white dark:bg-gray-950;
-
-    @media (prefers-color-scheme: dark) {
-        color-scheme: dark;
-    }
-}
-
 @theme inline {
     --font-heading: var(--font-sans);
     --font-sans: "Inter Variable", sans-serif;
@@ -144,10 +135,8 @@ body {
         @apply font-sans;
     }
 
-    @layer base {
-        button:not(:disabled),
-        [role="button"]:not(:disabled) {
-            cursor: pointer;
-        }
+    button:not(:disabled),
+    [role="button"]:not(:disabled) {
+        cursor: pointer;
     }
 }

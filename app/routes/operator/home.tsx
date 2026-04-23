@@ -22,26 +22,14 @@ export async function loader({ request }: Route.LoaderArgs) {
   return {
     accessLogs,
     site: sessionSite,
-    currentDate: new Date().toISOString(),
   };
 }
 
 export default function OperatorHome({ loaderData }: Route.ComponentProps) {
-  const currentDate = new Date(loaderData.currentDate);
-
   return (
     <div className="grid space-y-6">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-        <div className="space-y-1">
-          <h2 className="text-3xl font-bold">Accesos</h2>
-          <p className="text-sm text-muted-foreground">
-            Planta: {loaderData.site.name}
-          </p>
-          <p className="text-sm text-muted-foreground">
-            Fecha:{" "}
-            {formatTimestamp({ date: currentDate, template: "dd/MM/yyyy" })}
-          </p>
-        </div>
+        <h2 className="text-xl font-bold">Accesos</h2>
 
         <CreateAccessLog
           sites={[loaderData.site]}
