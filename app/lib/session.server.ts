@@ -3,7 +3,7 @@ import { createCookieSessionStorage } from "react-router";
 import {
   UserRole,
   type UserRole as UserRoleType,
-} from "../../generated/prisma/enums";
+} from "../../prisma/generated/prisma/enums";
 
 type SessionPayload = Record<string, unknown>;
 

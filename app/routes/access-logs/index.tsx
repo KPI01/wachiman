@@ -1,6 +1,6 @@
 import { performance } from "node:perf_hooks";
 import { redirect } from "react-router";
-import { UserRole } from "../../../generated/prisma/enums";
+import { UserRole } from "../../../prisma/generated/prisma/enums";
 import { handleCreateAccessLog } from "~/lib/actions/access-log.server";
 import { getSessionUser } from "~/lib/session.server";
 import type { Route } from "./+types/index";

@@ -10,7 +10,7 @@ import { UserEntity } from "../database/user.server";
 import { SiteEntity } from "../database/site.server";
 import { DepartmentEntity } from "../database/department.server";
 import { prisma } from "../prisma.server";
-import { UserRole } from "../../../generated/prisma/enums";
+import { UserRole } from "../../../prisma/generated/prisma/enums";
 
 export const createUserSchema = z
   .object({

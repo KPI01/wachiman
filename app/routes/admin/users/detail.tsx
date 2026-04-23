@@ -16,7 +16,7 @@ import type {
   Site,
   User,
   UserRole,
-} from "../../../../generated/prisma/client";
+} from "../../../../prisma/generated/prisma/client";
 import { useFetcher } from "react-router";
 import { Checkbox } from "~/components/ui/checkbox";
 import FieldWrapper from "~/components/ui/wrappers/field-wrapper";

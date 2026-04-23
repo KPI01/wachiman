@@ -23,12 +23,19 @@ enum UserRole {
 
 enum PlannedAccessStatus {
   PENDING_APPROVAL
-  APPROVED
-  REJECTED
+  PENDING_ACCESS
   IN_PROGRESS
   COMPLETED
-  EXPIRED
+  REJECTED
   CANCELLED
+  EXPIRED
+  RESCHEDULED
+}
+
+enum AuditAction {
+  CREATE
+  FIELD_UPDATE
+  STATUS_CHANGE
 }
 
 model User {
@@ -43,11 +50,13 @@ model User {
   role      UserRole? @default(ACCESS_REQUESTER)
 
   siteId               String
-  site                 Site        @relation(fields: [siteId], references: [id])
+  site                 Site                 @relation(fields: [siteId], references: [id])
   departmentId         String
-  department           Department  @relation(fields: [departmentId], references: [id])
-  createdAccesLogs     AccessLog[] @relation("createdBy")
-  accessLogsMarkedExit AccessLog[] @relation("exitRecordedBy")
+  department           Department           @relation(fields: [departmentId], references: [id])
+  createdAccesLogs     AccessLog[]          @relation("createdBy")
+  accessLogsMarkedExit AccessLog[]          @relation("exitRecordedBy")
+  plannedAccessAudits  PlannedAccessAudit[]
+  plannedAccesses      PlannedAccess[]
 
   @@index([username])
 }
@@ -121,10 +130,28 @@ model PlannedAccess {
   expectedStartDate DateTime
   expectedEndDate   DateTime?
   status            PlannedAccessStatus @default(PENDING_APPROVAL)
+  approvedAt        DateTime?
+
+  approvedById String
+  approvedBy   User   @relation(fields: [approvedById], references: [id])
 
   plannedAccessPersons  PlannedAccessPerson[]
   plannedAccessVehicles PlannedAccessVehicle[]
   plannedAccessLogs     PlannedAccessLog[]
+  plannedAccessAudits   PlannedAccessAudit[]
+}
+
+model PlannedAccessAudit {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+
+  plannedAccessId String
+  plannedAccess   PlannedAccess @relation(fields: [plannedAccessId], references: [id])
+  madeById        String
+  madeBy          User          @relation(fields: [madeById], references: [id])
+  action          AuditAction
+  reason          String?
+  payload         Json
 }
 
 model PlannedAccessLog {

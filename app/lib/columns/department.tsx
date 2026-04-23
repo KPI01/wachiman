@@ -1,5 +1,5 @@
 import { createColumnHelper } from "@tanstack/react-table";
-import type { Department } from "../../../generated/prisma/client";
+import type { Department } from "../../../prisma/generated/prisma/client";
 import { formatTimestamp } from "../utils";
 import { DepartmentDetails } from "~/routes/admin/departments/detail";
 import DeleteDepartment from "~/routes/admin/departments/delete";

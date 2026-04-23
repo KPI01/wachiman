@@ -1,5 +1,5 @@
 import { redirect } from "react-router";
-import { UserRole } from "../../generated/prisma/enums";
+import { UserRole } from "../../prisma/generated/prisma/enums";
 import type { Route } from "./+types/access-log";
 import { encryptValue } from "~/lib/crypt.server";
 import { AccessLogEntity } from "~/lib/database/access-log.server";

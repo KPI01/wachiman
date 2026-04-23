@@ -1,5 +1,5 @@
 import { performance } from "node:perf_hooks";
-import type { Prisma } from "../../../generated/prisma/client";
+import type { Prisma } from "../../../prisma/generated/prisma/client";
 import { hashText } from "../hash.server";
 import { prisma } from "../prisma.server";
 

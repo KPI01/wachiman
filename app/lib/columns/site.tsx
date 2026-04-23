@@ -1,5 +1,5 @@
 import { createColumnHelper } from "@tanstack/react-table";
-import type { Site } from "../../../generated/prisma/client";
+import type { Site } from "../../../prisma/generated/prisma/client";
 import { formatTimestamp } from "../utils";
 import { SiteDetails } from "~/routes/admin/sites/detail";
 import DeleteSite from "~/routes/admin/sites/delete";

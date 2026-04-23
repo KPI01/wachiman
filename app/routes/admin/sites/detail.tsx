@@ -11,7 +11,7 @@ import {
   AlertDialogTrigger,
 } from "~/components/ui/alert-dialog";
 import { buttonVariants } from "~/components/ui/button";
-import type { Site } from "../../../../generated/prisma/client";
+import type { Site } from "../../../../prisma/generated/prisma/client";
 import { useFetcher } from "react-router";
 import FieldWrapper from "~/components/ui/wrappers/field-wrapper";
 import { Input } from "~/components/ui/input";

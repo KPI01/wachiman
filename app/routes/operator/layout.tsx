@@ -1,5 +1,5 @@
 import { Outlet, redirect } from "react-router";
-import { UserRole } from "../../../generated/prisma/enums";
+import { UserRole } from "../../../prisma/generated/prisma/enums";
 import AppSidebar, { type SidebarLinkItem } from "~/components/app-sidebar";
 import { SidebarInset, SidebarProvider } from "~/components/ui/sidebar";
 import { getSessionUser } from "~/lib/session.server";

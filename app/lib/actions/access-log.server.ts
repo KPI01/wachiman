@@ -1,5 +1,5 @@
 import z from "zod";
-import { UserRole } from "../../../generated/prisma/enums";
+import { UserRole } from "../../../prisma/generated/prisma/enums";
 import { encryptValue } from "~/lib/crypt.server";
 import { AccessLogEntity } from "~/lib/database/access-log.server";
 import { UserEntity } from "~/lib/database/user.server";
