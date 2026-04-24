@@ -4,7 +4,6 @@ import { UserRole } from "../../../prisma/generated/prisma/enums";
 import { Button } from "~/components/ui/button";
 import { getSessionUser } from "~/lib/session.server";
 import type { Route } from "./+types/layout";
-import { Separator } from "~/components/ui/separator";
 import {
   DropdownMenu,
   DropdownMenuContent,

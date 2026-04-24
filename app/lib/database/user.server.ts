@@ -51,7 +51,9 @@ export class UserEntity {
 
       return user;
     } finally {
-      console.log(`[UserEntity.create] ${(performance.now() - start).toFixed(2)}ms`);
+      console.log(
+        `[UserEntity.create] ${(performance.now() - start).toFixed(2)}ms`,
+      );
     }
   }
 
@@ -106,7 +108,9 @@ export class UserEntity {
         },
       });
     } finally {
-      console.log(`[UserEntity.getById] ${(performance.now() - start).toFixed(2)}ms`);
+      console.log(
+        `[UserEntity.getById] ${(performance.now() - start).toFixed(2)}ms`,
+      );
     }
   }
 
@@ -126,7 +130,9 @@ export class UserEntity {
 
       return users;
     } finally {
-      console.log(`[UserEntity.getAll] ${(performance.now() - start).toFixed(2)}ms`);
+      console.log(
+        `[UserEntity.getAll] ${(performance.now() - start).toFixed(2)}ms`,
+      );
     }
   }
 
@@ -148,7 +154,9 @@ export class UserEntity {
 
       return updatedUser;
     } finally {
-      console.log(`[UserEntity.update] ${(performance.now() - start).toFixed(2)}ms`);
+      console.log(
+        `[UserEntity.update] ${(performance.now() - start).toFixed(2)}ms`,
+      );
     }
   }
 
@@ -166,7 +174,27 @@ export class UserEntity {
 
       return trashedUser;
     } finally {
-      console.log(`[UserEntity.trash] ${(performance.now() - start).toFixed(2)}ms`);
+      console.log(
+        `[UserEntity.trash] ${(performance.now() - start).toFixed(2)}ms`,
+      );
+    }
+  }
+
+  public static async updatePassword(id: string, newPassword: string) {
+    const start = performance.now();
+
+    try {
+      const hashedPassword = await hashText(newPassword);
+      const user = await prisma.user.update({
+        where: { id },
+        data: { password: hashedPassword },
+      });
+
+      return user;
+    } finally {
+      console.log(
+        `[UserEntity.updatePassword] ${(performance.now() - start).toFixed(2)}ms`,
+      );
     }
   }
 }

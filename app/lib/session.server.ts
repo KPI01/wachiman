@@ -27,6 +27,10 @@ export function getUserRedirectPath(role: SessionUser["role"]) {
     return "/operator";
   }
 
+  if (role === UserRole.ACCESS_APPROVER) {
+    return "/approver";
+  }
+
   return "/home";
 }
 

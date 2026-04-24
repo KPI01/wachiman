@@ -1,8 +1,13 @@
 import { createColumnHelper } from "@tanstack/react-table";
-import type { Department, Site, User } from "../../../prisma/generated/prisma/client";
+import type {
+  Department,
+  Site,
+  User,
+} from "../../../prisma/generated/prisma/client";
 import { formatTimestamp } from "../utils";
 import { UserDetails } from "~/routes/admin/users/detail";
 import TrashUser from "~/routes/admin/users/trash";
+import ResetPasswordForm from "~/components/models/user/reset-password-form";
 
 const userColHelper = createColumnHelper<User>();
 
@@ -32,6 +37,7 @@ export function getUserColumns(sites: Site[], departments: Department[]) {
             sites={sites}
             departments={departments}
           />
+          <ResetPasswordForm userId={row.original.id} />
           <TrashUser userId={row.original.id} />
         </div>
       ),

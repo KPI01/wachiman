@@ -13,10 +13,11 @@ export default [
     route("login", "routes/login.tsx"),
     route("unauthorized", "routes/unauthorized.tsx"),
   ]),
-  
+
   // Autenticacion
   ...prefix("auth", [
     route("logout", "routes/auth/logout.tsx"),
+    route("reset-password/:userId", "routes/auth/reset-password.tsx"),
   ]),
 
   // Protegidas genericas
@@ -44,11 +45,19 @@ export default [
 
     // Gestion de accesos planificados
     route("planned-accesses", "routes/admin/planned-accesses/index.tsx"),
-    route("planned-accesses/:plannedAccessId", "routes/admin/planned-accesses/detail.tsx"),
+    route(
+      "planned-accesses/:plannedAccessId",
+      "routes/admin/planned-accesses/detail.tsx",
+    ),
   ]),
 
   // Operador de accesos
   route("operator", "routes/operator/layout.tsx", [
     index("routes/operator/home.tsx"),
+  ]),
+
+  // Aprobador de accesos
+  route("approver", "routes/approver/layout.tsx", [
+    index("routes/approver/home.tsx"),
   ]),
 ] satisfies RouteConfig;

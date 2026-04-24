@@ -2,21 +2,21 @@ import { z } from "zod";
 import {
   PASSWORD_IS_INVALID,
   PASSWORDS_MUST_BE_EQUAL,
-  STRING_TYPE_REQUIRED_MSG,
-  USER_ALREADY_EXISTS,
   USER_DOESNT_EXISTS,
 } from "./messages";
 import { UserEntity } from "../database/user.server";
 import { validateHashedText } from "../hash.server";
+import { requiredString } from "./generic";
 
 export const loginSchema = z
   .object({
-    username: z.string(STRING_TYPE_REQUIRED_MSG),
-    password: z.string(STRING_TYPE_REQUIRED_MSG),
+    username: requiredString,
+    password: requiredString,
   })
   .refine(
     async (data) => {
-      const userExists = (await UserEntity.getByUsername(data.username)) !== null;
+      const userExists =
+        (await UserEntity.getByUsername(data.username)) !== null;
       return userExists;
     },
     {
@@ -44,3 +44,13 @@ export const loginSchema = z
       path: ["password"],
     },
   );
+
+export const updatePasswordSchema = z
+  .object({
+    newPassword: requiredString,
+    newPasswordConfirmation: requiredString,
+  })
+  .refine((data) => data.newPassword === data.newPasswordConfirmation, {
+    error: PASSWORDS_MUST_BE_EQUAL,
+  })
+  .transform((data) => data.newPassword);
