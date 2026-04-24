@@ -1,16 +1,9 @@
 import { InfoIcon } from "lucide-react";
 import { useState } from "react";
-import {
-  AlertDialog,
+import AlertDialogContainer, {
   AlertDialogAction,
   AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "~/components/ui/alert-dialog";
-import { buttonVariants } from "~/components/ui/button";
+} from "~/components/containers/alert-dialog-container";
 import type {
   Department,
   Site,
@@ -88,124 +81,124 @@ export function UserDetails({ user, sites, departments }: UserDetailsProps) {
   const formId = `user-form-${user.id}`;
 
   return (
-    <AlertDialog open={open} onOpenChange={setOpen}>
-      <AlertDialogTrigger className={buttonVariants({ variant: "secondary" })}>
-        <InfoIcon />
-      </AlertDialogTrigger>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Ficha de Usuario</AlertDialogTitle>
-        </AlertDialogHeader>
-        <patchFetcher.Form
-          id={formId}
-          method="patch"
-          action={`/admin/users/${user.id}`}
-          className="space-y-4"
-          onSubmit={() => {
-            // El cierre en éxito se maneja vía useEffect si fuera necesario,
-            // pero con fetcher podemos revisar cuando fetcher.state pasa a idle
-          }}
-        >
-          <Input name="id" defaultValue={user.id} type="hidden" />
-          <FieldWrapper
-            label="Nombre completo"
-            htmlFor="fullName"
-            errors={getFieldErrors(patchErrors, "fullName")}
-          >
-            <Input
-              id="fullName"
-              name="fullName"
-              autoComplete="name"
-              defaultValue={user.fullName}
-            />
-          </FieldWrapper>
-          <FieldWrapper
-            label="Nombre de inicio de sesión"
-            htmlFor="username"
-            errors={getFieldErrors(patchErrors, "username")}
-          >
-            <Input
-              id="username"
-              name="username"
-              autoComplete="username"
-              defaultValue={user.username}
-            />
-          </FieldWrapper>
-          <FieldWrapper
-            label="Centro"
-            htmlFor="siteId"
-            errors={getFieldErrors(patchErrors, "siteId")}
-          >
-            <Select name="siteId" defaultValue={user.siteId}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Centro para el usuario..." />
-              </SelectTrigger>
-              <SelectContent position="popper">
-                {sites.map((site) => (
-                  <SelectItem key={site.id} value={site.id}>
-                    {site.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </FieldWrapper>
-          <FieldWrapper
-            label="Departamento"
-            htmlFor="departmentId"
-            errors={getFieldErrors(patchErrors, "departmentId")}
-          >
-            <Select name="departmentId" defaultValue={user.departmentId}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Departamento para el usuario..." />
-              </SelectTrigger>
-              <SelectContent position="popper">
-                {departments.map((department) => (
-                  <SelectItem key={department.id} value={department.id}>
-                    {department.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </FieldWrapper>
-          <FieldWrapper
-            label="Rol de usuario"
-            htmlFor="role"
-            errors={getFieldErrors(patchErrors, "role")}
-          >
-            <Select name="role" defaultValue={user.role as string}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Rol para el usuario..." />
-              </SelectTrigger>
-              <SelectContent position="popper">
-                {(Object.keys(USER_ROLES) as UserRole[]).map((role, ix) => (
-                  <SelectItem key={ix} value={role}>
-                    {USER_ROLES[role]}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </FieldWrapper>
-          <FieldWrapper
-            orientation="horizontal"
-            label="Usuario activo"
-            htmlFor={`isActive-${user.id}`}
-            errors={getFieldErrors(patchErrors, "isActive")}
-          >
-            <Checkbox
-              id={`isActive-${user.id}`}
-              name="isActive"
-              defaultChecked={Boolean(user.isActive)}
-            />
-          </FieldWrapper>
-        </patchFetcher.Form>
-        <AlertDialogFooter>
+    <AlertDialogContainer
+      open={open}
+      onOpenChange={setOpen}
+      buttonLabel={<InfoIcon />}
+      buttonVariant="secondary"
+      title="Ficha de Usuario"
+      footer={
+        <>
           <AlertDialogCancel variant="destructive">Cancelar</AlertDialogCancel>
           <AlertDialogAction type="submit" form={formId}>
             Enviar
           </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+        </>
+      }
+    >
+      <patchFetcher.Form
+        id={formId}
+        method="patch"
+        action={`/admin/users/${user.id}`}
+        className="space-y-4"
+        onSubmit={() => {
+          // El cierre en éxito se maneja vía useEffect si fuera necesario,
+          // pero con fetcher podemos revisar cuando fetcher.state pasa a idle
+        }}
+      >
+        <Input name="id" defaultValue={user.id} type="hidden" />
+        <FieldWrapper
+          label="Nombre completo"
+          htmlFor="fullName"
+          errors={getFieldErrors(patchErrors, "fullName")}
+        >
+          <Input
+            id="fullName"
+            name="fullName"
+            autoComplete="name"
+            defaultValue={user.fullName}
+          />
+        </FieldWrapper>
+        <FieldWrapper
+          label="Nombre de inicio de sesión"
+          htmlFor="username"
+          errors={getFieldErrors(patchErrors, "username")}
+        >
+          <Input
+            id="username"
+            name="username"
+            autoComplete="username"
+            defaultValue={user.username}
+          />
+        </FieldWrapper>
+        <FieldWrapper
+          label="Centro"
+          htmlFor="siteId"
+          errors={getFieldErrors(patchErrors, "siteId")}
+        >
+          <Select name="siteId" defaultValue={user.siteId}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Centro para el usuario..." />
+            </SelectTrigger>
+            <SelectContent position="popper">
+              {sites.map((site) => (
+                <SelectItem key={site.id} value={site.id}>
+                  {site.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </FieldWrapper>
+        <FieldWrapper
+          label="Departamento"
+          htmlFor="departmentId"
+          errors={getFieldErrors(patchErrors, "departmentId")}
+        >
+          <Select name="departmentId" defaultValue={user.departmentId}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Departamento para el usuario..." />
+            </SelectTrigger>
+            <SelectContent position="popper">
+              {departments.map((department) => (
+                <SelectItem key={department.id} value={department.id}>
+                  {department.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </FieldWrapper>
+        <FieldWrapper
+          label="Rol de usuario"
+          htmlFor="role"
+          errors={getFieldErrors(patchErrors, "role")}
+        >
+          <Select name="role" defaultValue={user.role as string}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Rol para el usuario..." />
+            </SelectTrigger>
+            <SelectContent position="popper">
+              {(Object.keys(USER_ROLES) as UserRole[]).map((role, ix) => (
+                <SelectItem key={ix} value={role}>
+                  {USER_ROLES[role]}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </FieldWrapper>
+        <FieldWrapper
+          orientation="horizontal"
+          label="Usuario activo"
+          htmlFor={`isActive-${user.id}`}
+          errors={getFieldErrors(patchErrors, "isActive")}
+        >
+          <Checkbox
+            id={`isActive-${user.id}`}
+            name="isActive"
+            defaultChecked={Boolean(user.isActive)}
+          />
+        </FieldWrapper>
+      </patchFetcher.Form>
+    </AlertDialogContainer>
   );
 }
 

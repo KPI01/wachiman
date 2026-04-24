@@ -1,16 +1,9 @@
 import { useEffect, useState } from "react";
 import { useFetcher } from "react-router";
-import { Button } from "~/components/ui/button";
-import {
-  AlertDialog,
+import AlertDialogContainer, {
   AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "~/components/ui/alert-dialog";
+} from "~/components/containers/alert-dialog-container";
+import { Button } from "~/components/ui/button";
 import AccessLogSignature from "~/components/models/access-logs/access-log-signature";
 
 type MarkAccessLogExitProps = {
@@ -36,7 +29,7 @@ export default function MarkAccessLogExit({
   }, [fetcher.data, fetcher.state]);
 
   return (
-    <AlertDialog
+    <AlertDialogContainer
       open={open}
       onOpenChange={(nextOpen) => {
         setOpen(nextOpen);
@@ -46,37 +39,16 @@ export default function MarkAccessLogExit({
           setExitSignaturePayload("");
         }
       }}
-    >
-      <AlertDialogTrigger asChild>
+      triggerAsChild
+      buttonLabel={
         <Button type="button" size="sm" variant="outline">
           Marcar salida
         </Button>
-      </AlertDialogTrigger>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Confirmar salida</AlertDialogTitle>
-          <AlertDialogDescription>
-            Solicita al visitante su firma para registrar la salida.
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <fetcher.Form
-          id={`mark-access-log-exit-${accessLogId}`}
-          method="post"
-          action={`/access-log/${accessLogId}`}
-          className="space-y-4"
-        >
-          <input
-            type="hidden"
-            name="exitSignaturePayload"
-            value={exitSignaturePayload}
-          />
-          <AccessLogSignature
-            key={`exit-signature-${open}-${accessLogId}`}
-            onSignatureChange={setHasSignature}
-            onSignaturePayloadChange={setExitSignaturePayload}
-          />
-        </fetcher.Form>
-        <AlertDialogFooter>
+      }
+      title="Confirmar salida"
+      description="Solicita al visitante su firma para registrar la salida."
+      footer={
+        <>
           <AlertDialogCancel variant="destructive">Cancelar</AlertDialogCancel>
           <Button
             type="submit"
@@ -85,8 +57,26 @@ export default function MarkAccessLogExit({
           >
             {fetcher.state === "submitting" ? "Enviando..." : "Enviar"}
           </Button>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+        </>
+      }
+    >
+      <fetcher.Form
+        id={`mark-access-log-exit-${accessLogId}`}
+        method="post"
+        action={`/access-log/${accessLogId}`}
+        className="space-y-4"
+      >
+        <input
+          type="hidden"
+          name="exitSignaturePayload"
+          value={exitSignaturePayload}
+        />
+        <AccessLogSignature
+          key={`exit-signature-${open}-${accessLogId}`}
+          onSignatureChange={setHasSignature}
+          onSignaturePayloadChange={setExitSignaturePayload}
+        />
+      </fetcher.Form>
+    </AlertDialogContainer>
   );
 }

@@ -1,17 +1,10 @@
 import { PlusIcon, TrashIcon, UserPlusIcon, CarIcon } from "lucide-react";
 import { useState } from "react";
 import { Form } from "react-router";
-import {
-  AlertDialog,
+import AlertDialogContainer, {
   AlertDialogAction,
   AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "~/components/ui/alert-dialog";
+} from "~/components/containers/alert-dialog-container";
 import { Button, buttonVariants } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import FieldWrapper from "~/components/ui/wrappers/field-wrapper";
@@ -98,19 +91,26 @@ export default function CreatePlannedAccess({
   }
 
   return (
-    <AlertDialog>
-      <AlertDialogTrigger className={buttonVariants({ variant: "default" })}>
-        <PlusIcon />
-        Crear
-      </AlertDialogTrigger>
-      <AlertDialogContent className="max-h-[90vh] overflow-y-auto">
-        <AlertDialogHeader>
-          <AlertDialogTitle>Nuevo Acceso Planificado</AlertDialogTitle>
-          <AlertDialogDescription>
-            Ingresa los datos del acceso planificado, personas y vehiculos.
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <Form
+    <AlertDialogContainer
+      buttonLabel={
+        <>
+          <PlusIcon />
+          Crear
+        </>
+      }
+      title="Nuevo Acceso Planificado"
+      description="Ingresa los datos del acceso planificado, personas y vehiculos."
+      contentClassName="max-h-[90vh] overflow-y-auto"
+      footer={
+        <>
+          <AlertDialogCancel variant="destructive">Cancelar</AlertDialogCancel>
+          <AlertDialogAction type="submit" form="create-planned-access">
+            Enviar
+          </AlertDialogAction>
+        </>
+      }
+    >
+      <Form
           id="create-planned-access"
           method="post"
           action="/admin/planned-accesses"
@@ -383,14 +383,7 @@ export default function CreatePlannedAccess({
               </div>
             ))}
           </div>
-        </Form>
-        <AlertDialogFooter>
-          <AlertDialogCancel variant="destructive">Cancelar</AlertDialogCancel>
-          <AlertDialogAction type="submit" form="create-planned-access">
-            Enviar
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+      </Form>
+    </AlertDialogContainer>
   );
 }

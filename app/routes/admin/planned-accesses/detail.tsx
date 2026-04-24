@@ -1,15 +1,9 @@
 import { InfoIcon, PlusIcon, TrashIcon, UserPlusIcon, CarIcon } from "lucide-react";
 import { useState } from "react";
-import {
-  AlertDialog,
+import AlertDialogContainer, {
   AlertDialogAction,
   AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "~/components/ui/alert-dialog";
+} from "~/components/containers/alert-dialog-container";
 import { Button, buttonVariants } from "~/components/ui/button";
 import type {
   PlannedAccess,
@@ -110,15 +104,23 @@ export function PlannedAccessDetails({
   }
 
   return (
-    <AlertDialog open={open} onOpenChange={setOpen}>
-      <AlertDialogTrigger className={buttonVariants({ variant: "secondary" })}>
-        <InfoIcon />
-      </AlertDialogTrigger>
-      <AlertDialogContent className="max-h-[90vh] overflow-y-auto">
-        <AlertDialogHeader>
-          <AlertDialogTitle>Ficha de Acceso Planificado</AlertDialogTitle>
-        </AlertDialogHeader>
-        <patchFetcher.Form
+    <AlertDialogContainer
+      open={open}
+      onOpenChange={setOpen}
+      buttonLabel={<InfoIcon />}
+      buttonVariant="secondary"
+      title="Ficha de Acceso Planificado"
+      contentClassName="max-h-[90vh] overflow-y-auto"
+      footer={
+        <>
+          <AlertDialogCancel variant="destructive">Cancelar</AlertDialogCancel>
+          <AlertDialogAction type="submit" form={formId}>
+            Enviar
+          </AlertDialogAction>
+        </>
+      }
+    >
+      <patchFetcher.Form
           id={formId}
           method="patch"
           action="/admin/planned-accesses"
@@ -421,16 +423,8 @@ export function PlannedAccessDetails({
               </div>
             ))}
           </div>
-        </patchFetcher.Form>
-
-        <AlertDialogFooter>
-          <AlertDialogCancel variant="destructive">Cancelar</AlertDialogCancel>
-          <AlertDialogAction type="submit" form={formId}>
-            Enviar
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+      </patchFetcher.Form>
+    </AlertDialogContainer>
   );
 }
 
