@@ -23,6 +23,9 @@ export default function FieldWrapper({
     <Field
       orientation={orientation}
       data-invalid={hasErrors ? "true" : undefined}
+      className={
+        orientation === "horizontal" ? "grid grid-cols-[1fr_12rem]" : ""
+      }
     >
       <Label htmlFor={htmlFor}>{label}</Label>
       {children}

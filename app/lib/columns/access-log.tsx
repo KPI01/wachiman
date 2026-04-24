@@ -2,6 +2,7 @@ import { createColumnHelper } from "@tanstack/react-table";
 import MarkAccessLogExit from "~/routes/access-logs/mark-exit";
 import { formatTimestamp } from "../utils";
 import type { AccessLogListItem } from "../database/access-log.server";
+import VehiclePopover from "~/components/models/access-logs/vehicle-popover";
 
 const accessLogColHelper = createColumnHelper<AccessLogListItem>();
 
@@ -60,6 +61,10 @@ export const accessLogColumns = [
   accessLogColHelper.accessor(getVehicleDetails, {
     id: "vehicleDetails",
     header: "Vehiculo",
+    cell: ({ row }) =>
+      row.original.withVehicle && row.original.vehicleAccessLog ? (
+        <VehiclePopover vehicleLog={row.original.vehicleAccessLog} />
+      ) : undefined,
   }),
   accessLogColHelper.accessor("visitReason", {
     header: "Motivo",
