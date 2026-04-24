@@ -77,43 +77,51 @@ export async function action({ request }: Route.ActionArgs) {
 
 export default function Login({ actionData }: Route.ComponentProps) {
   return (
-    <CardContainer
-      title="Inicio de sesión"
-      className="min-w-md "
-      footer={
-        <Button type="submit" form="login-form">
-          Enviar
-        </Button>
-      }
-    >
-      <Form id="login-form" method="post" className="space-y-4" action="/login">
-        <FieldWrapper
-          label="Nombre de usuario"
-          htmlFor="username"
-          errors={getFieldErrors(actionData?.errors, "username")}
+    <>
+      <title>Inicio de sesión</title>
+      <CardContainer
+        title="Inicio de sesión"
+        className="min-w-md "
+        footer={
+          <Button type="submit" form="login-form">
+            Enviar
+          </Button>
+        }
+      >
+        <Form
+          id="login-form"
+          method="post"
+          className="space-y-4"
+          action="/login"
         >
-          <Input
-            id="username"
-            name="username"
-            autoComplete="username"
-            required
-          />
-        </FieldWrapper>
+          <FieldWrapper
+            label="Nombre de usuario"
+            htmlFor="username"
+            errors={getFieldErrors(actionData?.errors, "username")}
+          >
+            <Input
+              id="username"
+              name="username"
+              autoComplete="username"
+              required
+            />
+          </FieldWrapper>
 
-        <FieldWrapper
-          label="Contraseña"
-          htmlFor="password"
-          errors={getFieldErrors(actionData?.errors, "password")}
-        >
-          <Input
-            id="password"
-            name="password"
-            type="password"
-            autoComplete="current-password"
-            required
-          />
-        </FieldWrapper>
-      </Form>
-    </CardContainer>
+          <FieldWrapper
+            label="Contraseña"
+            htmlFor="password"
+            errors={getFieldErrors(actionData?.errors, "password")}
+          >
+            <Input
+              id="password"
+              name="password"
+              type="password"
+              autoComplete="current-password"
+              required
+            />
+          </FieldWrapper>
+        </Form>
+      </CardContainer>
+    </>
   );
 }
