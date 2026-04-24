@@ -11,6 +11,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
+import LogoBranding from "~/components/logo-branding";
 
 export async function loader({ request }: Route.LoaderArgs) {
   const user = await getSessionUser(request);
@@ -38,24 +39,10 @@ export default function OperatorLayout({ loaderData }: Route.ComponentProps) {
     <div className="p-4">
       <title>Portero</title>
       <header className="mb-6 flex justify-between items-center border-b pb-3">
-        <div className="flex items-center gap-3">
-          <div className="flex h-12 w-24 shrink-0 items-center justify-center">
-            <img
-              src="/logoFruveco.svg"
-              alt="Logo de Fruveco"
-              className="max-h-full max-w-full object-contain"
-            />
-          </div>
-          <Separator orientation="vertical" />
-          <div className="flex flex-col">
-            <h2 className="text-xl font-bold uppercase tracking-tight">
-              Control de Accesos
-            </h2>
-            <div className="text-foreground/50">
-              <span>Usuario:</span> {loaderData.fullName}
-            </div>
-          </div>
-        </div>
+        <LogoBranding
+          title="Control de Accesos"
+          username={loaderData.fullName}
+        />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline">
