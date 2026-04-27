@@ -5,8 +5,8 @@ import type {
   User,
 } from "../../../prisma/generated/prisma/client";
 import { formatTimestamp } from "../utils";
-import { UserDetails } from "~/routes/admin/users/detail";
-import TrashUser from "~/routes/admin/users/trash";
+import UserDetails from "~/components/models/user/user-details";
+import TrashUser from "~/components/models/user/trash-user";
 import ResetPasswordForm from "~/components/models/user/reset-password-form";
 
 const userColHelper = createColumnHelper<User>();

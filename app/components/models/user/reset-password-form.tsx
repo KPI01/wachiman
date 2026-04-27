@@ -1,11 +1,12 @@
 import { RotateCcwKeyIcon } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Form } from "react-router";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import {
   Popover,
+  PopoverAnchor,
   PopoverContent,
-  PopoverTrigger,
 } from "~/components/ui/popover";
 import FieldWrapper from "~/components/ui/wrappers/field-wrapper";
 
@@ -14,18 +15,21 @@ interface ResetPasswordFormProps {
 }
 
 export default function ResetPasswordForm({ userId }: ResetPasswordFormProps) {
+  const [open, setOpen] = useState(false);
+
   return (
-    <Popover>
-      <PopoverTrigger asChild>
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverAnchor asChild>
         <Button
           type="button"
           variant="secondary"
           aria-label="Reestablecer clave"
+          onClick={() => setOpen((currentOpen) => !currentOpen)}
         >
           <RotateCcwKeyIcon />
         </Button>
-      </PopoverTrigger>
-      <PopoverContent side="left">
+      </PopoverAnchor>
+      <PopoverContent side="left" className="min-w-fit">
         <Form
           className="space-y-4"
           method="post"

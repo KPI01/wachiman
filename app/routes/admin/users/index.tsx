@@ -7,6 +7,9 @@ import z from "zod";
 import { createUserSchema } from "~/lib/schemas/user";
 import { SiteEntity } from "~/lib/database/site.server";
 import { DepartmentEntity } from "~/lib/database/department.server";
+import { useMemo } from "react";
+
+const USER_GLOBAL_FILTER_COLUMNS = ["fullName", "username"];
 
 export async function loader() {
   const [users, sites, departments] = await Promise.all([
@@ -39,25 +42,33 @@ export async function action({ request }: Route.ActionArgs) {
   }
 }
 
-export default function IndexUsers({ loaderData, actionData }: Route.ComponentProps) {
+export default function IndexUsers({
+  loaderData,
+  actionData,
+}: Route.ComponentProps) {
+  const sites = loaderData.sites ?? [];
+  const departments = loaderData.departments ?? [];
+  const users = loaderData.users ?? [];
+  const columns = useMemo(
+    () => getUserColumns(sites, departments),
+    [sites, departments],
+  );
+
   return (
     <div className="grid space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-3xl font-bold">Usuarios</h2>
 
         <CreateUser
-          sites={loaderData.sites ?? []}
-          departments={loaderData.departments ?? []}
+          sites={sites}
+          departments={departments}
           errors={actionData?.errors}
         />
       </div>
       <DataTable
-        columns={getUserColumns(
-          loaderData.sites ?? [],
-          loaderData.departments ?? [],
-        )}
-        data={loaderData.users ?? []}
-        globalFilterColumns={["fullName", "username"]}
+        columns={columns}
+        data={users}
+        globalFilterColumns={USER_GLOBAL_FILTER_COLUMNS}
       />
     </div>
   );

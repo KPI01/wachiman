@@ -6,7 +6,7 @@ export default function TrashUser({ userId }: { userId: string }) {
   return (
     <Form method="delete" action={`/admin/users/${userId}`}>
       <input name="id" value={userId} type="hidden" />
-      <Button type="submit" variant="destructive">
+      <Button type="submit" variant="destructive" aria-label="Eliminar usuario">
         <TrashIcon />
       </Button>
     </Form>
