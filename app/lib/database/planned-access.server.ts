@@ -1,5 +1,5 @@
 import { performance } from "node:perf_hooks";
-import type { Prisma } from "../../../prisma/generated/prisma/client";
+import type { Prisma, Site } from "../../../prisma/generated/prisma/client";
 import { prisma } from "../prisma.server";
 
 type PlannedAccessWithRelations = Prisma.PlannedAccessGetPayload<{
@@ -44,6 +44,11 @@ type UpdatePlannedAccessInput = {
   status?: Prisma.PlannedAccessUpdateInput["status"];
   approvedAt?: Date | null;
   approvedById?: string;
+};
+
+type FindManyPlannedAccessFilter = {
+  site: string;
+  department: string;
 };
 
 export class PlannedAccessEntity {
@@ -120,11 +125,14 @@ export class PlannedAccessEntity {
     }
   }
 
-  public static async findMany(): Promise<PlannedAccessWithRelations[]> {
+  public static async findMany(
+    filters?: FindManyPlannedAccessFilter,
+  ): Promise<PlannedAccessWithRelations[]> {
     const start = performance.now();
 
     try {
       const plannedAccesses = await prisma.plannedAccess.findMany({
+        where: filters ? {} : undefined,
         orderBy: {
           createdAt: "desc",
         },

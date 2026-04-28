@@ -71,6 +71,7 @@ model Site {
 
   users      User[]
   accessLogs AccessLog[]
+  plannedAccesses PlannedAccess[]
 
   @@index([slug])
 }
@@ -132,8 +133,11 @@ model PlannedAccess {
   status            PlannedAccessStatus @default(PENDING_APPROVAL)
   approvedAt        DateTime?
 
+  siteId String
+  site Site @relation(fields:[siteId],references:[id])
   approvedById String?
   approvedBy   User?   @relation(fields: [approvedById], references: [id])
+  
 
   plannedAccessPersons  PlannedAccessPerson[]
   plannedAccessVehicles PlannedAccessVehicle[]

@@ -8,16 +8,21 @@ import type {
 import { formatTimestamp } from "../utils";
 import { PlannedAccessDetails } from "~/routes/admin/planned-accesses/detail";
 import PlannedAccessStatusBadge from "~/components/models/planned-accesses/status-badge";
+import type { ReactNode } from "react";
 
-interface PlannedAccessRow extends PlannedAccess {
+export interface PlannedAccessRow extends PlannedAccess {
   approvedBy?: Pick<User, "id" | "fullName"> | null;
   plannedAccessPersons?: PlannedAccessPerson[];
   plannedAccessVehicles?: PlannedAccessVehicle[];
 }
 
+type PlannedAccessColumnsOptions = {
+  renderActions?: (plannedAccess: PlannedAccessRow) => ReactNode;
+};
+
 const plannedAccessColHelper = createColumnHelper<PlannedAccessRow>();
 
-export function getPlannedAccessColumns() {
+export function getPlannedAccessColumns(options?: PlannedAccessColumnsOptions) {
   return [
     plannedAccessColHelper.accessor("expectedStartDate", {
       header: "Inicio previsto",
@@ -56,7 +61,11 @@ export function getPlannedAccessColumns() {
       id: "actions",
       cell: ({ row }) => (
         <div className="flex gap-3 items-center justify-end">
-          <PlannedAccessDetails plannedAccess={row.original} />
+          {options?.renderActions ? (
+            options.renderActions(row.original)
+          ) : (
+            <PlannedAccessDetails plannedAccess={row.original} />
+          )}
         </div>
       ),
     }),

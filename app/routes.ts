@@ -60,4 +60,9 @@ export default [
   route("approver", "routes/approver/layout.tsx", [
     index("routes/approver/home.tsx"),
   ]),
+
+  // Solicitante de accesos
+  route("requester", "routes/requester/layout.tsx", [
+    index("routes/requester/home.tsx"),
+  ]),
 ] satisfies RouteConfig;

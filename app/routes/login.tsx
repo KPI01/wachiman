@@ -41,7 +41,10 @@ export async function action({ request }: Route.ActionArgs) {
     }
 
     // consulta 2
-    const user = await UserEntity.getByUsername(data.username, { site: true });
+    const user = await UserEntity.getByUsername(data.username, {
+      site: true,
+      department: true,
+    });
 
     if (!user) {
       return {
@@ -58,10 +61,14 @@ export async function action({ request }: Route.ActionArgs) {
         fullName: user.fullName,
         username: user.username,
         role: user.role,
-      },
-      site: {
-        id: user.site.id,
-        name: user.site.name,
+        site: {
+          id: user.site.id,
+          name: user.site.name,
+        },
+        department: {
+          id: user.department.id,
+          name: user.department.name,
+        },
       },
     });
 

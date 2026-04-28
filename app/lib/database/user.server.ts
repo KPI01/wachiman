@@ -3,9 +3,15 @@ import type { Prisma } from "../../../prisma/generated/prisma/client";
 import { hashText } from "../hash.server";
 import { prisma } from "../prisma.server";
 
-type GetUserByUsernameWithSite = Prisma.UserGetPayload<{
+type GetUserByUsernameWithRelations = Prisma.UserGetPayload<{
   include: {
     site: {
+      select: {
+        id: true;
+        name: true;
+      };
+    };
+    department: {
       select: {
         id: true;
         name: true;
@@ -59,15 +65,15 @@ export class UserEntity {
 
   public static async getByUsername(
     username: string,
-    relations: { site: true },
-  ): Promise<GetUserByUsernameWithSite | null>;
+    relations: { site: true; department: true },
+  ): Promise<GetUserByUsernameWithRelations | null>;
   public static async getByUsername(
     username: string,
-    relations?: { site: false },
+    relations?: { site?: false; department?: false },
   ): Promise<Prisma.UserGetPayload<object> | null>;
   public static async getByUsername(
     username: string,
-    relations: { site: boolean } = { site: false },
+    relations: { site?: boolean; department?: boolean } = {},
   ) {
     const start = performance.now();
 
@@ -78,16 +84,27 @@ export class UserEntity {
           isTrashed: false,
           username,
         },
-        include: relations.site
-          ? {
-              site: {
-                select: {
-                  id: true,
-                  name: true,
-                },
-              },
-            }
-          : undefined,
+        include:
+          relations.site || relations.department
+            ? {
+                site: relations.site
+                  ? {
+                      select: {
+                        id: true,
+                        name: true,
+                      },
+                    }
+                  : undefined,
+                department: relations.department
+                  ? {
+                      select: {
+                        id: true,
+                        name: true,
+                      },
+                    }
+                  : undefined,
+              }
+            : undefined,
       });
     } finally {
       console.log(
