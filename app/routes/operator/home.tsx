@@ -4,8 +4,10 @@ import { accessLogColumns } from "~/lib/columns/access-log";
 import { AccessLogEntity } from "~/lib/database/access-log.server";
 import { getSessionSite } from "~/lib/session.server";
 import type { Route } from "./+types/home";
+import { validateUserRole } from "~/lib/auth.server";
 
 export async function loader({ request }: Route.LoaderArgs) {
+  await validateUserRole(request, "ACCESS_OPERATOR");
   const sessionSite = await getSessionSite(request);
 
   if (!sessionSite) {

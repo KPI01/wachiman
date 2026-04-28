@@ -5,8 +5,11 @@ import { DepartmentEntity } from "~/lib/database/department.server";
 import { createDepartmentSchema } from "~/lib/schemas/department";
 import type { Route } from "./+types";
 import CreateDepartment from "./create";
+import { validateUserRole } from "~/lib/auth.server";
 
-export async function loader() {
+export async function loader({ request }: Route.LoaderArgs) {
+  await validateUserRole(request, "ADMIN");
+
   const departments = await DepartmentEntity.findAll();
 
   return { departments };
@@ -16,6 +19,7 @@ export async function action({ request }: Route.ActionArgs) {
   const start = performance.now();
 
   try {
+    await validateUserRole(request, "ADMIN");
     const rawFormData = await request.formData();
     const jsonData = Object.fromEntries(rawFormData);
     const { error, data, success } =

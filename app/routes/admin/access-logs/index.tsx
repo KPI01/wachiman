@@ -4,8 +4,11 @@ import { AccessLogEntity } from "~/lib/database/access-log.server";
 import { SiteEntity } from "~/lib/database/site.server";
 import CreateAccessLog from "../../access-logs/create";
 import type { Route } from "./+types/index";
+import { validateUserRole } from "~/lib/auth.server";
 
-export async function loader() {
+export async function loader({ request }: Route.LoaderArgs) {
+  await validateUserRole(request, "ADMIN");
+
   const [accessLogs, sites] = await Promise.all([AccessLogEntity.findMany(), SiteEntity.findMany()]);
 
   return { accessLogs, sites };

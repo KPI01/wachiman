@@ -10,6 +10,7 @@ import {
   createPlannedAccessSchema,
   updatePlannedAccessSchema,
 } from "~/lib/schemas/planned-access";
+import { validateUserRole } from "~/lib/auth.server";
 
 function parseFormDataArrays<T extends Record<string, string>>(
   formData: FormData,
@@ -30,7 +31,9 @@ function parseFormDataArrays<T extends Record<string, string>>(
   return items;
 }
 
-export async function loader() {
+export async function loader({ request }: Route.LoaderArgs) {
+  await validateUserRole(request, "ADMIN");
+
   const [plannedAccesses, users] = await Promise.all([
     PlannedAccessEntity.findMany(),
     UserEntity.getAll(),
@@ -43,6 +46,7 @@ export async function action({ request }: Route.ActionArgs) {
   const start = performance.now();
 
   try {
+    await validateUserRole(request, "ADMIN");
     if (request.method === "PATCH") {
       const rawFormData = await request.formData();
       const jsonData = Object.fromEntries(rawFormData);

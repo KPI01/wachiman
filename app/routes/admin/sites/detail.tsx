@@ -13,8 +13,11 @@ import z from "zod";
 import { deleteSiteSchema, updateSiteSchema } from "~/lib/schemas/site";
 import { SiteEntity } from "~/lib/database/site.server";
 import { getFieldErrors } from "~/lib/utils/zod-errors";
+import { validateUserRole } from "~/lib/auth.server";
 
 export async function action({ request }: Route.ActionArgs) {
+  await validateUserRole(request, "ADMIN");
+
   if (request.method === "PATCH") {
     const rawFormData = await request.formData();
     const jsonData = Object.fromEntries(rawFormData);

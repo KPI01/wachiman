@@ -4,7 +4,8 @@ import { encryptValue } from "~/lib/crypt.server";
 import { AccessLogEntity } from "~/lib/database/access-log.server";
 import { UserEntity } from "~/lib/database/user.server";
 import { createAccessLogSchema } from "~/lib/schemas/access-log";
-import { getSessionSite, getSessionUser } from "~/lib/session.server";
+import { isAuthenticated } from "~/lib/auth.server";
+import { getSessionSite } from "~/lib/session.server";
 
 type HandleCreateAccessLogOptions = {
   restrictToSessionSite?: boolean;
@@ -16,12 +17,7 @@ export async function handleCreateAccessLog(
 ) {
   console.log("[handleCreateAccessLog] start");
   const rawFormData = await request.formData();
-  const sessionUser = await getSessionUser(request);
-
-  if (!sessionUser) {
-    console.log("[handleCreateAccessLog][no session] start");
-    throw new Response("Unauthorized", { status: 401 });
-  }
+  const sessionUser = await isAuthenticated(request);
 
   const jsonData = Object.fromEntries(rawFormData);
   let lockedSiteId: string | undefined;

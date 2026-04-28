@@ -1,22 +1,11 @@
-import { Outlet, redirect, useSubmit } from "react-router";
+import { Outlet, useSubmit } from "react-router";
 import LogoBranding from "~/components/logo-branding";
-import { UserRole } from "../../../prisma/generated/prisma/enums";
 import type { Route } from "./+types/layout";
-import { getSessionUser } from "~/lib/session.server";
 import { Button } from "~/components/ui/button";
+import { validateUserRole } from "~/lib/auth.server";
 
 export async function loader({ request }: Route.LoaderArgs) {
-  const user = await getSessionUser(request);
-
-  if (!user) {
-    throw redirect("/login");
-  }
-
-  if (!user.role || user.role !== UserRole.ACCESS_APPROVER) {
-    throw redirect("/unauthorized");
-  }
-
-  return user;
+  return await validateUserRole(request, "ACCESS_APPROVER");
 }
 
 const MENUBAR_ITEMS = [];

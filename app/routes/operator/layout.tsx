@@ -1,8 +1,6 @@
 import { EllipsisIcon, LogOutIcon } from "lucide-react";
-import { Outlet, redirect, useSubmit } from "react-router";
-import { UserRole } from "../../../prisma/generated/prisma/enums";
+import { Outlet, useSubmit } from "react-router";
 import { Button } from "~/components/ui/button";
-import { getSessionUser } from "~/lib/session.server";
 import type { Route } from "./+types/layout";
 import {
   DropdownMenu,
@@ -11,19 +9,10 @@ import {
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
 import LogoBranding from "~/components/logo-branding";
+import { validateUserRole } from "~/lib/auth.server";
 
 export async function loader({ request }: Route.LoaderArgs) {
-  const user = await getSessionUser(request);
-
-  if (!user) {
-    throw redirect("/login");
-  }
-
-  if (!user.role || user.role !== UserRole.ACCESS_OPERATOR) {
-    throw redirect("/unauthorized");
-  }
-
-  return user;
+  return await validateUserRole(request, "ACCESS_OPERATOR");
 }
 
 export default function OperatorLayout({ loaderData }: Route.ComponentProps) {

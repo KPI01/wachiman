@@ -1,29 +1,17 @@
 import { performance } from "node:perf_hooks";
-import { redirect } from "react-router";
-import { UserRole } from "../../../prisma/generated/prisma/enums";
 import { handleCreateAccessLog } from "~/lib/actions/access-log.server";
-import { getSessionUser } from "~/lib/session.server";
 import type { Route } from "./+types/index";
+import { validateUserRole } from "~/lib/auth.server";
+
+const ALLOWED_ROLES = ["ADMIN", "ACCESS_OPERATOR"] as const;
 
 export async function loader({ request }: Route.LoaderArgs) {
-  const user = await getSessionUser(request);
-  if (!user) {
-    throw redirect("/login");
-  }
-  if (!user.role || (user.role !== UserRole.ADMIN && user.role !== UserRole.ACCESS_OPERATOR)) {
-    throw redirect("/unauthorized");
-  }
+  await validateUserRole(request, [...ALLOWED_ROLES]);
   return null;
 }
 
 export async function action({ request }: Route.ActionArgs) {
-  const user = await getSessionUser(request);
-  if (!user) {
-    throw redirect("/login");
-  }
-  if (!user.role || (user.role !== UserRole.ADMIN && user.role !== UserRole.ACCESS_OPERATOR)) {
-    throw redirect("/unauthorized");
-  }
+  await validateUserRole(request, [...ALLOWED_ROLES]);
 
   const start = performance.now();
 

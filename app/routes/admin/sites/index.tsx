@@ -5,8 +5,11 @@ import { siteColumns } from "~/lib/columns/site";
 import CreateSite from "./create";
 import z from "zod";
 import { createSiteSchema } from "~/lib/schemas/site";
+import { validateUserRole } from "~/lib/auth.server";
 
-export async function loader() {
+export async function loader({ request }: Route.LoaderArgs) {
+  await validateUserRole(request, "ADMIN");
+
   const sites = await SiteEntity.findMany();
 
   return { sites };
@@ -16,6 +19,7 @@ export async function action({ request }: Route.ActionArgs) {
   const start = performance.now();
 
   try {
+    await validateUserRole(request, "ADMIN");
     const rawFormData = await request.formData();
     const jsonData = Object.fromEntries(rawFormData);
     const { error, data, success } = await createSiteSchema.safeParseAsync(jsonData);

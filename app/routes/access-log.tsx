@@ -4,15 +4,13 @@ import type { Route } from "./+types/access-log";
 import { encryptValue } from "~/lib/crypt.server";
 import { AccessLogEntity } from "~/lib/database/access-log.server";
 import { markAccessLogExitSchema } from "~/lib/schemas/access-log";
-import { getSessionSite, getSessionUser } from "~/lib/session.server";
+import { getSessionSite } from "~/lib/session.server";
 import { UserEntity } from "~/lib/database/user.server";
 import z from "zod";
+import { isAuthenticated } from "~/lib/auth.server";
 
 export async function loader({ request }: Route.LoaderArgs) {
-  const user = await getSessionUser(request);
-  if (!user) {
-    throw redirect("/login");
-  }
+  await isAuthenticated(request);
   return null;
 }
 
@@ -41,11 +39,7 @@ export async function action({ params, request }: Route.ActionArgs) {
     return { errors: z.treeifyError(error) };
   }
 
-  const sessionUser = await getSessionUser(request);
-
-  if (!sessionUser) {
-    throw new Response("Unauthorized", { status: 401 });
-  }
+  const sessionUser = await isAuthenticated(request);
 
   const exitRecordedBy = await UserEntity.getByUsername(sessionUser.username);
 

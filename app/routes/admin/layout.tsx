@@ -1,9 +1,8 @@
-import { Outlet, redirect } from "react-router";
-import { UserRole } from "../../../prisma/generated/prisma/enums";
-import { getSessionUser } from "~/lib/session.server";
+import { Outlet } from "react-router";
 import type { Route } from "./+types/layout";
 import { SidebarInset, SidebarProvider } from "~/components/ui/sidebar";
 import AppSidebar, { type SidebarLinkItem } from "~/components/app-sidebar";
+import { validateUserRole } from "~/lib/auth.server";
 
 const SIDEBAR_ITEMS: Array<SidebarLinkItem> = [
   {
@@ -24,16 +23,7 @@ const SIDEBAR_ITEMS: Array<SidebarLinkItem> = [
 ];
 
 export async function loader({ request }: Route.LoaderArgs) {
-  const user = await getSessionUser(request);
-
-  if (!user) {
-    throw redirect("/login");
-  }
-
-  if (!user.role || user.role !== UserRole.ADMIN) {
-    throw redirect("/unauthorized");
-  }
-
+  await validateUserRole(request, "ADMIN");
   return null;
 }
 

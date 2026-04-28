@@ -8,10 +8,13 @@ import { createUserSchema } from "~/lib/schemas/user";
 import { SiteEntity } from "~/lib/database/site.server";
 import { DepartmentEntity } from "~/lib/database/department.server";
 import { useMemo } from "react";
+import { validateUserRole } from "~/lib/auth.server";
 
 const USER_GLOBAL_FILTER_COLUMNS = ["fullName", "username"];
 
-export async function loader() {
+export async function loader({ request }: Route.LoaderArgs) {
+  await validateUserRole(request, "ADMIN");
+
   const [users, sites, departments] = await Promise.all([
     UserEntity.getAll(),
     SiteEntity.findMany(),
@@ -25,6 +28,7 @@ export async function action({ request }: Route.ActionArgs) {
   const start = performance.now();
 
   try {
+    await validateUserRole(request, "ADMIN");
     const rawFormData = await request.formData();
     const jsonData = Object.fromEntries(rawFormData);
     const { error, data, success } =
