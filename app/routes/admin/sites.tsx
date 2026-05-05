@@ -1,11 +1,14 @@
-import { SiteEntity } from "~/lib/database/site.server";
-import type { Route } from "./+types";
 import DataTable from "~/components/ui/data-table";
 import { siteColumns } from "~/lib/columns/site";
-import CreateSite from "./create";
-import z from "zod";
-import { createSiteSchema } from "~/lib/schemas/site";
+import { SiteEntity } from "~/lib/database/site.server";
 import { validateUserRole } from "~/lib/auth.server";
+import {
+  createSite,
+  deleteSite,
+  updateSite,
+} from "~/lib/services/sites.server";
+import CreateSite from "~/routes/admin/sites/create";
+import type { Route } from "./+types/sites";
 
 export async function loader({ request }: Route.LoaderArgs) {
   await validateUserRole(request, "ADMIN");
@@ -17,20 +20,27 @@ export async function loader({ request }: Route.LoaderArgs) {
 
 export async function action({ request }: Route.ActionArgs) {
   await validateUserRole(request, "ADMIN");
+  const method = request.method.toUpperCase();
   const rawFormData = await request.formData();
   const jsonData = Object.fromEntries(rawFormData);
-  const { error, data, success } = await createSiteSchema.safeParseAsync(jsonData);
 
-  if (error) {
-    return { errors: z.treeifyError(error) };
+  if (method === "POST") {
+    return await createSite(jsonData);
   }
 
-  await SiteEntity.create(data);
+  if (method === "PUT" || method === "PATCH") {
+    return await updateSite(jsonData);
+  }
 
-  return { success };
+  if (method === "DELETE") {
+    return await deleteSite(jsonData);
+  }
 }
 
-export default function IndexSites({ loaderData, actionData }: Route.ComponentProps) {
+export default function IndexSites({
+  loaderData,
+  actionData,
+}: Route.ComponentProps) {
   return (
     <div className="grid space-y-6">
       <div className="flex justify-between items-center">

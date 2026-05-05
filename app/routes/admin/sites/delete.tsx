@@ -4,7 +4,7 @@ import { Button } from "~/components/ui/button";
 
 export default function DeleteSite({ siteId }: { siteId: string }) {
   return (
-    <Form method="delete" action={`/admin/sites/${siteId}`}>
+    <Form method="delete" action={`/admin/sites?id=${siteId}`}>
       <input name="id" value={siteId} type="hidden" />
       <Button type="submit" variant="destructive">
         <TrashIcon />
