@@ -42,9 +42,9 @@ export default function UserDetails({
   departments,
 }: UserDetailsProps) {
   const [open, setOpen] = useState(false);
-  const patchFetcher = useFetcher<{ errors?: unknown }>();
+  const patchFetcher = useFetcher<{ error?: unknown }>();
 
-  const patchErrors = patchFetcher.data?.errors;
+  const patchErrors = patchFetcher.data?.error;
   const formId = `user-form-${user.id}`;
 
   return (
@@ -64,7 +64,7 @@ export default function UserDetails({
         <patchFetcher.Form
           id={formId}
           method="patch"
-          action={`/admin/users/${user.id}`}
+          action={`/admin/users?id=${user.id}`}
           className="space-y-4"
         >
           <Input name="id" defaultValue={user.id} type="hidden" />

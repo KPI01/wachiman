@@ -1,15 +1,13 @@
 import { UserEntity } from "~/lib/database/user.server";
-import type { Route } from "./+types";
 import DataTable from "~/components/ui/data-table";
 import { getUserColumns } from "~/lib/columns/user";
-import CreateUser from "./create";
-import z from "zod";
-import { createUserSchema } from "~/lib/schemas/user";
+import CreateUser from "./users/create";
 import { SiteEntity } from "~/lib/database/site.server";
 import { DepartmentEntity } from "~/lib/database/department.server";
 import { useMemo } from "react";
 import { validateUserRole } from "~/lib/auth.server";
-import { createUser, updateUser } from "~/lib/services/users.server";
+import { createUser, trashUser, updateUser } from "~/lib/services/users.server";
+import type { Route } from "./+types/users";
 
 const USER_GLOBAL_FILTER_COLUMNS = ["fullName", "username"];
 
@@ -37,6 +35,10 @@ export async function action({ request, }: Route.ActionArgs) {
 
   if (method === "PUT" || method === "PATCH") {
     return await updateUser(jsonData)
+  }
+
+  if (method === "DELETE") {
+    return await trashUser(jsonData)
   }
 }
 

@@ -28,9 +28,7 @@ export default [
   route("admin", "routes/admin/layout.tsx", [
     index("routes/admin/home.tsx"),
 
-    // Gestion de usuarios
-    route("users", "routes/admin/users/index.tsx"),
-    route("users/:userId", "routes/admin/users/detail.tsx"),
+    route("users", "routes/admin/users.tsx"),
 
     // Gestion de centros
     route("sites", "routes/admin/sites/index.tsx"),

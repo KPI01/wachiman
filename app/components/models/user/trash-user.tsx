@@ -4,7 +4,7 @@ import { Button } from "~/components/ui/button";
 
 export default function TrashUser({ userId }: { userId: string }) {
   return (
-    <Form method="delete" action={`/admin/users/${userId}`}>
+    <Form method="delete" action={`/admin/users?id=${userId}`}>
       <input name="id" value={userId} type="hidden" />
       <Button type="submit" variant="destructive" aria-label="Eliminar usuario">
         <TrashIcon />
