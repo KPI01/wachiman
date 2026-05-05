@@ -8,53 +8,7 @@ import AlertDialogContainer, {
 } from "~/components/containers/alert-dialog-container";
 import { Input } from "~/components/ui/input";
 import FieldWrapper from "~/components/ui/wrappers/field-wrapper";
-import { DepartmentEntity } from "~/lib/database/department.server";
-import {
-  deleteDepartmentSchema,
-  updateDepartmentSchema,
-} from "~/lib/schemas/department";
-import type { Route } from "./+types/detail";
-import z from "zod";
 import { getFieldErrors } from "~/lib/utils/zod-errors";
-import { validateUserRole } from "~/lib/auth.server";
-
-export async function action({ request }: Route.ActionArgs) {
-  await validateUserRole(request, "ADMIN");
-
-  if (request.method === "PATCH") {
-    const rawFormData = await request.formData();
-    const jsonData = Object.fromEntries(rawFormData);
-    const { success, error, data } =
-      await updateDepartmentSchema.safeParseAsync(jsonData);
-
-    if (!success) {
-      return { errors: z.treeifyError(error) };
-    }
-
-    const { id, ...dataWithoutId } = data;
-
-    await DepartmentEntity.update(id, dataWithoutId);
-
-    return { success: true };
-  }
-
-  if (request.method === "DELETE") {
-    const rawFormData = await request.formData();
-    const jsonData = Object.fromEntries(rawFormData);
-    const { success, error, data } =
-      await deleteDepartmentSchema.safeParseAsync(jsonData);
-
-    if (!success) {
-      return { errors: z.treeifyError(error) };
-    }
-
-    await DepartmentEntity.delete(data.id);
-
-    return { success: true };
-  }
-
-  return null;
-}
 
 type DepartmentDetailsProps = {
   department: Department;
@@ -86,7 +40,7 @@ export function DepartmentDetails({ department }: DepartmentDetailsProps) {
       <patchFetcher.Form
         id={formId}
         method="patch"
-        action={`/admin/departments/${department.id}`}
+        action={`/admin/departments?id=${department.id}`}
         className="space-y-4"
       >
         <Input name="id" defaultValue={department.id} type="hidden" />

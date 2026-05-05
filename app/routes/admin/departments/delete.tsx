@@ -8,7 +8,7 @@ export default function DeleteDepartment({
   departmentId: string;
 }) {
   return (
-    <Form method="delete" action={`/admin/departments/${departmentId}`}>
+    <Form method="delete" action={`/admin/departments?id=${departmentId}`}>
       <input name="id" value={departmentId} type="hidden" />
       <Button type="submit" variant="destructive">
         <TrashIcon />

@@ -1,11 +1,14 @@
-import z from "zod";
 import DataTable from "~/components/ui/data-table";
 import { departmentColumns } from "~/lib/columns/department";
 import { DepartmentEntity } from "~/lib/database/department.server";
-import { createDepartmentSchema } from "~/lib/schemas/department";
-import type { Route } from "./+types";
-import CreateDepartment from "./create";
 import { validateUserRole } from "~/lib/auth.server";
+import {
+  createDepartment,
+  deleteDepartment,
+  updateDepartment,
+} from "~/lib/services/departments.server";
+import CreateDepartment from "~/routes/admin/departments/create";
+import type { Route } from "./+types/departments";
 
 export async function loader({ request }: Route.LoaderArgs) {
   await validateUserRole(request, "ADMIN");
@@ -17,21 +20,27 @@ export async function loader({ request }: Route.LoaderArgs) {
 
 export async function action({ request }: Route.ActionArgs) {
   await validateUserRole(request, "ADMIN");
+  const method = request.method.toUpperCase();
   const rawFormData = await request.formData();
   const jsonData = Object.fromEntries(rawFormData);
-  const { error, data, success } =
-    await createDepartmentSchema.safeParseAsync(jsonData);
 
-  if (error) {
-    return { errors: z.treeifyError(error) };
+  if (method === "POST") {
+    return await createDepartment(jsonData);
   }
 
-  await DepartmentEntity.create(data);
+  if (method === "PUT" || method === "PATCH") {
+    return await updateDepartment(jsonData);
+  }
 
-  return { success };
+  if (method === "DELETE") {
+    return await deleteDepartment(jsonData);
+  }
 }
 
-export default function IndexDepartments({ loaderData, actionData }: Route.ComponentProps) {
+export default function IndexDepartments({
+  loaderData,
+  actionData,
+}: Route.ComponentProps) {
   return (
     <div className="grid space-y-6">
       <div className="flex justify-between items-center">
