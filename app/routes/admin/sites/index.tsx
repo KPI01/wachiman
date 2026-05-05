@@ -16,24 +16,18 @@ export async function loader({ request }: Route.LoaderArgs) {
 }
 
 export async function action({ request }: Route.ActionArgs) {
-  const start = performance.now();
+  await validateUserRole(request, "ADMIN");
+  const rawFormData = await request.formData();
+  const jsonData = Object.fromEntries(rawFormData);
+  const { error, data, success } = await createSiteSchema.safeParseAsync(jsonData);
 
-  try {
-    await validateUserRole(request, "ADMIN");
-    const rawFormData = await request.formData();
-    const jsonData = Object.fromEntries(rawFormData);
-    const { error, data, success } = await createSiteSchema.safeParseAsync(jsonData);
-
-    if (error) {
-      return { errors: z.treeifyError(error) };
-    }
-
-    await SiteEntity.create(data);
-
-    return { success };
-  } finally {
-    console.log(`[/admin/sites] ${(performance.now() - start).toFixed(2)}ms`);
+  if (error) {
+    return { errors: z.treeifyError(error) };
   }
+
+  await SiteEntity.create(data);
+
+  return { success };
 }
 
 export default function IndexSites({ loaderData, actionData }: Route.ComponentProps) {

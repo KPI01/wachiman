@@ -5,7 +5,6 @@ import {
   randomBytes,
   timingSafeEqual,
 } from "node:crypto";
-import { performance } from "node:perf_hooks";
 
 const ENCRYPTION_KEY_NAME = "ENCRIPTION_KEY";
 const ALGORITHM = "aes-256-gcm";
@@ -70,35 +69,25 @@ function parseEncryptedValueEnvelope(
 }
 
 export function encryptValue(value: string): EncryptedValueEnvelope {
-  const start = performance.now();
+  const iv = randomBytes(IV_LENGTH);
+  const cipher = createCipheriv(ALGORITHM, encryptionKey, iv, {
+    authTagLength: AUTH_TAG_LENGTH,
+  });
+  const ciphertext = Buffer.concat([
+    cipher.update(value, "utf8"),
+    cipher.final(),
+  ]);
 
-  try {
-    const iv = randomBytes(IV_LENGTH);
-    const cipher = createCipheriv(ALGORITHM, encryptionKey, iv, {
-      authTagLength: AUTH_TAG_LENGTH,
-    });
-    const ciphertext = Buffer.concat([
-      cipher.update(value, "utf8"),
-      cipher.final(),
-    ]);
-
-    return {
-      v: 1,
-      alg: ALGORITHM,
-      iv: iv.toString("base64"),
-      tag: cipher.getAuthTag().toString("base64"),
-      ct: ciphertext.toString("base64"),
-    };
-  } finally {
-    console.log(
-      `[encryptValue] ${(performance.now() - start).toFixed(2)}ms`,
-    );
-  }
+  return {
+    v: 1,
+    alg: ALGORITHM,
+    iv: iv.toString("base64"),
+    tag: cipher.getAuthTag().toString("base64"),
+    ct: ciphertext.toString("base64"),
+  };
 }
 
 export function decryptValue(encryptedValue: unknown): string {
-  const start = performance.now();
-
   try {
     const envelope = parseEncryptedValueEnvelope(encryptedValue);
     const iv = Buffer.from(envelope.iv, "base64");
@@ -120,10 +109,6 @@ export function decryptValue(encryptedValue: unknown): string {
     ]).toString("utf8");
   } catch {
     throw new Error("Invalid encrypted value");
-  } finally {
-    console.log(
-      `[decryptValue] ${(performance.now() - start).toFixed(2)}ms`,
-    );
   }
 }
 
@@ -131,8 +116,6 @@ export function validateEncryptedValue(
   encryptedValue: unknown,
   plainValue: string,
 ) {
-  const start = performance.now();
-
   try {
     const decryptedValue = decryptValue(encryptedValue);
     const decryptedBuffer = Buffer.from(decryptedValue, "utf8");
@@ -145,9 +128,5 @@ export function validateEncryptedValue(
     return timingSafeEqual(decryptedBuffer, plainValueBuffer);
   } catch {
     return false;
-  } finally {
-    console.log(
-      `[validateEncryptedValue] ${(performance.now() - start).toFixed(2)}ms`,
-    );
   }
 }

@@ -96,8 +96,6 @@ function main() {
   const nextEnvContent = upsertEnvValue(envContent, ENCRYPTION_KEY_NAME, key);
 
   writeFileSync(envPath, nextEnvContent, "utf8");
-
-  console.log(`Updated ${ENCRYPTION_KEY_NAME} in ${envPath}`);
 }
 
 try {

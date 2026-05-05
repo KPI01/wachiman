@@ -15,7 +15,6 @@ export async function handleCreateAccessLog(
   request: Request,
   options: HandleCreateAccessLogOptions = {},
 ) {
-  console.log("[handleCreateAccessLog] start");
   const rawFormData = await request.formData();
   const sessionUser = await isAuthenticated(request);
 
@@ -29,7 +28,6 @@ export async function handleCreateAccessLog(
     const sessionSite = await getSessionSite(request);
 
     if (!sessionSite) {
-      console.log("[handleCreateAccessLog][no Site in session] end");
       throw new Response("Unauthorized", { status: 401 });
     }
 
@@ -41,18 +39,12 @@ export async function handleCreateAccessLog(
     await createAccessLogSchema.safeParseAsync(jsonData);
 
   if (error) {
-    console.log(
-      "[handleCreateAccessLog][validation error]",
-      JSON.stringify(z.treeifyError(error)),
-    );
-
     return { errors: z.treeifyError(error) };
   }
 
   const createdBy = await UserEntity.getByUsername(sessionUser.username);
 
   if (!createdBy) {
-    console.log("[handleCreateAccessLog][createdBy not found] end");
     throw new Response("Unauthorized", { status: 401 });
   }
 
@@ -88,6 +80,5 @@ export async function handleCreateAccessLog(
       : undefined,
   });
 
-  console.log("[handleCreateAccessLog][success] end");
   return { success };
 }

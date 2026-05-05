@@ -87,10 +87,6 @@ async function main() {
         departmentId: department.id,
       },
     });
-
-    console.log(`Site principal preparado: ${site.slug}`);
-    console.log(`Departamento inicial preparado: ${department.slug}`);
-    console.log(`Admin inicial preparado: ${username}`);
   } finally {
     await prisma.$disconnect();
   }

@@ -43,51 +43,20 @@ export async function loader({ request }: Route.LoaderArgs) {
 }
 
 export async function action({ request }: Route.ActionArgs) {
-  const start = performance.now();
+  await validateUserRole(request, "ADMIN");
+  if (request.method === "PATCH") {
+    const rawFormData = await request.formData();
+    const jsonData = Object.fromEntries(rawFormData);
+    const { success, error, data } =
+      await updatePlannedAccessSchema.safeParseAsync(jsonData);
 
-  try {
-    await validateUserRole(request, "ADMIN");
-    if (request.method === "PATCH") {
-      const rawFormData = await request.formData();
-      const jsonData = Object.fromEntries(rawFormData);
-      const { success, error, data } =
-        await updatePlannedAccessSchema.safeParseAsync(jsonData);
-
-      if (!success) {
-        return { errors: z.treeifyError(error) };
-      }
-
-      const { id, ...dataWithoutId } = data;
-
-      await PlannedAccessEntity.update(id, dataWithoutId);
-
-      const persons = parseFormDataArrays(rawFormData, "persons", [
-        "firstNameSnapshot",
-        "middleNameSnapshot",
-        "lastNameSnapshot",
-        "secondLastNameSnapshot",
-        "legalIdSnapshot",
-      ]);
-
-      const vehicles = parseFormDataArrays(rawFormData, "vehicles", [
-        "typeSnapshot",
-        "brandSnapshot",
-        "modelSnapshot",
-        "plateSnapshot",
-      ]);
-
-      if (persons.length > 0) {
-        await PlannedAccessEntity.addPersons(id, persons);
-      }
-
-      if (vehicles.length > 0) {
-        await PlannedAccessEntity.addVehicles(id, vehicles);
-      }
-
-      return { success: true };
+    if (!success) {
+      return { errors: z.treeifyError(error) };
     }
 
-    const rawFormData = await request.formData();
+    const { id, ...dataWithoutId } = data;
+
+    await PlannedAccessEntity.update(id, dataWithoutId);
 
     const persons = parseFormDataArrays(rawFormData, "persons", [
       "firstNameSnapshot",
@@ -104,28 +73,51 @@ export async function action({ request }: Route.ActionArgs) {
       "plateSnapshot",
     ]);
 
-    const jsonData = {
-      expectedStartDate: rawFormData.get("expectedStartDate"),
-      expectedEndDate: rawFormData.get("expectedEndDate"),
-      persons,
-      vehicles,
-    };
-
-    const { error, data, success } =
-      await createPlannedAccessSchema.safeParseAsync(jsonData);
-
-    if (error) {
-      return { errors: z.treeifyError(error) };
+    if (persons.length > 0) {
+      await PlannedAccessEntity.addPersons(id, persons);
     }
 
-    await PlannedAccessEntity.create(data);
+    if (vehicles.length > 0) {
+      await PlannedAccessEntity.addVehicles(id, vehicles);
+    }
 
-    return { success };
-  } finally {
-    console.log(
-      `[/admin/planned-accesses] ${(performance.now() - start).toFixed(2)}ms`,
-    );
+    return { success: true };
   }
+
+  const rawFormData = await request.formData();
+
+  const persons = parseFormDataArrays(rawFormData, "persons", [
+    "firstNameSnapshot",
+    "middleNameSnapshot",
+    "lastNameSnapshot",
+    "secondLastNameSnapshot",
+    "legalIdSnapshot",
+  ]);
+
+  const vehicles = parseFormDataArrays(rawFormData, "vehicles", [
+    "typeSnapshot",
+    "brandSnapshot",
+    "modelSnapshot",
+    "plateSnapshot",
+  ]);
+
+  const jsonData = {
+    expectedStartDate: rawFormData.get("expectedStartDate"),
+    expectedEndDate: rawFormData.get("expectedEndDate"),
+    persons,
+    vehicles,
+  };
+
+  const { error, data, success } =
+    await createPlannedAccessSchema.safeParseAsync(jsonData);
+
+  if (error) {
+    return { errors: z.treeifyError(error) };
+  }
+
+  await PlannedAccessEntity.create(data);
+
+  return { success };
 }
 
 export default function IndexPlannedAccesses({

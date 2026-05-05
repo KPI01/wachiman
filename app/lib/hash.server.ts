@@ -1,5 +1,4 @@
 import { randomBytes, timingSafeEqual, scrypt as scryptCallback } from "node:crypto";
-import { performance } from "node:perf_hooks";
 import { promisify } from "node:util";
 
 const scrypt = promisify(scryptCallback);
@@ -9,42 +8,28 @@ const KEY_LENGTH = 64;
 const HASH_SEPARATOR = ":";
 
 export async function hashText(text: string) {
-  const start = performance.now();
+  const salt = randomBytes(SALT_LENGTH).toString("hex");
+  const derivedKey = (await scrypt(text, salt, KEY_LENGTH)) as Buffer;
 
-  try {
-    const salt = randomBytes(SALT_LENGTH).toString("hex");
-    const derivedKey = (await scrypt(text, salt, KEY_LENGTH)) as Buffer;
-
-    return `${salt}${HASH_SEPARATOR}${derivedKey.toString("hex")}`;
-  } finally {
-    console.log(`[hashText] hashText took ${(performance.now() - start).toFixed(2)}ms`);
-  }
+  return `${salt}${HASH_SEPARATOR}${derivedKey.toString("hex")}`;
 }
 
 export async function validateHashedText(
   hashedText: string,
   plainText: string,
 ) {
-  const start = performance.now();
+  const [salt, storedHash] = hashedText.split(HASH_SEPARATOR);
 
-  try {
-    const [salt, storedHash] = hashedText.split(HASH_SEPARATOR);
-
-    if (!salt || !storedHash) {
-      return false;
-    }
-
-    const derivedKey = (await scrypt(plainText, salt, KEY_LENGTH)) as Buffer;
-    const storedHashBuffer = Buffer.from(storedHash, "hex");
-
-    if (storedHashBuffer.length !== derivedKey.length) {
-      return false;
-    }
-
-    return timingSafeEqual(storedHashBuffer, derivedKey);
-  } finally {
-    console.log(
-      `[validateHashedText] validateHashedText took ${(performance.now() - start).toFixed(2)}ms`,
-    );
+  if (!salt || !storedHash) {
+    return false;
   }
+
+  const derivedKey = (await scrypt(plainText, salt, KEY_LENGTH)) as Buffer;
+  const storedHashBuffer = Buffer.from(storedHash, "hex");
+
+  if (storedHashBuffer.length !== derivedKey.length) {
+    return false;
+  }
+
+  return timingSafeEqual(storedHashBuffer, derivedKey);
 }

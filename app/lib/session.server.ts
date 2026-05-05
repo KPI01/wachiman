@@ -1,4 +1,3 @@
-import { performance } from "node:perf_hooks";
 import { createCookieSessionStorage, redirect } from "react-router";
 import {
   UserRole,
@@ -61,37 +60,25 @@ const sessionStorage = createCookieSessionStorage<SessionPayload>({
 });
 
 export async function createSession(data: SessionPayload) {
-  const start = performance.now();
+  const session = await sessionStorage.getSession();
 
-  try {
-    const session = await sessionStorage.getSession();
-
-    for (const [key, value] of Object.entries(data)) {
-      session.set(key, value);
-    }
-
-    return await sessionStorage.commitSession(session);
-  } finally {
-    console.log(`[createSession] ${(performance.now() - start).toFixed(2)}ms`);
+  for (const [key, value] of Object.entries(data)) {
+    session.set(key, value);
   }
+
+  return await sessionStorage.commitSession(session);
 }
 
 export async function addSessionData(request: Request, data: SessionPayload) {
-  const start = performance.now();
+  const session = await sessionStorage.getSession(
+    request.headers.get("Cookie"),
+  );
 
-  try {
-    const session = await sessionStorage.getSession(
-      request.headers.get("Cookie"),
-    );
-
-    for (const [key, value] of Object.entries(data)) {
-      session.set(key, value);
-    }
-
-    return await sessionStorage.commitSession(session);
-  } finally {
-    console.log(`[addSessionData] ${(performance.now() - start).toFixed(2)}ms`);
+  for (const [key, value] of Object.entries(data)) {
+    session.set(key, value);
   }
+
+  return await sessionStorage.commitSession(session);
 }
 
 function isSessionUser(value: unknown): value is SessionUser {
@@ -135,79 +122,53 @@ function isSessionDepartment(value: unknown): value is SessionDepartment {
 }
 
 export async function getSessionUser(request: Request) {
-  const start = performance.now();
+  const session = await sessionStorage.getSession(
+    request.headers.get("Cookie"),
+  );
 
-  try {
-    const session = await sessionStorage.getSession(
-      request.headers.get("Cookie"),
-    );
+  const user = session.get("user");
 
-    const user = session.get("user");
-
-    if (!isSessionUser(user)) {
-      return null;
-    }
-
-    return user;
-  } finally {
-    console.log(`[getSessionUser] ${(performance.now() - start).toFixed(2)}ms`);
+  if (!isSessionUser(user)) {
+    return null;
   }
+
+  return user;
 }
 
 export async function getSessionSite(request: Request) {
-  const start = performance.now();
+  const session = await sessionStorage.getSession(
+    request.headers.get("Cookie"),
+  );
 
-  try {
-    const session = await sessionStorage.getSession(
-      request.headers.get("Cookie"),
-    );
+  const user = session.get("user");
 
-    const user = session.get("user");
-
-    if (!isSessionUser(user)) {
-      return null;
-    }
-
-    return user.site;
-  } finally {
-    console.log(`[getSessionSite] ${(performance.now() - start).toFixed(2)}ms`);
+  if (!isSessionUser(user)) {
+    return null;
   }
+
+  return user.site;
 }
 
 export async function getSessionDepartment(request: Request) {
-  const start = performance.now();
+  const session = await sessionStorage.getSession(
+    request.headers.get("Cookie"),
+  );
 
-  try {
-    const session = await sessionStorage.getSession(
-      request.headers.get("Cookie"),
-    );
+  const user = session.get("user");
 
-    const user = session.get("user");
-
-    if (!isSessionUser(user)) {
-      return null;
-    }
-
-    return user.department;
-  } finally {
-    console.log(
-      `[getSessionDepartment] ${(performance.now() - start).toFixed(2)}ms`,
-    );
+  if (!isSessionUser(user)) {
+    return null;
   }
+
+  return user.department;
 }
 
 export async function destroySession(request: Request) {
-  const start = performance.now();
+  const session = await sessionStorage.getSession(
+    request.headers.get("Cookie"),
+  );
 
-  try {
-    const session = await sessionStorage.getSession(
-      request.headers.get("Cookie"),
-    );
-
-    return await sessionStorage.destroySession(session);
-  } finally {
-    console.log(`[destroySession] ${(performance.now() - start).toFixed(2)}ms`);
-  }
+  return await sessionStorage.destroySession(session);
 }
 
 export { sessionStorage };

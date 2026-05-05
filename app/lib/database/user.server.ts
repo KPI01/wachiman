@@ -1,4 +1,3 @@
-import { performance } from "node:perf_hooks";
 import type { Prisma } from "../../../prisma/generated/prisma/client";
 import { hashText } from "../hash.server";
 import { prisma } from "../prisma.server";
@@ -40,27 +39,19 @@ type UpdateUserInput = {
 
 export class UserEntity {
   public static async create(data: CreateUserInput) {
-    const start = performance.now();
+    const hashedPassword = await hashText(data.password);
+    const user = await prisma.user.create({
+      data: {
+        fullName: data.fullName,
+        username: data.username,
+        role: data.role,
+        password: hashedPassword,
+        siteId: data.siteId,
+        departmentId: data.departmentId,
+      },
+    });
 
-    try {
-      const hashedPassword = await hashText(data.password);
-      const user = await prisma.user.create({
-        data: {
-          fullName: data.fullName,
-          username: data.username,
-          role: data.role,
-          password: hashedPassword,
-          siteId: data.siteId,
-          departmentId: data.departmentId,
-        },
-      });
-
-      return user;
-    } finally {
-      console.log(
-        `[UserEntity.create] ${(performance.now() - start).toFixed(2)}ms`,
-      );
-    }
+    return user;
   }
 
   public static async getByUsername(
@@ -75,143 +66,95 @@ export class UserEntity {
     username: string,
     relations: { site?: boolean; department?: boolean } = {},
   ) {
-    const start = performance.now();
-
-    try {
-      return prisma.user.findUnique({
-        where: {
-          isActive: true,
-          isTrashed: false,
-          username,
-        },
-        include:
-          relations.site || relations.department
-            ? {
-                site: relations.site
-                  ? {
-                      select: {
-                        id: true,
-                        name: true,
-                      },
-                    }
-                  : undefined,
-                department: relations.department
-                  ? {
-                      select: {
-                        id: true,
-                        name: true,
-                      },
-                    }
-                  : undefined,
-              }
-            : undefined,
-      });
-    } finally {
-      console.log(
-        `[UserEntity.getByUsername] ${(performance.now() - start).toFixed(2)}ms`,
-      );
-    }
+    return prisma.user.findUnique({
+      where: {
+        isActive: true,
+        isTrashed: false,
+        username,
+      },
+      include:
+        relations.site || relations.department
+          ? {
+              site: relations.site
+                ? {
+                    select: {
+                      id: true,
+                      name: true,
+                    },
+                  }
+                : undefined,
+              department: relations.department
+                ? {
+                    select: {
+                      id: true,
+                      name: true,
+                    },
+                  }
+                : undefined,
+            }
+          : undefined,
+    });
   }
 
   public static async getById(id: string) {
-    const start = performance.now();
-
-    try {
-      return prisma.user.findUnique({
-        where: {
-          isActive: true,
-          isTrashed: false,
-          id,
-        },
-      });
-    } finally {
-      console.log(
-        `[UserEntity.getById] ${(performance.now() - start).toFixed(2)}ms`,
-      );
-    }
+    return prisma.user.findUnique({
+      where: {
+        isActive: true,
+        isTrashed: false,
+        id,
+      },
+    });
   }
 
   public static async getAll(
     isActive: boolean = true,
     isTrashed: boolean = false,
   ) {
-    const start = performance.now();
+    const users = await prisma.user.findMany({
+      where: {
+        isActive,
+        isTrashed,
+      },
+    });
 
-    try {
-      const users = await prisma.user.findMany({
-        where: {
-          isActive,
-          isTrashed,
-        },
-      });
-
-      return users;
-    } finally {
-      console.log(
-        `[UserEntity.getAll] ${(performance.now() - start).toFixed(2)}ms`,
-      );
-    }
+    return users;
   }
 
   public static async update(id: string, data: UpdateUserInput) {
-    const start = performance.now();
+    const updatedUser = await prisma.user.update({
+      where: { id },
+      data: {
+        fullName: data.fullName,
+        username: data.username,
+        role: data.role,
+        isActive: data.isActive,
+        siteId: data.siteId,
+        departmentId: data.departmentId,
+      },
+    });
 
-    try {
-      const updatedUser = await prisma.user.update({
-        where: { id },
-        data: {
-          fullName: data.fullName,
-          username: data.username,
-          role: data.role,
-          isActive: data.isActive,
-          siteId: data.siteId,
-          departmentId: data.departmentId,
-        },
-      });
-
-      return updatedUser;
-    } finally {
-      console.log(
-        `[UserEntity.update] ${(performance.now() - start).toFixed(2)}ms`,
-      );
-    }
+    return updatedUser;
   }
 
   public static async trash(id: string) {
-    const start = performance.now();
+    const trashedUser = await prisma.user.update({
+      where: { id },
+      data: {
+        isActive: false,
+        isTrashed: true,
+      },
+    });
 
-    try {
-      const trashedUser = await prisma.user.update({
-        where: { id },
-        data: {
-          isActive: false,
-          isTrashed: true,
-        },
-      });
-
-      return trashedUser;
-    } finally {
-      console.log(
-        `[UserEntity.trash] ${(performance.now() - start).toFixed(2)}ms`,
-      );
-    }
+    return trashedUser;
   }
 
   public static async updatePassword(id: string, newPassword: string) {
-    const start = performance.now();
+    const hashedPassword = await hashText(newPassword);
+    const user = await prisma.user.update({
+      where: { id },
+      data: { password: hashedPassword },
+    });
 
-    try {
-      const hashedPassword = await hashText(newPassword);
-      const user = await prisma.user.update({
-        where: { id },
-        data: { password: hashedPassword },
-      });
-
-      return user;
-    } finally {
-      console.log(
-        `[UserEntity.updatePassword] ${(performance.now() - start).toFixed(2)}ms`,
-      );
-    }
+    return user;
   }
 }

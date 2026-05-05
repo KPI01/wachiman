@@ -9,6 +9,7 @@ import { SiteEntity } from "~/lib/database/site.server";
 import { DepartmentEntity } from "~/lib/database/department.server";
 import { useMemo } from "react";
 import { validateUserRole } from "~/lib/auth.server";
+import { createUser, updateUser } from "~/lib/services/users.server";
 
 const USER_GLOBAL_FILTER_COLUMNS = ["fullName", "username"];
 
@@ -24,25 +25,18 @@ export async function loader({ request }: Route.LoaderArgs) {
   return { users, sites, departments };
 }
 
-export async function action({ request }: Route.ActionArgs) {
-  const start = performance.now();
+export async function action({ request, }: Route.ActionArgs) {
+  await validateUserRole(request, "ADMIN");
+  const method = request.method.toUpperCase()
+  const rawFormData = await request.formData();
+  const jsonData = Object.fromEntries(rawFormData);
 
-  try {
-    await validateUserRole(request, "ADMIN");
-    const rawFormData = await request.formData();
-    const jsonData = Object.fromEntries(rawFormData);
-    const { error, data, success } =
-      await createUserSchema.safeParseAsync(jsonData);
+  if (method === "POST") {
+    return await createUser(jsonData)
+  }
 
-    if (error) {
-      return { errors: z.treeifyError(error) };
-    }
-
-    await UserEntity.create(data);
-
-    return { success };
-  } finally {
-    console.log(`[/admin/users] ${(performance.now() - start).toFixed(2)}ms`);
+  if (method === "PUT" || method === "PATCH") {
+    return await updateUser(jsonData)
   }
 }
 
@@ -66,7 +60,7 @@ export default function IndexUsers({
         <CreateUser
           sites={sites}
           departments={departments}
-          errors={actionData?.errors}
+          errors={actionData?.error}
         />
       </div>
       <DataTable

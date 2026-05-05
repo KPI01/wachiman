@@ -1,4 +1,3 @@
-import { performance } from "node:perf_hooks";
 import type { Prisma, Site } from "../../../prisma/generated/prisma/client";
 import { prisma } from "../prisma.server";
 
@@ -53,176 +52,128 @@ type FindManyPlannedAccessFilter = {
 
 export class PlannedAccessEntity {
   public static async create(data: CreatePlannedAccessInput) {
-    const start = performance.now();
-
-    try {
-      const plannedAccess = await prisma.$transaction(async (tx) => {
-        const pa = await tx.plannedAccess.create({
-          data: {
-            expectedStartDate: data.expectedStartDate,
-            expectedEndDate: data.expectedEndDate,
-            ...(data.approvedById ? { approvedById: data.approvedById } : {}),
-          } as Prisma.PlannedAccessUncheckedCreateInput,
-        });
-
-        if (data.persons.length > 0) {
-          await tx.plannedAccessPerson.createMany({
-            data: data.persons.map((p) => ({
-              firstNameSnapshot: p.firstNameSnapshot,
-              middleNameSnapshot: p.middleNameSnapshot ?? null,
-              lastNameSnapshot: p.lastNameSnapshot,
-              secondLastNameSnapshot: p.secondLastNameSnapshot ?? null,
-              legalIdSnapshot: p.legalIdSnapshot,
-              plannedAccessId: pa.id,
-            })),
-          });
-        }
-
-        if (data.vehicles.length > 0) {
-          await tx.plannedAccessVehicle.createMany({
-            data: data.vehicles.map((v) => ({
-              typeSnapshot: v.typeSnapshot,
-              brandSnapshot: v.brandSnapshot ?? null,
-              modelSnapshot: v.modelSnapshot ?? null,
-              plateSnapshot: v.plateSnapshot,
-              plannedAccessId: pa.id,
-            })),
-          });
-        }
-
-        return pa;
+    const plannedAccess = await prisma.$transaction(async (tx) => {
+      const pa = await tx.plannedAccess.create({
+        data: {
+          expectedStartDate: data.expectedStartDate,
+          expectedEndDate: data.expectedEndDate,
+          ...(data.approvedById ? { approvedById: data.approvedById } : {}),
+        } as Prisma.PlannedAccessUncheckedCreateInput,
       });
 
-      return plannedAccess;
-    } finally {
-      console.log(
-        `[PlannedAccessEntity.create] ${(performance.now() - start).toFixed(2)}ms`,
-      );
-    }
+      if (data.persons.length > 0) {
+        await tx.plannedAccessPerson.createMany({
+          data: data.persons.map((p) => ({
+            firstNameSnapshot: p.firstNameSnapshot,
+            middleNameSnapshot: p.middleNameSnapshot ?? null,
+            lastNameSnapshot: p.lastNameSnapshot,
+            secondLastNameSnapshot: p.secondLastNameSnapshot ?? null,
+            legalIdSnapshot: p.legalIdSnapshot,
+            plannedAccessId: pa.id,
+          })),
+        });
+      }
+
+      if (data.vehicles.length > 0) {
+        await tx.plannedAccessVehicle.createMany({
+          data: data.vehicles.map((v) => ({
+            typeSnapshot: v.typeSnapshot,
+            brandSnapshot: v.brandSnapshot ?? null,
+            modelSnapshot: v.modelSnapshot ?? null,
+            plateSnapshot: v.plateSnapshot,
+            plannedAccessId: pa.id,
+          })),
+        });
+      }
+
+      return pa;
+    });
+
+    return plannedAccess;
   }
 
   public static async findById(id: string) {
-    const start = performance.now();
-
-    try {
-      return prisma.plannedAccess.findUnique({
-        where: { id },
-        include: {
-          approvedBy: {
-            select: {
-              id: true,
-              fullName: true,
-            },
+    return prisma.plannedAccess.findUnique({
+      where: { id },
+      include: {
+        approvedBy: {
+          select: {
+            id: true,
+            fullName: true,
           },
-          plannedAccessPersons: true,
-          plannedAccessVehicles: true,
         },
-      });
-    } finally {
-      console.log(
-        `[PlannedAccessEntity.findById] ${(performance.now() - start).toFixed(2)}ms`,
-      );
-    }
+        plannedAccessPersons: true,
+        plannedAccessVehicles: true,
+      },
+    });
   }
 
   public static async findMany(
     filters?: FindManyPlannedAccessFilter,
   ): Promise<PlannedAccessWithRelations[]> {
-    const start = performance.now();
-
-    try {
-      const plannedAccesses = await prisma.plannedAccess.findMany({
-        where: filters ? {} : undefined,
-        orderBy: {
-          createdAt: "desc",
-        },
-        include: {
-          approvedBy: {
-            select: {
-              id: true,
-              fullName: true,
-            },
+    const plannedAccesses = await prisma.plannedAccess.findMany({
+      where: filters ? {} : undefined,
+      orderBy: {
+        createdAt: "desc",
+      },
+      include: {
+        approvedBy: {
+          select: {
+            id: true,
+            fullName: true,
           },
-          plannedAccessPersons: true,
-          plannedAccessVehicles: true,
         },
-      });
+        plannedAccessPersons: true,
+        plannedAccessVehicles: true,
+      },
+    });
 
-      return plannedAccesses;
-    } finally {
-      console.log(
-        `[PlannedAccessEntity.findMany] ${(performance.now() - start).toFixed(2)}ms`,
-      );
-    }
+    return plannedAccesses;
   }
 
   public static async update(id: string, data: UpdatePlannedAccessInput) {
-    const start = performance.now();
+    const updatedPlannedAccess = await prisma.plannedAccess.update({
+      where: { id },
+      data: {
+        expectedStartDate: data.expectedStartDate,
+        expectedEndDate: data.expectedEndDate,
+        status: data.status,
+        approvedAt: data.approvedAt,
+        approvedById: data.approvedById,
+      } as Prisma.PlannedAccessUncheckedUpdateInput,
+    });
 
-    try {
-      const updatedPlannedAccess = await prisma.plannedAccess.update({
-        where: { id },
-        data: {
-          expectedStartDate: data.expectedStartDate,
-          expectedEndDate: data.expectedEndDate,
-          status: data.status,
-          approvedAt: data.approvedAt,
-          approvedById: data.approvedById,
-        } as Prisma.PlannedAccessUncheckedUpdateInput,
-      });
-
-      return updatedPlannedAccess;
-    } finally {
-      console.log(
-        `[PlannedAccessEntity.update] ${(performance.now() - start).toFixed(2)}ms`,
-      );
-    }
+    return updatedPlannedAccess;
   }
 
   public static async addPersons(
     id: string,
     persons: Record<string, string>[],
   ) {
-    const start = performance.now();
-
-    try {
-      await prisma.plannedAccessPerson.createMany({
-        data: persons.map((p) => ({
-          firstNameSnapshot: p.firstNameSnapshot,
-          middleNameSnapshot: p.middleNameSnapshot ?? null,
-          lastNameSnapshot: p.lastNameSnapshot,
-          secondLastNameSnapshot: p.secondLastNameSnapshot ?? null,
-          legalIdSnapshot: p.legalIdSnapshot,
-          plannedAccessId: id,
-        })),
-      });
-    } finally {
-      console.log(
-        `[PlannedAccessEntity.addPersons] ${(performance.now() - start).toFixed(2)}ms`,
-      );
-    }
+    await prisma.plannedAccessPerson.createMany({
+      data: persons.map((p) => ({
+        firstNameSnapshot: p.firstNameSnapshot,
+        middleNameSnapshot: p.middleNameSnapshot ?? null,
+        lastNameSnapshot: p.lastNameSnapshot,
+        secondLastNameSnapshot: p.secondLastNameSnapshot ?? null,
+        legalIdSnapshot: p.legalIdSnapshot,
+        plannedAccessId: id,
+      })),
+    });
   }
 
   public static async addVehicles(
     id: string,
     vehicles: Record<string, string>[],
   ) {
-    const start = performance.now();
-
-    try {
-      await prisma.plannedAccessVehicle.createMany({
-        data: vehicles.map((v) => ({
-          typeSnapshot: v.typeSnapshot,
-          brandSnapshot: v.brandSnapshot ?? null,
-          modelSnapshot: v.modelSnapshot ?? null,
-          plateSnapshot: v.plateSnapshot,
-          plannedAccessId: id,
-        })),
-      });
-    } finally {
-      console.log(
-        `[PlannedAccessEntity.addVehicles] ${(performance.now() - start).toFixed(2)}ms`,
-      );
-    }
+    await prisma.plannedAccessVehicle.createMany({
+      data: vehicles.map((v) => ({
+        typeSnapshot: v.typeSnapshot,
+        brandSnapshot: v.brandSnapshot ?? null,
+        modelSnapshot: v.modelSnapshot ?? null,
+        plateSnapshot: v.plateSnapshot,
+        plannedAccessId: id,
+      })),
+    });
   }
 }
