@@ -1,13 +1,13 @@
 import { UserEntity } from "~/lib/database/user.server";
 import DataTable from "~/components/ui/data-table";
 import { getUserColumns } from "~/lib/columns/user";
-import CreateUser from "./users/create";
 import { SiteEntity } from "~/lib/database/site.server";
 import { DepartmentEntity } from "~/lib/database/department.server";
 import { useMemo } from "react";
 import { validateUserRole } from "~/lib/auth.server";
 import { createUser, trashUser, updateUser } from "~/lib/services/users.server";
 import type { Route } from "./+types/users";
+import CreateUserForm from "~/components/models/user/create-user-form";
 
 const USER_GLOBAL_FILTER_COLUMNS = ["fullName", "username"];
 
@@ -59,7 +59,7 @@ export default function IndexUsers({
       <div className="flex justify-between items-center">
         <h2 className="text-3xl font-bold">Usuarios</h2>
 
-        <CreateUser
+        <CreateUserForm
           sites={sites}
           departments={departments}
           errors={actionData?.error}
