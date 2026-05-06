@@ -6,7 +6,7 @@ import type {
   User,
 } from "../../../prisma/generated/prisma/client";
 import { formatTimestamp } from "../utils";
-import { PlannedAccessDetails } from "~/routes/admin/planned-accesses/detail";
+import { PlannedAccessDetails } from "~/components/models/planned-accesses/planned-access-details";
 import PlannedAccessStatusBadge from "~/components/models/planned-accesses/status-badge";
 import type { ReactNode } from "react";
 

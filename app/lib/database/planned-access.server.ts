@@ -14,7 +14,7 @@ type PlannedAccessWithRelations = Prisma.PlannedAccessGetPayload<{
   };
 }>;
 
-type CreatePlannedAccessPerson = {
+export type CreatePlannedAccessPerson = {
   firstNameSnapshot: string;
   middleNameSnapshot?: string;
   lastNameSnapshot: string;
@@ -22,14 +22,14 @@ type CreatePlannedAccessPerson = {
   legalIdSnapshot: string;
 };
 
-type CreatePlannedAccessVehicle = {
+export type CreatePlannedAccessVehicle = {
   typeSnapshot: string;
   brandSnapshot?: string;
   modelSnapshot?: string;
   plateSnapshot: string;
 };
 
-type CreatePlannedAccessInput = {
+export type CreatePlannedAccessInput = {
   expectedStartDate: Date;
   expectedEndDate?: Date | null;
   approvedById?: string;
@@ -148,7 +148,7 @@ export class PlannedAccessEntity {
 
   public static async addPersons(
     id: string,
-    persons: Record<string, string>[],
+    persons: CreatePlannedAccessPerson[],
   ) {
     await prisma.plannedAccessPerson.createMany({
       data: persons.map((p) => ({
@@ -164,7 +164,7 @@ export class PlannedAccessEntity {
 
   public static async addVehicles(
     id: string,
-    vehicles: Record<string, string>[],
+    vehicles: CreatePlannedAccessVehicle[],
   ) {
     await prisma.plannedAccessVehicle.createMany({
       data: vehicles.map((v) => ({

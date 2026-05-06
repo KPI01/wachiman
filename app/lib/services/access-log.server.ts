@@ -4,6 +4,10 @@ import { UserEntity } from "../database/user.server";
 import { AccessLogEntity } from "../database/access-log.server";
 import { encryptValue } from "../crypt.server";
 
+export async function getManyAccessLogs() {
+    return await AccessLogEntity.findMany()
+}
+
 type CreateAccessLogOptionsType = {
     restrictToSessionSite?: boolean
     authorUsername: string

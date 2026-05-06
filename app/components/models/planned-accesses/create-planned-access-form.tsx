@@ -141,11 +141,7 @@ export default function CreatePlannedAccess({
             htmlFor="expectedEndDate"
             errors={getFieldErrors(errors, "expectedEndDate")}
           >
-            <Input
-              id="expectedEndDate"
-              name="expectedEndDate"
-              type="datetime-local"
-            />
+            <Input id="expectedEndDate" name="expectedEndDate" type="datetime-local" />
           </FieldWrapper>
         </div>
 

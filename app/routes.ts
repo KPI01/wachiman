@@ -22,26 +22,16 @@ export default [
 
   // Protegidas genericas
   route("access-log/:id", "routes/access-log.tsx"),
-  route("access-logs", "routes/access-logs/index.tsx"),
 
   // Admin
   route("admin", "routes/admin/layout.tsx", [
     index("routes/admin/home.tsx"),
     route("users", "routes/admin/users.tsx"),
     route("sites", "routes/admin/sites.tsx"),
-
-    // Gestion de departamentos
     route("departments", "routes/admin/departments.tsx"),
-
-    // Gestion de accesos
-    route("access-logs", "routes/admin/access-logs/index.tsx"),
-
+    route("access-logs", "routes/admin/access-logs.tsx"),
     // Gestion de accesos planificados
-    route("planned-accesses", "routes/admin/planned-accesses/index.tsx"),
-    route(
-      "planned-accesses/:plannedAccessId",
-      "routes/admin/planned-accesses/detail.tsx",
-    ),
+    route("planned-accesses", "routes/admin/planned-accesses.tsx"),
   ]),
 
   // Operador de accesos
