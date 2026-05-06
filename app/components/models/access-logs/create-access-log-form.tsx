@@ -15,8 +15,8 @@ import {
 import { Checkbox } from "~/components/ui/checkbox";
 import { useFetcher } from "react-router";
 import { useEffect, useRef, useState } from "react";
-import type { Site } from "../../../prisma/generated/prisma/client";
-import AccessLogSignature from "~/components/models/access-logs/access-log-signature";
+import type { Site } from "../../../../prisma/generated/prisma/client";
+import AccessLogSignature from "./access-log-signature";
 import { getFieldErrors } from "~/lib/utils/zod-errors";
 
 type FetcherErrors = {
@@ -29,7 +29,7 @@ type AccessLogSiteOption = Pick<Site, "id" | "name">;
 
 type CreateAccessLogProps = {
   sites: AccessLogSiteOption[];
-  actionPath?: string;
+  actionPath: string;
   lockedSiteId?: string;
   buttonLabel?: string;
 };
@@ -43,7 +43,7 @@ function getDefaultEntryTimestamp() {
 
 export default function CreateAccessLog({
   sites,
-  actionPath = "/access-logs",
+  actionPath,
   lockedSiteId,
   buttonLabel = "Crear acceso",
 }: CreateAccessLogProps) {
@@ -332,7 +332,7 @@ export default function CreateAccessLog({
                   />
                 </FieldWrapper>
                 <FieldWrapper
-                  label="Matrícula *"
+                  label="Matricula *"
                   htmlFor="vehiclePlateSnapshot"
                   errors={getFieldErrors(
                     fetcher.data?.errors,

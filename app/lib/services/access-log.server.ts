@@ -1,37 +1,36 @@
 import z from "zod";
-import { createAccessLogSchema } from "../schemas/access-log";
+import { createAccessLogSchema, markAccessLogExitSchema } from "../schemas/access-log";
 import { UserEntity } from "../database/user.server";
-import { AccessLogEntity } from "../database/access-log.server";
+import { AccessLogEntity, type GetAccessLogsInput } from "../database/access-log.server";
 import { encryptValue } from "../crypt.server";
 
-export async function getManyAccessLogs() {
-    return await AccessLogEntity.findMany()
+export async function getManyAccessLogs(input?: GetAccessLogsInput) {
+    return await AccessLogEntity.findMany(input);
 }
 
-type CreateAccessLogOptionsType = {
-    restrictToSessionSite?: boolean
-    authorUsername: string
-}
-export async function createAccessLog(input: Record<string, unknown>, options: CreateAccessLogOptionsType) {
-    let lockedToSiteId: string | undefined
+type CreateAccessLogOptions = {
+    authorUsername: string;
+    lockedSiteId?: string;
+};
 
-    const parsed = await createAccessLogSchema.safeParseAsync(input)
+export async function createAccessLog(
+    input: Record<string, unknown>,
+    options: CreateAccessLogOptions,
+) {
+    const parsed = await createAccessLogSchema.safeParseAsync(input);
 
     if (!parsed.success) {
-        return { success: false, error: z.treeifyError(parsed.error) }
+        return { success: false, errors: z.treeifyError(parsed.error) };
     }
 
-    const data = parsed.data
-    const createdBy = await UserEntity.getByUsername(options.authorUsername)
+    const data = parsed.data;
+    const createdBy = await UserEntity.getByUsername(options.authorUsername);
 
     if (!createdBy) {
-        return { error: "unauthorized" }
+        return { success: false, errors: "unauthorized" };
     }
 
-    let siteId = data.siteId
-    if (options.lockedSiteId) {
-        siteId = lockedSiteId;
-    }
+    const siteId = options.lockedSiteId ?? data.siteId;
 
     await AccessLogEntity.create({
         entryTimestamp: data.entryTimestamp,
@@ -51,13 +50,52 @@ export async function createAccessLog(input: Record<string, unknown>, options: C
         createdById: createdBy.id,
         vehicle: data.withVehicle
             ? {
-                typeSnapshot: data.vehicleTypeSnapshot ?? "",
-                brandSnapshot: data.vehicleBrandSnapshot,
-                modelSnapshot: data.vehicleModelSnapshot,
-                plateSnapshot: data.vehiclePlateSnapshot ?? "",
-            }
+                  typeSnapshot: data.vehicleTypeSnapshot ?? "",
+                  brandSnapshot: data.vehicleBrandSnapshot,
+                  modelSnapshot: data.vehicleModelSnapshot,
+                  plateSnapshot: data.vehiclePlateSnapshot ?? "",
+              }
             : undefined,
     });
 
-    return { success: true }
+    return { success: true };
+}
+
+type MarkAccessLogExitOptions = {
+    authorUsername: string;
+    siteId?: string;
+};
+
+export async function markAccessLogExit(
+    input: Record<string, unknown>,
+    accessLogId: string,
+    options: MarkAccessLogExitOptions,
+) {
+    const parsed = await markAccessLogExitSchema.safeParseAsync(input);
+
+    if (!parsed.success) {
+        return { success: false, errors: z.treeifyError(parsed.error) };
+    }
+
+    const data = parsed.data;
+    const exitRecordedBy = await UserEntity.getByUsername(options.authorUsername);
+
+    if (!exitRecordedBy) {
+        return { success: false, errors: "unauthorized" };
+    }
+
+    const wasExitRecorded = await AccessLogEntity.markExit({
+        accessLogId,
+        exitSignatureEnvelope: encryptValue(
+            JSON.stringify(data.exitSignaturePayload),
+        ),
+        exitRecordedById: exitRecordedBy.id,
+        siteId: options.siteId,
+    });
+
+    if (!wasExitRecorded) {
+        return { success: false, errors: "conflict" };
+    }
+
+    return { success: true };
 }

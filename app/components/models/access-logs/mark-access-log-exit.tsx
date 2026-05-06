@@ -4,7 +4,7 @@ import AlertDialogContainer, {
   AlertDialogCancel,
 } from "~/components/containers/alert-dialog-container";
 import { Button } from "~/components/ui/button";
-import AccessLogSignature from "~/components/models/access-logs/access-log-signature";
+import AccessLogSignature from "./access-log-signature";
 
 type MarkAccessLogExitProps = {
   accessLogId: string;

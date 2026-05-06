@@ -1,5 +1,5 @@
 import { createColumnHelper } from "@tanstack/react-table";
-import MarkAccessLogExit from "~/routes/access-logs/mark-exit";
+import MarkAccessLogExit from "~/components/models/access-logs/mark-access-log-exit";
 import { formatTimestamp } from "../utils";
 import type { AccessLogListItem } from "../database/access-log.server";
 import VehiclePopover from "~/components/models/access-logs/vehicle-popover";
