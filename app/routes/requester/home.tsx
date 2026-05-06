@@ -6,7 +6,7 @@ import { validateUserRole } from "~/lib/auth.server";
 import { getPlannedAccessColumns } from "~/lib/columns/planned-access";
 import { PlannedAccessEntity } from "~/lib/database/planned-access.server";
 import { createPlannedAccessSchema } from "~/lib/schemas/planned-access";
-import CreatePlannedAccess from "~/routes/admin/planned-accesses/create";
+import CreatePlannedAccess from "~/components/models/planned-accesses/create-planned-access-form";
 import RequesterPlannedAccessDetails from "./detail";
 import type { Route } from "./+types/home";
 
@@ -117,7 +117,7 @@ export default function RequesterHome({
       <DataTable
         columns={columns}
         data={plannedAccesses}
-        globalFilterColumns={["status"]}
+        globalFilterColumns={["status", "expectedStartDate", "expectedEndDate"]}
         empty={{
           title: "No hay solicitudes de acceso",
           description:

@@ -2,7 +2,7 @@ import { TrashIcon } from "lucide-react";
 import { Form } from "react-router";
 import { Button } from "~/components/ui/button";
 
-export default function TrashUser({ userId }: { userId: string }) {
+export default function TrashUserBtn({ userId }: { userId: string }) {
   return (
     <Form method="delete" action={`/admin/users?id=${userId}`}>
       <input name="id" value={userId} type="hidden" />
