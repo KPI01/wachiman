@@ -14,7 +14,7 @@ type DepartmentDetailsProps = {
   department: Department;
 };
 
-export function DepartmentDetails({ department }: DepartmentDetailsProps) {
+export default function DepartmentDetailsForm({ department }: DepartmentDetailsProps) {
   const [open, setOpen] = useState(false);
   const patchFetcher = useFetcher<{ errors?: unknown }>();
   const patchErrors = patchFetcher.data?.errors;
@@ -69,8 +69,4 @@ export function DepartmentDetails({ department }: DepartmentDetailsProps) {
       </patchFetcher.Form>
     </AlertDialogContainer>
   );
-}
-
-export default function DepartmentDetailRoute() {
-  return null;
 }

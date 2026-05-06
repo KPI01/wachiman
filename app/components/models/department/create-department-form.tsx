@@ -12,7 +12,7 @@ type CreateDepartmentProps = {
   errors?: unknown;
 };
 
-export default function CreateDepartment({ errors }: CreateDepartmentProps) {
+export default function CreateDepartmentForm({ errors }: CreateDepartmentProps) {
   return (
     <AlertDialogContainer
       buttonLabel={

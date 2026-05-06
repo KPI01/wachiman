@@ -2,7 +2,7 @@ import { TrashIcon } from "lucide-react";
 import { Form } from "react-router";
 import { Button } from "~/components/ui/button";
 
-export default function DeleteDepartment({
+export default function DeleteDepartmentBtn({
   departmentId,
 }: {
   departmentId: string;

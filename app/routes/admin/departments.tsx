@@ -7,7 +7,7 @@ import {
   deleteDepartment,
   updateDepartment,
 } from "~/lib/services/departments.server";
-import CreateDepartment from "~/routes/admin/departments/create";
+import CreateDepartmentForm from "~/components/models/department/create-department-form";
 import type { Route } from "./+types/departments";
 
 export async function loader({ request }: Route.LoaderArgs) {
@@ -46,7 +46,7 @@ export default function IndexDepartments({
       <div className="flex justify-between items-center">
         <h2 className="text-3xl font-bold">Departamentos</h2>
 
-        <CreateDepartment errors={actionData?.errors} />
+        <CreateDepartmentForm errors={actionData?.errors} />
       </div>
       <DataTable
         columns={departmentColumns}
