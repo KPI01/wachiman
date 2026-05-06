@@ -7,8 +7,8 @@ import {
   deleteSite,
   updateSite,
 } from "~/lib/services/sites.server";
-import CreateSite from "~/routes/admin/sites/create";
 import type { Route } from "./+types/sites";
+import CreateSiteForm from "~/components/models/site/create-site-form";
 
 export async function loader({ request }: Route.LoaderArgs) {
   await validateUserRole(request, "ADMIN");
@@ -46,7 +46,7 @@ export default function IndexSites({
       <div className="flex justify-between items-center">
         <h2 className="text-3xl font-bold">Centros</h2>
 
-        <CreateSite errors={actionData?.errors} />
+        <CreateSiteForm errors={actionData?.errors} />
       </div>
       <DataTable
         columns={siteColumns}

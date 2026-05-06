@@ -1,8 +1,8 @@
 import { createColumnHelper } from "@tanstack/react-table";
 import type { Site } from "../../../prisma/generated/prisma/client";
 import { formatTimestamp } from "../utils";
-import { SiteDetails } from "~/routes/admin/sites/detail";
-import DeleteSite from "~/routes/admin/sites/delete";
+import SiteDetailsForm from "~/components/models/site/site-details-form";
+import DeleteSiteBtn from "~/components/models/site/delete-site-btn";
 
 const siteColHelper = createColumnHelper<Site>();
 
@@ -26,8 +26,8 @@ export const siteColumns = [
     id: "actions",
     cell: ({ row }) => (
       <div className="flex gap-3 items-center justify-end">
-        <SiteDetails site={row.original} />
-        <DeleteSite siteId={row.original.id} />
+        <SiteDetailsForm site={row.original} />
+        <DeleteSiteBtn siteId={row.original.id} />
       </div>
     ),
   }),

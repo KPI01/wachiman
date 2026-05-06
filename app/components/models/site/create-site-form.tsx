@@ -12,7 +12,7 @@ type CreateSiteProps = {
   errors?: unknown;
 };
 
-export default function CreateSite({ errors }: CreateSiteProps) {
+export default function CreateSiteForm({ errors }: CreateSiteProps) {
   return (
     <AlertDialogContainer
       buttonLabel={

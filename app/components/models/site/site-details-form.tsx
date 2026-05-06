@@ -14,7 +14,7 @@ type SiteDetailsProps = {
   site: Site;
 };
 
-export function SiteDetails({ site }: SiteDetailsProps) {
+export default function SiteDetailsForm({ site }: SiteDetailsProps) {
   const [open, setOpen] = useState(false);
   const patchFetcher = useFetcher<{ errors?: unknown }>();
   const patchErrors = patchFetcher.data?.errors;
@@ -72,8 +72,4 @@ export function SiteDetails({ site }: SiteDetailsProps) {
       </patchFetcher.Form>
     </AlertDialogContainer>
   );
-}
-
-export default function SiteDetailRoute() {
-  return null;
 }
