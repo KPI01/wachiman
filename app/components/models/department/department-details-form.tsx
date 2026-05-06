@@ -64,6 +64,7 @@ export default function DepartmentDetailsForm({ department }: DepartmentDetailsP
             id={`slug-${department.id}`}
             name="slug"
             defaultValue={department.slug}
+            className="uppercase"
           />
         </FieldWrapper>
       </patchFetcher.Form>

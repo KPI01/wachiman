@@ -24,7 +24,7 @@ export const updateDepartmentSchema = z
   .object({
     id: requiredString,
     name: requiredString,
-    slug: requiredString,
+    slug: requiredString.transform(s => s.toUpperCase()),
   })
   .refine(
     async (data) => {
