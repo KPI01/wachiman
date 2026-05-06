@@ -2,6 +2,10 @@ import z from "zod";
 import { createUserSchema, trashUserSchema, updateUserSchema } from "../schemas/user";
 import { UserEntity } from "../database/user.server";
 
+export async function getManyUsers() {
+    return await UserEntity.getAll()
+}
+
 export async function createUser(input: Record<string, unknown>) {
     const parsed =
         await createUserSchema.safeParseAsync(input);

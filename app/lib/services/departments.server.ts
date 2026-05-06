@@ -6,6 +6,10 @@ import {
   updateDepartmentSchema,
 } from "../schemas/department";
 
+export async function getManyDepartments() {
+  return await DepartmentEntity.findAll()
+}
+
 export async function createDepartment(input: Record<string, unknown>) {
   const parsed = await createDepartmentSchema.safeParseAsync(input);
 

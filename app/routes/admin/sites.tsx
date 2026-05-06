@@ -1,10 +1,10 @@
 import DataTable from "~/components/ui/data-table";
 import { siteColumns } from "~/lib/columns/site";
-import { SiteEntity } from "~/lib/database/site.server";
 import { validateUserRole } from "~/lib/auth.server";
 import {
   createSite,
   deleteSite,
+  getManySites,
   updateSite,
 } from "~/lib/services/sites.server";
 import type { Route } from "./+types/sites";
@@ -13,7 +13,7 @@ import CreateSiteForm from "~/components/models/site/create-site-form";
 export async function loader({ request }: Route.LoaderArgs) {
   await validateUserRole(request, "ADMIN");
 
-  const sites = await SiteEntity.findMany();
+  const sites = await getManySites();
 
   return { sites };
 }

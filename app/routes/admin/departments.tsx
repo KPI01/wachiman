@@ -1,10 +1,10 @@
 import DataTable from "~/components/ui/data-table";
 import { departmentColumns } from "~/lib/columns/department";
-import { DepartmentEntity } from "~/lib/database/department.server";
 import { validateUserRole } from "~/lib/auth.server";
 import {
   createDepartment,
   deleteDepartment,
+  getManyDepartments,
   updateDepartment,
 } from "~/lib/services/departments.server";
 import CreateDepartmentForm from "~/components/models/department/create-department-form";
@@ -13,7 +13,7 @@ import type { Route } from "./+types/departments";
 export async function loader({ request }: Route.LoaderArgs) {
   await validateUserRole(request, "ADMIN");
 
-  const departments = await DepartmentEntity.findAll();
+  const departments = await getManyDepartments();
 
   return { departments };
 }

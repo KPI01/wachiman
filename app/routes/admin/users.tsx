@@ -1,13 +1,12 @@
-import { UserEntity } from "~/lib/database/user.server";
 import DataTable from "~/components/ui/data-table";
 import { getUserColumns } from "~/lib/columns/user";
-import { SiteEntity } from "~/lib/database/site.server";
-import { DepartmentEntity } from "~/lib/database/department.server";
 import { useMemo } from "react";
 import { validateUserRole } from "~/lib/auth.server";
-import { createUser, trashUser, updateUser } from "~/lib/services/users.server";
+import { createUser, getManyUsers, trashUser, updateUser } from "~/lib/services/users.server";
 import type { Route } from "./+types/users";
 import CreateUserForm from "~/components/models/user/create-user-form";
+import { getManySites } from "~/lib/services/sites.server";
+import { getManyDepartments } from "~/lib/services/departments.server";
 
 const USER_GLOBAL_FILTER_COLUMNS = ["fullName", "username"];
 
@@ -15,9 +14,9 @@ export async function loader({ request }: Route.LoaderArgs) {
   await validateUserRole(request, "ADMIN");
 
   const [users, sites, departments] = await Promise.all([
-    UserEntity.getAll(),
-    SiteEntity.findMany(),
-    DepartmentEntity.findAll(),
+    getManyUsers(),
+    getManySites(),
+    getManyDepartments(),
   ]);
 
   return { users, sites, departments };

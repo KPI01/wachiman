@@ -6,6 +6,10 @@ import {
   updateSiteSchema,
 } from "../schemas/site";
 
+export async function getManySites() {
+  return await SiteEntity.findMany()
+}
+
 export async function createSite(input: Record<string, unknown>) {
   const parsed = await createSiteSchema.safeParseAsync(input);
 
