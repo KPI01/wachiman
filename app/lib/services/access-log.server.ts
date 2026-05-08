@@ -1,8 +1,22 @@
-import z from "zod";
+import z, { success } from "zod";
 import { createAccessLogSchema, markAccessLogExitSchema } from "../schemas/access-log";
 import { UserEntity } from "../database/user.server";
 import { AccessLogEntity, type GetAccessLogsInput } from "../database/access-log.server";
 import { encryptValue } from "../crypt.server";
+
+async function isPersonAlreadyInside(siteId: string, legalId: string) {
+    const todaysLogs = await AccessLogEntity.findMany({
+        siteId,
+        timestampField: "entryTimestamp",
+        date: new Date(),
+    })
+    const peopleInside = todaysLogs
+        .filter(log => log.exitTimestamp === null)
+    const personIsInside = peopleInside
+        .some(person => person.legalIdSnapshot === legalId)
+
+    return personIsInside
+}
 
 export async function getManyAccessLogs(input?: GetAccessLogsInput) {
     return await AccessLogEntity.findMany(input);
@@ -31,6 +45,12 @@ export async function createAccessLog(
     }
 
     const siteId = options.lockedSiteId ?? data.siteId;
+    const personIsAlreadyInside = await isPersonAlreadyInside(data.siteId, data.legalIdSnapshot)
+
+    if (personIsAlreadyInside) {
+        return { success: false, errors: "Esta persona ya se encuentra registrada dentro del centro. No se puede registrar otro acceso para esta persona." }
+    }
+
 
     await AccessLogEntity.create({
         entryTimestamp: data.entryTimestamp,
@@ -50,11 +70,11 @@ export async function createAccessLog(
         createdById: createdBy.id,
         vehicle: data.withVehicle
             ? {
-                  typeSnapshot: data.vehicleTypeSnapshot ?? "",
-                  brandSnapshot: data.vehicleBrandSnapshot,
-                  modelSnapshot: data.vehicleModelSnapshot,
-                  plateSnapshot: data.vehiclePlateSnapshot ?? "",
-              }
+                typeSnapshot: data.vehicleTypeSnapshot ?? "",
+                brandSnapshot: data.vehicleBrandSnapshot,
+                modelSnapshot: data.vehicleModelSnapshot,
+                plateSnapshot: data.vehiclePlateSnapshot ?? "",
+            }
             : undefined,
     });
 

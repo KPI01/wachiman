@@ -1,7 +1,7 @@
 import Signature, { type SignatureRef } from "@uiw/react-signature";
 import { EraserIcon, PenIcon } from "lucide-react";
 import type { CSSProperties } from "react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "~/components/ui/button";
 
 type AccessLogSignatureProps = {
@@ -16,11 +16,18 @@ export default function AccessLogSignature({
   const signatureRef = useRef<SignatureRef>(null);
   const [strokes, setStrokes] = useState<number[][][]>([]);
 
+  useEffect(() => {
+    const hasSignature = strokes.length > 0;
+
+    onSignatureChange?.(hasSignature);
+    onSignaturePayloadChange?.(
+      hasSignature ? JSON.stringify({ strokes }) : "",
+    );
+  }, [onSignatureChange, onSignaturePayloadChange, strokes]);
+
   function handleClear() {
     signatureRef.current?.clear();
     setStrokes([]);
-    onSignatureChange?.(false);
-    onSignaturePayloadChange?.("");
   }
 
   return (
@@ -48,12 +55,8 @@ export default function AccessLogSignature({
 
             setStrokes((currentStrokes) => {
               const nextStrokes = [...currentStrokes, points];
-
-              onSignaturePayloadChange?.(JSON.stringify({ strokes: nextStrokes }));
-
               return nextStrokes;
             });
-            onSignatureChange?.(true);
           }}
         />
       </div>

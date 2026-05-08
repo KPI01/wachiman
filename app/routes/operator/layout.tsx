@@ -1,13 +1,7 @@
-import { EllipsisIcon, LogOutIcon } from "lucide-react";
+import { LogOutIcon } from "lucide-react";
 import { Outlet, useSubmit } from "react-router";
 import { Button } from "~/components/ui/button";
 import type { Route } from "./+types/layout";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "~/components/ui/dropdown-menu";
 import LogoBranding from "~/components/logo-branding";
 import { validateUserRole } from "~/lib/auth.server";
 
@@ -31,19 +25,12 @@ export default function OperatorLayout({ loaderData }: Route.ComponentProps) {
           title="Control de Accesos"
           username={loaderData.fullName}
         />
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline">
-              <EllipsisIcon />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent className="min-w-fit" side="left">
-            <DropdownMenuItem onClick={() => handleLogout()}>
-              <LogOutIcon />
-              Cerrar sesion
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <Button variant="outline" onClick={() => handleLogout()} title="Cerrar sesión">
+          <LogOutIcon />
+          <span className="sr-only md:not-sr-only">
+            Cerrar sesion
+          </span>
+        </Button>
       </header>
       <Outlet />
     </div>

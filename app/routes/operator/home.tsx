@@ -1,5 +1,5 @@
 import DataTable from "~/components/ui/data-table";
-import CreateAccessLog from "~/components/models/access-logs/create-access-log-form";
+import CreateAccessLogForm from "~/components/models/access-logs/create-access-log-form";
 import { accessLogColumns } from "~/lib/columns/access-log";
 import { getManyAccessLogs } from "~/lib/services/access-log.server";
 import { getSessionSite } from "~/lib/session.server";
@@ -38,17 +38,24 @@ export async function action({ request }: Route.ActionArgs) {
   const rawFormData = await request.formData();
   const jsonData = Object.fromEntries(rawFormData);
 
-  return await createAccessLog(jsonData, {
+  const result = await createAccessLog(jsonData, {
     authorUsername: user.username,
     lockedSiteId: sessionSite.id,
   });
+  console.log({ result })
+
+  return {
+    success: result.success,
+    errors: result.errors
+  }
 }
 
-export default function OperatorHome({ loaderData, actionData }: Route.ComponentProps) {
+export default function OperatorHome({ loaderData }: Route.ComponentProps) {
+  console.log({ loaderData })
   return (
     <div className="grid space-y-6">
       <div className="flex justify-end">
-        <CreateAccessLog
+        <CreateAccessLogForm
           sites={[loaderData.site]}
           actionPath="/operator?index"
           lockedSiteId={loaderData.site.id}

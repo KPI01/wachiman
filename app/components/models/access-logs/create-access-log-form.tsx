@@ -1,4 +1,4 @@
-import { PlusIcon } from "lucide-react";
+import { AlertTriangleIcon, PlusIcon } from "lucide-react";
 import AlertDialogContainer, {
   AlertDialogCancel,
 } from "~/components/containers/alert-dialog-container";
@@ -18,6 +18,8 @@ import { useEffect, useRef, useState } from "react";
 import type { Site } from "../../../../prisma/generated/prisma/client";
 import AccessLogSignature from "./access-log-signature";
 import { getFieldErrors } from "~/lib/utils/zod-errors";
+import { Textarea } from "~/components/ui/textarea";
+import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
 
 type FetcherErrors = {
   errors?: {
@@ -61,6 +63,8 @@ export default function CreateAccessLog({
   );
   const formRef = useRef<HTMLFormElement>(null);
   const selectedSiteId = lockedSiteId ?? sites[0]?.id;
+  const globalError =
+    typeof fetcher.data?.errors === "string" ? fetcher.data.errors : null;
 
   useEffect(() => {
     if (fetcher.state !== "idle" || !fetcher.data || fetcher.data.errors) {
@@ -106,12 +110,24 @@ export default function CreateAccessLog({
             Los campos con (*) son obligatorios
           </>
         ) : (
-          "Solicita al visitante que revise la informacion y firme para confirmar el registro."
+          <>
+            Solicita al visitante que revise la informacion y firme para confirmar el registro.
+            {globalError && (
+              <Alert variant="destructive">
+                <AlertTriangleIcon />
+                <AlertTitle>Error</AlertTitle>
+                <AlertDescription>
+                  {globalError}
+                </AlertDescription>
+              </Alert>
+            )}
+          </>
         )
       }
       footer={
         <>
           <AlertDialogCancel variant="destructive">Cancelar</AlertDialogCancel>
+
           {step === "details" ? (
             <Button
               type="button"
@@ -161,14 +177,15 @@ export default function CreateAccessLog({
       >
         {step === "details" ? (
           <>
-            <FieldWrapper
+            {lockedSiteId ? (
+              <input type="hidden" name="siteId" value={lockedSiteId} />
+            ) : null}
+            {!lockedSiteId && <FieldWrapper
               label="Centro"
               htmlFor="siteId"
               errors={getFieldErrors(fetcher.data?.errors, "siteId")}
             >
-              {lockedSiteId ? (
-                <input type="hidden" name="siteId" value={lockedSiteId} />
-              ) : null}
+
               <Select
                 name={lockedSiteId ? undefined : "siteId"}
                 {...(lockedSiteId
@@ -187,7 +204,7 @@ export default function CreateAccessLog({
                   ))}
                 </SelectContent>
               </Select>
-            </FieldWrapper>
+            </FieldWrapper>}
             <FieldWrapper
               label="Fecha y hora de ingreso"
               htmlFor="entryTimestamp"
@@ -278,7 +295,7 @@ export default function CreateAccessLog({
                 htmlFor="visitReason"
                 errors={getFieldErrors(fetcher.data?.errors, "visitReason")}
               >
-                <Input id="visitReason" name="visitReason" required />
+                <Textarea id="visitReason" name="visitReason" required />
               </FieldWrapper>
             </div>
             <div className="md:col-span-2 flex items-center gap-3 rounded-md border px-3 py-2">
