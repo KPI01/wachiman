@@ -75,23 +75,23 @@ export class UserEntity {
       include:
         relations.site || relations.department
           ? {
-              site: relations.site
-                ? {
-                    select: {
-                      id: true,
-                      name: true,
-                    },
-                  }
-                : undefined,
-              department: relations.department
-                ? {
-                    select: {
-                      id: true,
-                      name: true,
-                    },
-                  }
-                : undefined,
-            }
+            site: relations.site
+              ? {
+                select: {
+                  id: true,
+                  name: true,
+                },
+              }
+              : undefined,
+            department: relations.department
+              ? {
+                select: {
+                  id: true,
+                  name: true,
+                },
+              }
+              : undefined,
+          }
           : undefined,
     });
   }
@@ -107,14 +107,24 @@ export class UserEntity {
   }
 
   public static async getAll(
-    isActive: boolean = true,
-    isTrashed: boolean = false,
+    {
+      isActive = true,
+      isTrashed = false,
+      exclude = {}
+
+    }: Partial<{
+      isActive: boolean,
+      isTrashed: boolean,
+      exclude?: Record<string, unknown>
+    }>
   ) {
     const users = await prisma.user.findMany({
       where: {
         isActive,
         isTrashed,
+        NOT: exclude
       },
+
     });
 
     return users;

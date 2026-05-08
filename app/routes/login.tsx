@@ -54,6 +54,7 @@ export async function action({ request }: Route.ActionArgs) {
 
   const sessionCookie = await createSession({
     user: {
+      id: user.id,
       fullName: user.fullName,
       username: user.username,
       role: user.role,

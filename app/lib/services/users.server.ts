@@ -2,8 +2,13 @@ import z from "zod";
 import { createUserSchema, trashUserSchema, updateUserSchema } from "../schemas/user";
 import { UserEntity } from "../database/user.server";
 
-export async function getManyUsers() {
-    return await UserEntity.getAll()
+export async function getManyUsers({
+    exclude = {}
+}: { exclude: Record<string, unknown> }) {
+
+    return await UserEntity.getAll({
+        exclude
+    })
 }
 
 export async function createUser(input: Record<string, unknown>) {

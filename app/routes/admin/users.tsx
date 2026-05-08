@@ -11,10 +11,14 @@ import { getManyDepartments } from "~/lib/services/departments.server";
 const USER_GLOBAL_FILTER_COLUMNS = ["fullName", "username"];
 
 export async function loader({ request }: Route.LoaderArgs) {
-  await validateUserRole(request, "ADMIN");
+  const user = await validateUserRole(request, "ADMIN");
 
   const [users, sites, departments] = await Promise.all([
-    getManyUsers(),
+    getManyUsers({
+      exclude: {
+        id: user.id
+      }
+    }),
     getManySites(),
     getManyDepartments(),
   ]);

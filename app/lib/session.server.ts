@@ -7,6 +7,7 @@ import {
 type SessionPayload = Record<string, unknown>;
 
 export type SessionUser = {
+  id: string
   fullName: string;
   username: string;
   role: UserRoleType | null;
