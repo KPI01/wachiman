@@ -30,8 +30,6 @@ export default [
     route("sites", "routes/admin/sites.tsx"),
     route("departments", "routes/admin/departments.tsx"),
     route("access-logs", "routes/admin/access-logs.tsx"),
-    // Gestion de accesos planificados
-    route("planned-accesses", "routes/admin/planned-accesses.tsx"),
   ]),
 
   // Operador de accesos
@@ -39,13 +37,13 @@ export default [
     index("routes/operator/home.tsx"),
   ]),
 
-  // Aprobador de accesos
-  route("approver", "routes/approver/layout.tsx", [
-    index("routes/approver/home.tsx"),
+  // Monitor de accesos
+  route("monitor", "routes/monitor/layout.tsx", [
+    index("routes/monitor/home.tsx"),
   ]),
 
-  // Solicitante de accesos
-  route("requester", "routes/requester/layout.tsx", [
-    index("routes/requester/home.tsx"),
+  // Director de seguridad
+  route("security", "routes/security/layout.tsx", [
+    index("routes/security/home.tsx"),
   ]),
 ] satisfies RouteConfig;

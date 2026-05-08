@@ -18,7 +18,7 @@ export const createUserSchema = z
     username: z.string(STRING_TYPE_REQUIRED_MSG),
     siteId: z.string(STRING_TYPE_REQUIRED_MSG),
     departmentId: z.string(STRING_TYPE_REQUIRED_MSG),
-    role: z.enum(UserRole).optional().default("ACCESS_REQUESTER"),
+    role: z.enum(UserRole).optional().default("ACCESS_OPERATOR"),
     password: z.string(
       STRING_TYPE_REQUIRED_MSG,
     ) /** falta agregar dificultad de la clave */,
@@ -55,7 +55,7 @@ export const updateUserSchema = z
     username: z.string(STRING_TYPE_REQUIRED_MSG),
     siteId: z.string(STRING_TYPE_REQUIRED_MSG),
     departmentId: z.string(STRING_TYPE_REQUIRED_MSG),
-    role: z.enum(UserRole).optional().default("ACCESS_REQUESTER"),
+    role: z.enum(UserRole).optional().default("ACCESS_OPERATOR"),
     isActive: z.preprocess((value) => value === "on", z.boolean()),
   })
   .refine(

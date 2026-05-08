@@ -14,28 +14,9 @@ datasource db {
 
 enum UserRole {
   ADMIN
-  ACCESS_REQUESTER
   ACCESS_OPERATOR
-  ACCESS_APPROVER
   ACCESS_MONITOR
   SECURITY_MANAGER
-}
-
-enum PlannedAccessStatus {
-  PENDING_APPROVAL
-  PENDING_ACCESS
-  IN_PROGRESS
-  COMPLETED
-  REJECTED
-  CANCELLED
-  EXPIRED
-  RESCHEDULED
-}
-
-enum AuditAction {
-  CREATE
-  FIELD_UPDATE
-  STATUS_CHANGE
 }
 
 model User {
@@ -47,7 +28,7 @@ model User {
   password  String
   isActive  Boolean?  @default(true)
   isTrashed Boolean?  @default(false)
-  role      UserRole? @default(ACCESS_REQUESTER)
+  role      UserRole? @default(ACCESS_OPERATOR)
 
   siteId               String
   site                 Site                 @relation(fields: [siteId], references: [id])
@@ -55,8 +36,6 @@ model User {
   department           Department           @relation(fields: [departmentId], references: [id])
   createdAccesLogs     AccessLog[]          @relation("createdBy")
   accessLogsMarkedExit AccessLog[]          @relation("exitRecordedBy")
-  plannedAccessAudits  PlannedAccessAudit[]
-  plannedAccesses      PlannedAccess[]
 
   @@index([username])
 }
@@ -71,7 +50,6 @@ model Site {
 
   users      User[]
   accessLogs AccessLog[]
-  plannedAccesses PlannedAccess[]
 
   @@index([slug])
 }
@@ -112,7 +90,6 @@ model AccessLog {
   exitRecordedBy     User?              @relation(name: "exitRecordedBy", fields: [exitRecordedById], references: [id])
   vehicleAccessLogId String?
   vehicleAccessLog   AccessLogVehicle?  @relation(fields: [vehicleAccessLogId], references: [id])
-  plannedAccessLogs  PlannedAccessLog[]
 }
 
 model AccessLogVehicle {
@@ -122,80 +99,4 @@ model AccessLogVehicle {
   modelSnapshot String?
   plateSnapshot String
   accessLogs    AccessLog[]
-}
-
-model PlannedAccess {
-  id                String              @id @default(cuid())
-  createdAt         DateTime            @default(now())
-  updatedAt         DateTime            @updatedAt
-  expectedStartDate DateTime
-  expectedEndDate   DateTime?
-  status            PlannedAccessStatus @default(PENDING_APPROVAL)
-  approvedAt        DateTime?
-
-  siteId String
-  site Site @relation(fields:[siteId],references:[id])
-  approvedById String?
-  approvedBy   User?   @relation(fields: [approvedById], references: [id])
-  
-
-  plannedAccessPersons  PlannedAccessPerson[]
-  plannedAccessVehicles PlannedAccessVehicle[]
-  plannedAccessLogs     PlannedAccessLog[]
-  plannedAccessAudits   PlannedAccessAudit[]
-}
-
-model PlannedAccessAudit {
-  id        Int      @id @default(autoincrement())
-  createdAt DateTime @default(now())
-
-  plannedAccessId String
-  plannedAccess   PlannedAccess @relation(fields: [plannedAccessId], references: [id])
-  madeById        String
-  madeBy          User          @relation(fields: [madeById], references: [id])
-  action          AuditAction
-  reason          String?
-  payload         Json
-}
-
-model PlannedAccessLog {
-  id String @id @default(uuid())
-
-  accessLogId            String
-  accessLog              AccessLog            @relation(fields: [accessLogId], references: [id])
-  plannedAccessId        String
-  plannedAccess          PlannedAccess        @relation(fields: [plannedAccessId], references: [id])
-  plannedAccessPersonId  String
-  plannedAccessPerson    PlannedAccessPerson  @relation(fields: [plannedAccessPersonId], references: [id])
-  plannedAccessVehicleId String
-  plannedAccessVehicle   PlannedAccessVehicle @relation(fields: [plannedAccessVehicleId], references: [id])
-}
-
-model PlannedAccessPerson {
-  id                     String   @id @default(uuid())
-  createdAt              DateTime @default(now())
-  updatedAt              DateTime @updatedAt
-  firstNameSnapshot      String
-  middleNameSnapshot     String?
-  lastNameSnapshot       String
-  secondLastNameSnapshot String?
-  legalIdSnapshot        String
-
-  plannedAccessId   String
-  plannedAccess     PlannedAccess      @relation(fields: [plannedAccessId], references: [id])
-  plannedAccessLogs PlannedAccessLog[]
-}
-
-model PlannedAccessVehicle {
-  id            String   @id @default(uuid())
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  typeSnapshot  String
-  brandSnapshot String?
-  modelSnapshot String?
-  plateSnapshot String
-
-  plannedAccessId   String
-  plannedAccess     PlannedAccess      @relation(fields: [plannedAccessId], references: [id])
-  plannedAccessLogs PlannedAccessLog[]
 }

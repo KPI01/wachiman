@@ -29,8 +29,6 @@ export function getUserRedirectPath(role: SessionUser["role"]) {
   const paths: Record<UserRole, string> = {
     ADMIN: "/admin",
     ACCESS_OPERATOR: "/operator",
-    ACCESS_APPROVER: "/approver",
-    ACCESS_REQUESTER: "/requester",
     ACCESS_MONITOR: "/monitor",
     SECURITY_MANAGER: "/security",
   };

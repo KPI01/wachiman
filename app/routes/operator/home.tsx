@@ -42,7 +42,6 @@ export async function action({ request }: Route.ActionArgs) {
     authorUsername: user.username,
     lockedSiteId: sessionSite.id,
   });
-  console.log({ result })
 
   return {
     success: result.success,
@@ -51,7 +50,6 @@ export async function action({ request }: Route.ActionArgs) {
 }
 
 export default function OperatorHome({ loaderData }: Route.ComponentProps) {
-  console.log({ loaderData })
   return (
     <div className="grid space-y-6">
       <div className="flex justify-end">

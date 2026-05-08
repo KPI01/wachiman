@@ -109,7 +109,7 @@ export default function CreateUserForm({ sites, departments, errors }: CreateUse
                     htmlFor="role"
                     errors={getFieldErrors(errors, "role")}
                 >
-                    <Select name="role" defaultValue="ACCESS_REQUESTER">
+                    <Select name="role" defaultValue="ACCESS_OPERATOR">
                         <SelectTrigger className="w-full">
                             <SelectValue placeholder="Rol para el usuario..." />
                         </SelectTrigger>

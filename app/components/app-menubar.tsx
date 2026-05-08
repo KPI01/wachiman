@@ -45,7 +45,9 @@ export default function AppMenubar({ items }: AppMenubarProps) {
         <MenubarTrigger>Cuenta</MenubarTrigger>
         <MenubarContent align="center">
           <MenubarActionItem
-            onSelect={() => submit({}, { method: "post", action: "/logout" })}
+            onSelect={() =>
+              submit({}, { method: "post", action: "/auth/logout" })
+            }
           >
             <LogOutIcon />
             Cerrar sesión

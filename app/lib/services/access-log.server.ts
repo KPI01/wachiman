@@ -45,7 +45,7 @@ export async function createAccessLog(
     }
 
     const siteId = options.lockedSiteId ?? data.siteId;
-    const personIsAlreadyInside = await isPersonAlreadyInside(data.siteId, data.legalIdSnapshot)
+    const personIsAlreadyInside = await isPersonAlreadyInside(siteId, data.legalIdSnapshot)
 
     if (personIsAlreadyInside) {
         return { success: false, errors: "Esta persona ya se encuentra registrada dentro del centro. No se puede registrar otro acceso para esta persona." }

@@ -4,14 +4,8 @@ import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import FieldWrapper from "~/components/ui/wrappers/field-wrapper";
 import type { Route } from "./+types/login";
-import { loginSchema } from "~/lib/schemas/auth";
-import z from "zod";
-import {
-  createSession,
-  getSessionUser,
-  getUserRedirectPath,
-} from "~/lib/session.server";
-import { UserEntity } from "~/lib/database/user.server";
+import { login } from "~/lib/auth.server";
+import { getSessionUser, getUserRedirectPath } from "~/lib/session.server";
 import { getFieldErrors } from "~/lib/utils/zod-errors";
 
 export async function loader({ request }: Route.LoaderArgs) {
@@ -25,55 +19,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 }
 
 export async function action({ request }: Route.ActionArgs) {
-  const rawFormData = await request.formData();
-  const jsonData = Object.fromEntries(rawFormData);
-
-  // TODO: doble consulta a BD, buscar optimizar
-  // consulta 1
-  const { error, data } = await loginSchema.safeParseAsync(jsonData);
-
-  if (error) {
-    return { errors: z.treeifyError(error) };
-  }
-
-  // consulta 2
-  const user = await UserEntity.getByUsername(data.username, {
-    site: true,
-    department: true,
-  });
-
-  if (!user) {
-    return {
-      errors: {
-        username: {
-          errors: ["El usuario no existe"],
-        },
-      },
-    };
-  }
-
-  const sessionCookie = await createSession({
-    user: {
-      id: user.id,
-      fullName: user.fullName,
-      username: user.username,
-      role: user.role,
-      site: {
-        id: user.site.id,
-        name: user.site.name,
-      },
-      department: {
-        id: user.department.id,
-        name: user.department.name,
-      },
-    },
-  });
-
-  return redirect(getUserRedirectPath(user.role), {
-    headers: {
-      "Set-Cookie": sessionCookie,
-    },
-  });
+  return await login(request);
 }
 
 export default function Login({ actionData }: Route.ComponentProps) {
