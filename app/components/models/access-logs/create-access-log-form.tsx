@@ -47,7 +47,7 @@ export default function CreateAccessLog({
   sites,
   actionPath,
   lockedSiteId,
-  buttonLabel = "Crear acceso",
+  buttonLabel = "Nuevo acceso",
 }: CreateAccessLogProps) {
   const fetcher = useFetcher<FetcherErrors & { success?: boolean }>();
   const [open, setOpen] = useState(false);

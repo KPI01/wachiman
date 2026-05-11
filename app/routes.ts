@@ -45,5 +45,6 @@ export default [
   // Director de seguridad
   route("security", "routes/security/layout.tsx", [
     index("routes/security/home.tsx"),
+    route("access-logs", "routes/security/access-logs.tsx"),
   ]),
 ] satisfies RouteConfig;

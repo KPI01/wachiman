@@ -97,10 +97,14 @@ export class AccessLogEntity {
       return { gte: start, lt: end };
     }
 
-    return {
-      gte: filter.from,
-      lte: filter.to,
-    };
+    const start = new Date(filter.from!);
+    start.setHours(0, 0, 0, 0);
+
+    const end = new Date(filter.to!);
+    end.setHours(0, 0, 0, 0);
+    end.setDate(end.getDate() + 1);
+
+    return { gte: start, lt: end };
   }
 
   private static async createAccessWithVehicle(
