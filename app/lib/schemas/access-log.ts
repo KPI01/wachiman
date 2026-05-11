@@ -46,7 +46,7 @@ export const createAccessLogSchema = z
     vehicleTypeSnapshot: optionalString,
     vehicleBrandSnapshot: optionalString,
     vehicleModelSnapshot: optionalString,
-    vehiclePlateSnapshot: optionalString,
+    vehiclePlateSnapshot: optionalString.transform(s => s?.toUpperCase()),
   })
   .refine(async (data) => (await SiteEntity.findById(data.siteId)) !== null, {
     error: SITE_DOESNT_EXISTS,
