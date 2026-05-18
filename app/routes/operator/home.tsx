@@ -1,12 +1,13 @@
 import DataTable from "~/components/ui/data-table";
 import CreateAccessLogForm from "~/components/models/access-logs/create-access-log-form";
-import { accessLogColumns } from "~/lib/columns/access-log";
+import { getAccessLogColumns } from "~/lib/columns/access-log";
 import { getManyAccessLogs } from "~/lib/services/access-log.server";
 import { getSessionSite } from "~/lib/session.server";
 import type { Route } from "./+types/home";
 import { validateUserRole } from "~/lib/auth.server";
 import { createAccessLog } from "~/lib/services/access-log.server";
 import { getFormData } from "~/lib/services/http.server";
+import { useMemo } from "react";
 
 export async function loader({ request }: Route.LoaderArgs) {
   await validateUserRole(request, "ACCESS_OPERATOR");
@@ -50,6 +51,11 @@ export async function action({ request }: Route.ActionArgs) {
 }
 
 export default function OperatorHome({ loaderData }: Route.ComponentProps) {
+  const columns = useMemo(
+    () => getAccessLogColumns(["vehicleDetails", "visitReason", "actions"]),
+    [],
+  );
+
   return (
     <div className="grid space-y-6">
       <div className="flex justify-end">
@@ -62,7 +68,7 @@ export default function OperatorHome({ loaderData }: Route.ComponentProps) {
       </div>
 
       <DataTable
-        columns={accessLogColumns}
+        columns={columns}
         data={loaderData.accessLogs ?? []}
         showGlobalFilter={false}
         showColumnVisibility={false}
