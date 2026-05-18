@@ -1,6 +1,7 @@
 import type { ComponentProps, ReactNode } from "react";
 import { Field, FieldDescription } from "../field";
 import { Label } from "../label";
+import { cn } from "~/lib/utils";
 
 interface FieldWrapperProps {
   orientation?: ComponentProps<typeof Field>["orientation"];
@@ -8,6 +9,7 @@ interface FieldWrapperProps {
   htmlFor: ComponentProps<typeof Label>["htmlFor"];
   children: ReactNode;
   errors?: string[];
+  className?: string
 }
 
 export default function FieldWrapper({
@@ -16,6 +18,7 @@ export default function FieldWrapper({
   label,
   children,
   errors,
+  className
 }: FieldWrapperProps) {
   const hasErrors = errors && errors.length > 0;
 
@@ -23,8 +26,10 @@ export default function FieldWrapper({
     <Field
       orientation={orientation}
       data-invalid={hasErrors ? "true" : undefined}
-      className={
-        orientation === "horizontal" ? "grid grid-cols-[1fr_12rem]" : ""
+      className={cn(
+        orientation === "horizontal" ? "grid grid-cols-[1fr_12rem]" : "",
+        className
+      )
       }
     >
       <Label htmlFor={htmlFor}>{label}</Label>

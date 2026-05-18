@@ -30,7 +30,7 @@ export default function AdminLayout() {
   return (
     <SidebarProvider>
       <title>Administrador</title>
-      <AppSidebar items={SIDEBAR_ITEMS} />
+      <AppSidebar title="Control de Accesos" items={SIDEBAR_ITEMS} />
       <SidebarInset className="p-6 max-w-full overflow-auto">
         <Outlet />
       </SidebarInset>

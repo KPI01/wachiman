@@ -6,6 +6,7 @@ import { getSessionSite } from "~/lib/session.server";
 import type { Route } from "./+types/home";
 import { validateUserRole } from "~/lib/auth.server";
 import { createAccessLog } from "~/lib/services/access-log.server";
+import { getFormData } from "~/lib/services/http.server";
 
 export async function loader({ request }: Route.LoaderArgs) {
   await validateUserRole(request, "ACCESS_OPERATOR");
@@ -35,18 +36,17 @@ export async function action({ request }: Route.ActionArgs) {
     throw new Response("Unauthorized", { status: 401 });
   }
 
-  const rawFormData = await request.formData();
-  const jsonData = Object.fromEntries(rawFormData);
+  const data = await getFormData(request);
 
-  const result = await createAccessLog(jsonData, {
+  const result = await createAccessLog(data, {
     authorUsername: user.username,
     lockedSiteId: sessionSite.id,
   });
 
   return {
     success: result.success,
-    errors: result.errors
-  }
+    errors: result.errors,
+  };
 }
 
 export default function OperatorHome({ loaderData }: Route.ComponentProps) {

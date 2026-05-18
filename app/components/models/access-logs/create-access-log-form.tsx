@@ -232,41 +232,26 @@ export default function CreateAccessLog({
               />
             </FieldWrapper>
             <FieldWrapper
-              label="Primer nombre *"
+              className="col-start-1"
+              label="Nombre *"
               htmlFor="firstNameSnapshot"
               errors={getFieldErrors(fetcher.data?.errors, "firstNameSnapshot")}
             >
               <Input id="firstNameSnapshot" name="firstNameSnapshot" required />
             </FieldWrapper>
             <FieldWrapper
-              label="Segundo nombre"
-              htmlFor="middleNameSnapshot"
-              errors={getFieldErrors(
-                fetcher.data?.errors,
-                "middleNameSnapshot",
-              )}
-            >
-              <Input id="middleNameSnapshot" name="middleNameSnapshot" />
-            </FieldWrapper>
-            <FieldWrapper
-              label="Primer apellido *"
+              label="Apellido(s) *"
               htmlFor="lastNameSnapshot"
               errors={getFieldErrors(fetcher.data?.errors, "lastNameSnapshot")}
             >
               <Input id="lastNameSnapshot" name="lastNameSnapshot" required />
             </FieldWrapper>
             <FieldWrapper
-              label="Segundo apellido"
-              htmlFor="secondLastNameSnapshot"
-              errors={getFieldErrors(
-                fetcher.data?.errors,
-                "secondLastNameSnapshot",
-              )}
+              label="Telefono"
+              htmlFor="phoneNumber"
+              errors={getFieldErrors(fetcher.data?.errors, "phoneNumber")}
             >
-              <Input
-                id="secondLastNameSnapshot"
-                name="secondLastNameSnapshot"
-              />
+              <Input id="phoneNumber" name="phoneNumber" />
             </FieldWrapper>
             <FieldWrapper
               label="Empresa *"
@@ -282,13 +267,7 @@ export default function CreateAccessLog({
                 required
               />
             </FieldWrapper>
-            <FieldWrapper
-              label="Telefono"
-              htmlFor="phoneNumber"
-              errors={getFieldErrors(fetcher.data?.errors, "phoneNumber")}
-            >
-              <Input id="phoneNumber" name="phoneNumber" />
-            </FieldWrapper>
+
             <div className="md:col-span-2">
               <FieldWrapper
                 label="Motivo de visita *"

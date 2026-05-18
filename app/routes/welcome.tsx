@@ -20,7 +20,7 @@ export default function Welcome() {
       <title>Wachiman App</title>
       <CardContainer
         className="min-w-lg"
-        title="Bienvenido a Industrial Wachiman"
+        title="Bienvenido al Control de Accesos de Fruveco"
         description="Software para el control de accesos de una fábrica"
       >
         <div className="flex gap-3 justify-end">
