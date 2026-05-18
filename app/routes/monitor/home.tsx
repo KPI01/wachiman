@@ -27,6 +27,7 @@ export default function MonitorHome({ loaderData }: Route.ComponentProps) {
         columns={columns}
         data={loaderData.accessLogs}
         showGlobalFilter={false}
+        showColumnVisibility={false}
       />
     </div>
   );
