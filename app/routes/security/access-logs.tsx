@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate } from "react-router";
+import { useEffect, useState } from "react";
+import { useNavigate, useRevalidator } from "react-router";
 import CreateAccessLog from "~/components/models/access-logs/create-access-log-form";
 import DataTable from "~/components/ui/data-table";
 import { DatePicker } from "~/components/ui/date-picker";
@@ -27,7 +27,12 @@ import { getFormData, getQueryParams } from "~/lib/services/http.server";
 export async function loader({ request }: Route.LoaderArgs) {
   await validateUserRole(request, "SECURITY_MANAGER");
 
-  const query = getQueryParams(request, ["date", "dateFrom", "dateTo", "status"]);
+  const query = getQueryParams(request, [
+    "date",
+    "dateFrom",
+    "dateTo",
+    "status",
+  ]);
 
   let mode: "single" | "range";
   let input: GetManyAccessLogsInput;
@@ -73,9 +78,24 @@ export async function action({ request }: Route.ActionArgs) {
 
 export default function IndexAccessLogs({ loaderData }: Route.ComponentProps) {
   const navigation = useNavigate();
+  const revalidator = useRevalidator();
+
   const [filterMode, setFilterMode] = useState<"single" | "range">(
     loaderData.mode,
   );
+
+  useEffect(() => {
+    const intervalId = window.setInterval(() => {
+      if (
+        document.visibilityState === "visible" &&
+        revalidator.state === "idle"
+      ) {
+        revalidator.revalidate();
+      }
+    }, 5000);
+
+    return () => window.clearInterval(intervalId);
+  }, [revalidator]);
 
   const handleModeChange = (mode: "single" | "range") => {
     setFilterMode(mode);

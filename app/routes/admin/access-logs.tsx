@@ -11,8 +11,8 @@ import { getManySites } from "~/lib/services/sites.server";
 import { getFormData, getQueryParams } from "~/lib/services/http.server";
 import type { GetManyAccessLogsInput } from "~/lib/services/access-log.server";
 import { formatTimestamp, parseLocalDate } from "~/lib/utils";
-import { useNavigate } from "react-router";
-import { useState } from "react";
+import { useNavigate, useRevalidator } from "react-router";
+import { useEffect, useState } from "react";
 import {
   Select,
   SelectContent,
@@ -26,7 +26,12 @@ import { DateRangePicker } from "~/components/ui/date-range-picker";
 export async function loader({ request }: Route.LoaderArgs) {
   await validateUserRole(request, "ADMIN");
 
-  const query = getQueryParams(request, ["date", "dateFrom", "dateTo", "status"]);
+  const query = getQueryParams(request, [
+    "date",
+    "dateFrom",
+    "dateTo",
+    "status",
+  ]);
 
   let mode: "single" | "range";
   let input: GetManyAccessLogsInput;
@@ -74,9 +79,23 @@ export async function action({ request }: Route.ActionArgs) {
 
 export default function IndexAccessLogs({ loaderData }: Route.ComponentProps) {
   const navigation = useNavigate();
+  const revalidator = useRevalidator();
   const [filterMode, setFilterMode] = useState<"single" | "range">(
     loaderData.mode,
   );
+
+  useEffect(() => {
+    const intervalId = window.setInterval(() => {
+      if (
+        document.visibilityState === "visible" &&
+        revalidator.state === "idle"
+      ) {
+        revalidator.revalidate();
+      }
+    }, 5000);
+
+    return () => window.clearInterval(intervalId);
+  }, [revalidator]);
 
   const handleModeChange = (mode: "single" | "range") => {
     setFilterMode(mode);

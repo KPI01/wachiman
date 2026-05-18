@@ -3,7 +3,8 @@ import type { Route } from "./+types/home";
 import { validateUserRole } from "~/lib/auth.server";
 import { getManyAccessLogs } from "~/lib/services/access-log.server";
 import { getAccessLogColumns } from "~/lib/columns/access-log";
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
+import { useRevalidator } from "react-router";
 
 export async function loader({ request }: Route.LoaderArgs) {
   await validateUserRole(request, "ACCESS_MONITOR");
@@ -18,6 +19,17 @@ export async function loader({ request }: Route.LoaderArgs) {
 
 export default function MonitorHome({ loaderData }: Route.ComponentProps) {
   const columns = useMemo(() => getAccessLogColumns("createdBy"), []);
+  const revalidator = useRevalidator();
+
+  useEffect(() => {
+    const intervalId = window.setInterval(() => {
+      if (document.visibilityState === "visible" && revalidator.state === "idle") {
+        revalidator.revalidate();
+      }
+    }, 5000);
+
+    return () => window.clearInterval(intervalId);
+  }, [revalidator]);
 
   return (
     <div className="grid space-y-6">
