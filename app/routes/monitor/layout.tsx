@@ -19,17 +19,16 @@ export default function MonitorLayout({ loaderData }: Route.ComponentProps) {
   };
   return (
     <div className="p-4">
-      <title>Monitor de Accesos</title>
+      <title>Mostrador</title>
       <header className="mb-6 flex justify-between items-center border-b pb-3">
-        <LogoBranding
-          title="Monitor de Accesos"
-          username={loaderData.fullName}
-        />
-        <Button variant="outline" onClick={() => handleLogout()} title="Cerrar sesión">
+        <LogoBranding title="Mostrador" username={loaderData.fullName} />
+        <Button
+          variant="outline"
+          onClick={() => handleLogout()}
+          title="Cerrar sesión"
+        >
           <LogOutIcon />
-          <span className="sr-only md:not-sr-only">
-            Cerrar sesion
-          </span>
+          <span className="sr-only md:not-sr-only">Cerrar sesion</span>
         </Button>
       </header>
       <Outlet />

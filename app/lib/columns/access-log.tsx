@@ -6,7 +6,7 @@ import VehiclePopover from "~/components/models/access-logs/vehicle-popover";
 
 const accessLogColHelper = createColumnHelper<AccessLogListItem>();
 
-function getFullName(accessLog: AccessLogListItem) {
+function getFullName(accessLog: AccessLogListItem): string {
   return [
     accessLog.firstNameSnapshot,
     accessLog.middleNameSnapshot,
@@ -17,7 +17,7 @@ function getFullName(accessLog: AccessLogListItem) {
     .join(" ");
 }
 
-function getVehicleDetails(accessLog: AccessLogListItem) {
+function getVehicleDetails(accessLog: AccessLogListItem): string {
   if (!accessLog.withVehicle || !accessLog.vehicleAccessLog) {
     return "Sin vehiculo";
   }
@@ -32,68 +32,150 @@ function getVehicleDetails(accessLog: AccessLogListItem) {
     .join(" / ");
 }
 
-export const accessLogColumns = [
-  accessLogColHelper.accessor("entryTimestamp", {
-    header: "Ingreso",
-    cell: ({ getValue }) =>
-      formatTimestamp({ date: getValue(), template: "dd/MM/yyyy HH:mm" }),
-  }),
-  accessLogColHelper.accessor("exitTimestamp", {
-    header: "Salida",
-    cell: ({ getValue }) => {
-      const value = getValue();
+const entryTimestampColumn = accessLogColHelper.accessor("entryTimestamp", {
+  header: "Ingreso",
+  cell: ({ getValue }) =>
+    formatTimestamp({ date: getValue(), template: "dd/MM/yyyy HH:mm" }),
+});
 
-      return value
-        ? formatTimestamp({ date: value, template: "dd/MM/yyyy HH:mm" })
-        : "-";
-    },
-  }),
-  accessLogColHelper.accessor(getFullName, {
-    id: "fullNameSnapshot",
-    header: "Nombre completo",
-  }),
-  accessLogColHelper.accessor("legalIdSnapshot", {
-    header: "Documento",
-  }),
-  accessLogColHelper.accessor("companyNameSnapshot", {
-    header: "Empresa",
-  }),
-  accessLogColHelper.accessor(getVehicleDetails, {
-    id: "vehicleDetails",
-    header: "Vehiculo",
-    cell: ({ row }) =>
-      row.original.withVehicle && row.original.vehicleAccessLog ? (
-        <VehiclePopover vehicleLog={row.original.vehicleAccessLog} />
-      ) : undefined,
-  }),
-  accessLogColHelper.accessor("visitReason", {
-    header: "Motivo",
-  }),
-  accessLogColHelper.accessor((accessLog) => accessLog.site.name, {
+const exitTimestampColumn = accessLogColHelper.accessor("exitTimestamp", {
+  header: "Salida",
+  cell: ({ getValue }) => {
+    const value = getValue();
+
+    return value
+      ? formatTimestamp({ date: value, template: "dd/MM/yyyy HH:mm" })
+      : "-";
+  },
+});
+
+const fullNameColumn = accessLogColHelper.accessor(getFullName, {
+  id: "fullNameSnapshot",
+  header: "Nombre completo",
+});
+
+const legalIdColumn = accessLogColHelper.accessor("legalIdSnapshot", {
+  header: "Documento",
+});
+
+const companyNameColumn = accessLogColHelper.accessor("companyNameSnapshot", {
+  header: "Empresa",
+});
+
+const vehicleDetailsColumn = accessLogColHelper.accessor(getVehicleDetails, {
+  id: "vehicleDetails",
+  header: "Vehiculo",
+  cell: ({ row }) =>
+    row.original.withVehicle && row.original.vehicleAccessLog ? (
+      <VehiclePopover vehicleLog={row.original.vehicleAccessLog} />
+    ) : undefined,
+});
+
+const visitReasonColumn = accessLogColHelper.accessor("visitReason", {
+  id: "visitReason",
+  header: "Motivo",
+});
+
+const siteNameColumn = accessLogColHelper.accessor(
+  (accessLog) => accessLog.site.name,
+  {
     id: "siteName",
     header: "Centro",
-  }),
-  accessLogColHelper.accessor((accessLog) => accessLog.createdBy.fullName, {
+  },
+);
+
+const createdByNameColumn = accessLogColHelper.accessor(
+  (accessLog) => accessLog.createdBy.fullName,
+  {
     id: "createdByName",
     header: "Registrado por",
-  }),
-  accessLogColHelper.display({
-    id: "actions",
-    header: "Acciones",
-    cell: ({ row }) => {
-      if (row.original.exitTimestamp) {
-        return (
-          <span className="text-muted-foreground sr-only">
-            Salida registrada
-          </span>
-        );
-      }
+  },
+);
 
+const createdByColumn = accessLogColHelper.accessor(
+  (accessLog) => accessLog.createdBy.fullName,
+  {
+    id: "createdBy",
+    header: "Registrado por",
+  },
+);
+
+const actionsColumn = accessLogColHelper.display({
+  id: "actions",
+  header: "Acciones",
+  cell: ({ row }) => {
+    if (row.original.exitTimestamp) {
       return (
-        <div className="flex justify-end">
-          <MarkAccessLogExit accessLogId={row.original.id} />
-        </div>
+        <span className="text-muted-foreground sr-only">Salida registrada</span>
       );
-    },
-  }),
+    }
+
+    return (
+      <div className="flex justify-end">
+        <MarkAccessLogExit accessLogId={row.original.id} />
+      </div>
+    );
+  },
+});
+
+type AccessLogColumnDef =
+  | typeof entryTimestampColumn
+  | typeof exitTimestampColumn
+  | typeof fullNameColumn
+  | typeof legalIdColumn
+  | typeof companyNameColumn
+  | typeof vehicleDetailsColumn
+  | typeof visitReasonColumn
+  | typeof siteNameColumn
+  | typeof createdByNameColumn
+  | typeof createdByColumn
+  | typeof actionsColumn;
+
+export type OptionalColumnsOptions =
+  | "visitReason"
+  | "vehicleDetails"
+  | "createdBy"
+  | "actions";
+
+export const accessLogColumns: AccessLogColumnDef[] = [
+  entryTimestampColumn,
+  exitTimestampColumn,
+  fullNameColumn,
+  legalIdColumn,
+  companyNameColumn,
+  vehicleDetailsColumn,
+  visitReasonColumn,
+  siteNameColumn,
+  createdByNameColumn,
+  actionsColumn,
 ];
+
+const baseColumns: AccessLogColumnDef[] = [
+  entryTimestampColumn,
+  exitTimestampColumn,
+  fullNameColumn,
+  legalIdColumn,
+  companyNameColumn,
+];
+
+const optionalColumns: Record<OptionalColumnsOptions, AccessLogColumnDef> = {
+  visitReason: visitReasonColumn,
+  vehicleDetails: vehicleDetailsColumn,
+  createdBy: createdByColumn,
+  actions: actionsColumn,
+};
+
+export function getAccessLogColumns(
+  columns: OptionalColumnsOptions | readonly OptionalColumnsOptions[] = [],
+): AccessLogColumnDef[] {
+  const selectedColumns: readonly OptionalColumnsOptions[] = Array.isArray(
+    columns,
+  )
+    ? columns
+    : [columns];
+
+  return [
+    ...baseColumns,
+    ...selectedColumns.map((column) => optionalColumns[column]),
+  ];
+}
