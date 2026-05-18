@@ -37,6 +37,7 @@ type AccessLogDateFilter =
 export type GetAccessLogsInput = {
   siteId?: string;
   timestampField?: AccessLogTimestampField;
+  exitTimestamp?: Prisma.AccessLogWhereInput["exitTimestamp"];
 } & AccessLogDateFilter;
 
 export type CreateAccessLogInput = {
@@ -168,12 +169,18 @@ export class AccessLogEntity {
   public static async findMany(input?: GetAccessLogsInput) {
     const timestampField = input?.timestampField ?? "entryTimestamp";
 
+    const exitTimestampFilter =
+      input?.exitTimestamp !== undefined
+        ? { exitTimestamp: input.exitTimestamp }
+        : {};
+
     return await prisma.accessLog.findMany({
       where: input
         ? {
-          ...(input.siteId ? { siteId: input.siteId } : {}),
-          [timestampField]: this.getTimestampRangeFilter(input),
-        }
+            ...(input.siteId ? { siteId: input.siteId } : {}),
+            [timestampField]: this.getTimestampRangeFilter(input),
+            ...exitTimestampFilter,
+          }
         : undefined,
       include: this.DEFAULT_INCLUDE,
       orderBy: {

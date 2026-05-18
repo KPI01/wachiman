@@ -9,7 +9,7 @@ import {
 } from "~/lib/services/access-log.server";
 import { getManySites } from "~/lib/services/sites.server";
 import { getFormData, getQueryParams } from "~/lib/services/http.server";
-import type { GetAccessLogsInput } from "~/lib/database/access-log.server";
+import type { GetManyAccessLogsInput } from "~/lib/services/access-log.server";
 import { formatTimestamp, parseLocalDate } from "~/lib/utils";
 import { useNavigate } from "react-router";
 import { useState } from "react";
@@ -26,10 +26,10 @@ import { DateRangePicker } from "~/components/ui/date-range-picker";
 export async function loader({ request }: Route.LoaderArgs) {
   await validateUserRole(request, "ADMIN");
 
-  const query = getQueryParams(request, ["date", "dateFrom", "dateTo"]);
+  const query = getQueryParams(request, ["date", "dateFrom", "dateTo", "status"]);
 
   let mode: "single" | "range";
-  let input: GetAccessLogsInput;
+  let input: GetManyAccessLogsInput;
 
   if (query.dateFrom && query.dateTo) {
     mode = "range";
@@ -43,6 +43,10 @@ export async function loader({ request }: Route.LoaderArgs) {
     input = { date };
   }
 
+  if (query.status === "INSIDE" || query.status === "OUTSIDE") {
+    input.status = query.status;
+  }
+
   const [accessLogs, sites] = await Promise.all([
     getManyAccessLogs(input),
     getManySites(),
@@ -53,7 +57,7 @@ export async function loader({ request }: Route.LoaderArgs) {
     date: mode === "single" ? input.date : undefined,
     dateRange:
       mode === "range" ? { from: input.from, to: input.to } : undefined,
-
+    status: query.status,
     accessLogs,
     sites,
   };
@@ -86,6 +90,30 @@ export default function IndexAccessLogs({ loaderData }: Route.ComponentProps) {
       navigation(`/admin/access-logs`);
     }
   };
+
+  const handleStatusChange = (status: string) => {
+    const statusParam = status === "ALL" ? "" : `&status=${status}`;
+    if (filterMode === "range" && loaderData.dateRange) {
+      const from = formatTimestamp({
+        date: loaderData.dateRange.from,
+        template: "yyyy-MM-dd",
+      });
+      const to = formatTimestamp({
+        date: loaderData.dateRange.to,
+        template: "yyyy-MM-dd",
+      });
+      navigation(
+        `/admin/access-logs?dateFrom=${from}&dateTo=${to}${statusParam}`,
+      );
+    } else {
+      const today = formatTimestamp({
+        date: loaderData.date ?? new Date(),
+        template: "yyyy-MM-dd",
+      });
+      navigation(`/admin/access-logs?date=${today}${statusParam}`);
+    }
+  };
+
   return (
     <div className="grid space-y-6">
       <h2 className="text-3xl font-bold">Registros de acceso</h2>
@@ -108,7 +136,7 @@ export default function IndexAccessLogs({ loaderData }: Route.ComponentProps) {
               value={loaderData.date}
               onChange={(v) =>
                 navigation(
-                  `/admin/access-logs?date=${formatTimestamp({ date: v, template: "yyyy-MM-dd" })}`,
+                  `/admin/access-logs?date=${formatTimestamp({ date: v, template: "yyyy-MM-dd" })}${loaderData.status ? `&status=${loaderData.status}` : ""}`,
                 )
               }
             />
@@ -126,12 +154,25 @@ export default function IndexAccessLogs({ loaderData }: Route.ComponentProps) {
                     template: "yyyy-MM-dd",
                   });
                   navigation(
-                    `/admin/access-logs?dateFrom=${from}&dateTo=${to}`,
+                    `/admin/access-logs?dateFrom=${from}&dateTo=${to}${loaderData.status ? `&status=${loaderData.status}` : ""}`,
                   );
                 }
               }}
             />
           )}
+          <Select
+            value={loaderData.status ?? "ALL"}
+            onValueChange={handleStatusChange}
+          >
+            <SelectTrigger className="w-36">
+              <SelectValue placeholder="Estado" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">Todos</SelectItem>
+              <SelectItem value="INSIDE">Dentro</SelectItem>
+              <SelectItem value="OUTSIDE">Fuera</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
         <CreateAccessLog
           sites={loaderData.sites ?? []}
