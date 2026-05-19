@@ -42,6 +42,10 @@ export function getUserRedirectPath(role: SessionUser["role"]) {
 
 const SESSION_SECRET = process.env.SESSION_SECRET ?? "dev-session-secret";
 const SESSION_NAME = "wachiman-session";
+const SESSION_COOKIE_SECURE =
+  process.env.SESSION_COOKIE_SECURE === undefined
+    ? process.env.NODE_ENV === "production"
+    : process.env.SESSION_COOKIE_SECURE.trim().toLowerCase() === "true";
 const USER_ROLES = new Set(Object.values(UserRole));
 const SECONDS_IN_A_MINUTE = 60;
 const MINUTES_IN_A_HOUR = 60;
@@ -53,7 +57,7 @@ const sessionStorage = createCookieSessionStorage<SessionPayload>({
     path: "/",
     sameSite: "lax",
     secrets: [SESSION_SECRET],
-    secure: process.env.NODE_ENV === "production",
+    secure: SESSION_COOKIE_SECURE,
     maxAge: SECONDS_IN_A_MINUTE * MINUTES_IN_A_HOUR * 8,
   },
 });

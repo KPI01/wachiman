@@ -12,7 +12,8 @@
     "db:migrate": "pnpm prisma migrate",
     "db:seed": "tsx prisma/seed.ts",
     "db:reset": "pnpm prisma migrate reset",
-    "env:set-encryption-key": "tsx scripts/set-encryption-key.ts"
+    "env:set-encryption-key": "tsx scripts/set-encryption-key.ts",
+    "env:set-session-secret": "tsx scripts/set-session-secret.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

@@ -48,6 +48,15 @@ Set a specific key or use a different env file:
 npm run env:set-encryption-key -- --key "<base64-key>" --env .env.local
 ```
 
+### Session cookies
+
+Set `SESSION_SECRET` in production. `SESSION_COOKIE_SECURE` defaults to `true`
+when running with `NODE_ENV=production`.
+
+If you run the production build over plain HTTP for an internal test server,
+set `SESSION_COOKIE_SECURE=false`; otherwise browsers reject the secure session
+cookie after login. Keep `SESSION_COOKIE_SECURE=true` when serving through HTTPS.
+
 ## Building for Production
 
 Create a production build:
