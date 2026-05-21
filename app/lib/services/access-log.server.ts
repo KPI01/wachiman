@@ -16,18 +16,8 @@ export type GetManyAccessLogsInput = GetAccessLogsInput & {
   status?: AccessLogStatus;
 };
 
-async function isPersonAlreadyInside(siteId: string, legalId: string) {
-  const todaysLogs = await AccessLogEntity.findMany({
-    siteId,
-    timestampField: "entryTimestamp",
-    date: new Date(),
-  });
-  const peopleInside = todaysLogs.filter((log) => log.exitTimestamp === null);
-  const personIsInside = peopleInside.some(
-    (person) => person.legalIdSnapshot === legalId,
-  );
-
-  return personIsInside;
+async function isPersonAlreadyInside(legalId: string) {
+  return (await AccessLogEntity.findOpenByLegalId(legalId)) !== null;
 }
 
 export async function getManyAccessLogs(input?: GetManyAccessLogsInput) {
@@ -55,6 +45,41 @@ type CreateAccessLogOptions = {
   lockedSiteId?: string;
 };
 
+type CreateAccessLogInputType = {
+  data: z.infer<typeof createAccessLogSchema>;
+  siteId: string;
+  createdById: string;
+};
+function buildCreateAccessLogInput({
+  data,
+  createdById,
+  siteId,
+}: CreateAccessLogInputType) {
+  const {
+    vehiclePlateSnapshot,
+    vehicleBrandSnapshot,
+    vehicleModelSnapshot,
+    vehicleTypeSnapshot,
+    entrySignaturePayload,
+    ...accessLogData
+  } = data;
+
+  return {
+    ...accessLogData,
+    siteId,
+    createdById,
+    entrySignatureEnvelope: encryptValue(JSON.stringify(entrySignaturePayload)),
+    vehicle: data.withVehicle
+      ? {
+          typeSnapshot: vehicleTypeSnapshot ?? "",
+          brandSnapshot: vehicleBrandSnapshot,
+          modelSnapshot: vehicleModelSnapshot,
+          plateSnapshot: vehiclePlateSnapshot ?? "",
+        }
+      : undefined,
+  };
+}
+
 export async function createAccessLog(
   input: Record<string, unknown>,
   options: CreateAccessLogOptions,
@@ -72,9 +97,7 @@ export async function createAccessLog(
     return { success: false, errors: "unauthorized" };
   }
 
-  const siteId = options.lockedSiteId ?? data.siteId;
   const personIsAlreadyInside = await isPersonAlreadyInside(
-    siteId,
     data.legalIdSnapshot,
   );
 
@@ -86,31 +109,10 @@ export async function createAccessLog(
     };
   }
 
-  await AccessLogEntity.create({
-    entryTimestamp: data.entryTimestamp,
-    entrySignatureEnvelope: encryptValue(
-      JSON.stringify(data.entrySignaturePayload),
-    ),
-    companyNameSnapshot: data.companyNameSnapshot,
-    firstNameSnapshot: data.firstNameSnapshot,
-    middleNameSnapshot: data.middleNameSnapshot,
-    lastNameSnapshot: data.lastNameSnapshot,
-    secondLastNameSnapshot: data.secondLastNameSnapshot,
-    phoneNumber: data.phoneNumber,
-    legalIdSnapshot: data.legalIdSnapshot,
-    visitReason: data.visitReason,
-    siteId,
-    withVehicle: data.withVehicle,
-    createdById: createdBy.id,
-    vehicle: data.withVehicle
-      ? {
-          typeSnapshot: data.vehicleTypeSnapshot ?? "",
-          brandSnapshot: data.vehicleBrandSnapshot,
-          modelSnapshot: data.vehicleModelSnapshot,
-          plateSnapshot: data.vehiclePlateSnapshot ?? "",
-        }
-      : undefined,
-  });
+  const siteId = options.lockedSiteId ?? data.siteId;
+  await AccessLogEntity.create(
+    buildCreateAccessLogInput({ data, siteId, createdById: createdBy.id }),
+  );
 
   return { success: true };
 }

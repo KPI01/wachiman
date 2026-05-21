@@ -24,15 +24,15 @@ type AccessLogTimestampField = "entryTimestamp" | "exitTimestamp";
 
 type AccessLogDateFilter =
   | {
-    date: Date;
-    from?: never;
-    to?: never;
-  }
+      date: Date;
+      from?: never;
+      to?: never;
+    }
   | {
-    date?: never;
-    from: Date;
-    to: Date;
-  };
+      date?: never;
+      from: Date;
+      to: Date;
+    };
 
 export type GetAccessLogsInput = {
   siteId?: string;
@@ -68,6 +68,17 @@ export type MarkAccessLogExitInput = {
   exitRecordedById: string;
   siteId?: string;
 };
+
+type AccessLogFindFirstInput = {
+  entryTimestamp?: Date;
+  exitTimestamp?: Date | boolean;
+} & (
+  | {
+      id: string;
+      legalId?: never;
+    }
+  | { id?: never; legalId: string }
+);
 
 export class AccessLogEntity {
   private static DEFAULT_INCLUDE = {
@@ -189,10 +200,39 @@ export class AccessLogEntity {
     });
   }
 
-  public static async findById(id: string) {
-    return await prisma.accessLog.findUnique({
+  public static async findOpenByLegalId(legalId: string) {
+    return await prisma.accessLog.findFirst({
       where: {
-        id,
+        legalIdSnapshot: legalId,
+        exitTimestamp: null,
+      },
+    });
+  }
+
+  public static async findOpenByLegalIdInSite(legalId: string, siteId: string) {
+    return await prisma.accessLog.findFirst({
+      where: {
+        siteId,
+        legalIdSnapshot: legalId,
+        exitTimestamp: null,
+      },
+    });
+  }
+
+  public static async findFirst(where: AccessLogFindFirstInput) {
+    const { entryTimestamp, exitTimestamp, ...userWhere } = where;
+
+    return await prisma.accessLog.findFirst({
+      where: {
+        ...userWhere,
+
+        ...(entryTimestamp !== undefined ? { entryTimestamp } : {}),
+
+        ...(exitTimestamp !== undefined
+          ? typeof exitTimestamp === "boolean"
+            ? { exitTimestamp: { not: null } }
+            : { exitTimestamp }
+          : {}),
       },
       include: this.DEFAULT_INCLUDE,
     });
