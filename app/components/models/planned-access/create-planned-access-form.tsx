@@ -6,6 +6,7 @@ import AlertDialogContainer, {
 } from "~/components/containers/alert-dialog-container";
 import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
 import { Button } from "~/components/ui/button";
+import { DateTimePicker } from "~/components/ui/date-time-picker";
 import { Input } from "~/components/ui/input";
 import {
   Popover,
@@ -67,13 +68,6 @@ function getEmptyVisitorDraft(): VisitorDraft {
     lastNameSnapshot: "",
     phoneNumber: "",
   };
-}
-
-function getDefaultDatetime() {
-  const now = new Date();
-  const timezoneOffset = now.getTimezoneOffset() * 60_000;
-
-  return new Date(now.getTime() - timezoneOffset).toISOString().slice(0, 16);
 }
 
 function getPersonFieldErrors(
@@ -142,6 +136,7 @@ export default function CreatePlannedAccessForm({
 }: CreatePlannedAccessFormProps) {
   const fetcher = useFetcher<FetcherData>();
   const [open, setOpen] = useState(false);
+  const [datePickerResetKey, setDatePickerResetKey] = useState(0);
   const [visitors, setVisitors] = useState<PlannedAccessVisitor[]>([]);
   const [nextVisitorId, setNextVisitorId] = useState(1);
   const [visitorDraft, setVisitorDraft] = useState(getEmptyVisitorDraft);
@@ -165,6 +160,7 @@ export default function CreatePlannedAccessForm({
     }
 
     setOpen(false);
+    setDatePickerResetKey((currentKey) => currentKey + 1);
     setVisitors([]);
     setNextVisitorId(1);
     setVisitorDraft(getEmptyVisitorDraft());
@@ -174,6 +170,7 @@ export default function CreatePlannedAccessForm({
   }, [fetcher.data, fetcher.state]);
 
   function resetVisitorState() {
+    setDatePickerResetKey((currentKey) => currentKey + 1);
     setVisitors([]);
     setNextVisitorId(1);
     setVisitorDraft(getEmptyVisitorDraft());
@@ -293,18 +290,23 @@ export default function CreatePlannedAccessForm({
           </Select>
         </FieldWrapper>
         <FieldWrapper
+          label="Empresa *"
+          htmlFor="companySnapshot"
+          errors={getFieldErrors(fetcher.data?.errors, "companySnapshot")}
+        >
+          <Input id="companySnapshot" name="companySnapshot" required />
+        </FieldWrapper>
+        <FieldWrapper
           label="Inicio previsto *"
           htmlFor="expectedStartDatetime"
-          errors={getFieldErrors(
-            fetcher.data?.errors,
-            "expectedStartDatetime",
-          )}
+          errors={getFieldErrors(fetcher.data?.errors, "expectedStartDatetime")}
+          className="md:col-span-2"
         >
-          <Input
+          <DateTimePicker
+            key={`expected-start-${datePickerResetKey}`}
             id="expectedStartDatetime"
             name="expectedStartDatetime"
-            type="datetime-local"
-            defaultValue={getDefaultDatetime()}
+            className="m-0 w-full"
             required
           />
         </FieldWrapper>
@@ -312,19 +314,14 @@ export default function CreatePlannedAccessForm({
           label="Fin previsto"
           htmlFor="expectedEndDatetime"
           errors={getFieldErrors(fetcher.data?.errors, "expectedEndDatetime")}
+          className="md:col-span-2"
         >
-          <Input
+          <DateTimePicker
+            key={`expected-end-${datePickerResetKey}`}
             id="expectedEndDatetime"
             name="expectedEndDatetime"
-            type="datetime-local"
+            className="m-0 w-full"
           />
-        </FieldWrapper>
-        <FieldWrapper
-          label="Empresa *"
-          htmlFor="companySnapshot"
-          errors={getFieldErrors(fetcher.data?.errors, "companySnapshot")}
-        >
-          <Input id="companySnapshot" name="companySnapshot" required />
         </FieldWrapper>
         <div className="md:col-span-2">
           <FieldWrapper

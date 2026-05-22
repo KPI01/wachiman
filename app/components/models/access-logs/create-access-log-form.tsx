@@ -3,6 +3,7 @@ import AlertDialogContainer, {
   AlertDialogCancel,
 } from "~/components/containers/alert-dialog-container";
 import { Button } from "~/components/ui/button";
+import { DateTimePicker } from "~/components/ui/date-time-picker";
 import FieldWrapper from "~/components/ui/wrappers/field-wrapper";
 import { Input } from "~/components/ui/input";
 import {
@@ -37,10 +38,7 @@ type CreateAccessLogProps = {
 };
 
 function getDefaultEntryTimestamp() {
-  const now = new Date();
-  const timezoneOffset = now.getTimezoneOffset() * 60_000;
-
-  return new Date(now.getTime() - timezoneOffset).toISOString().slice(0, 16);
+  return new Date();
 }
 
 export default function CreateAccessLog({
@@ -210,12 +208,11 @@ export default function CreateAccessLog({
               htmlFor="entryTimestamp"
               errors={getFieldErrors(fetcher.data?.errors, "entryTimestamp")}
             >
-              <Input
+              <DateTimePicker
                 id="entryTimestamp"
                 name="entryTimestamp"
-                type="datetime-local"
                 value={entryTimestamp}
-                onChange={(event) => setEntryTimestamp(event.target.value)}
+                className="m-0 w-full"
                 readOnly
               />
             </FieldWrapper>
