@@ -23,7 +23,11 @@ export type PlannedAccessListItem = Prisma.PlannedAccessGetPayload<{
         username: true;
       };
     };
-    plannedAccessPersons: true;
+    plannedAccessPersons: {
+      include: {
+        accessLogs: true;
+      };
+    };
   };
 }>;
 
@@ -98,6 +102,9 @@ export class PlannedAccessEntity {
     plannedAccessPersons: {
       orderBy: {
         createdAt: "asc" as const,
+      },
+      include: {
+        accessLogs: true,
       },
     },
   };

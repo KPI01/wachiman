@@ -10,20 +10,17 @@ import {
   getPlannedAccessFormInput,
   updatePlannedAccessStatus,
 } from "~/lib/services/planned-access.server";
-import { getManyAccessLogs } from "~/lib/services/access-log.server";
 import type { Route } from "./+types/home";
 import { getSessionSite } from "~/lib/session.server";
 import { Badge } from "~/components/ui/badge";
+import type { PlannedAccessStatus } from "../../../prisma/generated/prisma/client";
 import type { AllowedAction } from "~/components/models/planned-access/planned-access-status-actions";
 import type { PlannedAccessListItem } from "~/lib/database/planned-access.server";
 
 type EnrichedPlannedAccess = PlannedAccessListItem & {
   _entryStatus: {
-    totalPersons: number;
-    entryCount: number;
-    allEntered: boolean;
-    someEntered: boolean;
-    noneEntered: boolean;
+    label: string;
+    variant: "default" | "secondary" | "destructive" | "outline";
   };
 };
 
@@ -38,6 +35,42 @@ const PLANNED_ACCESS_GLOBAL_FILTER_COLUMNS = [
 
 const entryColHelper = createColumnHelper<EnrichedPlannedAccess>();
 
+function getEntryStatusForRequest(
+  status: PlannedAccessStatus,
+  persons: PlannedAccessListItem["plannedAccessPersons"],
+): EnrichedPlannedAccess["_entryStatus"] {
+  switch (status) {
+    case "PENDING_APPROVAL":
+      return { label: "Pendiente de aprobación", variant: "secondary" };
+    case "REJECTED":
+      return { label: "Rechazada", variant: "destructive" };
+    case "CANCELED":
+      return { label: "Cancelada", variant: "outline" };
+    case "EXPIRED":
+      return { label: "Expirada", variant: "destructive" };
+    case "USED":
+      return { label: "Todos ingresaron", variant: "default" };
+    case "APPROVED": {
+      const totalPersons = persons.length;
+      const entryCount = persons.filter((p) => (p.accessLogs?.length ?? 0) > 0).length;
+      if (entryCount === totalPersons && totalPersons > 0) {
+        return { label: "Todos ingresaron", variant: "default" };
+      }
+      if (entryCount > 0) {
+        return { label: `${entryCount}/${totalPersons}`, variant: "secondary" };
+      }
+      return { label: "Sin ingreso", variant: "outline" };
+    }
+    case "PARTIALLY_USED": {
+      const totalPersons = persons.length;
+      const entryCount = persons.filter((p) => (p.accessLogs?.length ?? 0) > 0).length;
+      return { label: `${entryCount}/${totalPersons}`, variant: "secondary" };
+    }
+    default:
+      return { label: "Sin ingreso", variant: "outline" };
+  }
+}
+
 function getEntryStatusColumns(): ReturnType<typeof plannedAccessColumns> {
   const baseColumns = plannedAccessColumns({
     actionPath: "/requester?index",
@@ -48,18 +81,8 @@ function getEntryStatusColumns(): ReturnType<typeof plannedAccessColumns> {
     id: "entryStatus",
     header: "Ingreso",
     cell: ({ row }) => {
-      const status = row.original._entryStatus;
-      if (status.allEntered) {
-        return <Badge variant="default">Todos ingresaron</Badge>;
-      }
-      if (status.someEntered) {
-        return (
-          <Badge variant="secondary">
-            {status.entryCount}/{status.totalPersons}
-          </Badge>
-        );
-      }
-      return <Badge variant="outline">Sin ingreso</Badge>;
+      const entryStatus = row.original._entryStatus;
+      return <Badge variant={entryStatus.variant}>{entryStatus.label}</Badge>;
     },
   });
 
@@ -81,19 +104,12 @@ export async function loader({ request }: Route.LoaderArgs) {
     throw new Response("Unauthorized", { status: 401 });
   }
 
-  const [plannedAccesses, accessLogs] = await Promise.all([
-    getManyPlannedAccesses({
-      requestedById: user.id,
-      siteId: sessionSite.id,
-    }),
-    getManyAccessLogs({
-      siteId: sessionSite.id,
-      timestampField: "entryTimestamp",
-      date: new Date(),
-    }),
-  ]);
+  const plannedAccesses = await getManyPlannedAccesses({
+    requestedById: user.id,
+    siteId: sessionSite.id,
+  });
 
-  return { plannedAccesses, accessLogs, site: sessionSite };
+  return { plannedAccesses, site: sessionSite };
 }
 
 export async function action({ request }: Route.ActionArgs) {
@@ -125,36 +141,13 @@ export async function action({ request }: Route.ActionArgs) {
 
 export default function RequesterHome({ loaderData }: Route.ComponentProps) {
   const columns = getEntryStatusColumns();
-  const registeredLegalIds = useMemo(
-    () =>
-      new Set(
-        (loaderData.accessLogs ?? []).map((accessLog) =>
-          accessLog.legalIdSnapshot.toUpperCase(),
-        ),
-      ),
-    [loaderData.accessLogs],
-  );
 
   const enrichedAccesses = useMemo(() => {
-    return (loaderData.plannedAccesses ?? []).map((pa) => {
-      const personsWithEntry = pa.plannedAccessPersons.filter((person) =>
-        registeredLegalIds.has(person.legalIdSnapshot.toUpperCase()),
-      );
-      const totalPersons = pa.plannedAccessPersons.length;
-      const entryCount = personsWithEntry.length;
-
-      return {
-        ...pa,
-        _entryStatus: {
-          totalPersons,
-          entryCount,
-          allEntered: entryCount === totalPersons && totalPersons > 0,
-          someEntered: entryCount > 0 && entryCount < totalPersons,
-          noneEntered: entryCount === 0,
-        },
-      };
-    });
-  }, [loaderData.plannedAccesses, registeredLegalIds]);
+    return (loaderData.plannedAccesses ?? []).map((pa) => ({
+      ...pa,
+      _entryStatus: getEntryStatusForRequest(pa.status, pa.plannedAccessPersons),
+    }));
+  }, [loaderData.plannedAccesses]);
 
   return (
     <div className="grid space-y-6">
