@@ -16,8 +16,8 @@ export type GetManyAccessLogsInput = GetAccessLogsInput & {
   status?: AccessLogStatus;
 };
 
-async function isPersonAlreadyInside(legalId: string) {
-  return (await AccessLogEntity.findOpenByLegalId(legalId)) !== null;
+async function isPersonAlreadyInside(legalId: string, siteId: string) {
+  return (await AccessLogEntity.findOpenByLegalIdInSite(legalId, siteId)) !== null;
 }
 
 export async function getManyAccessLogs(input?: GetManyAccessLogsInput) {
@@ -97,8 +97,11 @@ export async function createAccessLog(
     return { success: false, errors: "unauthorized" };
   }
 
+  const siteId = options.lockedSiteId ?? data.siteId;
+
   const personIsAlreadyInside = await isPersonAlreadyInside(
     data.legalIdSnapshot,
+    siteId,
   );
 
   if (personIsAlreadyInside) {
@@ -109,7 +112,6 @@ export async function createAccessLog(
     };
   }
 
-  const siteId = options.lockedSiteId ?? data.siteId;
   await AccessLogEntity.create(
     buildCreateAccessLogInput({ data, siteId, createdById: createdBy.id }),
   );

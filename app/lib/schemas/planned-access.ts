@@ -49,6 +49,18 @@ export const createPlannedAccessSchema = z
         path: ["expectedEndDatetime"],
       });
     }
+
+    const seenLegalIds = new Set<string>();
+    data.persons.forEach((person, index) => {
+      if (seenLegalIds.has(person.legalIdSnapshot)) {
+        context.addIssue({
+          code: "custom",
+          message: "Esta persona ya fue agregada a la solicitud.",
+          path: ["persons", index, "legalIdSnapshot"],
+        });
+      }
+      seenLegalIds.add(person.legalIdSnapshot);
+    });
   });
 
 export const updatePlannedAccessStatusSchema = z.object({

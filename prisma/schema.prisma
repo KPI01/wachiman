@@ -97,6 +97,11 @@ model AccessLog {
   exitRecordedBy     User?             @relation(name: "exitRecordedBy", fields: [exitRecordedById], references: [id])
   vehicleAccessLogId String?
   vehicleAccessLog   AccessLogVehicle? @relation(fields: [vehicleAccessLogId], references: [id])
+
+  plannedAccessId       String?
+  plannedAccess         PlannedAccess?       @relation(fields: [plannedAccessId], references: [id])
+  plannedAccessPersonId String?
+  plannedAccessPerson   PlannedAccessPerson? @relation(fields: [plannedAccessPersonId], references: [id])
 }
 
 model AccessLogVehicle {
@@ -140,6 +145,7 @@ model PlannedAccess {
   site   Site   @relation(fields: [siteId], references: [id])
 
   plannedAccessPersons PlannedAccessPerson[]
+  accessLogs           AccessLog[]
 
   @@index([status, siteId])
   @@index([expectedStartDatetime, expectedEndDatetime])
@@ -159,6 +165,8 @@ model PlannedAccessPerson {
   secondLastNameSnapshot String?
   phoneNumber            String?
   legalIdSnapshot        String
+
+  accessLogs AccessLog[]
 
   @@index([legalIdSnapshot])
   @@index([plannedAccessId])

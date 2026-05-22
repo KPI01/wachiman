@@ -42,7 +42,7 @@ function getEntryStatusColumns(): ReturnType<typeof plannedAccessColumns> {
   const baseColumns = plannedAccessColumns({
     actionPath: "/requester?index",
     allowedActions: REQUESTER_ALLOWED_ACTIONS,
-  });
+  }) as ReturnType<typeof plannedAccessColumns>;
 
   const entryColumn = entryColHelper.display({
     id: "entryStatus",
@@ -65,9 +65,9 @@ function getEntryStatusColumns(): ReturnType<typeof plannedAccessColumns> {
 
   const actionsIndex = baseColumns.findIndex((col) => col.id === "actions");
   if (actionsIndex >= 0) {
-    baseColumns.splice(actionsIndex, 0, entryColumn);
+    baseColumns.splice(actionsIndex, 0, entryColumn as typeof baseColumns[number]);
   } else {
-    baseColumns.push(entryColumn);
+    baseColumns.push(entryColumn as typeof baseColumns[number]);
   }
 
   return baseColumns;

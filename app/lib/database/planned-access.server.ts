@@ -59,6 +59,20 @@ export type UpdatePlannedAccessStatusInput = {
   approvedAt?: Date | null;
 };
 
+const ACTIVE_STATUSES: PlannedAccessStatus[] = [
+  "PENDING_APPROVAL",
+  "APPROVED",
+  "PARTIALLY_USED",
+];
+
+export type OverlappingPlannedAccess = {
+  id: string;
+  companySnapshot: string;
+  expectedStartDatetime: Date;
+  expectedEndDatetime: Date | null;
+  plannedAccessPersons: Array<{ legalIdSnapshot: string }>;
+};
+
 export class PlannedAccessEntity {
   private static DEFAULT_INCLUDE = {
     site: {
@@ -168,5 +182,100 @@ export class PlannedAccessEntity {
         approvedById: data.approvedById,
       },
     });
+  }
+
+  public static async countLinkedAccessLogs(plannedAccessId: string) {
+    return await prisma.accessLog.count({
+      where: { plannedAccessId },
+    });
+  }
+
+  public static async findOverlappingPlannedAccess(
+    siteId: string,
+    expectedStart: Date,
+    expectedEnd: Date | null,
+    excludeId?: string,
+  ): Promise<OverlappingPlannedAccess[]> {
+    const dateFilter: Prisma.PlannedAccessWhereInput = {
+      status: { in: ACTIVE_STATUSES },
+      siteId,
+      ...(excludeId ? { id: { not: excludeId } } : {}),
+      OR: [
+        {
+          expectedEndDatetime: null,
+          expectedStartDatetime: { lte: expectedEnd ?? new Date(2100, 0, 1) },
+        },
+        {
+          expectedStartDatetime: {
+            lte: expectedEnd ?? new Date(2100, 0, 1),
+          },
+          expectedEndDatetime: { gte: expectedStart },
+        },
+      ],
+    };
+
+    return await prisma.plannedAccess.findMany({
+      where: dateFilter,
+      select: {
+        id: true,
+        companySnapshot: true,
+        expectedStartDatetime: true,
+        expectedEndDatetime: true,
+        plannedAccessPersons: {
+          select: { legalIdSnapshot: true },
+        },
+      },
+    });
+  }
+
+  public static async findOverlappingForPerson(
+    legalId: string,
+    expectedStart: Date,
+    expectedEnd: Date | null,
+    excludePlannedAccessId?: string,
+  ): Promise<OverlappingPlannedAccess[]> {
+    const dateFilter: Prisma.PlannedAccessWhereInput = {
+      status: { in: ACTIVE_STATUSES },
+      ...(excludePlannedAccessId
+        ? { id: { not: excludePlannedAccessId } }
+        : {}),
+      plannedAccessPersons: {
+        some: { legalIdSnapshot: legalId },
+      },
+      OR: [
+        {
+          expectedEndDatetime: null,
+          expectedStartDatetime: { lte: expectedEnd ?? new Date(2100, 0, 1) },
+        },
+        {
+          expectedStartDatetime: {
+            lte: expectedEnd ?? new Date(2100, 0, 1),
+          },
+          expectedEndDatetime: { gte: expectedStart },
+        },
+      ],
+    };
+
+    return await prisma.plannedAccess.findMany({
+      where: dateFilter,
+      select: {
+        id: true,
+        companySnapshot: true,
+        expectedStartDatetime: true,
+        expectedEndDatetime: true,
+        plannedAccessPersons: {
+          select: { legalIdSnapshot: true },
+        },
+      },
+    });
+  }
+
+  public static async hasPersonAccessLog(
+    plannedAccessPersonId: string,
+  ): Promise<boolean> {
+    const count = await prisma.accessLog.count({
+      where: { plannedAccessPersonId },
+    });
+    return count > 0;
   }
 }

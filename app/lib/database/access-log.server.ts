@@ -60,6 +60,8 @@ export type CreateAccessLogInput = {
     modelSnapshot?: string;
     plateSnapshot: string;
   };
+  plannedAccessId?: string;
+  plannedAccessPersonId?: string;
 };
 
 export type MarkAccessLogExitInput = {
@@ -155,6 +157,8 @@ export class AccessLogEntity {
           siteId: data.siteId,
           createdById: data.createdById,
           vehicleAccessLogId: vehicleAccessLog?.id,
+          plannedAccessId: data.plannedAccessId,
+          plannedAccessPersonId: data.plannedAccessPersonId,
         },
       });
     });

@@ -83,14 +83,79 @@ export async function createPlannedAccess(
     return { success: false, errors: "unauthorized" };
   }
 
+  const siteId = options.lockedSiteId ?? parsed.data.siteId;
+  const newLegalIds = parsed.data.persons.map((p) => p.legalIdSnapshot);
+
+  const overlappingSameSite = await PlannedAccessEntity.findOverlappingPlannedAccess(
+    siteId,
+    parsed.data.expectedStartDatetime,
+    parsed.data.expectedEndDatetime ?? null,
+  );
+
+  for (const existing of overlappingSameSite) {
+    const existingLegalIds = existing.plannedAccessPersons.map(
+      (p) => p.legalIdSnapshot,
+    );
+    const sharedLegalId = newLegalIds.find((id) =>
+      existingLegalIds.includes(id),
+    );
+
+    if (sharedLegalId) {
+      const startStr = formatPlannedDate(existing.expectedStartDatetime);
+      const endStr = existing.expectedEndDatetime
+        ? formatPlannedDate(existing.expectedEndDatetime)
+        : "sin fecha de fin definida";
+
+      return {
+        success: false,
+        errors: `Ya existe una solicitud planificada para "${existing.companySnapshot}" con las mismas personas en el rango ${startStr} - ${endStr}.`,
+      };
+    }
+  }
+
+  const personErrors: string[] = [];
+  for (const legalId of newLegalIds) {
+    const overlappingForPerson = await PlannedAccessEntity.findOverlappingForPerson(
+      legalId,
+      parsed.data.expectedStartDatetime,
+      parsed.data.expectedEndDatetime ?? null,
+    );
+
+    for (const existing of overlappingForPerson) {
+      const startStr = formatPlannedDate(existing.expectedStartDatetime);
+      const endStr = existing.expectedEndDatetime
+        ? formatPlannedDate(existing.expectedEndDatetime)
+        : "sin fecha de fin definida";
+
+      personErrors.push(
+        `La persona con DNI ${legalId} ya está registrada en otra solicitud planificada para "${existing.companySnapshot}" (${startStr} - ${endStr}).`,
+      );
+    }
+  }
+
+  if (personErrors.length > 0) {
+    return {
+      success: false,
+      errors: personErrors.join(" "),
+    };
+  }
+
   await PlannedAccessEntity.create({
     ...parsed.data,
-    siteId: options.lockedSiteId ?? parsed.data.siteId,
+    siteId,
     requestedById: author.id,
     approvedById: author.id,
   });
 
   return { success: true };
+}
+
+function formatPlannedDate(date: Date) {
+  return date.toLocaleDateString("es-AR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
 }
 
 export async function updatePlannedAccessStatus(
@@ -152,10 +217,13 @@ export async function createAccessLogFromPlannedAccess(
     };
   }
 
-  if (plannedAccess.status !== "APPROVED") {
+  if (
+    plannedAccess.status !== "APPROVED" &&
+    plannedAccess.status !== "PARTIALLY_USED"
+  ) {
     return {
       success: false,
-      errors: "Solo se pueden registrar accesos planificados aprobados.",
+      errors: "Solo se pueden registrar accesos planificados aprobados o parcialmente usados.",
     };
   }
 
@@ -183,8 +251,22 @@ export async function createAccessLogFromPlannedAccess(
     };
   }
 
+  const personHasRegisteredAccess = await PlannedAccessEntity.hasPersonAccessLog(
+    person.id,
+  );
+
+  if (personHasRegisteredAccess) {
+    return {
+      success: false,
+      errors: "Esta persona ya registró su ingreso desde esta solicitud planificada.",
+    };
+  }
+
   const personIsAlreadyInside =
-    (await AccessLogEntity.findOpenByLegalId(person.legalIdSnapshot)) !== null;
+    (await AccessLogEntity.findOpenByLegalIdInSite(
+      person.legalIdSnapshot,
+      options.lockedSiteId,
+    )) !== null;
 
   if (personIsAlreadyInside) {
     return {
@@ -210,7 +292,28 @@ export async function createAccessLogFromPlannedAccess(
     visitReason: plannedAccess.visitReason,
     siteId: options.lockedSiteId,
     createdById: author.id,
+    plannedAccessId: plannedAccess.id,
+    plannedAccessPersonId: person.id,
   });
+
+  const totalPersons = plannedAccess.plannedAccessPersons.length;
+  const usedPersons = await PlannedAccessEntity.countLinkedAccessLogs(
+    plannedAccess.id,
+  );
+
+  if (usedPersons >= totalPersons) {
+    await PlannedAccessEntity.updateStatus({
+      id: plannedAccess.id,
+      status: "USED",
+      approvedById: author.id,
+    });
+  } else if (usedPersons > 0) {
+    await PlannedAccessEntity.updateStatus({
+      id: plannedAccess.id,
+      status: "PARTIALLY_USED",
+      approvedById: author.id,
+    });
+  }
 
   return { success: true };
 }
