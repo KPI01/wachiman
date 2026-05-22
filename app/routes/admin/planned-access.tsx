@@ -19,6 +19,10 @@ const PLANNED_ACCESS_GLOBAL_FILTER_COLUMNS = [
   "requestedByName",
 ];
 
+const columns = plannedAccessColumns({
+  actionPath: "/admin/planned-access",
+});
+
 export async function loader({ request }: Route.LoaderArgs) {
   await validateUserRole(request, "ADMIN");
 
@@ -46,6 +50,8 @@ export async function action({ request }: Route.ActionArgs) {
       authorUsername: user.username,
     });
   }
+
+  return null;
 }
 
 export default function PlannedAccessIndex({
@@ -59,7 +65,7 @@ export default function PlannedAccessIndex({
         <CreatePlannedAccessForm sites={loaderData.sites ?? []} />
       </div>
       <DataTable
-        columns={plannedAccessColumns()}
+        columns={columns}
         data={loaderData.plannedAccesses ?? []}
         globalFilterColumns={PLANNED_ACCESS_GLOBAL_FILTER_COLUMNS}
         empty={{

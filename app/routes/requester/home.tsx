@@ -71,31 +71,6 @@ function getEntryStatusForRequest(
   }
 }
 
-function getEntryStatusColumns(): ReturnType<typeof plannedAccessColumns> {
-  const baseColumns = plannedAccessColumns({
-    actionPath: "/requester?index",
-    allowedActions: REQUESTER_ALLOWED_ACTIONS,
-  }) as ReturnType<typeof plannedAccessColumns>;
-
-  const entryColumn = entryColHelper.display({
-    id: "entryStatus",
-    header: "Ingreso",
-    cell: ({ row }) => {
-      const entryStatus = row.original._entryStatus;
-      return <Badge variant={entryStatus.variant}>{entryStatus.label}</Badge>;
-    },
-  });
-
-  const actionsIndex = baseColumns.findIndex((col) => col.id === "actions");
-  if (actionsIndex >= 0) {
-    baseColumns.splice(actionsIndex, 0, entryColumn as typeof baseColumns[number]);
-  } else {
-    baseColumns.push(entryColumn as typeof baseColumns[number]);
-  }
-
-  return baseColumns;
-}
-
 export async function loader({ request }: Route.LoaderArgs) {
   const user = await validateUserRole(request, "ACCESS_REQUESTER");
   const sessionSite = await getSessionSite(request);
@@ -140,7 +115,30 @@ export async function action({ request }: Route.ActionArgs) {
 }
 
 export default function RequesterHome({ loaderData }: Route.ComponentProps) {
-  const columns = getEntryStatusColumns();
+  const columns = useMemo(() => {
+    const baseColumns = plannedAccessColumns({
+      actionPath: "/requester?index",
+      allowedActions: REQUESTER_ALLOWED_ACTIONS,
+    });
+
+    const entryColumn = entryColHelper.display({
+      id: "entryStatus",
+      header: "Ingreso",
+      cell: ({ row }) => {
+        const entryStatus = row.original._entryStatus;
+        return <Badge variant={entryStatus.variant}>{entryStatus.label}</Badge>;
+      },
+    });
+
+    const actionsIndex = baseColumns.findIndex((col) => col.id === "actions");
+    if (actionsIndex >= 0) {
+      baseColumns.splice(actionsIndex, 0, entryColumn as typeof baseColumns[number]);
+    } else {
+      baseColumns.push(entryColumn as typeof baseColumns[number]);
+    }
+
+    return baseColumns;
+  }, []);
 
   const enrichedAccesses = useMemo(() => {
     return (loaderData.plannedAccesses ?? []).map((pa) => ({
