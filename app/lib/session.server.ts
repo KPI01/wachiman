@@ -31,6 +31,8 @@ export function getUserRedirectPath(role: SessionUser["role"]) {
     ACCESS_OPERATOR: "/operator",
     ACCESS_MONITOR: "/monitor",
     SECURITY_MANAGER: "/security",
+    ACCESS_REQUESTER: "/requester",
+    ACCESS_APPROVER: "/approver",
   };
 
   if (!role || !Object.keys(paths).includes(role)) {

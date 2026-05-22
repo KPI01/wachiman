@@ -47,5 +47,18 @@ export default [
   route("security", "routes/security/layout.tsx", [
     index("routes/security/home.tsx"),
     route("access-logs", "routes/security/access-logs.tsx"),
+    route("planned-access", "routes/security/planned-access.tsx"),
+  ]),
+
+  // Solicitante de accesos
+  route("requester", "routes/requester/layout.tsx", [
+    index("routes/requester/home.tsx"),
+  ]),
+
+  // Aprobador de accesos
+  route("approver", "routes/approver/layout.tsx", [
+    index("routes/approver/home.tsx"),
+    route("planned-access", "routes/approver/planned-access.tsx"),
+    route("access-logs", "routes/approver/access-logs.tsx"),
   ]),
 ] satisfies RouteConfig;

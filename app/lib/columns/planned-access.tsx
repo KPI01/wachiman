@@ -1,4 +1,5 @@
 import { createColumnHelper } from "@tanstack/react-table";
+import type { AllowedAction } from "~/components/models/planned-access/planned-access-status-actions";
 import type { ComponentProps } from "react";
 import type { PlannedAccessStatus } from "../../../prisma/generated/prisma/client";
 import PlannedAccessStatusActions from "~/components/models/planned-access/planned-access-status-actions";
@@ -50,7 +51,13 @@ function getPersonsDetails(plannedAccess: PlannedAccessListItem) {
     .join(", ");
 }
 
-export const plannedAccessColumns = [
+export const plannedAccessColumns = ({
+  actionPath,
+  allowedActions,
+}: {
+  actionPath?: string;
+  allowedActions?: AllowedAction[];
+} = {}) => [
   plannedAccessColHelper.accessor("expectedStartDatetime", {
     header: "Inicio previsto",
     cell: ({ getValue }) =>
@@ -63,7 +70,7 @@ export const plannedAccessColumns = [
 
       return value
         ? formatTimestamp({ date: value, template: "dd/MM/yyyy HH:mm" })
-        : "-";
+        : "Todo el dia";
     },
   }),
   plannedAccessColHelper.accessor("status", {
@@ -122,6 +129,8 @@ export const plannedAccessColumns = [
       <PlannedAccessStatusActions
         plannedAccessId={row.original.id}
         status={row.original.status}
+        actionPath={actionPath}
+        allowedActions={allowedActions}
       />
     ),
   }),

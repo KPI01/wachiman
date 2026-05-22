@@ -4,13 +4,13 @@ import type { Route } from "./+types/layout";
 import { validateUserRole } from "~/lib/auth.server";
 import { Separator } from "~/components/ui/separator";
 import { Button } from "~/components/ui/button";
-import SecurityNavMenu from "./nav-menu";
+import ApproverNavMenu from "./nav-menu";
 
 export async function loader({ request }: Route.LoaderArgs) {
-  return await validateUserRole(request, "SECURITY_MANAGER");
+  return await validateUserRole(request, "ACCESS_APPROVER");
 }
 
-export default function SecurityLayout({ loaderData }: Route.ComponentProps) {
+export default function ApproverLayout({ loaderData }: Route.ComponentProps) {
   const submit = useSubmit();
   const handleLogout = () => {
     submit(null, {
@@ -20,7 +20,7 @@ export default function SecurityLayout({ loaderData }: Route.ComponentProps) {
   };
   return (
     <div className="p-4">
-      <title>Director de Seguridad</title>
+      <title>Aprobador de Accesos</title>
       <header className="mb-6 flex items-center border-b pb-3">
         <div className="flex h-12 w-24 shrink-0 items-center justify-center">
           <img
@@ -30,7 +30,7 @@ export default function SecurityLayout({ loaderData }: Route.ComponentProps) {
           />
         </div>
         <Separator orientation="vertical" className="mx-4" />
-        <SecurityNavMenu />
+        <ApproverNavMenu />
         <Button
           type="button"
           variant="outline"

@@ -31,6 +31,8 @@ type PlannedAccessSiteOption = Pick<Site, "id" | "name">;
 
 type CreatePlannedAccessFormProps = {
   sites: PlannedAccessSiteOption[];
+  actionPath?: string;
+  lockedSiteId?: string;
 };
 
 type TreeifiedError = {
@@ -133,6 +135,8 @@ function validateVisitorDraft(visitor: VisitorDraft): VisitorDraftErrors {
 
 export default function CreatePlannedAccessForm({
   sites,
+  actionPath = "/admin/planned-access",
+  lockedSiteId,
 }: CreatePlannedAccessFormProps) {
   const fetcher = useFetcher<FetcherData>();
   const [open, setOpen] = useState(false);
@@ -242,7 +246,7 @@ export default function CreatePlannedAccessForm({
       <fetcher.Form
         id="create-planned-access"
         method="post"
-        action="/admin/planned-access"
+        action={actionPath}
         className="grid min-h-0 gap-x-8 gap-y-5 overflow-y-auto p-2 md:grid-cols-2"
         onSubmit={(event) => {
           if (visitors.length > 0) {
@@ -274,7 +278,10 @@ export default function CreatePlannedAccessForm({
           htmlFor="siteId"
           errors={getFieldErrors(fetcher.data?.errors, "siteId")}
         >
-          <Select name="siteId" defaultValue={selectedSiteId} disabled={!sites.length}>
+          {lockedSiteId ? (
+            <input type="hidden" name="siteId" value={lockedSiteId} />
+          ) : null}
+          <Select name="siteId" defaultValue={selectedSiteId} disabled={!sites.length || !!lockedSiteId}>
             <SelectTrigger className="w-full">
               <SelectValue placeholder="Centro para la solicitud..." />
             </SelectTrigger>

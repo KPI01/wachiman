@@ -5,4 +5,6 @@ export const USER_ROLES: Record<UserRole, string> = {
   ACCESS_MONITOR: "Monitor de accesos",
   ACCESS_OPERATOR: "Operador de accesos",
   SECURITY_MANAGER: "Director de seguridad",
+  ACCESS_REQUESTER: "Solicitante de accesos",
+  ACCESS_APPROVER: "Aprobador de accesos",
 };

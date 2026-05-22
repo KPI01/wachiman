@@ -9,7 +9,7 @@ const signaturePayloadSchema = z.object({
     .min(1, "La firma es obligatoria."),
 });
 
-const signaturePayloadFromStringSchema = requiredString
+export const signaturePayloadFromStringSchema = requiredString
   .transform((value, context) => {
     try {
       return JSON.parse(value);

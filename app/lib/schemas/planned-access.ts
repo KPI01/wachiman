@@ -2,6 +2,7 @@ import z from "zod";
 import { SiteEntity } from "../database/site.server";
 import { optionalString, requiredString } from "./generic";
 import { SITE_DOESNT_EXISTS } from "./messages";
+import { signaturePayloadFromStringSchema } from "./access-log";
 
 const optionalDate = z.preprocess((value) => {
   if (typeof value !== "string") {
@@ -53,4 +54,10 @@ export const createPlannedAccessSchema = z
 export const updatePlannedAccessStatusSchema = z.object({
   id: requiredString,
   status: z.enum(["APPROVED", "REJECTED", "CANCELED"]),
+});
+
+export const createAccessLogFromPlannedAccessSchema = z.object({
+  plannedAccessId: requiredString,
+  plannedAccessPersonId: requiredString,
+  entrySignaturePayload: signaturePayloadFromStringSchema,
 });

@@ -20,7 +20,7 @@ const PLANNED_ACCESS_GLOBAL_FILTER_COLUMNS = [
 ];
 
 export async function loader({ request }: Route.LoaderArgs) {
-  await validateUserRole(request, "ADMIN");
+  await validateUserRole(request, "SECURITY_MANAGER");
 
   const [plannedAccesses, sites] = await Promise.all([
     getManyPlannedAccesses(),
@@ -31,7 +31,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 }
 
 export async function action({ request }: Route.ActionArgs) {
-  const user = await validateUserRole(request, "ADMIN");
+  const user = await validateUserRole(request, "SECURITY_MANAGER");
   const method = request.method.toUpperCase();
   const rawFormData = await request.formData();
 
@@ -46,25 +46,32 @@ export async function action({ request }: Route.ActionArgs) {
       authorUsername: user.username,
     });
   }
+
+  return null;
 }
 
-export default function PlannedAccessIndex({
+const columns = plannedAccessColumns({
+  actionPath: "/security/planned-access",
+});
+
+export default function SecurityPlannedAccess({
   loaderData,
 }: Route.ComponentProps) {
   return (
     <div className="grid space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-3xl font-bold">Solicitudes de acceso</h2>
-
-        <CreatePlannedAccessForm sites={loaderData.sites ?? []} />
+      <div className="flex items-center justify-end">
+        <CreatePlannedAccessForm
+          sites={loaderData.sites ?? []}
+          actionPath="/security/planned-access"
+        />
       </div>
       <DataTable
-        columns={plannedAccessColumns()}
+        columns={columns}
         data={loaderData.plannedAccesses ?? []}
         globalFilterColumns={PLANNED_ACCESS_GLOBAL_FILTER_COLUMNS}
         empty={{
           title: "No hay solicitudes de acceso",
-          description: "Las solicitudes de acceso creadas apareceran aqui.",
+          description: "Las solicitudes de acceso apareceran aqui.",
         }}
         filterPlaceholder="Escribe aqui para empezar a buscar..."
       />

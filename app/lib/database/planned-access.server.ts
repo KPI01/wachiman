@@ -30,6 +30,8 @@ export type PlannedAccessListItem = Prisma.PlannedAccessGetPayload<{
 export type GetPlannedAccessInput = {
   status?: PlannedAccessStatus;
   siteId?: string;
+  requestedById?: string;
+  expectedDate?: Date;
 };
 
 export type CreatePlannedAccessInput = {
@@ -110,16 +112,50 @@ export class PlannedAccessEntity {
     });
   }
 
+  private static getExpectedDateFilter(
+    date: Date,
+  ): Prisma.PlannedAccessWhereInput {
+    const start = new Date(date);
+    start.setHours(0, 0, 0, 0);
+
+    const end = new Date(start);
+    end.setDate(end.getDate() + 1);
+
+    return {
+      OR: [
+        {
+          expectedEndDatetime: null,
+          expectedStartDatetime: { gte: start, lt: end },
+        },
+        {
+          expectedStartDatetime: { lt: end },
+          expectedEndDatetime: { gte: start },
+        },
+      ],
+    };
+  }
+
   public static async findMany(input?: GetPlannedAccessInput) {
     return await prisma.plannedAccess.findMany({
       where: {
         ...(input?.status ? { status: input.status } : {}),
         ...(input?.siteId ? { siteId: input.siteId } : {}),
+        ...(input?.requestedById ? { requestedById: input.requestedById } : {}),
+        ...(input?.expectedDate
+          ? this.getExpectedDateFilter(input.expectedDate)
+          : {}),
       },
       include: this.DEFAULT_INCLUDE,
       orderBy: {
         expectedStartDatetime: "desc",
       },
+    });
+  }
+
+  public static async findById(id: string) {
+    return await prisma.plannedAccess.findUnique({
+      where: { id },
+      include: this.DEFAULT_INCLUDE,
     });
   }
 
