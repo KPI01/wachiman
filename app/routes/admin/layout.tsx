@@ -17,6 +17,7 @@ const SIDEBAR_ITEMS: Array<SidebarLinkItem> = [
     label: "Eventos",
     children: [
       { label: "Registros de acceso", href: "/admin/access-logs" },
+      { label: "Solicitudes de acceso", href: "/admin/planned-access" },
     ],
   },
 ];

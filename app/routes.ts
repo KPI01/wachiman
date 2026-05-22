@@ -30,6 +30,7 @@ export default [
     route("sites", "routes/admin/sites.tsx"),
     route("departments", "routes/admin/departments.tsx"),
     route("access-logs", "routes/admin/access-logs.tsx"),
+    route("planned-access", "routes/admin/planned-access.tsx"),
   ]),
 
   // Operador de accesos

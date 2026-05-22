@@ -30,12 +30,16 @@ model User {
   isTrashed Boolean?  @default(false)
   role      UserRole? @default(ACCESS_OPERATOR)
 
-  siteId               String
-  site                 Site                 @relation(fields: [siteId], references: [id])
-  departmentId         String
-  department           Department           @relation(fields: [departmentId], references: [id])
-  createdAccesLogs     AccessLog[]          @relation("createdBy")
-  accessLogsMarkedExit AccessLog[]          @relation("exitRecordedBy")
+  siteId       String
+  site         Site       @relation(fields: [siteId], references: [id])
+  departmentId String
+  department   Department @relation(fields: [departmentId], references: [id])
+
+  createdAccesLogs     AccessLog[] @relation("createdBy")
+  accessLogsMarkedExit AccessLog[] @relation("exitRecordedBy")
+
+  requestedPlannedAccesses PlannedAccess[] @relation("requestedBy")
+  validatedPlannedAccess   PlannedAccess[] @relation("approvedBy")
 
   @@index([username])
 }
@@ -48,8 +52,9 @@ model Site {
   slug      String   @unique
   address   String?
 
-  users      User[]
-  accessLogs AccessLog[]
+  users           User[]
+  accessLogs      AccessLog[]
+  plannedAccesses PlannedAccess[]
 
   @@index([slug])
 }
@@ -83,13 +88,13 @@ model AccessLog {
   visitReason            String
 
   siteId             String
-  site               Site               @relation(fields: [siteId], references: [id])
+  site               Site              @relation(fields: [siteId], references: [id])
   createdById        String
-  createdBy          User               @relation(name: "createdBy", fields: [createdById], references: [id])
+  createdBy          User              @relation(name: "createdBy", fields: [createdById], references: [id])
   exitRecordedById   String?
-  exitRecordedBy     User?              @relation(name: "exitRecordedBy", fields: [exitRecordedById], references: [id])
+  exitRecordedBy     User?             @relation(name: "exitRecordedBy", fields: [exitRecordedById], references: [id])
   vehicleAccessLogId String?
-  vehicleAccessLog   AccessLogVehicle?  @relation(fields: [vehicleAccessLogId], references: [id])
+  vehicleAccessLog   AccessLogVehicle? @relation(fields: [vehicleAccessLogId], references: [id])
 }
 
 model AccessLogVehicle {
@@ -99,4 +104,60 @@ model AccessLogVehicle {
   modelSnapshot String?
   plateSnapshot String
   accessLogs    AccessLog[]
+}
+
+enum PlannedAccessStatus {
+  PENDING_APPROVAL
+  APPROVED
+  REJECTED
+  CANCELED
+  EXPIRED
+  USED
+  PARTIALLY_USED
+}
+
+model PlannedAccess {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  expectedStartDatetime DateTime
+  expectedEndDatetime   DateTime?
+  status                PlannedAccessStatus @default(PENDING_APPROVAL)
+  companySnapshot       String
+  visitReason           String
+
+  approvedAt   DateTime?
+  approvedById String
+  approvedBy   User      @relation(name: "approvedBy", fields: [approvedById], references: [id])
+
+  requestedById String
+  requestedBy   User   @relation(name: "requestedBy", fields: [requestedById], references: [id])
+
+  siteId String
+  site   Site   @relation(fields: [siteId], references: [id])
+
+  plannedAccessPersons PlannedAccessPerson[]
+
+  @@index([status, siteId])
+  @@index([expectedStartDatetime, expectedEndDatetime])
+}
+
+model PlannedAccessPerson {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  plannedAccessId String
+  plannedAccess   PlannedAccess @relation(fields: [plannedAccessId], references: [id])
+
+  firstNameSnapshot      String
+  middleNameSnapshot     String?
+  lastNameSnapshot       String
+  secondLastNameSnapshot String?
+  phoneNumber            String?
+  legalIdSnapshot        String
+
+  @@index([legalIdSnapshot])
+  @@index([plannedAccessId])
 }
