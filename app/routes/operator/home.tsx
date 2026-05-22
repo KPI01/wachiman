@@ -51,7 +51,7 @@ export async function loader({ request }: Route.LoaderArgs) {
     }),
     getManyPlannedAccesses({
       siteId: sessionSite.id,
-      status: "APPROVED",
+      status: ["APPROVED", "PARTIALLY_USED"],
       expectedDate: new Date(),
     }),
   ]);

@@ -32,7 +32,7 @@ export type PlannedAccessListItem = Prisma.PlannedAccessGetPayload<{
 }>;
 
 export type GetPlannedAccessInput = {
-  status?: PlannedAccessStatus;
+  status?: PlannedAccessStatus | PlannedAccessStatus[];
   siteId?: string;
   requestedById?: string;
   expectedDate?: Date;
@@ -159,7 +159,11 @@ export class PlannedAccessEntity {
   public static async findMany(input?: GetPlannedAccessInput) {
     return await prisma.plannedAccess.findMany({
       where: {
-        ...(input?.status ? { status: input.status } : {}),
+        ...(input?.status
+          ? Array.isArray(input.status)
+            ? { status: { in: input.status } }
+            : { status: input.status }
+          : {}),
         ...(input?.siteId ? { siteId: input.siteId } : {}),
         ...(input?.requestedById ? { requestedById: input.requestedById } : {}),
         ...(input?.expectedDate

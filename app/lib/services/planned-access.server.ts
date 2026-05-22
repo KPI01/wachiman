@@ -40,7 +40,7 @@ export function getPlannedAccessFormInput(formData: FormData) {
 }
 
 export async function getManyPlannedAccesses(input?: {
-  status?: PlannedAccessStatus;
+  status?: PlannedAccessStatus | PlannedAccessStatus[];
   siteId?: string;
   requestedById?: string;
   expectedDate?: Date;
