@@ -1,23 +1,15 @@
 allowBuilds:
   '@prisma/engines': true
   better-sqlite3: true
+  core-js-pure: true
   esbuild: true
   msw: true
   prisma: true
 
 onlyBuiltDependencies:
-  - '-'
-  - '3'
   - '@prisma/engines'
-  - b
   - better-sqlite3
-  - e
+  - core-js-pure
   - esbuild
-  - i
-  - l
   - msw
   - prisma
-  - q
-  - r
-  - s
-  - t
