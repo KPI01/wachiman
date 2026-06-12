@@ -23,7 +23,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Meta />
         <Links />
       </head>
-      <body className="h-dvh w-dwh">
+      <body className="h-dvh w-dvw">
         {children}
         <ScrollRestoration />
         <Scripts />

@@ -29,7 +29,7 @@ export default function ResetPasswordForm({ userId }: ResetPasswordFormProps) {
           <RotateCcwKeyIcon />
         </Button>
       </PopoverAnchor>
-      <PopoverContent side="left" className="min-w-fit">
+      <PopoverContent side="bottom" className="min-w-fit">
         <Form
           className="space-y-4"
           method="post"

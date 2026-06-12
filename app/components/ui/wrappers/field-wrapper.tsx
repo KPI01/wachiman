@@ -27,7 +27,7 @@ export default function FieldWrapper({
       orientation={orientation}
       data-invalid={hasErrors ? "true" : undefined}
       className={cn(
-        orientation === "horizontal" ? "grid grid-cols-[1fr_12rem]" : "",
+        orientation === "horizontal" ? "grid grid-cols-1 sm:grid-cols-[1fr_12rem]" : "",
         className
       )
       }

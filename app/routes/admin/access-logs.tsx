@@ -136,13 +136,13 @@ export default function IndexAccessLogs({ loaderData }: Route.ComponentProps) {
   return (
     <div className="grid space-y-6">
       <h2 className="text-3xl font-bold">Registros de acceso</h2>
-      <div className="flex items-center justify-between">
-        <div className="text-accent-foreground flex items-end gap-3">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+        <div className="text-accent-foreground flex flex-col gap-3 sm:flex-row sm:items-end sm:gap-3">
           <Select
             value={filterMode}
             onValueChange={(v) => handleModeChange(v as "single" | "range")}
           >
-            <SelectTrigger className="w-44">
+            <SelectTrigger className="w-full sm:w-44">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -183,7 +183,7 @@ export default function IndexAccessLogs({ loaderData }: Route.ComponentProps) {
             value={loaderData.status ?? "ALL"}
             onValueChange={handleStatusChange}
           >
-            <SelectTrigger className="w-36">
+            <SelectTrigger className="w-full sm:w-36">
               <SelectValue placeholder="Estado" />
             </SelectTrigger>
             <SelectContent>
@@ -193,10 +193,12 @@ export default function IndexAccessLogs({ loaderData }: Route.ComponentProps) {
             </SelectContent>
           </Select>
         </div>
-        <CreateAccessLog
-          sites={loaderData.sites ?? []}
-          actionPath="/admin/access-logs"
-        />
+        <div className="w-full sm:w-auto">
+          <CreateAccessLog
+            sites={loaderData.sites ?? []}
+            actionPath="/admin/access-logs"
+          />
+        </div>
       </div>
       <DataTable
         columns={accessLogColumns}

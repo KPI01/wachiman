@@ -355,7 +355,7 @@ export default function CreatePlannedAccessForm({
                 </Button>
               </PopoverTrigger>
               <PopoverContent
-                side="right"
+                side="bottom"
                 align="start"
                 className="w-80 gap-4"
                 onOpenAutoFocus={(event) => event.preventDefault()}

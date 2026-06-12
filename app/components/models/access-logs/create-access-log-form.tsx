@@ -99,7 +99,7 @@ export default function CreateAccessLog({
           {buttonLabel}
         </>
       }
-      contentClassName="flex max-h-9/10 min-w-xl max-w-4xl flex-col overflow-hidden"
+      contentClassName="flex max-h-9/10 w-[94vw] max-w-4xl flex-col overflow-hidden"
       title={step === "details" ? "Nuevo Acceso" : "Confirmacion del visitante"}
       description={
         step === "details" ? (

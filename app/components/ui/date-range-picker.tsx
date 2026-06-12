@@ -227,7 +227,7 @@ export function DateRangePicker({
                 <span className="sr-only">Selecciona un rango de fechas</span>
               </InputGroupButton>
             </PopoverTrigger>
-            <PopoverContent className="w-auto overflow-hidden p-0" align="end">
+            <PopoverContent className="w-auto max-h-[70vh] overflow-y-auto overflow-hidden p-0" align="end">
               <Calendar
                 mode="range"
                 locale={es}

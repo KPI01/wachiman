@@ -43,8 +43,8 @@ export default function IndexDepartments({
 }: Route.ComponentProps) {
   return (
     <div className="grid space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-3xl font-bold">Departamentos</h2>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <h2 className="text-2xl sm:text-3xl font-bold">Departamentos</h2>
 
         <CreateDepartmentForm errors={actionData?.errors} />
       </div>

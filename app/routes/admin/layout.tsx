@@ -1,6 +1,6 @@
 import { Outlet } from "react-router";
 import type { Route } from "./+types/layout";
-import { SidebarInset, SidebarProvider } from "~/components/ui/sidebar";
+import { SidebarInset, SidebarProvider, SidebarTrigger } from "~/components/ui/sidebar";
 import AppSidebar, { type SidebarLinkItem } from "~/components/app-sidebar";
 import { validateUserRole } from "~/lib/auth.server";
 
@@ -32,7 +32,10 @@ export default function AdminLayout() {
     <SidebarProvider>
       <title>Administrador</title>
       <AppSidebar title="Control de Accesos" items={SIDEBAR_ITEMS} />
-      <SidebarInset className="p-6 max-w-full overflow-auto">
+      <SidebarInset className="p-4 md:p-6 max-w-full overflow-auto">
+        <div className="flex items-center gap-2 mb-4 md:hidden">
+          <SidebarTrigger />
+        </div>
         <Outlet />
       </SidebarInset>
     </SidebarProvider>

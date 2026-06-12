@@ -5,7 +5,7 @@ import { buttonVariants } from "~/components/ui/button";
 export default function Unauthorized() {
   return (
     <CardContainer
-      className="min-w-lg"
+      className="w-full max-w-lg"
       title="Acceso no autorizado"
       description="No tienes permisos para acceder a esta sección."
     >

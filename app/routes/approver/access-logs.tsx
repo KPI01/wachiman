@@ -126,15 +126,15 @@ export default function ApproverAccessLogs({ loaderData }: Route.ComponentProps)
 
   return (
     <div>
-      <div className="flex justify-between items-end mb-4">
-        <div className="grid space-y-2">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+        <div className="grid gap-2">
           <div className="font-semibold">Filtros:</div>
-          <div className="text-accent-foreground flex items-end gap-3">
+          <div className="text-accent-foreground flex flex-col gap-3 sm:flex-row sm:items-end sm:gap-3">
             <Select
               value={filterMode}
               onValueChange={(v) => handleModeChange(v as "single" | "range")}
             >
-              <SelectTrigger className="w-44">
+              <SelectTrigger className="w-full sm:w-44">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -175,7 +175,7 @@ export default function ApproverAccessLogs({ loaderData }: Route.ComponentProps)
               value={loaderData.status ?? "ALL"}
               onValueChange={handleStatusChange}
             >
-              <SelectTrigger className="w-36">
+              <SelectTrigger className="w-full sm:w-36">
                 <SelectValue placeholder="Estado" />
               </SelectTrigger>
               <SelectContent>

@@ -21,7 +21,7 @@ export default function ApproverLayout({ loaderData }: Route.ComponentProps) {
   return (
     <div className="p-4">
       <title>Aprobador de Accesos</title>
-      <header className="mb-6 flex items-center border-b pb-3">
+      <header className="mb-6 flex flex-col gap-3 border-b pb-3 sm:flex-row sm:items-center">
         <div className="flex h-12 w-24 shrink-0 items-center justify-center">
           <img
             src="/logoFruveco.svg"
@@ -29,12 +29,12 @@ export default function ApproverLayout({ loaderData }: Route.ComponentProps) {
             className="max-h-full max-w-full object-contain"
           />
         </div>
-        <Separator orientation="vertical" className="mx-4" />
+        <Separator orientation="vertical" className="mx-4 hidden sm:block" />
         <ApproverNavMenu />
         <Button
           type="button"
           variant="outline"
-          className="ms-auto"
+          className="sm:ms-auto"
           onClick={() => handleLogout()}
         >
           <LogOutIcon />

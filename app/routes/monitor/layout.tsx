@@ -20,7 +20,7 @@ export default function MonitorLayout({ loaderData }: Route.ComponentProps) {
   return (
     <div className="p-4">
       <title>Mostrador</title>
-      <header className="mb-6 flex justify-between items-center border-b pb-3">
+      <header className="mb-6 flex flex-col gap-3 border-b pb-3 sm:flex-row sm:items-center sm:justify-between">
         <LogoBranding title="Mostrador" username={loaderData.fullName} />
         <Button
           variant="outline"

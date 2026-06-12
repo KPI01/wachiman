@@ -19,7 +19,7 @@ export default function Welcome() {
     <>
       <title>Wachiman App</title>
       <CardContainer
-        className="min-w-lg"
+        className="w-full max-w-lg"
         title="Bienvenido al Control de Accesos de Fruveco"
         description="Software para el control de accesos de una fábrica"
       >
