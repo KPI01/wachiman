@@ -1,15 +1,55 @@
 services:
   db:
     image: postgres:18.4
+    container_name: wachiman-db
     restart: unless-stopped
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: wachiman
+      POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER no definido}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD no definido}
+      POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DB no definido}
     ports:
-      - "55432:5432"
+      - "127.0.0.1:55432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql
+    networks:
+      wachiman:
+        aliases:
+          - db
+          - wachiman-db
+
+  app:
+    build:
+      context: .
+      target: build
+    image: wachiman-app:dev
+    container_name: wachiman-app
+    restart: unless-stopped
+    depends_on:
+      - db
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:?POSTGRES_USER no definido}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD no definido}@db:5432/${POSTGRES_DB:?POSTGRES_DB no definido}
+      SESSION_COOKIE_SECURE: "false"
+    command: >
+      sh -c "until pnpm prisma migrate deploy; do
+        echo 'Esperando PostgreSQL...';
+        sleep 2;
+      done;
+      pnpm db:seed;
+      exec pnpm run start"
+    ports:
+      - "0.0.0.0:3000:3000"
+    networks:
+      wachiman:
+        aliases:
+          - app
+          - wachiman-app
 
 volumes:
   postgres_data:
+    name: wachiman_pgdata
+
+networks:
+  wachiman:
+    name: wachiman-net
