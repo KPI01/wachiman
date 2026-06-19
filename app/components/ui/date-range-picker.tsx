@@ -195,7 +195,7 @@ export function DateRangePicker({
           <input type="hidden" name={`${name}To`} value={toValue} />
         </>
       )}
-      <InputGroup className={cn("mx-auto w-72", className)}>
+      <InputGroup className={cn(className)}>
         <IMaskInput
           id={name}
           mask="00/00/0000 - 00/00/0000"
@@ -227,7 +227,10 @@ export function DateRangePicker({
                 <span className="sr-only">Selecciona un rango de fechas</span>
               </InputGroupButton>
             </PopoverTrigger>
-            <PopoverContent className="w-auto max-h-[70vh] overflow-y-auto overflow-hidden p-0" align="end">
+            <PopoverContent
+              className="w-auto max-h-[70vh] overflow-y-auto overflow-hidden p-0"
+              align="end"
+            >
               <Calendar
                 mode="range"
                 locale={es}

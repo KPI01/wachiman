@@ -15,10 +15,11 @@ type CreateSiteProps = {
 export default function CreateSiteForm({ errors }: CreateSiteProps) {
   return (
     <AlertDialogContainer
+      buttonClassName="w-fit ms-auto"
       buttonLabel={
         <>
           <PlusIcon />
-          Crear centro
+          Centro
         </>
       }
       title="Alta de Centro"

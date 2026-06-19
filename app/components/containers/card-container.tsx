@@ -28,7 +28,11 @@ export default function CardContainer({
     <Card className={cn("border border-accent", className)}>
       {(title || description) && (
         <CardHeader>
-          {title && <CardTitle className="uppercase">{title}</CardTitle>}
+          {title && (
+            <CardTitle className="uppercase font-2xl font-bold">
+              {title}
+            </CardTitle>
+          )}
           {description && <CardDescription>{description}</CardDescription>}
         </CardHeader>
       )}

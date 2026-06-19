@@ -42,65 +42,75 @@ function hasChildren(item: SidebarLinkItem): item is SidebarGroupLinks {
   return "children" in item;
 }
 
-export default function AppSidebar({ title = "Wachiman app", items, ...props }: AppSidebarProps) {
+export default function AppSidebar({
+  title = "Wachiman app",
+  items,
+  ...props
+}: AppSidebarProps) {
   return (
     <Sidebar collapsible="offcanvas" {...props}>
-      <SidebarHeader>
-        <span className="font-bold text-xl">{title}</span>
+      <SidebarHeader className="m-2">
+        <span className="font-bold text-4xl">{title}</span>
       </SidebarHeader>
       <SidebarContent className="px-2">
         {items.length > 0
           ? items.map((item) =>
-            hasChildren(item) ? (
-              <Collapsible
-                key={item.label}
-                defaultOpen
-                className="group/collapsible"
-              >
-                <SidebarGroup>
-                  <SidebarGroupLabel asChild>
-                    <CollapsibleTrigger>
-                      <span className="font-semibold text-sm">
-                        {item.label}
-                      </span>
-                      <ChevronDown className="ml-auto transition-transform group-data-[state=open]/collapsible:rotate-180" />
-                    </CollapsibleTrigger>
-                  </SidebarGroupLabel>
-                  <CollapsibleContent>
-                    <SidebarGroupContent>
-                      <SidebarMenu>
-                        {item.children.map((child) => (
-                          <SidebarMenuItem key={child.href}>
-                            <SidebarMenuButton asChild>
-                              <NavLink to={child.href}>{child.label}</NavLink>
-                            </SidebarMenuButton>
-                          </SidebarMenuItem>
-                        ))}
-                      </SidebarMenu>
-                    </SidebarGroupContent>
-                  </CollapsibleContent>
+              hasChildren(item) ? (
+                <Collapsible
+                  key={item.label}
+                  defaultOpen
+                  className="group/collapsible my-2"
+                >
+                  <SidebarGroup>
+                    <SidebarGroupLabel asChild>
+                      <CollapsibleTrigger>
+                        <span className="font-semibold text-2xl">
+                          {item.label}
+                        </span>
+                        <ChevronDown className="ml-auto transition-transform group-data-[state=open]/collapsible:rotate-180" />
+                      </CollapsibleTrigger>
+                    </SidebarGroupLabel>
+                    <CollapsibleContent>
+                      <SidebarGroupContent className="mt-2">
+                        <SidebarMenu>
+                          {item.children.map((child) => (
+                            <SidebarMenuItem key={child.href} className="my-1">
+                              <SidebarMenuButton asChild>
+                                <NavLink to={child.href} className="text-xl">
+                                  {child.label}
+                                </NavLink>
+                              </SidebarMenuButton>
+                            </SidebarMenuItem>
+                          ))}
+                        </SidebarMenu>
+                      </SidebarGroupContent>
+                    </CollapsibleContent>
+                  </SidebarGroup>
+                </Collapsible>
+              ) : (
+                <SidebarGroup key={item.href}>
+                  <SidebarGroupContent>
+                    <SidebarMenu>
+                      <SidebarMenuItem>
+                        <SidebarMenuButton asChild>
+                          <NavLink to={item.href}>{item.label}</NavLink>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    </SidebarMenu>
+                  </SidebarGroupContent>
                 </SidebarGroup>
-              </Collapsible>
-            ) : (
-              <SidebarGroup key={item.href}>
-                <SidebarGroupContent>
-                  <SidebarMenu>
-                    <SidebarMenuItem>
-                      <SidebarMenuButton asChild>
-                        <NavLink to={item.href}>{item.label}</NavLink>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  </SidebarMenu>
-                </SidebarGroupContent>
-              </SidebarGroup>
-            ),
-          )
+              ),
+            )
           : "Sin elementos"}
       </SidebarContent>
       <SidebarFooter className="w-full items-center">
         <Form method="post" action="/auth/logout" className="w-full">
-          <Button type="submit" variant="ghost" className="w-full">
-            <LogOutIcon />
+          <Button
+            type="submit"
+            variant="ghost"
+            className="w-full text-xl gap-2"
+          >
+            <LogOutIcon className="size-6" />
             Cerrar sesión
           </Button>
         </Form>

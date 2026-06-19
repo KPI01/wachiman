@@ -12,13 +12,16 @@ type CreateDepartmentProps = {
   errors?: unknown;
 };
 
-export default function CreateDepartmentForm({ errors }: CreateDepartmentProps) {
+export default function CreateDepartmentForm({
+  errors,
+}: CreateDepartmentProps) {
   return (
     <AlertDialogContainer
+      buttonClassName="w-fit ms-auto"
       buttonLabel={
         <>
           <PlusIcon />
-          Crear departamento
+          Departamento
         </>
       }
       title="Alta de Departamento"

@@ -28,9 +28,9 @@ export default function Login({ actionData }: Route.ComponentProps) {
       <title>Inicio de sesión</title>
       <CardContainer
         title="Inicio de sesión"
-        className="w-full max-w-md"
+        className="w-full"
         footer={
-          <Button type="submit" form="login-form">
+          <Button type="submit" form="login-form" className="text-lg">
             Enviar
           </Button>
         }

@@ -115,12 +115,14 @@ export default function DataTable<TData>({
   });
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-4 max-w-full overflow-hidden">
       {data.length > 0 ? (
         <>
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex justify-between gap-4">
             {showGlobalFilter && searchableColumnIds.length ? (
               <Input
+                aria-label="Buscar en la tabla"
+                autoComplete="off"
                 placeholder={
                   filterPlaceholder ??
                   getGlobalFilterPlaceholder(
@@ -131,7 +133,7 @@ export default function DataTable<TData>({
                 }
                 value={globalFilter}
                 onChange={(event) => setGlobalFilter(event.target.value)}
-                className="w-full sm:max-w-sm"
+                className="shrink"
               />
             ) : (
               <div />
@@ -212,80 +214,95 @@ export function DataTablePagination<TData>({
   pageSizeOptions: number[];
 }) {
   return (
-    <div className="flex flex-col gap-4 px-2 sm:flex-row sm:items-center sm:justify-between">
-      <div className="text-sm text-muted-foreground">
-        {table.getFilteredRowModel().rows.length} resultado(s) de{" "}
+    <div className="flex max-w-full justify-between">
+      <div className="text-muted-foreground text-sm tabular-nums w-fit">
+        {table.getFilteredRowModel().rows.length} resultado(s) de&nbsp;
         {table.getCoreRowModel().rows.length}
       </div>
 
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-end">
-        <div className="flex items-center gap-2">
-          <p className="text-sm font-medium">Filas por pagina</p>
-          <Select
-            value={`${table.getState().pagination.pageSize}`}
-            onValueChange={(value) => {
-              table.setPageSize(Number(value));
-            }}
-          >
-            <SelectTrigger className="w-20" size="sm">
-              <SelectValue placeholder={table.getState().pagination.pageSize} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectGroup>
-                {pageSizeOptions.map((pageSize) => (
-                  <SelectItem key={pageSize} value={`${pageSize}`}>
-                    {pageSize}
-                  </SelectItem>
-                ))}
-              </SelectGroup>
-            </SelectContent>
-          </Select>
-        </div>
+      <div className="flex flex-col gap-y-3 justify-end">
+        <div className="flex flex-col md:flex-row md:items-center items-end gap-y-3">
+          <div className="flex items-center gap-2">
+            <label
+              htmlFor="page-size-select"
+              className="text-xs font-medium sm:text-sm"
+            >
+              Filas por página
+            </label>
+            <Select
+              value={`${table.getState().pagination.pageSize}`}
+              onValueChange={(value) => {
+                table.setPageSize(Number(value));
+              }}
+            >
+              <SelectTrigger
+                id="page-size-select"
+                className="w-16 sm:w-20"
+                size="sm"
+              >
+                <SelectValue
+                  placeholder={table.getState().pagination.pageSize}
+                />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  {pageSizeOptions.map((pageSize) => (
+                    <SelectItem key={pageSize} value={`${pageSize}`}>
+                      {pageSize}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="tabular-nums text-sm font-medium w-fit">
+            <span>
+              Página&nbsp;{table.getState().pagination.pageIndex + 1}
+              &nbsp;de&nbsp;
+              {table.getPageCount() || 1}
+            </span>
+          </div>
 
-        <div className="flex items-center justify-center text-sm font-medium sm:min-w-28">
-          Pagina {table.getState().pagination.pageIndex + 1} de{" "}
-          {table.getPageCount() || 1}
-        </div>
-
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="icon-sm"
-            className="hidden sm:inline-flex"
-            onClick={() => table.setPageIndex(0)}
-            disabled={!table.getCanPreviousPage()}
-          >
-            <span className="sr-only">Ir a la primera pagina</span>
-            <ChevronsLeftIcon />
-          </Button>
-          <Button
-            variant="outline"
-            size="icon-sm"
-            onClick={() => table.previousPage()}
-            disabled={!table.getCanPreviousPage()}
-          >
-            <span className="sr-only">Ir a la pagina anterior</span>
-            <ChevronLeftIcon />
-          </Button>
-          <Button
-            variant="outline"
-            size="icon-sm"
-            onClick={() => table.nextPage()}
-            disabled={!table.getCanNextPage()}
-          >
-            <span className="sr-only">Ir a la pagina siguiente</span>
-            <ChevronRightIcon />
-          </Button>
-          <Button
-            variant="outline"
-            size="icon-sm"
-            className="hidden sm:inline-flex"
-            onClick={() => table.setPageIndex(table.getPageCount() - 1)}
-            disabled={!table.getCanNextPage()}
-          >
-            <span className="sr-only">Ir a la ultima pagina</span>
-            <ChevronsRightIcon />
-          </Button>
+          <div className="flex items-center justify-center gap-1.5 sm:justify-end sm:gap-2">
+            <Button
+              variant="outline"
+              size="icon-sm"
+              className="hidden sm:inline-flex"
+              onClick={() => table.setPageIndex(0)}
+              disabled={!table.getCanPreviousPage()}
+            >
+              <span className="sr-only">Ir a la primera página</span>
+              <ChevronsLeftIcon />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon-sm"
+              onClick={() => table.previousPage()}
+              disabled={!table.getCanPreviousPage()}
+            >
+              <span className="sr-only">Ir a la página anterior</span>
+              <ChevronLeftIcon />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon-sm"
+              onClick={() => table.nextPage()}
+              disabled={!table.getCanNextPage()}
+            >
+              <span className="sr-only">Ir a la página siguiente</span>
+              <ChevronRightIcon />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon-sm"
+              className="hidden sm:inline-flex"
+              onClick={() => table.setPageIndex(table.getPageCount() - 1)}
+              disabled={!table.getCanNextPage()}
+            >
+              <span className="sr-only">Ir a la última página</span>
+              <ChevronsRightIcon />
+            </Button>
+          </div>
         </div>
       </div>
     </div>
@@ -310,7 +327,7 @@ export function DataTableViewOptions<TData>({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="sm" className="sm:ml-auto">
+        <Button variant="outline" size="sm" className="w-fit ms-auto ">
           <Columns3Icon data-icon="inline-start" />
           Ver columnas
         </Button>
@@ -446,7 +463,7 @@ function getGlobalFilterPlaceholder<TData>(
     return columnId.replace(/[_-]+/g, " ").toLowerCase();
   });
 
-  return `Buscar por ${labels.join(", ")}...`;
+  return `Buscar por ${labels.join(", ")}…`;
 }
 
 function getColumnLabel<TData>(

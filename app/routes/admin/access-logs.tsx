@@ -22,6 +22,8 @@ import {
 } from "~/components/ui/select";
 import { DatePicker } from "~/components/ui/date-picker";
 import { DateRangePicker } from "~/components/ui/date-range-picker";
+import FieldWrapper from "~/components/ui/wrappers/field-wrapper";
+import { Separator } from "~/components/ui/separator";
 
 export async function loader({ request }: Route.LoaderArgs) {
   await validateUserRole(request, "ADMIN");
@@ -137,12 +139,12 @@ export default function IndexAccessLogs({ loaderData }: Route.ComponentProps) {
     <div className="grid space-y-6">
       <h2 className="text-3xl font-bold">Registros de acceso</h2>
       <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-        <div className="text-accent-foreground flex flex-col gap-3 sm:flex-row sm:items-end sm:gap-3">
+        <div className="flex flex-wrap justify-between gap-2">
           <Select
             value={filterMode}
             onValueChange={(v) => handleModeChange(v as "single" | "range")}
           >
-            <SelectTrigger className="w-full sm:w-44">
+            <SelectTrigger className="max-w-lg">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -152,6 +154,7 @@ export default function IndexAccessLogs({ loaderData }: Route.ComponentProps) {
           </Select>
           {filterMode === "single" ? (
             <DatePicker
+              className="grow max-w-56"
               value={loaderData.date}
               onChange={(v) =>
                 navigation(
@@ -161,6 +164,7 @@ export default function IndexAccessLogs({ loaderData }: Route.ComponentProps) {
             />
           ) : (
             <DateRangePicker
+              className="grow max-w-56"
               value={loaderData.dateRange}
               onChange={(range) => {
                 if (range?.from && range.to) {
@@ -179,26 +183,27 @@ export default function IndexAccessLogs({ loaderData }: Route.ComponentProps) {
               }}
             />
           )}
-          <Select
-            value={loaderData.status ?? "ALL"}
-            onValueChange={handleStatusChange}
-          >
-            <SelectTrigger className="w-full sm:w-36">
-              <SelectValue placeholder="Estado" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="ALL">Todos</SelectItem>
-              <SelectItem value="INSIDE">Dentro</SelectItem>
-              <SelectItem value="OUTSIDE">Fuera</SelectItem>
-            </SelectContent>
-          </Select>
+          <FieldWrapper label="Estado" htmlFor="status">
+            <Select
+              value={loaderData.status ?? "ALL"}
+              onValueChange={handleStatusChange}
+            >
+              <SelectTrigger className="w-fit" id="status">
+                <SelectValue placeholder="Estado" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">Todos</SelectItem>
+                <SelectItem value="INSIDE">Dentro</SelectItem>
+                <SelectItem value="OUTSIDE">Fuera</SelectItem>
+              </SelectContent>
+            </Select>
+          </FieldWrapper>
         </div>
-        <div className="w-full sm:w-auto">
-          <CreateAccessLog
-            sites={loaderData.sites ?? []}
-            actionPath="/admin/access-logs"
-          />
-        </div>
+        <Separator className="my-4" />
+        <CreateAccessLog
+          sites={loaderData.sites ?? []}
+          actionPath="/admin/access-logs"
+        />
       </div>
       <DataTable
         columns={accessLogColumns}

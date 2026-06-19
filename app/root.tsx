@@ -11,7 +11,7 @@ import type { Route } from "./+types/root";
 import "./app.css";
 
 export const links: Route.LinksFunction = () => [
-  { rel: "icon", type: "image/svg", href: "/copo-fruveco-azul.svg" }
+  { rel: "icon", type: "image/svg", href: "/copo-fruveco-azul.svg" },
 ];
 
 export function Layout({ children }: { children: React.ReactNode }) {
@@ -23,7 +23,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Meta />
         <Links />
       </head>
-      <body className="h-dvh w-dvw">
+      <body className="min-h-dvh w-full max-w-dvw grid grid-cols-1 grid-rows-1">
         {children}
         <ScrollRestoration />
         <Scripts />

@@ -42,10 +42,9 @@ export default function IndexSites({
   actionData,
 }: Route.ComponentProps) {
   return (
-    <div className="grid space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h2 className="text-2xl sm:text-3xl font-bold">Centros</h2>
-
+    <div className="flex flex-col gap-y-4">
+      <div className="flex">
+        <h2 className="text-3xl font-bold">Centros</h2>
         <CreateSiteForm errors={actionData?.errors} />
       </div>
       <DataTable

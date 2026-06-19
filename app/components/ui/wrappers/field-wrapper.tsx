@@ -9,7 +9,7 @@ interface FieldWrapperProps {
   htmlFor: ComponentProps<typeof Label>["htmlFor"];
   children: ReactNode;
   errors?: string[];
-  className?: string
+  className?: string;
 }
 
 export default function FieldWrapper({
@@ -18,7 +18,7 @@ export default function FieldWrapper({
   label,
   children,
   errors,
-  className
+  className,
 }: FieldWrapperProps) {
   const hasErrors = errors && errors.length > 0;
 
@@ -27,12 +27,15 @@ export default function FieldWrapper({
       orientation={orientation}
       data-invalid={hasErrors ? "true" : undefined}
       className={cn(
-        orientation === "horizontal" ? "grid grid-cols-1 sm:grid-cols-[1fr_12rem]" : "",
-        className
-      )
-      }
+        orientation === "horizontal"
+          ? "grid grid-cols-1 sm:grid-cols-[1fr_12rem]"
+          : "",
+        className,
+      )}
     >
-      <Label htmlFor={htmlFor}>{label}</Label>
+      <Label htmlFor={htmlFor} className="text-">
+        {label}
+      </Label>
       {children}
       {hasErrors && (
         <FieldDescription className="text-destructive">

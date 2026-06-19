@@ -93,6 +93,7 @@ export default function CreateAccessLog({
           setPendingFormEntries([]);
         }
       }}
+      buttonClassName="ms-auto"
       buttonLabel={
         <>
           <PlusIcon />
@@ -109,14 +110,13 @@ export default function CreateAccessLog({
           </>
         ) : (
           <>
-            Solicita al visitante que revise la informacion y firme para confirmar el registro.
+            Solicita al visitante que revise la informacion y firme para
+            confirmar el registro.
             {globalError && (
               <Alert variant="destructive">
                 <AlertTriangleIcon />
                 <AlertTitle>Error</AlertTitle>
-                <AlertDescription>
-                  {globalError}
-                </AlertDescription>
+                <AlertDescription>{globalError}</AlertDescription>
               </Alert>
             )}
           </>
@@ -178,31 +178,32 @@ export default function CreateAccessLog({
             {lockedSiteId ? (
               <input type="hidden" name="siteId" value={lockedSiteId} />
             ) : null}
-            {!lockedSiteId && <FieldWrapper
-              label="Centro"
-              htmlFor="siteId"
-              errors={getFieldErrors(fetcher.data?.errors, "siteId")}
-            >
-
-              <Select
-                name={lockedSiteId ? undefined : "siteId"}
-                {...(lockedSiteId
-                  ? { value: selectedSiteId }
-                  : { defaultValue: selectedSiteId })}
-                disabled={Boolean(lockedSiteId)}
+            {!lockedSiteId && (
+              <FieldWrapper
+                label="Centro"
+                htmlFor="siteId"
+                errors={getFieldErrors(fetcher.data?.errors, "siteId")}
               >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Centro para el acceso..." />
-                </SelectTrigger>
-                <SelectContent position="popper">
-                  {sites.map((site) => (
-                    <SelectItem key={site.id} value={site.id}>
-                      {site.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </FieldWrapper>}
+                <Select
+                  name={lockedSiteId ? undefined : "siteId"}
+                  {...(lockedSiteId
+                    ? { value: selectedSiteId }
+                    : { defaultValue: selectedSiteId })}
+                  disabled={Boolean(lockedSiteId)}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Centro para el acceso..." />
+                  </SelectTrigger>
+                  <SelectContent position="popper">
+                    {sites.map((site) => (
+                      <SelectItem key={site.id} value={site.id}>
+                        {site.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </FieldWrapper>
+            )}
             <FieldWrapper
               label="Fecha y hora de ingreso"
               htmlFor="entryTimestamp"
