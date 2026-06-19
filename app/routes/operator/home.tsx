@@ -16,14 +16,6 @@ import {
   getManyPlannedAccesses,
 } from "~/lib/services/planned-access.server";
 import type { PlannedAccessListItem } from "~/lib/database/planned-access.server";
-import {
-  Card,
-  CardAction,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import {
   Empty,
