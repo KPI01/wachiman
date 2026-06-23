@@ -38,7 +38,7 @@ export default function CreateUserForm({
       buttonLabel={
         <>
           <PlusIcon />
-          Usuario
+          <span className="text-base">Usuario</span>
         </>
       }
       title="Alta de Usuario"

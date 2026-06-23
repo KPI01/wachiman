@@ -9,6 +9,7 @@ import {
 } from "~/lib/services/sites.server";
 import type { Route } from "./+types/sites";
 import CreateSiteForm from "~/components/models/site/create-site-form";
+import { Separator } from "~/components/ui/separator";
 
 export async function loader({ request }: Route.LoaderArgs) {
   await validateUserRole(request, "ADMIN");
@@ -47,6 +48,7 @@ export default function IndexSites({
         <h2 className="text-3xl font-bold">Centros</h2>
         <CreateSiteForm errors={actionData?.errors} />
       </div>
+      <Separator />
       <DataTable
         columns={siteColumns}
         data={loaderData.sites ?? []}

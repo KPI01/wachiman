@@ -19,7 +19,7 @@ export default function CreateSiteForm({ errors }: CreateSiteProps) {
       buttonLabel={
         <>
           <PlusIcon />
-          Centro
+          <span className="text-base">Centro</span>
         </>
       }
       title="Alta de Centro"
@@ -47,7 +47,7 @@ export default function CreateSiteForm({ errors }: CreateSiteProps) {
           <Input id="name" name="name" required />
         </FieldWrapper>
         <FieldWrapper
-          label="Slug"
+          label="Nombre corto"
           htmlFor="slug"
           errors={getFieldErrors(errors, "slug")}
         >

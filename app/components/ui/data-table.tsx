@@ -133,7 +133,7 @@ export default function DataTable<TData>({
                 }
                 value={globalFilter}
                 onChange={(event) => setGlobalFilter(event.target.value)}
-                className="shrink"
+                className="shrink md:max-w-lg text-base!"
               />
             ) : (
               <div />
@@ -147,7 +147,7 @@ export default function DataTable<TData>({
             <Table>
               <TableHeader>
                 {table.getHeaderGroups().map((headerGroup) => (
-                  <TableRow key={headerGroup.id}>
+                  <TableRow key={headerGroup.id} className="text-base!">
                     {headerGroup.headers.map((header) => (
                       <TableHead key={header.id}>
                         {renderHeader(header, columnLabels)}
@@ -159,7 +159,7 @@ export default function DataTable<TData>({
               <TableBody>
                 {table.getRowModel().rows.length ? (
                   table.getRowModel().rows.map((row) => (
-                    <TableRow key={row.id}>
+                    <TableRow key={row.id} className="text-base">
                       {row.getVisibleCells().map((cell) => (
                         <TableCell key={cell.id}>
                           {flexRender(
@@ -215,17 +215,17 @@ export function DataTablePagination<TData>({
 }) {
   return (
     <div className="flex max-w-full justify-between">
-      <div className="text-muted-foreground text-sm tabular-nums w-fit">
+      <div className="text-muted-foreground text-sm md:text-base tabular-nums w-fit">
         {table.getFilteredRowModel().rows.length} resultado(s) de&nbsp;
         {table.getCoreRowModel().rows.length}
       </div>
 
       <div className="flex flex-col gap-y-3 justify-end">
-        <div className="flex flex-col md:flex-row md:items-center items-end gap-y-3">
+        <div className="flex flex-col md:flex-row md:items-center items-end gap-3">
           <div className="flex items-center gap-2">
             <label
               htmlFor="page-size-select"
-              className="text-xs font-medium sm:text-sm"
+              className="font-medium text-sm md:text-base"
             >
               Filas por página
             </label>
@@ -255,7 +255,7 @@ export function DataTablePagination<TData>({
               </SelectContent>
             </Select>
           </div>
-          <div className="tabular-nums text-sm font-medium w-fit">
+          <div className="tabular-nums text-sm md:text-base font-medium w-fit">
             <span>
               Página&nbsp;{table.getState().pagination.pageIndex + 1}
               &nbsp;de&nbsp;
@@ -266,7 +266,7 @@ export function DataTablePagination<TData>({
           <div className="flex items-center justify-center gap-1.5 sm:justify-end sm:gap-2">
             <Button
               variant="outline"
-              size="icon-sm"
+              size="icon"
               className="hidden sm:inline-flex"
               onClick={() => table.setPageIndex(0)}
               disabled={!table.getCanPreviousPage()}
@@ -276,7 +276,7 @@ export function DataTablePagination<TData>({
             </Button>
             <Button
               variant="outline"
-              size="icon-sm"
+              size="icon"
               onClick={() => table.previousPage()}
               disabled={!table.getCanPreviousPage()}
             >
@@ -285,7 +285,7 @@ export function DataTablePagination<TData>({
             </Button>
             <Button
               variant="outline"
-              size="icon-sm"
+              size="icon"
               onClick={() => table.nextPage()}
               disabled={!table.getCanNextPage()}
             >
@@ -294,7 +294,7 @@ export function DataTablePagination<TData>({
             </Button>
             <Button
               variant="outline"
-              size="icon-sm"
+              size="icon"
               className="hidden sm:inline-flex"
               onClick={() => table.setPageIndex(table.getPageCount() - 1)}
               disabled={!table.getCanNextPage()}
@@ -327,19 +327,26 @@ export function DataTableViewOptions<TData>({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="sm" className="w-fit ms-auto ">
+        <Button
+          variant="outline"
+          size="sm"
+          className="w-fit ms-auto text-base gap-3"
+        >
           <Columns3Icon data-icon="inline-start" />
           Ver columnas
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-44">
-        <DropdownMenuLabel>Columnas visibles</DropdownMenuLabel>
+      <DropdownMenuContent align="end" className="w-2xs">
+        <DropdownMenuLabel className="text-sm">
+          Columnas visibles
+        </DropdownMenuLabel>
         <DropdownMenuSeparator />
         {columns.map((column) => (
           <DropdownMenuCheckboxItem
             key={column.id}
             checked={column.getIsVisible()}
             onCheckedChange={(value) => column.toggleVisibility(Boolean(value))}
+            className="text-base"
           >
             {getColumnLabel(column, columnLabels)}
           </DropdownMenuCheckboxItem>
@@ -364,7 +371,7 @@ function renderHeader<TData>(
       <Button
         variant="ghost"
         size="sm"
-        className="-ml-2 h-8 px-2"
+        className="-ml-2 h-8 px-2 text-base"
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
       >
         <span>{getColumnLabel(column, columnLabels)}</span>

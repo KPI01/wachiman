@@ -20,6 +20,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "./ui/collapsible";
+import { Separator } from "./ui/separator";
 
 type SidebarLink = {
   label: string;
@@ -50,8 +51,9 @@ export default function AppSidebar({
   return (
     <Sidebar collapsible="offcanvas" {...props}>
       <SidebarHeader className="m-2">
-        <span className="font-bold text-4xl">{title}</span>
+        <span className="font-bold text-4xl md:text-2xl">{title}</span>
       </SidebarHeader>
+      <Separator />
       <SidebarContent className="px-2">
         {items.length > 0
           ? items.map((item) =>
@@ -64,7 +66,7 @@ export default function AppSidebar({
                   <SidebarGroup>
                     <SidebarGroupLabel asChild>
                       <CollapsibleTrigger>
-                        <span className="font-semibold text-2xl">
+                        <span className="font-semibold text-2xl md:text-lg">
                           {item.label}
                         </span>
                         <ChevronDown className="ml-auto transition-transform group-data-[state=open]/collapsible:rotate-180" />
@@ -76,7 +78,10 @@ export default function AppSidebar({
                           {item.children.map((child) => (
                             <SidebarMenuItem key={child.href} className="my-1">
                               <SidebarMenuButton asChild>
-                                <NavLink to={child.href} className="text-xl">
+                                <NavLink
+                                  to={child.href}
+                                  className="text-xl md:text-base"
+                                >
                                   {child.label}
                                 </NavLink>
                               </SidebarMenuButton>
@@ -103,14 +108,15 @@ export default function AppSidebar({
             )
           : "Sin elementos"}
       </SidebarContent>
+      <Separator />
       <SidebarFooter className="w-full items-center">
         <Form method="post" action="/auth/logout" className="w-full">
           <Button
             type="submit"
             variant="ghost"
-            className="w-full text-xl gap-2"
+            className="w-full text-base gap-2"
           >
-            <LogOutIcon className="size-6" />
+            <LogOutIcon className="size-4" />
             Cerrar sesión
           </Button>
         </Form>
