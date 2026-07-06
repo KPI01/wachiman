@@ -1,12 +1,28 @@
 import type { Route } from "./+types/home";
+import { DashboardGrid } from "~/components/dashboard/dashboard-grid";
+import type { WidgetId } from "~/components/dashboard/types";
 
-export default function SecurityHome() {
+export function loader(_args: Route.LoaderArgs) {
+  // El layout de /security ya valida el rol (SECURITY_MANAGER) y redirige si
+  // no corresponde. No se necesita validar de nuevo aquí.
+  return null;
+}
+
+const SECURITY_WIDGETS: WidgetId[] = [
+  "today-access-count",
+  "planned-access-status",
+  "last-access",
+  "people-inside",
+];
+
+export default function SecurityHome(_props: Route.ComponentProps) {
   return (
-    <div className="grid space-y-6">
-      <h2 className="text-2xl font-bold">Director de Seguridad</h2>
-      <p className="text-muted-foreground">
-        Este dashboard está reservado para la gestión de seguridad.
-      </p>
+    <div className="space-y-6">
+      <DashboardGrid
+        storageKey="security"
+        widgetIds={SECURITY_WIDGETS}
+        scope="all-sites"
+      />
     </div>
   );
 }

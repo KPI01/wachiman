@@ -61,4 +61,12 @@ export default [
     route("planned-access", "routes/approver/planned-access.tsx"),
     route("access-logs", "routes/approver/access-logs.tsx"),
   ]),
+
+  // API - Dashboard widgets (resource routes)
+  ...prefix("api/dashboard", [
+    route("people-inside", "routes/api/dashboard/people-inside.tsx"),
+    route("today-access-count", "routes/api/dashboard/today-access-count.tsx"),
+    route("planned-access-status", "routes/api/dashboard/planned-access-status.tsx"),
+    route("last-access", "routes/api/dashboard/last-access.tsx"),
+  ]),
 ] satisfies RouteConfig;

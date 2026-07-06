@@ -259,4 +259,30 @@ export class AccessLogEntity {
 
     return accessLog?.vehicleAccessLog ?? null;
   }
+
+  public static async countByEntryDate(input: {
+    date: Date;
+    siteId?: string;
+  }) {
+    return await prisma.accessLog.count({
+      where: {
+        entryTimestamp: this.getTimestampRangeFilter({
+          date: input.date,
+        }),
+        ...(input.siteId ? { siteId: input.siteId } : {}),
+      },
+    });
+  }
+
+  public static async findLatestEntry(input: { siteId?: string } = {}) {
+    return await prisma.accessLog.findFirst({
+      where: {
+        ...(input.siteId ? { siteId: input.siteId } : {}),
+      },
+      include: this.DEFAULT_INCLUDE,
+      orderBy: {
+        entryTimestamp: "desc",
+      },
+    });
+  }
 }

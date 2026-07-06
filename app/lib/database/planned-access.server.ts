@@ -184,6 +184,30 @@ export class PlannedAccessEntity {
     });
   }
 
+  public static async countByStatuses(
+    statuses: PlannedAccessStatus[],
+    input: { siteId?: string } = {},
+  ): Promise<Record<PlannedAccessStatus, number>> {
+    const groups = await prisma.plannedAccess.groupBy({
+      by: ["status"],
+      where: {
+        status: { in: statuses },
+        ...(input.siteId ? { siteId: input.siteId } : {}),
+      },
+      _count: { _all: true },
+    });
+
+    const result = {} as Record<PlannedAccessStatus, number>;
+    for (const status of statuses) {
+      result[status] = 0;
+    }
+    for (const group of groups) {
+      result[group.status] = group._count._all;
+    }
+
+    return result;
+  }
+
   public static async updateStatus(data: UpdatePlannedAccessStatusInput) {
     return await prisma.plannedAccess.update({
       where: { id: data.id },
