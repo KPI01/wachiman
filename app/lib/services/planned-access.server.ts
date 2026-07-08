@@ -43,6 +43,7 @@ export async function getManyPlannedAccesses(input?: {
   status?: PlannedAccessStatus | PlannedAccessStatus[];
   siteId?: string;
   requestedById?: string;
+  departmentId?: string;
   expectedDate?: Date;
 }) {
   return await PlannedAccessEntity.findMany(input);

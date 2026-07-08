@@ -285,4 +285,34 @@ export class AccessLogEntity {
       },
     });
   }
+
+  public static async findPeopleInsideByDepartment(
+    departmentId: string,
+    siteId: string,
+  ): Promise<AccessLogListItem[]> {
+    return await prisma.accessLog.findMany({
+      where: {
+        exitTimestamp: null,
+        siteId,
+        OR: [
+          {
+            plannedAccess: {
+              requestedBy: { departmentId },
+            },
+          },
+          {
+            plannedAccessPerson: {
+              plannedAccess: {
+                requestedBy: { departmentId },
+              },
+            },
+          },
+        ],
+      },
+      include: this.DEFAULT_INCLUDE,
+      orderBy: {
+        entryTimestamp: "desc",
+      },
+    });
+  }
 }

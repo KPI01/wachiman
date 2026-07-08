@@ -53,6 +53,7 @@ export default [
   // Solicitante de accesos
   route("requester", "routes/requester/layout.tsx", [
     index("routes/requester/home.tsx"),
+    route("planned-access", "routes/requester/planned-access.tsx"),
   ]),
 
   // Aprobador de accesos
@@ -68,5 +69,7 @@ export default [
     route("today-access-count", "routes/api/dashboard/today-access-count.tsx"),
     route("planned-access-status", "routes/api/dashboard/planned-access-status.tsx"),
     route("last-access", "routes/api/dashboard/last-access.tsx"),
+    route("requester-planned-status", "routes/api/dashboard/requester-planned-status.tsx"),
+    route("requester-people-inside", "routes/api/dashboard/requester-people-inside.tsx"),
   ]),
 ] satisfies RouteConfig;

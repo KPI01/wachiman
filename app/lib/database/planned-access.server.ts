@@ -35,6 +35,7 @@ export type GetPlannedAccessInput = {
   status?: PlannedAccessStatus | PlannedAccessStatus[];
   siteId?: string;
   requestedById?: string;
+  departmentId?: string;
   expectedDate?: Date;
 };
 
@@ -166,6 +167,9 @@ export class PlannedAccessEntity {
           : {}),
         ...(input?.siteId ? { siteId: input.siteId } : {}),
         ...(input?.requestedById ? { requestedById: input.requestedById } : {}),
+        ...(input?.departmentId
+          ? { requestedBy: { departmentId: input.departmentId } }
+          : {}),
         ...(input?.expectedDate
           ? this.getExpectedDateFilter(input.expectedDate)
           : {}),
@@ -186,13 +190,16 @@ export class PlannedAccessEntity {
 
   public static async countByStatuses(
     statuses: PlannedAccessStatus[],
-    input: { siteId?: string } = {},
+    input: { siteId?: string; departmentId?: string } = {},
   ): Promise<Record<PlannedAccessStatus, number>> {
     const groups = await prisma.plannedAccess.groupBy({
       by: ["status"],
       where: {
         status: { in: statuses },
         ...(input.siteId ? { siteId: input.siteId } : {}),
+        ...(input.departmentId
+          ? { requestedBy: { departmentId: input.departmentId } }
+          : {}),
       },
       _count: { _all: true },
     });

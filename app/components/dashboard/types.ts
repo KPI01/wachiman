@@ -4,7 +4,9 @@ export type WidgetId =
   | "people-inside"
   | "today-access-count"
   | "planned-access-status"
-  | "last-access";
+  | "last-access"
+  | "requester-planned-status"
+  | "requester-people-inside";
 
 export type WidgetLayout = {
   i: WidgetId;
