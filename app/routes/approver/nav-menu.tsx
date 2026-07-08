@@ -9,6 +9,11 @@ import { NavLink } from "react-router";
 
 const NAV_LINKS: Array<{ id: string; title: string; href: string }> = [
   {
+    id: "dashboard",
+    title: "Dashboard",
+    href: "/approver",
+  },
+  {
     id: "planned-access",
     title: "Solicitudes",
     href: "/approver/planned-access",

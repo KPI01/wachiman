@@ -1,18 +1,26 @@
-import { useEffect } from "react";
-import { useNavigate } from "react-router";
 import type { Route } from "./+types/home";
-import { validateUserRole } from "~/lib/auth.server";
+import { DashboardGrid } from "~/components/dashboard/dashboard-grid";
+import type { WidgetId } from "~/components/dashboard/types";
 
-export async function loader({ request }: Route.LoaderArgs) {
-  return await validateUserRole(request, "ACCESS_APPROVER");
+export function loader(_args: Route.LoaderArgs) {
+  return null;
 }
 
-export default function ApproverHome() {
-  const navigate = useNavigate();
+const APPROVER_WIDGETS: WidgetId[] = [
+  "today-access-count",
+  "planned-access-status",
+  "last-access",
+  "people-inside",
+];
 
-  useEffect(() => {
-    navigate("/approver/planned-access", { replace: true });
-  }, [navigate]);
-
-  return null;
+export default function ApproverHome(_props: Route.ComponentProps) {
+  return (
+    <div className="space-y-6">
+      <DashboardGrid
+        storageKey="approver"
+        widgetIds={APPROVER_WIDGETS}
+        scope="session-site"
+      />
+    </div>
+  );
 }
