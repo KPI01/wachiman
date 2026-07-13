@@ -8,6 +8,7 @@ import {
 } from "react-router";
 
 import type { Route } from "./+types/root";
+import { Toaster } from "~/components/ui/sonner";
 import "./app.css";
 
 export const links: Route.LinksFunction = () => [
@@ -25,6 +26,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       </head>
       <body className="min-h-dvh w-full max-w-dvw grid grid-cols-1 grid-rows-1">
         {children}
+        <Toaster />
         <ScrollRestoration />
         <Scripts />
       </body>

@@ -18,6 +18,7 @@ import {
   EmptyTitle,
 } from "~/components/ui/empty";
 import { formatTimestamp } from "~/lib/utils";
+import { useAccessLogNotifications } from "~/hooks/use-access-log-notifications";
 import type { AccessLogListItem } from "~/lib/database/access-log.server";
 import type { WidgetComponentProps } from "../types";
 
@@ -71,6 +72,8 @@ export function RequesterPeopleInsideWidget({
     scope,
     def.refreshMs,
   );
+
+  useAccessLogNotifications(data?.accessLogs ?? []);
 
   const groups = useMemo(
     () => (data ? groupBySite(data.accessLogs) : []),

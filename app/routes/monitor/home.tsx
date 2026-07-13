@@ -5,6 +5,7 @@ import { getManyAccessLogs } from "~/lib/services/access-log.server";
 import { getAccessLogColumns } from "~/lib/columns/access-log";
 import { useEffect, useMemo } from "react";
 import { useRevalidator } from "react-router";
+import { useAccessLogNotifications } from "~/hooks/use-access-log-notifications";
 
 export async function loader({ request }: Route.LoaderArgs) {
   await validateUserRole(request, "ACCESS_MONITOR");
@@ -20,6 +21,8 @@ export async function loader({ request }: Route.LoaderArgs) {
 export default function MonitorHome({ loaderData }: Route.ComponentProps) {
   const columns = useMemo(() => getAccessLogColumns("createdBy"), []);
   const revalidator = useRevalidator();
+
+  useAccessLogNotifications(loaderData.accessLogs ?? []);
 
   useEffect(() => {
     const intervalId = window.setInterval(() => {

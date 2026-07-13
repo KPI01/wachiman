@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useRevalidator } from "react-router";
+import { useAccessLogNotifications } from "~/hooks/use-access-log-notifications";
 import CreateAccessLog from "~/components/models/access-logs/create-access-log-form";
 import DataTable from "~/components/ui/data-table";
 import { DatePicker } from "~/components/ui/date-picker";
@@ -79,6 +80,8 @@ export async function action({ request }: Route.ActionArgs) {
 export default function IndexAccessLogs({ loaderData }: Route.ComponentProps) {
   const navigation = useNavigate();
   const revalidator = useRevalidator();
+
+  useAccessLogNotifications(loaderData.accessLogs ?? []);
 
   const [filterMode, setFilterMode] = useState<"single" | "range">(
     loaderData.mode,

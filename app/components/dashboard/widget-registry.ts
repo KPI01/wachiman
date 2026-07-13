@@ -55,7 +55,7 @@ export const WIDGET_REGISTRY: Record<WidgetId, WidgetDefinition> = {
     component: RequesterPeopleInsideWidget,
     defaultLayout: { i: "requester-people-inside", x: 3, y: 0, w: 3, h: 8 },
     constraints: { minW: 2, minH: 6 },
-    refreshMs: REFRESH_MS,
+    refreshMs: 5_000,
   },
 };
 
