@@ -9,7 +9,8 @@ import { getSessionSite } from "~/lib/session.server";
 import type { Route } from "./+types/home";
 import { validateUserRole } from "~/lib/auth.server";
 import { getFormData } from "~/lib/services/http.server";
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
+import { useRevalidator } from "react-router";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import {
   createAccessLogFromPlannedAccess,
@@ -200,6 +201,21 @@ export default function OperatorHome({ loaderData }: Route.ComponentProps) {
       ),
     [loaderData.accessLogs],
   );
+
+  const revalidator = useRevalidator();
+
+  useEffect(() => {
+    const intervalId = window.setInterval(() => {
+      if (
+        document.visibilityState === "visible" &&
+        revalidator.state === "idle"
+      ) {
+        revalidator.revalidate();
+      }
+    }, 5000);
+
+    return () => window.clearInterval(intervalId);
+  }, [revalidator]);
 
   return (
     <Tabs defaultValue="access-logs" className="w-full">
