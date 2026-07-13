@@ -1,10 +1,11 @@
 import { LogOutIcon } from "lucide-react";
-import { Outlet, useNavigate, useSubmit } from "react-router";
+import { Outlet, useSubmit, NavLink } from "react-router";
 import type { Route } from "./+types/layout";
 import { validateUserRole } from "~/lib/auth.server";
 import { Separator } from "~/components/ui/separator";
 import { Button } from "~/components/ui/button";
 import SecurityNavMenu from "./nav-menu";
+import LogoBranding from "~/components/logo-branding";
 
 export async function loader({ request }: Route.LoaderArgs) {
   return await validateUserRole(request, "SECURITY_MANAGER");
@@ -22,13 +23,11 @@ export default function SecurityLayout({ loaderData }: Route.ComponentProps) {
     <div className="p-4">
       <title>Director de Seguridad</title>
       <header className="mb-6 flex flex-col gap-3 border-b pb-3 sm:flex-row sm:items-center">
-        <div className="flex h-12 w-24 shrink-0 items-center justify-center">
-          <img
-            src="/logoFruveco.svg"
-            alt="Logo de Fruveco"
-            className="max-h-full max-w-full object-contain"
-          />
-        </div>
+        <LogoBranding
+          title="Aprobador de accesos"
+          username={loaderData.fullName}
+          href="/security"
+        />
         <Separator orientation="vertical" className="mx-4 hidden sm:block" />
         <SecurityNavMenu />
         <Button

@@ -25,6 +25,7 @@ export default function RequesterLayout({ loaderData }: Route.ComponentProps) {
         <LogoBranding
           title="Solicitudes de Acceso"
           username={loaderData.fullName}
+          href="/requester"
         />
         <RequesterNavMenu />
         <Button
@@ -35,9 +36,7 @@ export default function RequesterLayout({ loaderData }: Route.ComponentProps) {
           title="Cerrar sesión"
         >
           <LogOutIcon />
-          <span className="sr-only md:not-sr-only">
-            Cerrar sesion
-          </span>
+          <span className="sr-only md:not-sr-only">Cerrar sesion</span>
         </Button>
       </header>
       <Outlet />

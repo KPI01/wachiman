@@ -1,19 +1,38 @@
+import { NavLink } from "react-router";
 import { Separator } from "./ui/separator";
 
 interface LogoBrandingProps {
   title: string;
   username?: string;
+  href?: string;
 }
-export default function LogoBranding({ title, username }: LogoBrandingProps) {
+export default function LogoBranding({
+  title,
+  username,
+  href,
+}: LogoBrandingProps) {
   return (
     <div className="flex items-center gap-3 min-w-0">
-      <div className="flex w-32 shrink-0 items-center justify-center">
-        <img
-          src="/logoFruveco.svg"
-          alt="Logo de Fruveco"
-          className="max-h-full max-w-full object-contain"
-        />
-      </div>
+      {!href ? (
+        <div className="flex w-32 shrink-0 items-center justify-center">
+          <img
+            src="/logoFruveco.svg"
+            alt="Logo de Fruveco"
+            className="max-h-full max-w-full object-contain"
+          />
+        </div>
+      ) : (
+        <NavLink
+          to={href}
+          className="flex w-32 shrink-0 items-center justify-center"
+        >
+          <img
+            src="/logoFruveco.svg"
+            alt="Logo de Fruveco"
+            className="max-h-full max-w-full object-contain"
+          />
+        </NavLink>
+      )}
       <Separator orientation="vertical" className="shrink-0 hidden md:flex" />
 
       <div className="hidden md:flex md:flex-col md:min-w-0">
