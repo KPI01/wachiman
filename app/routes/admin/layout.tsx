@@ -11,6 +11,14 @@ const SIDEBAR_ITEMS: Array<SidebarLinkItem> = [
       { label: "Usuarios", href: "/admin/users" },
       { label: "Centros", href: "/admin/sites" },
       { label: "Departamentos", href: "/admin/departments" },
+      { label: "Empresas", href: "/admin/companies" },
+      { label: "Categorias laborales", href: "/admin/work-categories" },
+    ],
+  },
+  {
+    label: "Trabajadores",
+    children: [
+      { label: "Trabajadores externos", href: "/admin/external-workers" },
     ],
   },
   {
@@ -18,6 +26,7 @@ const SIDEBAR_ITEMS: Array<SidebarLinkItem> = [
     children: [
       { label: "Registros de acceso", href: "/admin/access-logs" },
       { label: "Solicitudes de acceso", href: "/admin/planned-access" },
+      { label: "Auditoria", href: "/admin/audit-log" },
     ],
   },
 ];

@@ -18,6 +18,21 @@ const NAV_LINKS: Array<{ id: string; title: string; href: string }> = [
     title: "Accesos",
     href: `/approver/access-logs?date=${formatTimestamp({ date: new Date(), template: "yyyy-MM-dd" })}`,
   },
+  {
+    id: "external-workers",
+    title: "Trabajadores",
+    href: "/approver/external-workers",
+  },
+  {
+    id: "companies",
+    title: "Empresas",
+    href: "/approver/companies",
+  },
+  {
+    id: "work-categories",
+    title: "Categorias",
+    href: "/approver/work-categories",
+  },
 ];
 
 export default function ApproverNavMenu() {

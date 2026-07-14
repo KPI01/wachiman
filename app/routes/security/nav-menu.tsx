@@ -1,10 +1,8 @@
 import {
   NavigationMenu,
-  NavigationMenuContent,
   NavigationMenuItem,
   NavigationMenuLink,
   NavigationMenuList,
-  NavigationMenuTrigger,
 } from "~/components/ui/navigation-menu";
 import { formatTimestamp } from "~/lib/utils";
 import { NavLink } from "react-router";
@@ -19,6 +17,26 @@ const NAV_LINKS: Array<{ id: string; title: string; href: string }> = [
     id: "planned-access",
     title: "Solicitudes",
     href: "/security/planned-access",
+  },
+  {
+    id: "external-workers",
+    title: "Trabajadores",
+    href: "/security/external-workers",
+  },
+  {
+    id: "companies",
+    title: "Empresas",
+    href: "/security/companies",
+  },
+  {
+    id: "work-categories",
+    title: "Categorias",
+    href: "/security/work-categories",
+  },
+  {
+    id: "audit-log",
+    title: "Auditoria",
+    href: "/security/audit-log",
   },
 ];
 
