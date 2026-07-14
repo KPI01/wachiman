@@ -289,6 +289,7 @@ export async function createAccessLogFromPlannedAccess(
     secondLastNameSnapshot: person.secondLastNameSnapshot ?? undefined,
     phoneNumber: person.phoneNumber ?? undefined,
     legalIdSnapshot: person.legalIdSnapshot,
+    externalWorkerId: person.externalWorkerId ?? undefined,
     withVehicle: false,
     visitReason: plannedAccess.visitReason,
     siteId: options.lockedSiteId,

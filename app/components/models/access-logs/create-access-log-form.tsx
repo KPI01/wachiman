@@ -21,6 +21,7 @@ import AccessLogSignature from "./access-log-signature";
 import { getFieldErrors } from "~/lib/utils/zod-errors";
 import { Textarea } from "~/components/ui/textarea";
 import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
+import type { ExternalWorkerListItem } from "~/lib/database/external-worker.server";
 
 type FetcherErrors = {
   errors?: {
@@ -59,10 +60,92 @@ export default function CreateAccessLog({
   const [entryTimestamp, setEntryTimestamp] = useState(
     getDefaultEntryTimestamp,
   );
+  const [selectedExternalWorkerId, setSelectedExternalWorkerId] = useState<
+    string | null
+  >(null);
+  const [legalIdValue, setLegalIdValue] = useState("");
+  const [suggestions, setSuggestions] = useState<ExternalWorkerListItem[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(0);
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   const formRef = useRef<HTMLFormElement>(null);
+  const firstNameRef = useRef<HTMLInputElement>(null);
+  const lastNameRef = useRef<HTMLInputElement>(null);
+  const companyRef = useRef<HTMLInputElement>(null);
+  const phoneRef = useRef<HTMLInputElement>(null);
+  const suggestionContainerRef = useRef<HTMLDivElement>(null);
   const selectedSiteId = lockedSiteId ?? sites[0]?.id;
   const globalError =
     typeof fetcher.data?.errors === "string" ? fetcher.data.errors : null;
+
+  function handleExternalWorkerSelect(worker: ExternalWorkerListItem) {
+    setSelectedExternalWorkerId(worker.id);
+    setLegalIdValue(worker.legalId);
+
+    if (firstNameRef.current) firstNameRef.current.value = worker.firstName;
+    if (lastNameRef.current) lastNameRef.current.value = worker.lastName;
+    if (companyRef.current) companyRef.current.value = worker.company.name;
+    if (phoneRef.current) phoneRef.current.value = worker.phoneNumber ?? "";
+    setSuggestions([]);
+    setShowSuggestions(false);
+  }
+
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+
+    if (legalIdValue.length < 2) {
+      setSuggestions([]);
+      setShowSuggestions(false);
+      setSelectedExternalWorkerId(null);
+      return;
+    }
+
+    debounceRef.current = setTimeout(async () => {
+      const params = new URLSearchParams({ q: legalIdValue });
+      const response = await fetch(`/api/external-workers/search?${params}`);
+      if (response.ok) {
+        const data = await response.json() as ExternalWorkerListItem[];
+        setSuggestions(data);
+        setSelectedSuggestionIndex(0);
+        setShowSuggestions(data.length > 0);
+      }
+    }, 300);
+
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [legalIdValue]);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        suggestionContainerRef.current &&
+        !suggestionContainerRef.current.contains(event.target as Node)
+      ) {
+        setShowSuggestions(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  function handleSuggestionKeyDown(event: React.KeyboardEvent) {
+    if (!showSuggestions || suggestions.length === 0) return;
+
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+      setSelectedSuggestionIndex((prev) => Math.min(prev + 1, suggestions.length - 1));
+    } else if (event.key === "ArrowUp") {
+      event.preventDefault();
+      setSelectedSuggestionIndex((prev) => Math.max(prev - 1, 0));
+    } else if (event.key === "Enter") {
+      event.preventDefault();
+      handleExternalWorkerSelect(suggestions[selectedSuggestionIndex]);
+    } else if (event.key === "Escape") {
+      setShowSuggestions(false);
+    }
+  }
 
   useEffect(() => {
     if (fetcher.state !== "idle" || !fetcher.data || fetcher.data.errors) {
@@ -76,6 +159,10 @@ export default function CreateAccessLog({
     setHasSignature(false);
     setEntrySignaturePayload("");
     setPendingFormEntries([]);
+    setSelectedExternalWorkerId(null);
+    setLegalIdValue("");
+    setSuggestions([]);
+    setShowSuggestions(false);
   }, [fetcher.data, fetcher.state]);
 
   return (
@@ -91,6 +178,10 @@ export default function CreateAccessLog({
           setHasSignature(false);
           setEntrySignaturePayload("");
           setPendingFormEntries([]);
+          setSelectedExternalWorkerId(null);
+          setLegalIdValue("");
+          setSuggestions([]);
+          setShowSuggestions(false);
         }
       }}
       buttonClassName="ms-auto"
@@ -222,12 +313,57 @@ export default function CreateAccessLog({
               htmlFor="legalIdSnapshot"
               errors={getFieldErrors(fetcher.data?.errors, "legalIdSnapshot")}
             >
-              <Input
-                id="legalIdSnapshot"
-                name="legalIdSnapshot"
-                className="uppercase"
-                required
-              />
+              <div ref={suggestionContainerRef} className="relative">
+                <Input
+                  id="legalIdSnapshot"
+                  name="legalIdSnapshot"
+                  className="uppercase"
+                  required
+                  value={legalIdValue}
+                  onChange={(event) => {
+                    setLegalIdValue(event.currentTarget.value);
+                    setSelectedExternalWorkerId(null);
+                  }}
+                  onKeyDown={handleSuggestionKeyDown}
+                  autoComplete="off"
+                />
+                {selectedExternalWorkerId ? (
+                  <input
+                    type="hidden"
+                    name="externalWorkerId"
+                    value={selectedExternalWorkerId}
+                  />
+                ) : null}
+                {showSuggestions && suggestions.length > 0 && (
+                  <ul className="absolute z-50 mt-1 max-h-48 w-full overflow-auto rounded-md border bg-popover p-1 shadow-md">
+                    {suggestions.map((worker, index) => (
+                      <li
+                        key={worker.id}
+                        className={`cursor-pointer rounded-sm px-2 py-1.5 text-sm ${
+                          index === selectedSuggestionIndex
+                            ? "bg-accent text-accent-foreground"
+                            : "hover:bg-accent/50"
+                        }`}
+                        onMouseDown={(event) => {
+                          event.preventDefault();
+                          handleExternalWorkerSelect(worker);
+                        }}
+                        onMouseEnter={() => setSelectedSuggestionIndex(index)}
+                      >
+                        <span className="font-medium">
+                          {worker.firstName} {worker.lastName}
+                        </span>
+                        <span className="ml-2 text-muted-foreground">
+                          {worker.legalId}
+                        </span>
+                        <span className="ml-2 text-xs text-muted-foreground">
+                          {worker.company.name}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
             </FieldWrapper>
             <FieldWrapper
               className="col-start-1"

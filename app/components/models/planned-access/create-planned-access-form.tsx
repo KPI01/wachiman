@@ -1,5 +1,5 @@
 import { AlertTriangleIcon, PlusIcon, TrashIcon } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useFetcher } from "react-router";
 import AlertDialogContainer, {
   AlertDialogCancel,
@@ -26,6 +26,7 @@ import { Textarea } from "~/components/ui/textarea";
 import FieldWrapper from "~/components/ui/wrappers/field-wrapper";
 import { getFieldErrors } from "~/lib/utils/zod-errors";
 import type { Site } from "../../../../prisma/generated/prisma/client";
+import type { ExternalWorkerListItem } from "~/lib/database/external-worker.server";
 
 type PlannedAccessSiteOption = Pick<Site, "id" | "name">;
 
@@ -55,6 +56,7 @@ type VisitorDraft = {
   firstNameSnapshot: string;
   lastNameSnapshot: string;
   phoneNumber: string;
+  externalWorkerId: string;
 };
 
 type PlannedAccessVisitor = VisitorDraft & {
@@ -69,6 +71,7 @@ function getEmptyVisitorDraft(): VisitorDraft {
     firstNameSnapshot: "",
     lastNameSnapshot: "",
     phoneNumber: "",
+    externalWorkerId: "",
   };
 }
 
@@ -112,6 +115,7 @@ function normalizeVisitorDraft(visitor: VisitorDraft): VisitorDraft {
     firstNameSnapshot: visitor.firstNameSnapshot.trim(),
     lastNameSnapshot: visitor.lastNameSnapshot.trim(),
     phoneNumber: visitor.phoneNumber.trim(),
+    externalWorkerId: visitor.externalWorkerId.trim(),
   };
 }
 
@@ -150,6 +154,14 @@ export default function CreatePlannedAccessForm({
   const [localVisitorsError, setLocalVisitorsError] = useState<string | null>(
     null,
   );
+  const [legalIdSuggestions, setLegalIdSuggestions] = useState<
+    ExternalWorkerListItem[]
+  >([]);
+  const [showLegalIdSuggestions, setShowLegalIdSuggestions] = useState(false);
+  const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(0);
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const suggestionsContainerRef = useRef<HTMLDivElement>(null);
+
   const selectedSiteId = sites[0]?.id;
   const globalError =
     typeof fetcher.data?.errors === "string" ? fetcher.data.errors : null;
@@ -171,7 +183,80 @@ export default function CreatePlannedAccessForm({
     setVisitorDraftErrors({});
     setVisitorPopoverOpen(false);
     setLocalVisitorsError(null);
+    setLegalIdSuggestions([]);
+    setShowLegalIdSuggestions(false);
   }, [fetcher.data, fetcher.state]);
+
+  function handleLegalIdChange(value: string) {
+    handleVisitorDraftChange("legalIdSnapshot", value);
+    handleVisitorDraftChange("externalWorkerId", "");
+
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+
+    if (value.length < 2) {
+      setLegalIdSuggestions([]);
+      setShowLegalIdSuggestions(false);
+      return;
+    }
+
+    debounceRef.current = setTimeout(async () => {
+      const params = new URLSearchParams({ q: value });
+      const response = await fetch(`/api/external-workers/search?${params}`);
+      if (response.ok) {
+        const data = (await response.json()) as ExternalWorkerListItem[];
+        setLegalIdSuggestions(data);
+        setSelectedSuggestionIndex(0);
+        setShowLegalIdSuggestions(data.length > 0);
+      }
+    }, 300);
+
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }
+
+  function handleWorkerSuggestionSelect(worker: ExternalWorkerListItem) {
+    handleVisitorDraftChange("firstNameSnapshot", worker.firstName);
+    handleVisitorDraftChange("lastNameSnapshot", worker.lastName);
+    handleVisitorDraftChange("phoneNumber", worker.phoneNumber ?? "");
+    handleVisitorDraftChange("legalIdSnapshot", worker.legalId);
+    handleVisitorDraftChange("externalWorkerId", worker.id);
+    setLegalIdSuggestions([]);
+    setShowLegalIdSuggestions(false);
+  }
+
+  function handleLegalIdKeyDown(event: React.KeyboardEvent) {
+    if (!showLegalIdSuggestions || legalIdSuggestions.length === 0) return;
+
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+      setSelectedSuggestionIndex((prev) =>
+        Math.min(prev + 1, legalIdSuggestions.length - 1),
+      );
+    } else if (event.key === "ArrowUp") {
+      event.preventDefault();
+      setSelectedSuggestionIndex((prev) => Math.max(prev - 1, 0));
+    } else if (event.key === "Enter") {
+      event.preventDefault();
+      handleWorkerSuggestionSelect(legalIdSuggestions[selectedSuggestionIndex]);
+    } else if (event.key === "Escape") {
+      setShowLegalIdSuggestions(false);
+    }
+  }
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        suggestionsContainerRef.current &&
+        !suggestionsContainerRef.current.contains(event.target as Node)
+      ) {
+        setShowLegalIdSuggestions(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   function resetVisitorState() {
     setDatePickerResetKey((currentKey) => currentKey + 1);
@@ -181,6 +266,8 @@ export default function CreatePlannedAccessForm({
     setVisitorDraftErrors({});
     setVisitorPopoverOpen(false);
     setLocalVisitorsError(null);
+    setLegalIdSuggestions([]);
+    setShowLegalIdSuggestions(false);
   }
 
   function handleVisitorDraftChange(field: keyof VisitorDraft, value: string) {
@@ -369,20 +456,53 @@ export default function CreatePlannedAccessForm({
                       : undefined
                   }
                 >
-                  <Input
-                    id="visitor-legal-id"
-                    value={visitorDraft.legalIdSnapshot}
-                    onChange={(event) =>
-                      handleVisitorDraftChange(
-                        "legalIdSnapshot",
-                        event.currentTarget.value,
-                      )
-                    }
-                    className="uppercase"
-                    aria-invalid={
-                      visitorDraftErrors.legalIdSnapshot ? true : undefined
-                    }
-                  />
+                  <div ref={suggestionsContainerRef} className="relative">
+                    <Input
+                      id="visitor-legal-id"
+                      value={visitorDraft.legalIdSnapshot}
+                      onChange={(event) =>
+                        handleLegalIdChange(event.currentTarget.value)
+                      }
+                      onKeyDown={handleLegalIdKeyDown}
+                      className="uppercase"
+                      aria-invalid={
+                        visitorDraftErrors.legalIdSnapshot ? true : undefined
+                      }
+                      autoComplete="off"
+                    />
+                    {showLegalIdSuggestions &&
+                      legalIdSuggestions.length > 0 && (
+                        <ul className="absolute z-50 mt-1 max-h-48 w-full overflow-auto rounded-md border bg-popover p-1 shadow-md">
+                          {legalIdSuggestions.map((worker, index) => (
+                            <li
+                              key={worker.id}
+                              className={`cursor-pointer rounded-sm px-2 py-1.5 text-sm ${
+                                index === selectedSuggestionIndex
+                                  ? "bg-accent text-accent-foreground"
+                                  : "hover:bg-accent/50"
+                              }`}
+                              onMouseDown={(event) => {
+                                event.preventDefault();
+                                handleWorkerSuggestionSelect(worker);
+                              }}
+                              onMouseEnter={() =>
+                                setSelectedSuggestionIndex(index)
+                              }
+                            >
+                              <span className="font-medium">
+                                {worker.firstName} {worker.lastName}
+                              </span>
+                              <span className="ml-2 text-muted-foreground">
+                                {worker.legalId}
+                              </span>
+                              <span className="ml-2 text-xs text-muted-foreground">
+                                {worker.company.name}
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                  </div>
                 </FieldWrapper>
                 <FieldWrapper
                   label="Nombre *"
@@ -498,6 +618,13 @@ export default function CreatePlannedAccessForm({
                       name={`persons[${visitorIndex}].phoneNumber`}
                       value={visitor.phoneNumber}
                     />
+                    {visitor.externalWorkerId ? (
+                      <input
+                        type="hidden"
+                        name={`persons[${visitorIndex}].externalWorkerId`}
+                        value={visitor.externalWorkerId}
+                      />
+                    ) : null}
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
                         <p className="truncate text-sm font-semibold">

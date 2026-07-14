@@ -39,6 +39,7 @@ export const createAccessLogSchema = z
     legalIdSnapshot: requiredString.transform((s) => s.toUpperCase()),
     visitReason: requiredString,
     siteId: requiredString,
+    externalWorkerId: optionalString,
     withVehicle: z.preprocess(
       (value) => value === "true" || value === "on",
       z.boolean(),

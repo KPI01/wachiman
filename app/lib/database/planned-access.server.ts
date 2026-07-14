@@ -54,6 +54,7 @@ export type CreatePlannedAccessInput = {
     secondLastNameSnapshot?: string;
     phoneNumber?: string;
     legalIdSnapshot: string;
+    externalWorkerId?: string;
   }>;
 };
 
@@ -128,6 +129,7 @@ export class PlannedAccessEntity {
             secondLastNameSnapshot: person.secondLastNameSnapshot,
             phoneNumber: person.phoneNumber,
             legalIdSnapshot: person.legalIdSnapshot,
+            externalWorkerId: person.externalWorkerId,
           })),
         },
       },

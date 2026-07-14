@@ -14,3 +14,10 @@ export const PASSWORD_IS_INVALID = "La contraseña introducida es incorrecta.";
 export const SITE_ALREADY_EXISTS = "Ya existe un centro con el slug ingresado.";
 export const DEPARTMENT_ALREADY_EXISTS =
   "Ya existe un departamento con el slug ingresado.";
+
+export const COMPANY_ALREADY_EXISTS = "Ya existe una empresa con el slug ingresado.";
+export const COMPANY_DOESNT_EXISTS = "La empresa ingresada no existe.";
+export const WORK_CATEGORY_DOESNT_EXISTS = "La categoria laboral ingresada no existe.";
+export const EXTERNAL_WORKER_ALREADY_EXISTS = "Ya existe un trabajador externo con el DNI ingresado.";
+export const EXTERNAL_WORKER_DOESNT_EXISTS = "El trabajador externo ingresado no existe.";
+export const EXTERNAL_WORKER_HAS_ACCESS_LOGS = "No se puede eliminar el trabajador porque tiene registros de acceso asociados.";

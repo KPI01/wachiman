@@ -102,6 +102,77 @@ model AccessLog {
   plannedAccess         PlannedAccess?       @relation(fields: [plannedAccessId], references: [id])
   plannedAccessPersonId String?
   plannedAccessPerson   PlannedAccessPerson? @relation(fields: [plannedAccessPersonId], references: [id])
+
+  externalWorkerId String?
+  externalWorker   ExternalWorker? @relation(fields: [externalWorkerId], references: [id])
+}
+
+model Company {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  name      String
+  cif       String   @default("")
+  address   String?
+  phone     String?
+  email     String?
+  slug      String   @unique
+
+  externalWorkers ExternalWorker[]
+  @@index([slug])
+}
+
+model WorkCategory {
+  id                        String   @id @default(uuid())
+  createdAt                 DateTime @default(now())
+  updatedAt                 DateTime @updatedAt
+  name                      String
+  description               String?
+  requiresSpecialPermission Boolean  @default(false)
+
+  externalWorkers ExternalWorker[]
+}
+
+model ExternalWorker {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  firstName      String
+  middleName     String?
+  lastName       String
+  secondLastName String?
+  phoneNumber    String?
+  legalId        String   @unique
+
+  workCategoryId String
+  workCategory   WorkCategory @relation(fields: [workCategoryId], references: [id])
+
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id])
+
+  accessLogs          AccessLog[]
+  plannedAccessPersons PlannedAccessPerson[]
+
+  @@index([legalId])
+  @@index([companyId])
+  @@index([workCategoryId])
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+
+  entityType String
+  entityId   String
+  action     String
+  changedBy  String
+  summary    String
+  metadata   Json?
+
+  @@index([entityType, entityId])
+  @@index([changedBy])
+  @@index([createdAt])
 }
 
 model AccessLogVehicle {
@@ -167,6 +238,9 @@ model PlannedAccessPerson {
   legalIdSnapshot        String
 
   accessLogs AccessLog[]
+
+  externalWorkerId String?
+  externalWorker   ExternalWorker? @relation(fields: [externalWorkerId], references: [id])
 
   @@index([legalIdSnapshot])
   @@index([plannedAccessId])

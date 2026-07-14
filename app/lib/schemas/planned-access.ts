@@ -21,6 +21,7 @@ const plannedAccessPersonSchema = z.object({
   secondLastNameSnapshot: optionalString,
   phoneNumber: optionalString,
   legalIdSnapshot: requiredString.transform((value) => value.toUpperCase()),
+  externalWorkerId: optionalString,
 });
 
 export const createPlannedAccessSchema = z

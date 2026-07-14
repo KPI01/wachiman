@@ -54,6 +54,7 @@ export type CreateAccessLogInput = {
   visitReason: string;
   siteId: string;
   createdById: string;
+  externalWorkerId?: string;
   vehicle?: {
     typeSnapshot: string;
     brandSnapshot?: string;
@@ -156,6 +157,7 @@ export class AccessLogEntity {
           visitReason: data.visitReason,
           siteId: data.siteId,
           createdById: data.createdById,
+          externalWorkerId: data.externalWorkerId,
           vehicleAccessLogId: vehicleAccessLog?.id,
           plannedAccessId: data.plannedAccessId,
           plannedAccessPersonId: data.plannedAccessPersonId,
