@@ -21,3 +21,12 @@ export const WORK_CATEGORY_DOESNT_EXISTS = "La categoria laboral ingresada no ex
 export const EXTERNAL_WORKER_ALREADY_EXISTS = "Ya existe un trabajador externo con el DNI ingresado.";
 export const EXTERNAL_WORKER_DOESNT_EXISTS = "El trabajador externo ingresado no existe.";
 export const EXTERNAL_WORKER_HAS_ACCESS_LOGS = "No se puede eliminar el trabajador porque tiene registros de acceso asociados.";
+
+export const INVALID_FILE_TYPE = "El tipo de archivo no esta permitido. Solo se aceptan JPEG, PNG, PDF y documentos Word.";
+export const FILE_TOO_LARGE = "El archivo excede el tamanio maximo permitido de 5 MB.";
+export const FILE_REQUIRED = "El archivo es obligatorio.";
+export const DOCUMENT_EXPIRY_REQUIRED = "La fecha de expiracion es obligatoria.";
+export const WORKER_DOCUMENT_NOT_FOUND = "El documento no fue encontrado.";
+export const DOCUMENT_TYPE_REQUIRED = "El tipo de documento es obligatorio.";
+export const EXPIRED_DOCUMENT_MSG = "ha expirado.";
+export const MISSING_DOCUMENT_MSG = "no tiene";
