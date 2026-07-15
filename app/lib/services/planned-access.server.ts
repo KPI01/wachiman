@@ -1,6 +1,9 @@
 import z from "zod";
 import type { PlannedAccessStatus } from "../../../prisma/generated/prisma/client";
 import { encryptValue } from "../crypt.server";
+import { DOCUMENT_TYPE_LABELS } from "../models/worker-document";
+import { validateWorkerDocumentsForApproval } from "./worker-document.server";
+import { ExternalWorkerEntity } from "../database/external-worker.server";
 import { AccessLogEntity } from "../database/access-log.server";
 import { PlannedAccessEntity } from "../database/planned-access.server";
 import { UserEntity } from "../database/user.server";
@@ -173,6 +176,50 @@ export async function updatePlannedAccessStatus(
 
   if (!author) {
     return { success: false, errors: "unauthorized" };
+  }
+
+  if (parsed.data.status === "APPROVED") {
+    const plannedAccess = await PlannedAccessEntity.findById(parsed.data.id);
+
+    if (!plannedAccess) {
+      return { success: false, errors: "La solicitud planificada no existe." };
+    }
+
+    for (const person of plannedAccess.plannedAccessPersons) {
+      if (!person.externalWorkerId) continue;
+
+      const worker = await ExternalWorkerEntity.findById(person.externalWorkerId);
+      if (!worker) continue;
+
+      const docResult = await validateWorkerDocumentsForApproval(
+        person.externalWorkerId,
+        worker.workCategory.requiresTraining,
+      );
+
+      if (!docResult.valid) {
+        const workerName = `${worker.firstName} ${worker.lastName}`;
+        const legalId = worker.legalId;
+        const missingLabels = docResult.missingTypes.map(
+          (t) => DOCUMENT_TYPE_LABELS[t as keyof typeof DOCUMENT_TYPE_LABELS],
+        );
+        const expiredLabels = docResult.expiredTypes.map(
+          (t) => DOCUMENT_TYPE_LABELS[t as keyof typeof DOCUMENT_TYPE_LABELS],
+        );
+
+        const errorParts: string[] = [];
+        if (missingLabels.length > 0) {
+          errorParts.push(`faltan: ${missingLabels.join(", ")}`);
+        }
+        if (expiredLabels.length > 0) {
+          errorParts.push(`expirados: ${expiredLabels.join(", ")}`);
+        }
+
+        return {
+          success: false,
+          errors: `El trabajador ${workerName} (${legalId}) no tiene la documentacion requerida vigente (${errorParts.join("; ")}).`,
+        };
+      }
+    }
   }
 
   await PlannedAccessEntity.updateStatus({

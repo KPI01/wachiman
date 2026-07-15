@@ -12,6 +12,7 @@ export type ExternalWorkerDetail = Prisma.ExternalWorkerGetPayload<{
   include: {
     company: true;
     workCategory: true;
+    documents: true;
     accessLogs: {
       include: {
         site: { select: { id: true; name: true } };
@@ -92,6 +93,9 @@ export class ExternalWorkerEntity {
       include: {
         company: true,
         workCategory: true,
+        documents: {
+          orderBy: { createdAt: "desc" },
+        },
         accessLogs: {
           include: {
             site: { select: { id: true, name: true } },

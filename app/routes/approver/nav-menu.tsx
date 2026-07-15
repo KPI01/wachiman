@@ -33,6 +33,11 @@ const NAV_LINKS: Array<{ id: string; title: string; href: string }> = [
     title: "Categorias",
     href: "/approver/work-categories",
   },
+  {
+    id: "documents",
+    title: "Documentacion",
+    href: "/approver/documents",
+  },
 ];
 
 export default function ApproverNavMenu() {

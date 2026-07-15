@@ -14,6 +14,8 @@ import {
 } from "~/components/ui/table";
 import { Badge } from "~/components/ui/badge";
 import type { PlannedAccessStatus } from "../../../prisma/generated/prisma/client";
+import WorkerDocumentList from "~/components/models/worker-document/worker-document-list";
+import UploadWorkerDocumentBtn from "~/components/models/worker-document/upload-worker-document-btn";
 
 const PLANNED_ACCESS_STATUS_LABELS: Record<PlannedAccessStatus, string> = {
   PENDING_APPROVAL: "Pendiente",
@@ -121,6 +123,16 @@ export default function ExternalWorkerDetail({
             </div>
           </dl>
         </div>
+      </div>
+
+      <Separator />
+
+      <div>
+        <div className="mb-3 flex items-center justify-between">
+          <h3 className="text-xl font-semibold">Documentacion</h3>
+          <UploadWorkerDocumentBtn workerId={worker.id} />
+        </div>
+        <WorkerDocumentList documents={worker.documents} workerId={worker.id} />
       </div>
 
       <Separator />

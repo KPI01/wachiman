@@ -34,6 +34,11 @@ const NAV_LINKS: Array<{ id: string; title: string; href: string }> = [
     href: "/security/work-categories",
   },
   {
+    id: "documents",
+    title: "Documentacion",
+    href: "/security/documents",
+  },
+  {
     id: "audit-log",
     title: "Auditoria",
     href: "/security/audit-log",

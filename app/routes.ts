@@ -36,6 +36,7 @@ export default [
     route("companies", "routes/admin/companies.tsx"),
     route("work-categories", "routes/admin/work-categories.tsx"),
     route("audit-log", "routes/admin/audit-log.tsx"),
+    route("documents", "routes/admin/documents.tsx"),
   ]),
 
   // Operador de accesos
@@ -58,6 +59,7 @@ export default [
     route("companies", "routes/security/companies.tsx"),
     route("work-categories", "routes/security/work-categories.tsx"),
     route("audit-log", "routes/security/audit-log.tsx"),
+    route("documents", "routes/security/documents.tsx"),
   ]),
 
   // Solicitante de accesos
@@ -75,6 +77,7 @@ export default [
     route("external-worker/:id", "routes/approver/external-worker.$id.tsx"),
     route("companies", "routes/approver/companies.tsx"),
     route("work-categories", "routes/approver/work-categories.tsx"),
+    route("documents", "routes/approver/documents.tsx"),
   ]),
 
   // API - Dashboard widgets (resource routes)
@@ -89,5 +92,9 @@ export default [
   ...prefix("api/external-workers", [
     route("search", "routes/api/external-workers/search.tsx"),
     route(":id", "routes/api/external-workers/$id.tsx"),
+    route(":workerId/documents", "routes/api/external-workers/$workerId.documents.tsx"),
+    route(":workerId/documents/:docId", "routes/api/external-workers/$workerId.documents.$docId.tsx"),
+    route(":workerId/documents/:docId/file", "routes/api/external-workers/$workerId.documents.$docId.file.tsx"),
   ]),
+  route("api/worker-documents/check-expiry", "routes/api/worker-documents/check-expiry.tsx"),
 ] satisfies RouteConfig;

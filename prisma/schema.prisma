@@ -129,6 +129,7 @@ model WorkCategory {
   name                      String
   description               String?
   requiresSpecialPermission Boolean  @default(false)
+  requiresTraining          Boolean  @default(false)
 
   externalWorkers ExternalWorker[]
 }
@@ -153,10 +154,45 @@ model ExternalWorker {
 
   accessLogs          AccessLog[]
   plannedAccessPersons PlannedAccessPerson[]
+  documents           WorkerDocument[]
 
   @@index([legalId])
   @@index([companyId])
   @@index([workCategoryId])
+}
+
+enum DocumentType {
+  IDENTIFICATION
+  TRAINING
+}
+
+enum DocumentStatus {
+  VALIDATED
+  EXPIRED
+  ARCHIVED
+}
+
+model WorkerDocument {
+  id        String         @id @default(uuid())
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  documentType DocumentType
+  status       DocumentStatus @default(VALIDATED)
+
+  fileName   String
+  filePath   String
+  fileSize   Int?
+  mimeType   String?
+  expiryDate DateTime
+
+  notes String?
+
+  externalWorkerId String
+  externalWorker   ExternalWorker @relation(fields: [externalWorkerId], references: [id], onDelete: Cascade)
+
+  @@index([externalWorkerId])
+  @@index([status, expiryDate])
 }
 
 model AuditLog {

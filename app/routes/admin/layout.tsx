@@ -19,6 +19,7 @@ const SIDEBAR_ITEMS: Array<SidebarLinkItem> = [
     label: "Trabajadores",
     children: [
       { label: "Trabajadores externos", href: "/admin/external-workers" },
+      { label: "Documentacion", href: "/admin/documents" },
     ],
   },
   {
