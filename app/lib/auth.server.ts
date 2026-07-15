@@ -10,10 +10,7 @@ import {
 import type { UserRole } from "../../prisma/generated/prisma/enums";
 import { loginSchema } from "./schemas/auth";
 import z from "zod";
-import {
-  PASSWORD_IS_INVALID,
-  USER_DOESNT_EXISTS,
-} from "./schemas/messages";
+import { INVALID_CREDENTIALS } from "./schemas/messages";
 
 function getFieldError(fieldName: string, message: string) {
   return {
@@ -65,13 +62,13 @@ export async function login(request: Request) {
   });
 
   if (!user) {
-    return { errors: getFieldError("username", USER_DOESNT_EXISTS) };
+    return { errors: getFieldError("password", INVALID_CREDENTIALS) };
   }
 
   const passwordIsValid = await validateHashedText(user.password, data.password);
 
   if (!passwordIsValid) {
-    return { errors: getFieldError("password", PASSWORD_IS_INVALID) };
+    return { errors: getFieldError("password", INVALID_CREDENTIALS) };
   }
 
   const sessionCookie = await createSession({
