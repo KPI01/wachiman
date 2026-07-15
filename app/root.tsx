@@ -12,7 +12,7 @@ import { Toaster } from "~/components/ui/sonner";
 import "./app.css";
 
 export const links: Route.LinksFunction = () => [
-  { rel: "icon", type: "image/svg", href: "/copo-fruveco-azul.svg" },
+  { rel: "icon", type: "image/svg", href: process.env.APP_FAVICON },
 ];
 
 export function Layout({ children }: { children: React.ReactNode }) {

@@ -44,7 +44,7 @@ function hasChildren(item: SidebarLinkItem): item is SidebarGroupLinks {
 }
 
 export default function AppSidebar({
-  title = "Wachiman app",
+  title = process.env.APP_NAME,
   items,
   ...props
 }: AppSidebarProps) {

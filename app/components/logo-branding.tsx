@@ -16,8 +16,8 @@ export default function LogoBranding({
       {!href ? (
         <div className="flex w-32 shrink-0 items-center justify-center">
           <img
-            src="/logoFruveco.svg"
-            alt="Logo de Fruveco"
+            src={process.env.APP_LOGO}
+            alt={`Logo de ${process.env.APP_NAME}`}
             className="max-h-full max-w-full object-contain"
           />
         </div>
@@ -27,8 +27,8 @@ export default function LogoBranding({
           className="flex w-32 shrink-0 items-center justify-center"
         >
           <img
-            src="/logoFruveco.svg"
-            alt="Logo de Fruveco"
+            src={process.env.APP_LOGO}
+            alt={`Logo de ${process.env.APP_NAME}`}
             className="max-h-full max-w-full object-contain"
           />
         </NavLink>

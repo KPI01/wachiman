@@ -17,7 +17,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 export default function Welcome() {
   return (
     <>
-      <title>Wachiman App</title>
+      <title>{process.env.APP_NAME}</title>
       <CardContainer
         className="min-w-xs md:min-w-lg"
         title="Bienvenido al Control de Accesos de Fruveco"

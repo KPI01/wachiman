@@ -41,7 +41,7 @@ export default function AdminLayout() {
   return (
     <SidebarProvider>
       <title>Administrador</title>
-      <AppSidebar title="Control de Accesos" items={SIDEBAR_ITEMS} />
+      <AppSidebar title={process.env.APP_NAME} items={SIDEBAR_ITEMS} />
       <SidebarInset className="p-4 md:p-6 max-w-full overflow-auto">
         <div className="flex items-center gap-2 mb-4 md:hidden">
           <SidebarTrigger />
