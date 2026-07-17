@@ -7,7 +7,7 @@
     "build": "react-router build",
     "dev": "react-router dev",
     "lint": "eslint .",
-    "start": "react-router-serve ./build/server/index.js",
+    "start": "react-router-serve ./dist/server/index.js",
     "deploy": "react-router build && wrangler deploy",
     "preview": "wrangler dev",
     "cf-typegen": "wrangler types",
