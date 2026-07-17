@@ -1,3 +1,5 @@
+/// <reference types="@cloudflare/workers-types" />
+
 import {
   isRouteErrorResponse,
   Links,
@@ -9,7 +11,18 @@ import {
 
 import type { Route } from "./+types/root";
 import { Toaster } from "~/components/ui/sonner";
+import { initPrisma } from "~/lib/prisma.server";
 import "./app.css";
+
+export async function loader({ context }: Route.LoaderArgs) {
+  const cloudflare = (context as Record<string, unknown>)?.cloudflare as
+    | { env: Record<string, unknown> }
+    | undefined;
+  if (cloudflare?.env?.DB) {
+    initPrisma(cloudflare.env.DB as D1Database);
+  }
+  return null;
+}
 
 export const links: Route.LinksFunction = () => [
   { rel: "icon", type: "image/svg", href: process.env.APP_FAVICON },
