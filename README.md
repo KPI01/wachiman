@@ -105,7 +105,7 @@ cp .dev.vars.example .dev.vars
 ### 2. Crear base de datos D1
 
 ```bash
-pnpm exec wrangler d1 create wachiman-db
+pnpm exec wrangler d1 create wachiman
 ```
 
 Copiar el `database_id` del output a `wrangler.jsonc`.
