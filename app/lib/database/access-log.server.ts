@@ -123,10 +123,9 @@ export class AccessLogEntity {
   }
 
   private static async createAccessWithVehicle(
-    tx: Prisma.TransactionClient,
     vehicleData: NonNullable<CreateAccessLogInput["vehicle"]>,
   ) {
-    return await tx.accessLogVehicle.create({
+    return await prisma.accessLogVehicle.create({
       data: {
         typeSnapshot: vehicleData.typeSnapshot ?? "",
         brandSnapshot: vehicleData.brandSnapshot,
@@ -137,12 +136,14 @@ export class AccessLogEntity {
   }
 
   public static async create(data: CreateAccessLogInput) {
-    return await prisma.$transaction(async (tx) => {
-      const vehicleAccessLog = data.withVehicle
-        ? await this.createAccessWithVehicle(tx, data.vehicle!)
-        : null;
+    let vehicleAccessLog: { id: string } | null = null;
 
-      return await tx.accessLog.create({
+    if (data.withVehicle) {
+      vehicleAccessLog = await this.createAccessWithVehicle(data.vehicle!);
+    }
+
+    try {
+      return await prisma.accessLog.create({
         data: {
           entryTimestamp: data.entryTimestamp,
           entrySignatureEnvelope: data.entrySignatureEnvelope,
@@ -163,7 +164,18 @@ export class AccessLogEntity {
           plannedAccessPersonId: data.plannedAccessPersonId,
         },
       });
-    });
+    } catch (error) {
+      if (vehicleAccessLog) {
+        try {
+          await prisma.accessLogVehicle.delete({
+            where: { id: vehicleAccessLog.id },
+          });
+        } catch {
+          // Best-effort cleanup — log orphaned vehicle for manual review
+        }
+      }
+      throw error;
+    }
   }
 
   public static async markExit(data: MarkAccessLogExitInput) {

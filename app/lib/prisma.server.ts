@@ -1,14 +1,22 @@
-import "dotenv/config";
-import { PrismaPg } from "@prisma/adapter-pg";
+import type { D1Database } from "@cloudflare/workers-types";
+import { PrismaD1 } from "@prisma/adapter-d1";
 import { PrismaClient } from "../../prisma/generated/prisma/client";
 
-const connectionString = process.env.DATABASE_URL;
+let _prisma: PrismaClient | null = null;
 
-if (!connectionString) {
-  throw new Error("DATABASE_URL no esta definido");
+const handler: ProxyHandler<PrismaClient> = {
+  get(_, prop) {
+    if (!_prisma) {
+      throw new Error("Prisma Client not initialized. Call initPrisma() first.");
+    }
+    const value = (_prisma as unknown as Record<string | symbol, unknown>)[prop];
+    return typeof value === "function" ? (value as Function).bind(_prisma) : value;
+  },
+};
+
+export const prisma = new Proxy({} as PrismaClient, handler);
+
+export function initPrisma(db: D1Database) {
+  const adapter = new PrismaD1(db);
+  _prisma = new PrismaClient({ adapter });
 }
-
-const adapter = new PrismaPg({ connectionString });
-const prisma = new PrismaClient({ adapter });
-
-export { prisma };

@@ -3,9 +3,9 @@ import "dotenv/config";
 import { randomBytes, scrypt as scryptCallback } from "node:crypto";
 import { promisify } from "node:util";
 
-import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "./generated/prisma/client";
 import type { Prisma } from "./generated/prisma/client";
+import { createLocalPrismaClient } from "./lib";
 import { encryptValue } from "../app/lib/crypt.server";
 
 const scrypt = promisify(scryptCallback);
@@ -227,13 +227,7 @@ const DOCUMENT_MIME_TYPES = [
 ] as const;
 
 async function main() {
-  const connectionString = process.env.DATABASE_URL;
-  if (!connectionString) {
-    throw new Error("DATABASE_URL no esta definido");
-  }
-
-  const adapter = new PrismaPg({ connectionString });
-  const prisma = new PrismaClient({ adapter });
+  const prisma = createLocalPrismaClient();
 
   const counts: Record<string, number> = {};
 

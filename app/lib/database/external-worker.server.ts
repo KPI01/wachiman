@@ -151,9 +151,9 @@ export class ExternalWorkerEntity {
     return prisma.externalWorker.findMany({
       where: {
         OR: [
-          { legalId: { contains: normalizedQuery, mode: "insensitive" } },
-          { firstName: { contains: normalizedQuery, mode: "insensitive" } },
-          { lastName: { contains: normalizedQuery, mode: "insensitive" } },
+          { legalId: { contains: normalizedQuery } },
+          { firstName: { contains: normalizedQuery } },
+          { lastName: { contains: normalizedQuery } },
         ],
       },
       include: this.DEFAULT_INCLUDE,

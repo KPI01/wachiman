@@ -3,8 +3,8 @@ import "dotenv/config";
 import { randomBytes, scrypt as scryptCallback } from "node:crypto";
 import { promisify } from "node:util";
 
-import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "./generated/prisma/client";
+import { createLocalPrismaClient } from "./lib";
 
 const scrypt = promisify(scryptCallback);
 
@@ -20,7 +20,6 @@ async function hashText(text: string) {
 }
 
 async function main() {
-  const connectionString = process.env.DATABASE_URL;
   const fullName = process.env.ADMIN_FULL_NAME ?? "Administrador";
   const username = process.env.ADMIN_USERNAME ?? "admin";
   const password = "demo123";
@@ -29,12 +28,7 @@ async function main() {
   const departmentName = process.env.DEPARTMENT_NAME ?? "General";
   const departmentSlug = process.env.DEPARTMENT_SLUG ?? "GENERAL";
 
-  if (!connectionString) {
-    throw new Error("DATABASE_URL no esta definido");
-  }
-
-  const adapter = new PrismaPg({ connectionString });
-  const prisma = new PrismaClient({ adapter });
+  const prisma = createLocalPrismaClient();
 
   try {
     const site = await prisma.site.upsert({
