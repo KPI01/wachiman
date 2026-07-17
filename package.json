@@ -12,7 +12,7 @@
     "orm:generate": "pnpm prisma generate",
     "db:migrate": "pnpm prisma migrate",
     "db:seed": "tsx prisma/seed.ts",
-    "db:seed-access-logs": "tsx prisma/seed-access-logs.ts",
+    "db:seed-populate": "tsx prisma/seed-populate.ts",
     "db:reset": "pnpm prisma migrate reset",
     "env:set-encryption-key": "tsx scripts/set-encryption-key.ts",
     "env:set-session-secret": "tsx scripts/set-session-secret.ts"

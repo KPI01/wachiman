@@ -7,19 +7,14 @@ Sistema de control de acceso industrial para el registro, monitoreo y gestión d
 | Capa | Tecnología |
 |---|---|
 | **Runtime** | Node.js 24 |
-| **Framework full-stack** | React Router v7 (SSR + rutas API) |
-| **Frontend** | React 19 + Tailwind CSS 4 + shadcn/ui (Radix UI) |
-| **Lenguaje** | TypeScript 5.9 |
-| **Base de datos** | PostgreSQL 18 |
-| **ORM** | Prisma v7 |
-| **Autenticación** | Sesiones por cookie (`createCookieSessionStorage`) con scrypt para hash de contraseñas |
-| **Cifrado de datos sensibles** | AES-256-GCM (firmas digitales e identificaciones) |
-| **Tablas** | @tanstack/react-table |
-| **Fechas** | date-fns |
-| **Captura de firmas** | @uiw/react-signature + react-signature-canvas |
-| **Gestor de paquetes** | pnpm 10.12 |
-| **Build tool** | Vite 8 |
-| **Contenedores** | Docker + Docker Compose |
+| **Framework** | React Router v7 (SSR + rutas API) |
+| **Frontend** | React 19, Tailwind CSS 4, shadcn/ui |
+| **Lenguaje** | TypeScript |
+| **Base de datos** | PostgreSQL |
+| **ORM** | Prisma |
+| **Autenticación** | Sesiones por cookie con scrypt |
+| **Cifrado** | AES-256-GCM |
+| **Contenedores** | Docker |
 
 ## Instalación y ejecución
 
@@ -37,13 +32,14 @@ Copia el archivo de ejemplo y configura las variables:
 cp .env.example .env
 ```
 
+El seed usa la contraseña por defecto `demo123` para todos los usuarios de prueba.
+
 Variables obligatorias:
 
 | Variable | Descripción |
 |---|---|
-| `ENCRIPTION_KEY` | Clave AES-256-GCM en base64 (generar con `npm run env:set-encryption-key`) |
-| `SESSION_SECRET` | Secreto para firmar cookies de sesión |
-| `ADMIN_PASSWORD` | Contraseña del usuario administrador inicial |
+| `ENCRIPTION_KEY` | Clave AES-256-GCM en base64 (generar con `pnpm run env:set-encryption-key`) |
+| `SESSION_SECRET` | Secreto para firmar cookies de sesión (generar con `pnpm run env:set-session-secret`) |
 | `DATABASE_URL` | URL de conexión a PostgreSQL |
 
 Variables opcionales con valores por defecto en el seed:
@@ -66,14 +62,14 @@ pnpm install
 ### 3. Configurar la base de datos
 
 ```bash
-pnpm db:migrate    # Ejecutar migraciones
-pnpm db:seed       # Poblar datos iniciales (admin, sitio, departamento)
+pnpm db:migrate          # Ejecutar migraciones
+pnpm db:seed             # Crear usuario admin inicial (usuario: admin, contraseña: demo123)
 ```
 
-Para datos de prueba de registros de acceso:
+Para poblar la aplicación con datos demo realistas:
 
 ```bash
-pnpm db:seed-access-logs
+pnpm db:seed-populate
 ```
 
 ### 4. Iniciar en desarrollo
@@ -163,7 +159,7 @@ wachiman/
 ├── prisma/
 │   ├── schema.prisma               # Esquema de base de datos (15 modelos, 4 enums)
 │   ├── seed.ts                     # Seeder inicial (admin, sitio, departamento)
-│   ├── seed-access-logs.ts         # Seeder de datos de prueba
+│   ├── seed-populate.ts            # Seeder de datos demo completos
 │   └── migrations/                 # Historial de migraciones
 ├── docker-compose.yml
 ├── Dockerfile
@@ -219,15 +215,25 @@ Endpoints para widgets en tiempo real:
 
 ## Usuario y contraseña de prueba
 
-El seed inicial crea un usuario administrador. Las credenciales dependen de las variables de entorno configuradas en `.env`:
+El seed (`db:seed`) crea un usuario administrador inicial. Para datos demo completos con múltiples roles ejecuta `db:seed-populate`.
 
-| Campo | Valor por defecto |
+**Contraseña común para todos los usuarios:** `demo123`
+
+| Usuario | Rol |
 |---|---|
-| **Usuario** | `admin` |
-| **Contraseña** | La definida en `ADMIN_PASSWORD` (obligatorio) |
+| `admin` | ADMIN |
+| `admin.principal` | ADMIN |
+| `operador.principal` | ACCESS_OPERATOR |
+| `operador.almacen` | ACCESS_OPERATOR |
+| `operador.cd` | ACCESS_OPERATOR |
+| `monitor.principal` | ACCESS_MONITOR |
+| `segur.principal` | SECURITY_MANAGER |
+| `aprobador.principal` | ACCESS_APPROVER |
+| `solicitante.principal` | ACCESS_REQUESTER |
+| `solicitante.norte` | ACCESS_REQUESTER |
 
-Para iniciar sesión por primera vez:
+Para iniciar sesión:
 
-1. Define `ADMIN_PASSWORD` en tu archivo `.env`
-2. Ejecuta `pnpm db:seed`
-3. Accede a `http://localhost:5173/login` con usuario `admin` y la contraseña configurada
+1. Configura las variables de entorno en `.env`
+2. Ejecuta `pnpm db:seed` (o `pnpm db:seed-populate` para datos demo)
+3. Accede a `http://localhost:5173/login` con cualquiera de los usuarios anteriores y contraseña `demo123`

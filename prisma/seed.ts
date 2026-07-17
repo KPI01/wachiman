@@ -23,7 +23,7 @@ async function main() {
   const connectionString = process.env.DATABASE_URL;
   const fullName = process.env.ADMIN_FULL_NAME ?? "Administrador";
   const username = process.env.ADMIN_USERNAME ?? "admin";
-  const password = process.env.ADMIN_PASSWORD;
+  const password = "demo123";
   const siteName = process.env.SITE_NAME ?? "Sitio principal";
   const siteSlug = process.env.SITE_SLUG ?? "PRINCIPAL";
   const departmentName = process.env.DEPARTMENT_NAME ?? "General";
@@ -31,10 +31,6 @@ async function main() {
 
   if (!connectionString) {
     throw new Error("DATABASE_URL no esta definido");
-  }
-
-  if (!password) {
-    throw new Error("ADMIN_PASSWORD no esta definido");
   }
 
   const adapter = new PrismaPg({ connectionString });
