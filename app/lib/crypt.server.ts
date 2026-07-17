@@ -1,57 +1,74 @@
-import {
-  createCipheriv,
-  createDecipheriv,
-  createSecretKey,
-  randomBytes,
-  timingSafeEqual,
-} from "node:crypto";
-
 const ENCRYPTION_KEY_NAME = "ENCRIPTION_KEY";
-const ALGORITHM = "aes-256-gcm";
+const ENVELOPE_ALGORITHM = "aes-256-gcm";
+const WEB_CRYPTO_ALGORITHM = "AES-GCM";
 const KEY_LENGTH = 32;
 const IV_LENGTH = 12;
 const AUTH_TAG_LENGTH = 16;
 
 export type EncryptedValueEnvelope = {
   v: 1;
-  alg: typeof ALGORITHM;
+  alg: typeof ENVELOPE_ALGORITHM;
   iv: string;
   tag: string;
   ct: string;
 };
 
-const encryptionKey = getEncryptionKey();
+let _rawKey: Uint8Array | null = null;
 
-function getEncryptionKey() {
-  const encryptionKeyValue = process.env[ENCRYPTION_KEY_NAME];
+function getRawKey(): Uint8Array {
+  if (_rawKey) return _rawKey;
 
-  if (!encryptionKeyValue) {
+  const key = process.env[ENCRYPTION_KEY_NAME];
+  if (!key) {
     throw new Error(`${ENCRYPTION_KEY_NAME} is not defined`);
   }
 
-  const decodedKey = Buffer.from(encryptionKeyValue, "base64");
-
-  if (decodedKey.length !== KEY_LENGTH) {
+  const decoded = Uint8Array.from(atob(key), (c) => c.charCodeAt(0));
+  if (decoded.length !== KEY_LENGTH) {
     throw new Error(
       `${ENCRYPTION_KEY_NAME} must be a base64-encoded 32-byte key`,
     );
   }
 
-  return createSecretKey(decodedKey);
+  _rawKey = decoded;
+  return _rawKey;
 }
 
-function parseEncryptedValueEnvelope(
-  encryptedValue: unknown,
+function timingSafeEqual(a: Uint8Array, b: Uint8Array): boolean {
+  if (a.length !== b.length) return false;
+  let result = 0;
+  for (let i = 0; i < a.length; i++) {
+    result |= a[i] ^ b[i];
+  }
+  return result === 0;
+}
+
+async function getCryptoKey(): Promise<CryptoKey> {
+  const rawKey = getRawKey();
+  return crypto.subtle.importKey(
+    "raw",
+    rawKey.buffer.slice(
+      rawKey.byteOffset,
+      rawKey.byteOffset + rawKey.byteLength,
+    ) as ArrayBuffer,
+    { name: "AES-GCM" },
+    false,
+    ["encrypt", "decrypt"],
+  );
+}
+
+function parseEnvelope(
+  value: unknown,
 ): EncryptedValueEnvelope {
-  if (typeof encryptedValue !== "object" || encryptedValue === null) {
+  if (typeof value !== "object" || value === null) {
     throw new Error("Invalid encrypted value");
   }
 
-  const envelope = encryptedValue as Record<string, unknown>;
+  const envelope = value as Record<string, unknown>;
 
   if (
     envelope.v !== 1 ||
-    envelope.alg !== ALGORITHM ||
+    envelope.alg !== ENVELOPE_ALGORITHM ||
     typeof envelope.iv !== "string" ||
     typeof envelope.tag !== "string" ||
     typeof envelope.ct !== "string"
@@ -68,64 +85,77 @@ function parseEncryptedValueEnvelope(
   };
 }
 
-export function encryptValue(value: string): EncryptedValueEnvelope {
-  const iv = randomBytes(IV_LENGTH);
-  const cipher = createCipheriv(ALGORITHM, encryptionKey, iv, {
-    authTagLength: AUTH_TAG_LENGTH,
-  });
-  const ciphertext = Buffer.concat([
-    cipher.update(value, "utf8"),
-    cipher.final(),
-  ]);
+export async function encryptValue(
+  value: string,
+): Promise<EncryptedValueEnvelope> {
+  const iv = crypto.getRandomValues(new Uint8Array(IV_LENGTH));
+  const key = await getCryptoKey();
+  const encoder = new TextEncoder();
+
+  const encrypted = await crypto.subtle.encrypt(
+    { name: WEB_CRYPTO_ALGORITHM, iv },
+    key,
+    encoder.encode(value),
+  );
+
+  const full = new Uint8Array(encrypted);
+  const ct = full.slice(0, -AUTH_TAG_LENGTH);
+  const tag = full.slice(-AUTH_TAG_LENGTH);
 
   return {
     v: 1,
-    alg: ALGORITHM,
-    iv: iv.toString("base64"),
-    tag: cipher.getAuthTag().toString("base64"),
-    ct: ciphertext.toString("base64"),
+    alg: ENVELOPE_ALGORITHM,
+    iv: btoa(String.fromCharCode(...iv)),
+    tag: btoa(String.fromCharCode(...tag)),
+    ct: btoa(String.fromCharCode(...ct)),
   };
 }
 
-export function decryptValue(encryptedValue: unknown): string {
+export async function decryptValue(
+  encryptedValue: unknown,
+): Promise<string> {
   try {
-    const envelope = parseEncryptedValueEnvelope(encryptedValue);
-    const iv = Buffer.from(envelope.iv, "base64");
-    const authTag = Buffer.from(envelope.tag, "base64");
-    const ciphertext = Buffer.from(envelope.ct, "base64");
+    const envelope = parseEnvelope(encryptedValue);
 
-    if (iv.length !== IV_LENGTH || authTag.length !== AUTH_TAG_LENGTH) {
+    const iv = Uint8Array.from(atob(envelope.iv), (c) => c.charCodeAt(0));
+    const tag = Uint8Array.from(atob(envelope.tag), (c) => c.charCodeAt(0));
+    const ct = Uint8Array.from(atob(envelope.ct), (c) => c.charCodeAt(0));
+
+    if (iv.length !== IV_LENGTH || tag.length !== AUTH_TAG_LENGTH) {
       throw new Error("Invalid encrypted value");
     }
 
-    const decipher = createDecipheriv(ALGORITHM, encryptionKey, iv, {
-      authTagLength: AUTH_TAG_LENGTH,
-    });
-    decipher.setAuthTag(authTag);
+    const combined = new Uint8Array(ct.length + tag.length);
+    combined.set(ct);
+    combined.set(tag, ct.length);
 
-    return Buffer.concat([
-      decipher.update(ciphertext),
-      decipher.final(),
-    ]).toString("utf8");
+    const key = await getCryptoKey();
+    const decrypted = await crypto.subtle.decrypt(
+      { name: WEB_CRYPTO_ALGORITHM, iv },
+      key,
+      combined,
+    );
+
+    return new TextDecoder().decode(decrypted);
   } catch {
     throw new Error("Invalid encrypted value");
   }
 }
 
-export function validateEncryptedValue(
+export async function validateEncryptedValue(
   encryptedValue: unknown,
   plainValue: string,
 ) {
   try {
-    const decryptedValue = decryptValue(encryptedValue);
-    const decryptedBuffer = Buffer.from(decryptedValue, "utf8");
-    const plainValueBuffer = Buffer.from(plainValue, "utf8");
+    const decrypted = await decryptValue(encryptedValue);
+    const decArr = new TextEncoder().encode(decrypted);
+    const plainArr = new TextEncoder().encode(plainValue);
 
-    if (decryptedBuffer.length !== plainValueBuffer.length) {
+    if (decArr.length !== plainArr.length) {
       return false;
     }
 
-    return timingSafeEqual(decryptedBuffer, plainValueBuffer);
+    return timingSafeEqual(decArr, plainArr);
   } catch {
     return false;
   }

@@ -1,27 +1,14 @@
 import "dotenv/config";
 
-import { randomBytes, scrypt as scryptCallback } from "node:crypto";
-import { promisify } from "node:util";
-
 import { PrismaClient } from "./generated/prisma/client";
 import type { Prisma } from "./generated/prisma/client";
 import { createLocalPrismaClient } from "./lib";
+import { hashText } from "../app/lib/hash.server";
 import { encryptValue } from "../app/lib/crypt.server";
 
-const scrypt = promisify(scryptCallback);
-
-const SALT_LENGTH = 16;
-const KEY_LENGTH = 64;
-const HASH_SEPARATOR = ":";
 const DEMO_PASSWORD = "demo123";
 
-async function hashText(text: string) {
-  const salt = randomBytes(SALT_LENGTH).toString("hex");
-  const derivedKey = (await scrypt(text, salt, KEY_LENGTH)) as Buffer;
-  return `${salt}${HASH_SEPARATOR}${derivedKey.toString("hex")}`;
-}
-
-function randomSignatureEnvelope() {
+async function randomSignatureEnvelope() {
   const strokesCount = Math.floor(Math.random() * 3) + 2;
   const strokes = [];
   for (let s = 0; s < strokesCount; s++) {
@@ -35,7 +22,7 @@ function randomSignatureEnvelope() {
     }
     strokes.push(points);
   }
-  return encryptValue(JSON.stringify({ strokes }));
+  return await encryptValue(JSON.stringify({ strokes }));
 }
 
 function randomLegalId(): string {
@@ -493,9 +480,9 @@ async function main() {
       const log = await prisma.accessLog.create({
         data: {
           entryTimestamp,
-          entrySignatureEnvelope: randomSignatureEnvelope(),
+          entrySignatureEnvelope: await randomSignatureEnvelope(),
           exitTimestamp,
-          exitSignatureEnvelope: exitTimestamp ? randomSignatureEnvelope() : undefined,
+          exitSignatureEnvelope: exitTimestamp ? await randomSignatureEnvelope() : undefined,
           companyNameSnapshot: companyName,
           firstNameSnapshot: extWorker?.firstName ?? firstName,
           lastNameSnapshot: extWorker?.lastName ?? lastName,

@@ -326,7 +326,7 @@ export async function createAccessLogFromPlannedAccess(
 
   await AccessLogEntity.create({
     entryTimestamp: new Date(),
-    entrySignatureEnvelope: encryptValue(
+    entrySignatureEnvelope: await encryptValue(
       JSON.stringify(parsed.data.entrySignaturePayload),
     ),
     companyNameSnapshot: plannedAccess.companySnapshot,

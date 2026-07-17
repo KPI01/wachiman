@@ -20,7 +20,7 @@ export default function Welcome() {
       <title>{process.env.APP_NAME}</title>
       <CardContainer
         className="min-w-xs md:min-w-lg"
-        title="Bienvenido al Control de Accesos de Fruveco"
+        title={`Bienvenido a ${process.env.APP_NAME}`}
         description="Software para el control de accesos de una fábrica"
       >
         <div className="flex gap-3 justify-end">

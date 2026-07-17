@@ -58,7 +58,7 @@ export async function action({ params, request }: Route.ActionArgs) {
 
   const wasExitRecorded = await AccessLogEntity.markExit({
     accessLogId: params.id,
-    exitSignatureEnvelope: encryptValue(
+    exitSignatureEnvelope: await encryptValue(
       JSON.stringify(data.exitSignaturePayload),
     ),
     exitRecordedById: exitRecordedBy.id,

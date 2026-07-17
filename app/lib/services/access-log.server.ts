@@ -50,7 +50,7 @@ type CreateAccessLogInputType = {
   siteId: string;
   createdById: string;
 };
-function buildCreateAccessLogInput({
+async function buildCreateAccessLogInput({
   data,
   createdById,
   siteId,
@@ -68,7 +68,7 @@ function buildCreateAccessLogInput({
     ...accessLogData,
     siteId,
     createdById,
-    entrySignatureEnvelope: encryptValue(JSON.stringify(entrySignaturePayload)),
+    entrySignatureEnvelope: await encryptValue(JSON.stringify(entrySignaturePayload)),
     vehicle: data.withVehicle
       ? {
           typeSnapshot: vehicleTypeSnapshot ?? "",
@@ -113,7 +113,7 @@ export async function createAccessLog(
   }
 
   await AccessLogEntity.create(
-    buildCreateAccessLogInput({ data, siteId, createdById: createdBy.id }),
+    await buildCreateAccessLogInput({ data, siteId, createdById: createdBy.id }),
   );
 
   return { success: true };
@@ -144,7 +144,7 @@ export async function markAccessLogExit(
 
   const wasExitRecorded = await AccessLogEntity.markExit({
     accessLogId,
-    exitSignatureEnvelope: encryptValue(
+    exitSignatureEnvelope: await encryptValue(
       JSON.stringify(data.exitSignaturePayload),
     ),
     exitRecordedById: exitRecordedBy.id,

@@ -6,15 +6,15 @@ Sistema de control de acceso industrial para el registro, monitoreo y gestión d
 
 | Capa | Tecnología |
 |---|---|
-| **Runtime** | Node.js 24 |
+| **Runtime** | Node.js 24 / Cloudflare Workers |
 | **Framework** | React Router v7 (SSR + rutas API) |
 | **Frontend** | React 19, Tailwind CSS 4, shadcn/ui |
 | **Lenguaje** | TypeScript |
-| **Base de datos** | PostgreSQL |
-| **ORM** | Prisma |
-| **Autenticación** | Sesiones por cookie con scrypt |
-| **Cifrado** | AES-256-GCM |
-| **Contenedores** | Docker |
+| **Base de datos** | SQLite (local) / Cloudflare D1 (producción) |
+| **ORM** | Prisma + driver adapters (libsql, d1) |
+| **Autenticación** | Sesiones por cookie con PBKDF2 (Web Crypto) |
+| **Cifrado** | AES-256-GCM (Web Crypto) |
+| **Deploy** | Cloudflare Workers + Wrangler |
 
 ## Instalación y ejecución
 
@@ -22,7 +22,6 @@ Sistema de control de acceso industrial para el registro, monitoreo y gestión d
 
 - Node.js 24
 - pnpm 10.12+
-- PostgreSQL 18
 
 ### 1. Variables de entorno
 
@@ -38,9 +37,9 @@ Variables obligatorias:
 
 | Variable | Descripción |
 |---|---|
-| `ENCRIPTION_KEY` | Clave AES-256-GCM en base64 (generar con `pnpm run env:set-encryption-key`) |
-| `SESSION_SECRET` | Secreto para firmar cookies de sesión (generar con `pnpm run env:set-session-secret`) |
-| `DATABASE_URL` | URL de conexión a PostgreSQL |
+| `ENCRIPTION_KEY` | Clave AES-256-GCM en base64 (generar con `pnpm env:set-encryption-key`) |
+| `SESSION_SECRET` | Secreto para firmar cookies de sesión (generar con `pnpm env:set-session-secret`) |
+| `DATABASE_URL` | URL SQLite (`file:./prisma/dev.db`) |
 
 Variables opcionales con valores por defecto en el seed:
 
@@ -62,14 +61,15 @@ pnpm install
 ### 3. Configurar la base de datos
 
 ```bash
-pnpm db:migrate          # Ejecutar migraciones
-pnpm db:seed             # Crear usuario admin inicial (usuario: admin, contraseña: demo123)
+pnpm orm:generate        # Generar cliente Prisma
+pnpm exec prisma db push # Crear/esquema SQLite local
+pnpm db:seed             # Usuario admin (admin / demo123)
 ```
 
-Para poblar la aplicación con datos demo realistas:
+Para datos demo completos:
 
 ```bash
-pnpm db:seed-populate
+pnpm db:seed-populate    # 60 registros, 15 accesos, 18 trabajadores, 9 usuarios multirol
 ```
 
 ### 4. Iniciar en desarrollo
@@ -80,16 +80,65 @@ pnpm dev
 
 La aplicación estará disponible en `http://localhost:5173`.
 
-### 5. Construcción para producción
+### 5. Construcción para producción (Node.js)
 
 ```bash
 pnpm build
 pnpm start
 ```
 
-### Docker Compose
+## Despliegue en Cloudflare Workers
 
-El proyecto incluye `docker-compose.yml` con servicios de PostgreSQL y la aplicación:
+### Requisitos previos
+
+- Cuenta Cloudflare
+- Wrangler CLI autenticado (`pnpm exec wrangler login`)
+
+### 1. Configurar entorno Cloudflare
+
+Crear `.dev.vars` para desarrollo local con Wrangler:
+
+```bash
+cp .dev.vars.example .dev.vars
+```
+
+### 2. Crear base de datos D1
+
+```bash
+pnpm exec wrangler d1 create wachiman-db
+```
+
+Copiar el `database_id` del output a `wrangler.jsonc`.
+
+### 3. Aplicar migraciones D1
+
+```bash
+pnpm db:apply-local   # Desarrollo local
+pnpm db:apply-remote  # Producción
+```
+
+### 4. Configurar secrets en Cloudflare
+
+```bash
+pnpm exec wrangler secret put ENCRIPTION_KEY
+pnpm exec wrangler secret put SESSION_SECRET
+```
+
+### 5. Deploy
+
+```bash
+pnpm deploy
+```
+
+### 6. Preview local con Wrangler
+
+```bash
+pnpm preview
+```
+
+## Deploy en servidor propio con Docker
+
+El proyecto incluye `Dockerfile` y `docker-compose.yml` para despliegue tradicional:
 
 ```bash
 docker compose up -d
@@ -146,9 +195,10 @@ wachiman/
 │   ├── lib/
 │   │   ├── auth.server.ts          # Login/logout, verificación de autenticación y roles
 │   │   ├── session.server.ts       # Gestión de sesiones con cookies
-│   │   ├── hash.server.ts          # Hash y validación de contraseñas (scrypt)
-│   │   ├── crypt.server.ts         # Cifrado/descifrado AES-256-GCM
-│   │   ├── prisma.server.ts        # Cliente singleton de Prisma
+│   │   ├── hash.server.ts          # Hash y validación de contraseñas (PBKDF2)
+│   │   ├── crypt.server.ts         # Cifrado/descifrado AES-256-GCM (Web Crypto)
+│   │   ├── platform.server.ts      # Detección de soporte de archivos (DISABLE_FILE_UPLOADS)
+│   │   ├── prisma.server.ts        # Cliente Prisma (auto-init SQLite local, D1 en Workers)
 │   │   ├── utils.ts                # Utilidades generales
 │   │   ├── database/               # Clases de acceso a datos (CRUD por entidad)
 │   │   ├── services/               # Lógica de negocio
@@ -158,12 +208,17 @@ wachiman/
 │       └── env.d.ts
 ├── prisma/
 │   ├── schema.prisma               # Esquema de base de datos (15 modelos, 4 enums)
+│   ├── config.ts                   # Configuración de Prisma (migraciones + seed)
+│   ├── lib.ts                      # Helper createLocalPrismaClient() para scripts
 │   ├── seed.ts                     # Seeder inicial (admin, sitio, departamento)
 │   ├── seed-populate.ts            # Seeder de datos demo completos
-│   └── migrations/                 # Historial de migraciones
-├── docker-compose.yml
-├── Dockerfile
+│   ├── migrations/                 # Migraciones D1 (0001_init.sql)
+│   └── dev.db                      # Base de datos SQLite local
+├── workers/
+│   └── app.ts                      # Entry point para Cloudflare Workers
+├── wrangler.jsonc                  # Configuración de Wrangler (D1 binding, assets)
 ├── .env.example                    # Plantilla de variables de entorno
+├── .dev.vars                       # Secrets para desarrollo local con Wrangler
 └── scripts/                        # Scripts auxiliares
 ```
 

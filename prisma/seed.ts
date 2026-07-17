@@ -1,23 +1,8 @@
 import "dotenv/config";
 
-import { randomBytes, scrypt as scryptCallback } from "node:crypto";
-import { promisify } from "node:util";
-
 import { PrismaClient } from "./generated/prisma/client";
 import { createLocalPrismaClient } from "./lib";
-
-const scrypt = promisify(scryptCallback);
-
-const SALT_LENGTH = 16;
-const KEY_LENGTH = 64;
-const HASH_SEPARATOR = ":";
-
-async function hashText(text: string) {
-  const salt = randomBytes(SALT_LENGTH).toString("hex");
-  const derivedKey = (await scrypt(text, salt, KEY_LENGTH)) as Buffer;
-
-  return `${salt}${HASH_SEPARATOR}${derivedKey.toString("hex")}`;
-}
+import { hashText } from "../app/lib/hash.server";
 
 async function main() {
   const fullName = process.env.ADMIN_FULL_NAME ?? "Administrador";

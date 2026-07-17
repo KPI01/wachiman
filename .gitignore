@@ -13,9 +13,14 @@
 # Database
 *.db
 
-# Worktrees
-/.worktrees/
+# Cloudflare
+.wrangler/
+.dev.vars
 
 .hermes/
 
 .vscode/
+
+# Cloudflare
+.wrangler/
+.dev.vars
