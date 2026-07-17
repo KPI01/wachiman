@@ -3,17 +3,17 @@
   "name": "wachiman",
   "compatibility_date": "2025-08-01",
   "compatibility_flags": ["nodejs_compat_v2"],
-  "assets": {
-    "directory": "dist/client"
-  },
   "d1_databases": [
     {
       "binding": "DB",
-      "database_name": "wachiman-",
-      "database_id": "wachiman-id"
+      "database_name": "wachiman",
+      "database_id": "afb15594-550d-49f4-90e3-24c09950ff98"
     }
   ],
-  "observability": {
-    "enabled": true
+  "vars": {
+    "APP_NAME": "Wachiman App",
+    "DATABASE_URL": "file:./prisma/dev.db",
+    "DISABLE_FILE_UPLOADS": "true"
   }
+
 }
