@@ -2,6 +2,7 @@ import { mkdir } from "fs/promises";
 import { join, normalize, resolve as resolvePath } from "path";
 import { writeFile, unlink } from "fs/promises";
 import z from "zod";
+import { areFileUploadsSupported } from "../platform.server";
 import { WorkerDocumentEntity } from "../database/worker-document.server";
 import { AuditLogEntity } from "../database/audit-log.server";
 import { ExternalWorkerEntity } from "../database/external-worker.server";
@@ -74,6 +75,10 @@ export async function uploadWorkerDocument(
   formData: Record<string, string>,
   userId: string,
 ) {
+  if (!areFileUploadsSupported()) {
+    return { success: false as const, errors: "Carga de documentos no disponible en este entorno." };
+  }
+
   const worker = await ExternalWorkerEntity.findById(workerId);
   if (!worker) {
     return { success: false as const, errors: "El trabajador externo no existe." };
@@ -178,6 +183,10 @@ export async function deleteWorkerDocument(
   documentId: string,
   userId: string,
 ) {
+  if (!areFileUploadsSupported()) {
+    return { success: false as const, errors: "Eliminación de documentos no disponible en este entorno." };
+  }
+
   const doc = await WorkerDocumentEntity.findById(documentId);
   if (!doc) {
     return { success: false as const, errors: "El documento no fue encontrado." };

@@ -1,5 +1,6 @@
 import { createReadStream } from "fs";
 import { stat } from "fs/promises";
+import { areFileUploadsSupported } from "~/lib/platform.server";
 import { toOsPath } from "~/lib/services/worker-document.server";
 import { WorkerDocumentEntity } from "~/lib/database/worker-document.server";
 
@@ -13,6 +14,10 @@ export async function loader({
 
   if (!document) {
     return new Response("Not found", { status: 404 });
+  }
+
+  if (!areFileUploadsSupported()) {
+    return Response.json({ error: "Descarga de documentos no disponible en este entorno." }, { status: 503 });
   }
 
   const fullPath = toOsPath(document.filePath);
