@@ -18,5 +18,14 @@
 	},
 	"vars": {
 		"APP_NAME": "Wachiman App"
-	}
+	},
+	"observability": {
+    "logs": {
+      "enabled": true,
+      "invocation_logs": true
+    },
+	"traces": {
+      "enabled": false
+    }
+  }
 }
