@@ -17,7 +17,8 @@
     "db:push": "drizzle-kit push",
     "db:seed": "tsx scripts/seed.ts",
     "db:seed-remote": "tsx scripts/seed-remote.ts > /tmp/d1-seed.sql && wrangler d1 execute wachiman --remote --file=/tmp/d1-seed.sql",
-    "db:seed-populate": "tsx scripts/seed-populate.ts",
+    "db:reset": "pnpm deploy && pnpm db:seed-remote",
+    "env:set-remote": "bash scripts/set-remote-secrets.sh",
     "env:set-encryption-key": "tsx scripts/set-encryption-key.ts",
     "env:set-session-secret": "tsx scripts/set-session-secret.ts"
   },
