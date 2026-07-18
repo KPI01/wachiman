@@ -1,20 +1,22 @@
 {
-  "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "wachiman",
-  "main": "./worker/index.ts",
-  "compatibility_date": "2026-07-01",
-  "compatibility_flags": ["nodejs_compat_v2"],
-  "d1_databases": [
-    {
-      "binding": "DB",
-      "database_name": "wachiman",
-      "database_id": "afb15594-550d-49f4-90e3-24c09950ff98"
-    }
-  ],
-  "assets": {
-    "directory": "./dist/client"
-  },
-  "vars": {
-    "APP_NAME": "Wachiman App"
-  }
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "wachiman",
+	"main": "./worker/index.ts",
+	"compatibility_date": "2026-07-01",
+	"compatibility_flags": [
+		"nodejs_compat_v2"
+	],
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "wachiman",
+			"database_id": "9a48f7b0-28d1-474b-83b6-fb1fffb5d1d5"
+		}
+	],
+	"assets": {
+		"directory": "./dist/client"
+	},
+	"vars": {
+		"APP_NAME": "Wachiman App"
+	}
 }
