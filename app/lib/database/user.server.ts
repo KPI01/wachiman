@@ -71,7 +71,7 @@ export class UserEntity {
       return rows ?? null;
     }
 
-    return query.get() ?? null;
+    return (await query.get()) ?? null;
   }
 
   public static async getById(id: string) {
