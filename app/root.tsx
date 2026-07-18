@@ -19,7 +19,7 @@ export async function loader({ context }: Route.LoaderArgs) {
     | { env: Record<string, unknown> }
     | undefined;
   if (cloudflare?.env?.DB) {
-    initDb(cloudflare.env.DB as D1Database);
+    await initDb(cloudflare.env.DB as D1Database);
   }
   return null;
 }

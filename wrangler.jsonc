@@ -17,7 +17,8 @@
 		"directory": "./dist/client"
 	},
 	"vars": {
-		"APP_NAME": "Wachiman App"
+		"APP_NAME": "Wachiman App",
+		"SESSION_COOKIE_SECURE": "true"
 	},
 	"observability": {
     "logs": {
