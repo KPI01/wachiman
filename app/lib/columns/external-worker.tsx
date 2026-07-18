@@ -1,8 +1,5 @@
 import { createColumnHelper } from "@tanstack/react-table";
-import type {
-  Company,
-  WorkCategory,
-} from "../../../prisma/generated/prisma/client";
+import type { Company, WorkCategory } from "../../../db/schema";
 import type { ExternalWorkerListItem } from "../database/external-worker.server";
 import { formatTimestamp } from "../utils";
 import ExternalWorkerDetailsForm from "~/components/models/external-worker/external-worker-details-form";

@@ -138,7 +138,7 @@ export default function IndexAccessLogs({ loaderData }: Route.ComponentProps) {
   return (
     <div className="grid space-y-6">
       <h2 className="text-3xl font-bold">Registros de acceso</h2>
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+      <div className="">
         <div className="flex flex-wrap justify-between gap-2">
           <Select
             value={filterMode}

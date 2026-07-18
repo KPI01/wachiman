@@ -1,8 +1,5 @@
 import { createCookieSessionStorage, redirect } from "react-router";
-import {
-  UserRole,
-  type UserRole as UserRoleType,
-} from "../../prisma/generated/prisma/enums";
+import { USER_ROLES, type UserRole } from "../../db/enums";
 
 type SessionPayload = Record<string, unknown>;
 
@@ -10,7 +7,7 @@ export type SessionUser = {
   id: string
   fullName: string;
   username: string;
-  role: UserRoleType | null;
+  role: UserRole | null;
   site: SessionSite;
   department: SessionDepartment;
 };
@@ -48,7 +45,7 @@ const SESSION_COOKIE_SECURE =
   process.env.SESSION_COOKIE_SECURE === undefined
     ? process.env.NODE_ENV === "production"
     : process.env.SESSION_COOKIE_SECURE.trim().toLowerCase() === "true";
-const USER_ROLES = new Set(Object.values(UserRole));
+const USER_ROLES_SET = new Set(Object.values(USER_ROLES));
 const SECONDS_IN_A_MINUTE = 60;
 const MINUTES_IN_A_HOUR = 60;
 
@@ -100,7 +97,7 @@ function isSessionUser(value: unknown): value is SessionUser {
     isSessionDepartment(user.department) &&
     (user.role === null ||
       (typeof user.role === "string" &&
-        USER_ROLES.has(user.role as UserRoleType)))
+        USER_ROLES_SET.has(user.role as UserRole)))
   );
 }
 

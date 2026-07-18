@@ -1,37 +1,51 @@
-import type { Prisma } from "../../../prisma/generated/prisma/client";
-import { prisma } from "../prisma.server";
+import { and, eq, like, or, desc, sql } from "drizzle-orm";
+import { db } from "../../../db/server";
+import {
+  externalWorkers,
+  companies,
+  workCategories,
+} from "../../../db/schema";
 
-export type ExternalWorkerListItem = Prisma.ExternalWorkerGetPayload<{
-  include: {
-    company: { select: { id: true; name: true } };
-    workCategory: { select: { id: true; name: true } };
-  };
-}>;
+export type ExternalWorkerDetail = typeof externalWorkers.$inferSelect & {
+  company?: typeof companies.$inferSelect;
+  workCategory?: typeof workCategories.$inferSelect;
+  documents?: Array<{
+    id: string;
+    documentType: string;
+    status: string;
+    fileName: string;
+    filePath: string;
+    expiryDate: string;
+    createdAt: string;
+  }>;
+  accessLogs?: Array<{
+    id: string;
+    entryTimestamp: string;
+    exitTimestamp: string | null;
+    site: { id: string; name: string } | null;
+    createdBy: { id: string; fullName: string; username: string } | null;
+  }>;
+  plannedAccessPersons?: Array<{
+    id: string;
+    firstNameSnapshot: string;
+    lastNameSnapshot: string;
+    legalIdSnapshot: string;
+    plannedAccess: {
+      id: string;
+      expectedStartDatetime: string;
+      expectedEndDatetime: string | null;
+      status: string;
+      site: { id: string; name: string } | null;
+      requestedBy: { id: string; fullName: string } | null;
+      approvedBy: { id: string; fullName: string } | null;
+    } | null;
+  }>;
+};
 
-export type ExternalWorkerDetail = Prisma.ExternalWorkerGetPayload<{
-  include: {
-    company: true;
-    workCategory: true;
-    documents: true;
-    accessLogs: {
-      include: {
-        site: { select: { id: true; name: true } };
-        createdBy: { select: { id: true; fullName: true; username: true } };
-      };
-    };
-    plannedAccessPersons: {
-      include: {
-        plannedAccess: {
-          include: {
-            site: { select: { id: true; name: true } };
-            requestedBy: { select: { id: true; fullName: true } };
-            approvedBy: { select: { id: true; fullName: true } };
-          };
-        };
-      };
-    };
-  };
-}>;
+export type ExternalWorkerListItem = typeof externalWorkers.$inferSelect & {
+  company?: { id: string; name: string } | null;
+  workCategory?: { id: string; name: string } | null;
+};
 
 export type CreateExternalWorkerInput = {
   firstName: string;
@@ -56,132 +70,120 @@ export type UpdateExternalWorkerInput = {
 };
 
 export class ExternalWorkerEntity {
-  private static DEFAULT_INCLUDE = {
-    company: {
-      select: {
-        id: true,
-        name: true,
-      },
-    },
-    workCategory: {
-      select: {
-        id: true,
-        name: true,
-      },
-    },
-  };
-
   public static async create(data: CreateExternalWorkerInput) {
-    return prisma.externalWorker.create({
-      data: {
-        firstName: data.firstName,
-        middleName: data.middleName,
-        lastName: data.lastName,
-        secondLastName: data.secondLastName,
-        phoneNumber: data.phoneNumber,
-        legalId: data.legalId,
-        companyId: data.companyId,
-        workCategoryId: data.workCategoryId,
-      },
-      include: this.DEFAULT_INCLUDE,
-    });
+    const [worker] = await db
+      .insert(externalWorkers)
+      .values(data)
+      .returning();
+    return this.findById(worker.id) as Promise<ExternalWorkerDetail>;
   }
 
   public static async findById(id: string): Promise<ExternalWorkerDetail | null> {
-    return prisma.externalWorker.findUnique({
-      where: { id },
-      include: {
+    const row = await db.query.externalWorkers.findFirst({
+      where: eq(externalWorkers.id, id),
+      with: {
         company: true,
         workCategory: true,
         documents: {
-          orderBy: { createdAt: "desc" },
+          orderBy: (doc, { desc: d }) => [d(doc.createdAt)],
         },
         accessLogs: {
-          include: {
-            site: { select: { id: true, name: true } },
-            createdBy: { select: { id: true, fullName: true, username: true } },
+          with: {
+            site: { columns: { id: true, name: true } },
+            createdBy: { columns: { id: true, fullName: true, username: true } },
           },
-          orderBy: { entryTimestamp: "desc" },
-          take: 50,
+          orderBy: (log, { desc: d }) => [d(log.entryTimestamp)],
+          limit: 50,
         },
         plannedAccessPersons: {
-          include: {
+          with: {
             plannedAccess: {
-              include: {
-                site: { select: { id: true, name: true } },
-                requestedBy: { select: { id: true, fullName: true } },
-                approvedBy: { select: { id: true, fullName: true } },
+              with: {
+                site: { columns: { id: true, name: true } },
+                requestedBy: { columns: { id: true, fullName: true } },
+                approvedBy: { columns: { id: true, fullName: true } },
               },
             },
           },
-          orderBy: { createdAt: "desc" },
-          take: 50,
+          orderBy: (pap, { desc: d }) => [d(pap.createdAt)],
+          limit: 50,
         },
       },
     });
+    return row ?? null;
   }
 
   public static async findByLegalId(legalId: string) {
-    return prisma.externalWorker.findUnique({
-      where: { legalId },
-      include: this.DEFAULT_INCLUDE,
+    const row = await db.query.externalWorkers.findFirst({
+      where: eq(externalWorkers.legalId, legalId),
+      with: {
+        company: { columns: { id: true, name: true } },
+        workCategory: { columns: { id: true, name: true } },
+      },
     });
+    return row ?? null;
   }
 
   public static async findByLegalIdExcluding(legalId: string, excludedId: string) {
-    return prisma.externalWorker.findFirst({
-      where: {
-        legalId,
-        NOT: { id: excludedId },
-      },
-    });
+    const row = await db
+      .select()
+      .from(externalWorkers)
+      .where(
+        and(
+          eq(externalWorkers.legalId, legalId),
+          ne(externalWorkers.id, excludedId),
+        ),
+      )
+      .get();
+    return row ?? null;
   }
 
   public static async findMany(): Promise<ExternalWorkerListItem[]> {
-    return prisma.externalWorker.findMany({
-      orderBy: { createdAt: "desc" },
-      include: this.DEFAULT_INCLUDE,
+    const rows = await db.query.externalWorkers.findMany({
+      orderBy: (worker, { desc: d }) => [d(worker.createdAt)],
+      with: {
+        company: { columns: { id: true, name: true } },
+        workCategory: { columns: { id: true, name: true } },
+      },
     });
+    return rows;
   }
 
   public static async search(query: string) {
     const normalizedQuery = query.trim();
     if (!normalizedQuery) return [];
 
-    return prisma.externalWorker.findMany({
-      where: {
-        OR: [
-          { legalId: { contains: normalizedQuery } },
-          { firstName: { contains: normalizedQuery } },
-          { lastName: { contains: normalizedQuery } },
-        ],
+    const searchTerm = `%${normalizedQuery}%`;
+    const rows = await db.query.externalWorkers.findMany({
+      where: or(
+        like(externalWorkers.legalId, searchTerm),
+        like(externalWorkers.firstName, searchTerm),
+        like(externalWorkers.lastName, searchTerm),
+      ),
+      with: {
+        company: { columns: { id: true, name: true } },
+        workCategory: { columns: { id: true, name: true } },
       },
-      include: this.DEFAULT_INCLUDE,
-      take: 10,
-      orderBy: { createdAt: "desc" },
+      limit: 10,
+      orderBy: (worker, { desc: d }) => [d(worker.createdAt)],
     });
+    return rows;
   }
 
   public static async update(id: string, data: UpdateExternalWorkerInput) {
-    return prisma.externalWorker.update({
-      where: { id },
-      data: {
-        firstName: data.firstName,
-        middleName: data.middleName,
-        lastName: data.lastName,
-        secondLastName: data.secondLastName,
-        phoneNumber: data.phoneNumber,
-        legalId: data.legalId,
-        companyId: data.companyId,
-        workCategoryId: data.workCategoryId,
-      },
-      include: this.DEFAULT_INCLUDE,
-    });
+    const [worker] = await db
+      .update(externalWorkers)
+      .set(data)
+      .where(eq(externalWorkers.id, id))
+      .returning();
+    return this.findById(worker.id) as Promise<ExternalWorkerListItem>;
   }
 
   public static async delete(id: string) {
-    return prisma.externalWorker.delete({
-      where: { id },
-    });
+    const [worker] = await db
+      .delete(externalWorkers)
+      .where(eq(externalWorkers.id, id))
+      .returning();
+    return worker;
   }
 }

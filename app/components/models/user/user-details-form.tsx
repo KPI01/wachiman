@@ -17,12 +17,8 @@ import {
 import FieldWrapper from "~/components/ui/wrappers/field-wrapper";
 import { USER_ROLES } from "~/lib/models/user";
 import { getFieldErrors } from "~/lib/utils/zod-errors";
-import type {
-  Department,
-  Site,
-  User,
-  UserRole,
-} from "../../../../prisma/generated/prisma/client";
+import type { Department, Site, User } from "../../../../db/schema";
+import { type UserRole } from "../../../../db/enums";
 
 type UserDetailsProps = {
   user: User;

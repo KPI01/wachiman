@@ -9,8 +9,10 @@ import {
 import { UserEntity } from "../database/user.server";
 import { SiteEntity } from "../database/site.server";
 import { DepartmentEntity } from "../database/department.server";
-import { prisma } from "../prisma.server";
-import { UserRole } from "../../../prisma/generated/prisma/enums";
+import { and, eq, ne } from "drizzle-orm";
+import { db } from "../../../db/server";
+import { users } from "../../../db/schema";
+import { USER_ROLES, type UserRole } from "../../../db/enums";
 
 export const createUserSchema = z
   .object({
@@ -18,7 +20,7 @@ export const createUserSchema = z
     username: z.string(STRING_TYPE_REQUIRED_MSG),
     siteId: z.string(STRING_TYPE_REQUIRED_MSG),
     departmentId: z.string(STRING_TYPE_REQUIRED_MSG),
-    role: z.enum(UserRole).optional().default("ACCESS_OPERATOR"),
+    role: z.enum(USER_ROLES).optional().default("ACCESS_OPERATOR"),
     password: z.string(
       STRING_TYPE_REQUIRED_MSG,
     ) /** falta agregar dificultad de la clave */,
@@ -55,7 +57,7 @@ export const updateUserSchema = z
     username: z.string(STRING_TYPE_REQUIRED_MSG),
     siteId: z.string(STRING_TYPE_REQUIRED_MSG),
     departmentId: z.string(STRING_TYPE_REQUIRED_MSG),
-    role: z.enum(UserRole).optional().default("ACCESS_OPERATOR"),
+    role: z.enum(USER_ROLES).optional().default("ACCESS_OPERATOR"),
     isActive: z.preprocess((value) => value === "on", z.boolean()),
   })
   .refine(
@@ -63,15 +65,18 @@ export const updateUserSchema = z
       const user = await UserEntity.getById(data.id);
       if (user) {
         // Query que luego tengo que centralizar
-        const userNameExists =
-          (await prisma.user.findFirst({
-            where: {
-              username: data.username,
-              NOT: {
-                id: user.id,
-              },
-            },
-          })) !== null;
+        const existingUser = await db
+          .select()
+          .from(users)
+          .where(
+            and(
+              eq(users.username, data.username),
+              ne(users.id, user.id),
+            ),
+          )
+          .limit(1)
+          .get();
+        const userNameExists = existingUser !== undefined;
 
         return !userNameExists;
       }

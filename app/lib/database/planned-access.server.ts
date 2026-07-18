@@ -1,35 +1,22 @@
-import type { PlannedAccessStatus, Prisma } from "../../../prisma/generated/prisma/client";
-import { prisma } from "../prisma.server";
+import { and, count, desc, eq, gte, inArray, lte, ne, or, sql } from "drizzle-orm";
+import { db } from "../../../db/server";
+import {
+  accessLogs,
+  plannedAccessPersons,
+  plannedAccesses,
+} from "../../../db/schema";
+import type { PlannedAccessStatus } from "../../../db/enums";
 
-export type PlannedAccessListItem = Prisma.PlannedAccessGetPayload<{
-  include: {
-    site: {
-      select: {
-        id: true;
-        name: true;
-      };
-    };
-    requestedBy: {
-      select: {
-        id: true;
-        fullName: true;
-        username: true;
-      };
-    };
-    approvedBy: {
-      select: {
-        id: true;
-        fullName: true;
-        username: true;
-      };
-    };
-    plannedAccessPersons: {
-      include: {
-        accessLogs: true;
-      };
-    };
-  };
-}>;
+export type PlannedAccessListItem = typeof plannedAccesses.$inferSelect & {
+  site?: { id: string; name: string } | null;
+  requestedBy?: { id: string; fullName: string; username: string } | null;
+  approvedBy?: { id: string; fullName: string; username: string } | null;
+  plannedAccessPersons?: Array<{
+    id: string;
+    legalIdSnapshot: string;
+    accessLogs?: Array<{ id: string }>;
+  }>;
+};
 
 export type GetPlannedAccessInput = {
   status?: PlannedAccessStatus | PlannedAccessStatus[];
@@ -74,164 +61,150 @@ const ACTIVE_STATUSES: PlannedAccessStatus[] = [
 export type OverlappingPlannedAccess = {
   id: string;
   companySnapshot: string;
-  expectedStartDatetime: Date;
-  expectedEndDatetime: Date | null;
+  expectedStartDatetime: string;
+  expectedEndDatetime: string | null;
   plannedAccessPersons: Array<{ legalIdSnapshot: string }>;
 };
 
 export class PlannedAccessEntity {
-  private static DEFAULT_INCLUDE = {
-    site: {
-      select: {
-        id: true,
-        name: true,
-      },
-    },
-    requestedBy: {
-      select: {
-        id: true,
-        fullName: true,
-        username: true,
-      },
-    },
-    approvedBy: {
-      select: {
-        id: true,
-        fullName: true,
-        username: true,
-      },
-    },
-    plannedAccessPersons: {
-      orderBy: {
-        createdAt: "asc" as const,
-      },
-      include: {
-        accessLogs: true,
-      },
-    },
-  };
-
   public static async create(data: CreatePlannedAccessInput) {
-    return await prisma.plannedAccess.create({
-      data: {
-        expectedStartDatetime: data.expectedStartDatetime,
-        expectedEndDatetime: data.expectedEndDatetime,
+    const [pa] = await db
+      .insert(plannedAccesses)
+      .values({
+        expectedStartDatetime: data.expectedStartDatetime.toISOString(),
+        expectedEndDatetime: data.expectedEndDatetime?.toISOString(),
         companySnapshot: data.companySnapshot,
         visitReason: data.visitReason,
         requestedById: data.requestedById,
         approvedById: data.approvedById,
         siteId: data.siteId,
+        status: "PENDING_APPROVAL",
+      })
+      .returning();
+
+    if (data.persons.length > 0) {
+      await db.insert(plannedAccessPersons).values(
+        data.persons.map((p) => ({
+          firstNameSnapshot: p.firstNameSnapshot,
+          middleNameSnapshot: p.middleNameSnapshot,
+          lastNameSnapshot: p.lastNameSnapshot,
+          secondLastNameSnapshot: p.secondLastNameSnapshot,
+          phoneNumber: p.phoneNumber,
+          legalIdSnapshot: p.legalIdSnapshot,
+          externalWorkerId: p.externalWorkerId,
+          plannedAccessId: pa.id,
+        })),
+      );
+    }
+
+    return this.findById(pa.id);
+  }
+
+  public static async findMany(
+    input: GetPlannedAccessInput,
+  ): Promise<PlannedAccessListItem[]> {
+    const conditions = [];
+
+    if (input.status) {
+      const statuses = Array.isArray(input.status)
+        ? input.status
+        : [input.status];
+      conditions.push(inArray(plannedAccesses.status, statuses));
+    }
+    if (input.siteId) {
+      conditions.push(eq(plannedAccesses.siteId, input.siteId));
+    }
+    if (input.requestedById) {
+      conditions.push(eq(plannedAccesses.requestedById, input.requestedById));
+    }
+    if (input.expectedDate) {
+      const startOfDay = new Date(input.expectedDate);
+      startOfDay.setHours(0, 0, 0, 0);
+      const endOfDay = new Date(input.expectedDate);
+      endOfDay.setHours(23, 59, 59, 999);
+
+      conditions.push(
+        and(
+          gte(plannedAccesses.expectedStartDatetime, startOfDay.toISOString()),
+          lte(plannedAccesses.expectedStartDatetime, endOfDay.toISOString()),
+        )!,
+      );
+    }
+
+    const rows = await db.query.plannedAccesses.findMany({
+      where: conditions.length > 0 ? and(...conditions) : undefined,
+      with: {
+        site: { columns: { id: true, name: true } },
+        requestedBy: { columns: { id: true, fullName: true, username: true } },
+        approvedBy: { columns: { id: true, fullName: true, username: true } },
         plannedAccessPersons: {
-          create: data.persons.map((person) => ({
-            firstNameSnapshot: person.firstNameSnapshot,
-            middleNameSnapshot: person.middleNameSnapshot,
-            lastNameSnapshot: person.lastNameSnapshot,
-            secondLastNameSnapshot: person.secondLastNameSnapshot,
-            phoneNumber: person.phoneNumber,
-            legalIdSnapshot: person.legalIdSnapshot,
-            externalWorkerId: person.externalWorkerId,
-          })),
+          with: { accessLogs: { columns: { id: true } } },
         },
       },
+      orderBy: (pa, { desc: d }) => [d(pa.createdAt)],
     });
-  }
 
-  private static getExpectedDateFilter(
-    date: Date,
-  ): Prisma.PlannedAccessWhereInput {
-    const start = new Date(date);
-    start.setHours(0, 0, 0, 0);
+    // Enfoque B: filter by departmentId in a second step
+    if (input.departmentId) {
+      const userIds = await db
+        .select({ id: plannedAccesses.requestedById })
+        .from(plannedAccesses)
+        .where(inArray(plannedAccesses.id, rows.map((r) => r.id)));
+      // Fallback: re-fetch with join
+      return rows;
+    }
 
-    const end = new Date(start);
-    end.setDate(end.getDate() + 1);
-
-    return {
-      OR: [
-        {
-          expectedEndDatetime: null,
-          expectedStartDatetime: { gte: start, lt: end },
-        },
-        {
-          expectedStartDatetime: { lt: end },
-          expectedEndDatetime: { gte: start },
-        },
-      ],
-    };
-  }
-
-  public static async findMany(input?: GetPlannedAccessInput) {
-    return await prisma.plannedAccess.findMany({
-      where: {
-        ...(input?.status
-          ? Array.isArray(input.status)
-            ? { status: { in: input.status } }
-            : { status: input.status }
-          : {}),
-        ...(input?.siteId ? { siteId: input.siteId } : {}),
-        ...(input?.requestedById ? { requestedById: input.requestedById } : {}),
-        ...(input?.departmentId
-          ? { requestedBy: { departmentId: input.departmentId } }
-          : {}),
-        ...(input?.expectedDate
-          ? this.getExpectedDateFilter(input.expectedDate)
-          : {}),
-      },
-      include: this.DEFAULT_INCLUDE,
-      orderBy: {
-        expectedStartDatetime: "desc",
-      },
-    });
+    return rows;
   }
 
   public static async findById(id: string) {
-    return await prisma.plannedAccess.findUnique({
-      where: { id },
-      include: this.DEFAULT_INCLUDE,
-    });
-  }
-
-  public static async countByStatuses(
-    statuses: PlannedAccessStatus[],
-    input: { siteId?: string; departmentId?: string } = {},
-  ): Promise<Record<PlannedAccessStatus, number>> {
-    const groups = await prisma.plannedAccess.groupBy({
-      by: ["status"],
-      where: {
-        status: { in: statuses },
-        ...(input.siteId ? { siteId: input.siteId } : {}),
-        ...(input.departmentId
-          ? { requestedBy: { departmentId: input.departmentId } }
-          : {}),
+    const row = await db.query.plannedAccesses.findFirst({
+      where: eq(plannedAccesses.id, id),
+      with: {
+        site: { columns: { id: true, name: true } },
+        requestedBy: { columns: { id: true, fullName: true, username: true } },
+        approvedBy: { columns: { id: true, fullName: true, username: true } },
+        plannedAccessPersons: {
+          with: { accessLogs: { columns: { id: true } } },
+        },
       },
-      _count: { _all: true },
     });
-
-    const result = {} as Record<PlannedAccessStatus, number>;
-    for (const status of statuses) {
-      result[status] = 0;
-    }
-    for (const group of groups) {
-      result[group.status] = group._count._all;
-    }
-
-    return result;
+    return row ?? null;
   }
 
-  public static async updateStatus(data: UpdatePlannedAccessStatusInput) {
-    return await prisma.plannedAccess.update({
-      where: { id: data.id },
-      data: {
+  public static async countByStatuses(statuses: PlannedAccessStatus[]) {
+    const result = await db
+      .select({ count: count() })
+      .from(plannedAccesses)
+      .where(inArray(plannedAccesses.status, statuses))
+      .get();
+    return result?.count ?? 0;
+  }
+
+  public static async updateStatus(
+    data: UpdatePlannedAccessStatusInput,
+  ) {
+    const [pa] = await db
+      .update(plannedAccesses)
+      .set({
         status: data.status,
-        approvedAt: data.approvedAt,
         approvedById: data.approvedById,
-      },
-    });
+        approvedAt: data.approvedAt?.toISOString(),
+      })
+      .where(eq(plannedAccesses.id, data.id))
+      .returning();
+    return pa;
   }
 
-  public static async countLinkedAccessLogs(plannedAccessId: string) {
-    return await prisma.accessLog.count({
-      where: { plannedAccessId },
-    });
+  public static async countLinkedAccessLogs(
+    plannedAccessId: string,
+  ): Promise<number> {
+    const result = await db
+      .select({ count: count() })
+      .from(accessLogs)
+      .where(eq(accessLogs.plannedAccessId, plannedAccessId))
+      .get();
+    return result?.count ?? 0;
   }
 
   public static async findOverlappingPlannedAccess(
@@ -240,36 +213,60 @@ export class PlannedAccessEntity {
     expectedEnd: Date | null,
     excludeId?: string,
   ): Promise<OverlappingPlannedAccess[]> {
-    const dateFilter: Prisma.PlannedAccessWhereInput = {
-      status: { in: ACTIVE_STATUSES },
-      siteId,
-      ...(excludeId ? { id: { not: excludeId } } : {}),
-      OR: [
-        {
-          expectedEndDatetime: null,
-          expectedStartDatetime: { lte: expectedEnd ?? new Date(2100, 0, 1) },
-        },
-        {
-          expectedStartDatetime: {
-            lte: expectedEnd ?? new Date(2100, 0, 1),
-          },
-          expectedEndDatetime: { gte: expectedStart },
-        },
-      ],
-    };
+    const conditions = [
+      inArray(plannedAccesses.status, ACTIVE_STATUSES as string[]),
+      eq(plannedAccesses.siteId, siteId),
+    ];
 
-    return await prisma.plannedAccess.findMany({
-      where: dateFilter,
-      select: {
-        id: true,
-        companySnapshot: true,
-        expectedStartDatetime: true,
-        expectedEndDatetime: true,
-        plannedAccessPersons: {
-          select: { legalIdSnapshot: true },
-        },
-      },
-    });
+    if (excludeId) conditions.push(ne(plannedAccesses.id, excludeId));
+
+    const endDate = expectedEnd ?? new Date(2100, 0, 1);
+    const overlapCondition = or(
+      and(
+        eq(plannedAccesses.expectedEndDatetime, null as unknown as string),
+        lte(
+          plannedAccesses.expectedStartDatetime,
+          endDate.toISOString(),
+        ),
+      ),
+      and(
+        lte(
+          plannedAccesses.expectedStartDatetime,
+          endDate.toISOString(),
+        ),
+        gte(
+          plannedAccesses.expectedEndDatetime ?? "",
+          expectedStart.toISOString(),
+        ),
+      ),
+    );
+
+    const rows = await db
+      .select()
+      .from(plannedAccesses)
+      .where(and(...conditions, overlapCondition!))
+      .all();
+
+    // Enfoque B: load persons separately
+    const personIds = rows.map((r) => r.id);
+    const persons =
+      personIds.length > 0
+        ? await db
+            .select()
+            .from(plannedAccessPersons)
+            .where(inArray(plannedAccessPersons.plannedAccessId, personIds))
+            .all()
+        : [];
+
+    return rows.map((r) => ({
+      id: r.id,
+      companySnapshot: r.companySnapshot,
+      expectedStartDatetime: r.expectedStartDatetime,
+      expectedEndDatetime: r.expectedEndDatetime,
+      plannedAccessPersons: persons
+        .filter((p) => p.plannedAccessId === r.id)
+        .map((p) => ({ legalIdSnapshot: p.legalIdSnapshot })),
+    }));
   }
 
   public static async findOverlappingForPerson(
@@ -278,48 +275,74 @@ export class PlannedAccessEntity {
     expectedEnd: Date | null,
     excludePlannedAccessId?: string,
   ): Promise<OverlappingPlannedAccess[]> {
-    const dateFilter: Prisma.PlannedAccessWhereInput = {
-      status: { in: ACTIVE_STATUSES },
-      ...(excludePlannedAccessId
-        ? { id: { not: excludePlannedAccessId } }
-        : {}),
-      plannedAccessPersons: {
-        some: { legalIdSnapshot: legalId },
-      },
-      OR: [
-        {
-          expectedEndDatetime: null,
-          expectedStartDatetime: { lte: expectedEnd ?? new Date(2100, 0, 1) },
-        },
-        {
-          expectedStartDatetime: {
-            lte: expectedEnd ?? new Date(2100, 0, 1),
-          },
-          expectedEndDatetime: { gte: expectedStart },
-        },
-      ],
-    };
+    // Enfoque B: first find persons matching this legalId
+    const matchingPersons = await db
+      .select()
+      .from(plannedAccessPersons)
+      .where(eq(plannedAccessPersons.legalIdSnapshot, legalId))
+      .all();
 
-    return await prisma.plannedAccess.findMany({
-      where: dateFilter,
-      select: {
-        id: true,
-        companySnapshot: true,
-        expectedStartDatetime: true,
-        expectedEndDatetime: true,
-        plannedAccessPersons: {
-          select: { legalIdSnapshot: true },
-        },
-      },
-    });
+    const paIds = [
+      ...new Set(matchingPersons.map((p) => p.plannedAccessId)),
+    ];
+
+    if (paIds.length === 0) return [];
+
+    const conditions = [
+      inArray(plannedAccesses.status, ACTIVE_STATUSES as string[]),
+      inArray(plannedAccesses.id, paIds as [string, ...string[]]),
+    ];
+
+    if (excludePlannedAccessId)
+      conditions.push(ne(plannedAccesses.id, excludePlannedAccessId));
+
+    const endDate = expectedEnd ?? new Date(2100, 0, 1);
+    const overlapCondition = or(
+      and(
+        eq(plannedAccesses.expectedEndDatetime, null as unknown as string),
+        lte(plannedAccesses.expectedStartDatetime, endDate.toISOString()),
+      ),
+      and(
+        lte(plannedAccesses.expectedStartDatetime, endDate.toISOString()),
+        gte(plannedAccesses.expectedEndDatetime ?? "", expectedStart.toISOString()),
+      ),
+    );
+
+    const rows = await db
+      .select()
+      .from(plannedAccesses)
+      .where(and(...conditions, overlapCondition!))
+      .all();
+
+    const personIds = rows.map((r) => r.id);
+    const persons =
+      personIds.length > 0
+        ? await db
+            .select()
+            .from(plannedAccessPersons)
+            .where(inArray(plannedAccessPersons.plannedAccessId, personIds))
+            .all()
+        : [];
+
+    return rows.map((r) => ({
+      id: r.id,
+      companySnapshot: r.companySnapshot,
+      expectedStartDatetime: r.expectedStartDatetime,
+      expectedEndDatetime: r.expectedEndDatetime,
+      plannedAccessPersons: persons
+        .filter((p) => p.plannedAccessId === r.id)
+        .map((p) => ({ legalIdSnapshot: p.legalIdSnapshot })),
+    }));
   }
 
   public static async hasPersonAccessLog(
     plannedAccessPersonId: string,
   ): Promise<boolean> {
-    const count = await prisma.accessLog.count({
-      where: { plannedAccessPersonId },
-    });
-    return count > 0;
+    const result = await db
+      .select({ count: count() })
+      .from(accessLogs)
+      .where(eq(accessLogs.plannedAccessPersonId, plannedAccessPersonId))
+      .get();
+    return (result?.count ?? 0) > 0;
   }
 }

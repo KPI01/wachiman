@@ -1,0 +1,39 @@
+export const USER_ROLES = {
+  ADMIN: "ADMIN",
+  ACCESS_OPERATOR: "ACCESS_OPERATOR",
+  ACCESS_MONITOR: "ACCESS_MONITOR",
+  SECURITY_MANAGER: "SECURITY_MANAGER",
+  ACCESS_APPROVER: "ACCESS_APPROVER",
+  ACCESS_REQUESTER: "ACCESS_REQUESTER",
+} as const;
+
+export type UserRole = (typeof USER_ROLES)[keyof typeof USER_ROLES];
+
+export const DOCUMENT_TYPES = {
+  IDENTIFICATION: "IDENTIFICATION",
+  TRAINING: "TRAINING",
+} as const;
+
+export type DocumentType = (typeof DOCUMENT_TYPES)[keyof typeof DOCUMENT_TYPES];
+
+export const DOCUMENT_STATUSES = {
+  VALIDATED: "VALIDATED",
+  EXPIRED: "EXPIRED",
+  ARCHIVED: "ARCHIVED",
+} as const;
+
+export type DocumentStatus =
+  (typeof DOCUMENT_STATUSES)[keyof typeof DOCUMENT_STATUSES];
+
+export const PLANNED_ACCESS_STATUSES = {
+  PENDING_APPROVAL: "PENDING_APPROVAL",
+  APPROVED: "APPROVED",
+  REJECTED: "REJECTED",
+  CANCELED: "CANCELED",
+  EXPIRED: "EXPIRED",
+  USED: "USED",
+  PARTIALLY_USED: "PARTIALLY_USED",
+} as const;
+
+export type PlannedAccessStatus =
+  (typeof PLANNED_ACCESS_STATUSES)[keyof typeof PLANNED_ACCESS_STATUSES];

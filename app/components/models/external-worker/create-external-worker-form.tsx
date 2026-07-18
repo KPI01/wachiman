@@ -14,7 +14,7 @@ import {
 } from "~/components/ui/select";
 import FieldWrapper from "~/components/ui/wrappers/field-wrapper";
 import { getFieldErrors } from "~/lib/utils/zod-errors";
-import type { Company, WorkCategory } from "../../../../prisma/generated/prisma/client";
+import type { Company, WorkCategory } from "../../../../db/schema";
 
 type CreateExternalWorkerProps = {
   errors?: unknown;

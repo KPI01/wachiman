@@ -13,11 +13,8 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import FieldWrapper from "~/components/ui/wrappers/field-wrapper";
-import type {
-  Department,
-  Site,
-  UserRole,
-} from "../../../../prisma/generated/prisma/client";
+import type { Department, Site } from "../../../../db/schema";
+import { type UserRole } from "../../../../db/enums";
 import { USER_ROLES } from "~/lib/models/user";
 import { getFieldErrors } from "~/lib/utils/zod-errors";
 

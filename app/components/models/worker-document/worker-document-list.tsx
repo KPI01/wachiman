@@ -1,4 +1,4 @@
-import type { DocumentStatus } from "../../../../prisma/generated/prisma/enums";
+import type { DocumentStatus } from "../../../../db/enums";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import {

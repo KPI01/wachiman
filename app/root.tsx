@@ -11,7 +11,7 @@ import {
 
 import type { Route } from "./+types/root";
 import { Toaster } from "~/components/ui/sonner";
-import { initPrisma } from "~/lib/prisma.server";
+import { initDb } from "../db/server";
 import "./app.css";
 
 export async function loader({ context }: Route.LoaderArgs) {
@@ -19,7 +19,7 @@ export async function loader({ context }: Route.LoaderArgs) {
     | { env: Record<string, unknown> }
     | undefined;
   if (cloudflare?.env?.DB) {
-    initPrisma(cloudflare.env.DB as D1Database);
+    initDb(cloudflare.env.DB as D1Database);
   }
   return null;
 }

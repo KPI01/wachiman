@@ -1,63 +1,49 @@
-import type { Prisma } from "../../../prisma/generated/prisma/client";
-import { prisma } from "../prisma.server";
+import { eq } from "drizzle-orm";
+import { db } from "../../../db/server";
+import { departments } from "../../../db/schema";
 
 export class DepartmentEntity {
-  static async create(data: Prisma.DepartmentCreateInput) {
-    const department = await prisma.department.create({
-      data: {
-        name: data.name,
-        slug: data.slug,
-      },
-    });
-
+  public static async create(data: { name: string; slug: string }) {
+    const [department] = await db.insert(departments).values(data).returning();
     return department;
   }
 
-  static async findById(id: string) {
-    return prisma.department.findUnique({
-      where: { id },
-    });
+  public static async findById(id: string) {
+    const department = await db
+      .select()
+      .from(departments)
+      .where(eq(departments.id, id))
+      .get();
+    return department ?? null;
   }
 
-  static async findBySlug(slug: string, excludedId?: string) {
-    return prisma.department.findFirst({
-      where: {
-        slug,
-        ...(excludedId
-          ? {
-              NOT: {
-                id: excludedId,
-              },
-            }
-          : {}),
-      },
-    });
+  public static async findBySlug(slug: string) {
+    const department = await db
+      .select()
+      .from(departments)
+      .where(eq(departments.slug, slug))
+      .get();
+    return department ?? null;
   }
 
-  static async findAll() {
-    const departments = await prisma.department.findMany({
-      orderBy: {
-        createdAt: "desc",
-      },
-    });
-
-    return departments;
+  public static async findAll() {
+    return db.select().from(departments).all();
   }
 
-  static async update(id: string, data: Prisma.DepartmentUpdateInput) {
-    const updatedDepartment = await prisma.department.update({
-      where: { id },
-      data,
-    });
-
-    return updatedDepartment;
+  public static async update(id: string, data: { name?: string; slug?: string }) {
+    const [department] = await db
+      .update(departments)
+      .set(data)
+      .where(eq(departments.id, id))
+      .returning();
+    return department;
   }
 
-  static async delete(id: string) {
-    const deletedDepartment = await prisma.department.delete({
-      where: { id },
-    });
-
-    return deletedDepartment;
+  public static async delete(id: string) {
+    const [department] = await db
+      .delete(departments)
+      .where(eq(departments.id, id))
+      .returning();
+    return department;
   }
 }

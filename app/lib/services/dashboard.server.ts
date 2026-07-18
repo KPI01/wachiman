@@ -1,5 +1,5 @@
 import type { SessionUser } from "../session.server";
-import type { UserRole } from "../../../prisma/generated/prisma/enums";
+import type { UserRole } from "../../../db/enums";
 
 export type DashboardScope = "all-sites" | "session-site";
 

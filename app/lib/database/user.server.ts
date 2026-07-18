@@ -1,28 +1,18 @@
-import type { Prisma } from "../../../prisma/generated/prisma/client";
+import { and, eq, ne } from "drizzle-orm";
 import { hashText } from "../hash.server";
-import { prisma } from "../prisma.server";
+import { db } from "../../../db/server";
+import { users } from "../../../db/schema";
+import type { UserRole } from "../../../db/enums";
 
-type GetUserByUsernameWithRelations = Prisma.UserGetPayload<{
-  include: {
-    site: {
-      select: {
-        id: true;
-        name: true;
-      };
-    };
-    department: {
-      select: {
-        id: true;
-        name: true;
-      };
-    };
-  };
-}>;
+type UserWithRelations = typeof users.$inferSelect & {
+  site?: { id: string; name: string };
+  department?: { id: string; name: string };
+};
 
 type CreateUserInput = {
   fullName: string;
   username: string;
-  role?: Prisma.UserCreateInput["role"];
+  role?: UserRole;
   password: string;
   siteId: string;
   departmentId: string;
@@ -31,7 +21,7 @@ type CreateUserInput = {
 type UpdateUserInput = {
   fullName?: string;
   username?: string;
-  role?: Prisma.UserUpdateInput["role"];
+  role?: UserRole;
   isActive?: boolean;
   siteId?: string;
   departmentId?: string;
@@ -40,131 +30,109 @@ type UpdateUserInput = {
 export class UserEntity {
   public static async create(data: CreateUserInput) {
     const hashedPassword = await hashText(data.password);
-    const user = await prisma.user.create({
-      data: {
+    const [user] = await db
+      .insert(users)
+      .values({
         fullName: data.fullName,
         username: data.username,
-        role: data.role,
+        role: data.role ?? "ACCESS_OPERATOR",
         password: hashedPassword,
         siteId: data.siteId,
         departmentId: data.departmentId,
-      },
-    });
-
+      })
+      .returning();
     return user;
   }
 
   public static async getByUsername(
     username: string,
     relations: { site: true; department: true },
-  ): Promise<GetUserByUsernameWithRelations | null>;
+  ): Promise<UserWithRelations | null>;
   public static async getByUsername(
     username: string,
     relations?: { site?: false; department?: false },
-  ): Promise<Prisma.UserGetPayload<object> | null>;
+  ): Promise<typeof users.$inferSelect | null>;
   public static async getByUsername(
     username: string,
     relations: { site?: boolean; department?: boolean } = {},
   ) {
-    return prisma.user.findUnique({
-      where: {
-        isActive: true,
-        isTrashed: false,
-        username,
-      },
-      include:
-        relations.site || relations.department
-          ? {
-            site: relations.site
-              ? {
-                select: {
-                  id: true,
-                  name: true,
-                },
-              }
-              : undefined,
-            department: relations.department
-              ? {
-                select: {
-                  id: true,
-                  name: true,
-                },
-              }
-              : undefined,
-          }
-          : undefined,
-    });
+    const query = db.select().from(users).where(
+      and(eq(users.isActive, true), eq(users.isTrashed, false), eq(users.username, username)),
+    );
+
+    if (relations.site || relations.department) {
+      const rows = await db.query.users.findFirst({
+        where: and(eq(users.isActive, true), eq(users.isTrashed, false), eq(users.username, username)),
+        with: {
+          ...(relations.site ? { site: { columns: { id: true, name: true } } } : {}),
+          ...(relations.department ? { department: { columns: { id: true, name: true } } } : {}),
+        },
+      });
+      return rows ?? null;
+    }
+
+    return query.get() ?? null;
   }
 
   public static async getById(id: string) {
-    return prisma.user.findUnique({
-      where: {
-        isActive: true,
-        isTrashed: false,
-        id,
-      },
-    });
+    const user = await db
+      .select()
+      .from(users)
+      .where(and(eq(users.isActive, true), eq(users.isTrashed, false), eq(users.id, id)))
+      .get();
+    return user ?? null;
   }
 
-  public static async getAll(
-    {
-      isActive = true,
-      isTrashed = false,
-      exclude = {}
+  public static async getAll({
+    isActive = true,
+    isTrashed = false,
+    exclude = {},
+  }: Partial<{
+    isActive: boolean;
+    isTrashed: boolean;
+    exclude: Record<string, unknown>;
+  }> = {}) {
+    const conditions = [
+      eq(users.isActive, isActive),
+      eq(users.isTrashed, isTrashed),
+    ];
+    // exclude is simplified — the original used Prisma's NOT syntax
+    if (Object.keys(exclude).length > 0) {
+      for (const [key, value] of Object.entries(exclude)) {
+        if (key === "id") {
+          conditions.push(ne(users.id, value as string));
+        }
+      }
+    }
 
-    }: Partial<{
-      isActive: boolean,
-      isTrashed: boolean,
-      exclude?: Record<string, unknown>
-    }>
-  ) {
-    const users = await prisma.user.findMany({
-      where: {
-        isActive,
-        isTrashed,
-        NOT: exclude
-      },
-
-    });
-
-    return users;
+    return db.select().from(users).where(and(...conditions)).all();
   }
 
   public static async update(id: string, data: UpdateUserInput) {
-    const updatedUser = await prisma.user.update({
-      where: { id },
-      data: {
-        fullName: data.fullName,
-        username: data.username,
-        role: data.role,
-        isActive: data.isActive,
-        siteId: data.siteId,
-        departmentId: data.departmentId,
-      },
-    });
-
+    const [updatedUser] = await db
+      .update(users)
+      .set(data)
+      .where(eq(users.id, id))
+      .returning();
     return updatedUser;
   }
 
   public static async trash(id: string) {
-    const trashedUser = await prisma.user.update({
-      where: { id },
-      data: {
-        isActive: false,
-        isTrashed: true,
-      },
-    });
-
+    const [trashedUser] = await db
+      .update(users)
+      .set({ isActive: false, isTrashed: true })
+      .where(eq(users.id, id))
+      .returning();
     return trashedUser;
   }
 
   public static async updatePassword(id: string, newPassword: string) {
     const hashedPassword = await hashText(newPassword);
-    const user = await prisma.user.update({
-      where: { id },
-      data: { password: hashedPassword },
-    });
-
+    const [user] = await db
+      .update(users)
+      .set({ password: hashedPassword })
+      .where(eq(users.id, id))
+      .returning();
     return user;
   }
 }

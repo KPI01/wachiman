@@ -1,7 +1,8 @@
-import type { Prisma } from "../../../prisma/generated/prisma/client";
-import { prisma } from "../prisma.server";
+import { and, desc, eq } from "drizzle-orm";
+import { db } from "../../../db/server";
+import { auditLogs } from "../../../db/schema";
 
-export type AuditLogListItem = Prisma.AuditLogGetPayload<object>;
+export type AuditLogListItem = typeof auditLogs.$inferSelect;
 
 export type CreateAuditLogInput = {
   entityType: string;
@@ -14,16 +15,8 @@ export type CreateAuditLogInput = {
 
 export class AuditLogEntity {
   public static async create(data: CreateAuditLogInput) {
-    return prisma.auditLog.create({
-      data: {
-        entityType: data.entityType,
-        entityId: data.entityId,
-        action: data.action,
-        changedBy: data.changedBy,
-        summary: data.summary,
-        metadata: data.metadata as Prisma.InputJsonValue | undefined,
-      },
-    });
+    const [log] = await db.insert(auditLogs).values(data).returning();
+    return log;
   }
 
   public static async findMany(input?: {
@@ -32,24 +25,26 @@ export class AuditLogEntity {
     action?: string;
     changedBy?: string;
   }): Promise<AuditLogListItem[]> {
-    return prisma.auditLog.findMany({
-      where: input
-        ? {
-            ...(input.entityType ? { entityType: input.entityType } : {}),
-            ...(input.entityId ? { entityId: input.entityId } : {}),
-            ...(input.action ? { action: input.action } : {}),
-            ...(input.changedBy ? { changedBy: input.changedBy } : {}),
-          }
-        : {},
-      orderBy: { createdAt: "desc" },
-      take: 500,
-    });
+    const conditions = [];
+    if (input?.entityType) conditions.push(eq(auditLogs.entityType, input.entityType));
+    if (input?.entityId) conditions.push(eq(auditLogs.entityId, input.entityId));
+    if (input?.action) conditions.push(eq(auditLogs.action, input.action));
+    if (input?.changedBy) conditions.push(eq(auditLogs.changedBy, input.changedBy));
+
+    const query = db.select().from(auditLogs).orderBy(desc(auditLogs.createdAt)).limit(500);
+
+    if (conditions.length > 0) {
+      return query.where(and(...conditions)).all();
+    }
+    return query.all();
   }
 
   public static async findByEntity(entityType: string, entityId: string) {
-    return prisma.auditLog.findMany({
-      where: { entityType, entityId },
-      orderBy: { createdAt: "desc" },
-    });
+    return db
+      .select()
+      .from(auditLogs)
+      .where(and(eq(auditLogs.entityType, entityType), eq(auditLogs.entityId, entityId)))
+      .orderBy(desc(auditLogs.createdAt))
+      .all();
   }
 }

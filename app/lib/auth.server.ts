@@ -7,7 +7,7 @@ import {
   getSessionUser,
   getUserRedirectPath,
 } from "./session.server";
-import type { UserRole } from "../../prisma/generated/prisma/enums";
+import type { UserRole } from "../../db/enums";
 import { loginSchema } from "./schemas/auth";
 import z from "zod";
 import { INVALID_CREDENTIALS } from "./schemas/messages";

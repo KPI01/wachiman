@@ -16,7 +16,7 @@ import {
 import { Checkbox } from "~/components/ui/checkbox";
 import { useFetcher } from "react-router";
 import { useEffect, useRef, useState } from "react";
-import type { Site } from "../../../../prisma/generated/prisma/client";
+import type { Site } from "../../../../db/schema";
 import AccessLogSignature from "./access-log-signature";
 import { getFieldErrors } from "~/lib/utils/zod-errors";
 import { Textarea } from "~/components/ui/textarea";

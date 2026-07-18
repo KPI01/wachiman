@@ -13,7 +13,7 @@ import {
   TableRow,
 } from "~/components/ui/table";
 import { Badge } from "~/components/ui/badge";
-import type { PlannedAccessStatus } from "../../../prisma/generated/prisma/client";
+import type { PlannedAccessStatus } from "../../../db/enums";
 import WorkerDocumentList from "~/components/models/worker-document/worker-document-list";
 import UploadWorkerDocumentBtn from "~/components/models/worker-document/upload-worker-document-btn";
 

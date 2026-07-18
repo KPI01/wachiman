@@ -4,7 +4,7 @@ import AlertDialogContainer, {
   AlertDialogAction,
   AlertDialogCancel,
 } from "~/components/containers/alert-dialog-container";
-import type { Company } from "../../../../prisma/generated/prisma/client";
+import type { Company } from "../../../../db/schema";
 import { useFetcher } from "react-router";
 import FieldWrapper from "~/components/ui/wrappers/field-wrapper";
 import { Input } from "~/components/ui/input";

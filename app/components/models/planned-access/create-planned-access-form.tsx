@@ -25,7 +25,7 @@ import {
 import { Textarea } from "~/components/ui/textarea";
 import FieldWrapper from "~/components/ui/wrappers/field-wrapper";
 import { getFieldErrors } from "~/lib/utils/zod-errors";
-import type { Site } from "../../../../prisma/generated/prisma/client";
+import type { Site } from "../../../../db/schema";
 import type { ExternalWorkerListItem } from "~/lib/database/external-worker.server";
 
 type PlannedAccessSiteOption = Pick<Site, "id" | "name">;

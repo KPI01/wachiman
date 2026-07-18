@@ -1,5 +1,5 @@
 import { useFetcher } from "react-router";
-import type { PlannedAccessStatus } from "../../../../prisma/generated/prisma/client";
+import type { PlannedAccessStatus } from "../../../../db/enums";
 import { Button } from "~/components/ui/button";
 
 export type AllowedAction = "APPROVE" | "REJECT" | "CANCEL";

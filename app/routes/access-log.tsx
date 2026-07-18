@@ -1,5 +1,5 @@
 import { redirect } from "react-router";
-import { UserRole } from "../../prisma/generated/prisma/enums";
+import { USER_ROLES, type UserRole } from "../../db/enums";
 import type { Route } from "./+types/access-log";
 import { encryptValue } from "~/lib/crypt.server";
 import { AccessLogEntity } from "~/lib/database/access-log.server";
@@ -48,11 +48,11 @@ export async function action({ params, request }: Route.ActionArgs) {
   }
 
   const sessionSite =
-    sessionUser.role === UserRole.ACCESS_OPERATOR
+    sessionUser.role === USER_ROLES.ACCESS_OPERATOR
       ? await getSessionSite(request)
       : null;
 
-  if (sessionUser.role === UserRole.ACCESS_OPERATOR && !sessionSite) {
+  if (sessionUser.role === USER_ROLES.ACCESS_OPERATOR && !sessionSite) {
     throw new Response("Unauthorized", { status: 401 });
   }
 
@@ -72,7 +72,7 @@ export async function action({ params, request }: Route.ActionArgs) {
   return redirect(
     getReturnPath(
       request,
-      sessionUser.role === UserRole.ACCESS_OPERATOR
+      sessionUser.role === USER_ROLES.ACCESS_OPERATOR
         ? "/operator"
         : "/admin/access-logs",
     ),

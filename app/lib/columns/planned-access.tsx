@@ -1,7 +1,7 @@
 import { createColumnHelper } from "@tanstack/react-table";
 import type { AllowedAction } from "~/components/models/planned-access/planned-access-status-actions";
 import type { ComponentProps } from "react";
-import type { PlannedAccessStatus } from "../../../prisma/generated/prisma/client";
+import type { PlannedAccessStatus } from "../../../db/enums";
 import PlannedAccessStatusActions from "~/components/models/planned-access/planned-access-status-actions";
 import { Badge } from "~/components/ui/badge";
 import type { PlannedAccessListItem } from "../database/planned-access.server";

@@ -1,7 +1,7 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "wachiman",
-  "compatibility_date": "2025-08-01",
+  "compatibility_date": "2026-07-01",
   "compatibility_flags": ["nodejs_compat_v2"],
   "d1_databases": [
     {
@@ -10,10 +10,10 @@
       "database_id": "afb15594-550d-49f4-90e3-24c09950ff98"
     }
   ],
+  "assets": {
+    "directory": "./dist/client"
+  },
   "vars": {
-    "APP_NAME": "Wachiman App",
-    "DATABASE_URL": "file:./prisma/dev.db",
-    "DISABLE_FILE_UPLOADS": "true"
+    "APP_NAME": "Wachiman App"
   }
-
 }

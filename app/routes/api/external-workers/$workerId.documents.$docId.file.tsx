@@ -1,5 +1,3 @@
-import { createReadStream } from "fs";
-import { stat } from "fs/promises";
 import { areFileUploadsSupported } from "~/lib/platform.server";
 import { toOsPath } from "~/lib/services/worker-document.server";
 import { WorkerDocumentEntity } from "~/lib/database/worker-document.server";
@@ -20,7 +18,10 @@ export async function loader({
     return Response.json({ error: "Descarga de documentos no disponible en este entorno." }, { status: 503 });
   }
 
-  const fullPath = toOsPath(document.filePath);
+  const { createReadStream } = await import("fs");
+  const { stat } = await import("fs/promises");
+
+  const fullPath = await toOsPath(document.filePath);
 
   try {
     const fileStat = await stat(fullPath);

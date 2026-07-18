@@ -1,5 +1,5 @@
 import { createColumnHelper } from "@tanstack/react-table";
-import type { Company } from "../../../prisma/generated/prisma/client";
+import type { Company } from "../../../db/schema";
 import { formatTimestamp } from "../utils";
 import CompanyDetailsForm from "~/components/models/company/company-details-form";
 import DeleteCompanyBtn from "~/components/models/company/delete-company-btn";

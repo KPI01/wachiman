@@ -1,9 +1,5 @@
 import { createColumnHelper } from "@tanstack/react-table";
-import type {
-  Department,
-  Site,
-  User,
-} from "../../../prisma/generated/prisma/client";
+import type { Department, Site, User } from "../../../db/schema";
 import { formatTimestamp } from "../utils";
 import UserDetails from "~/components/models/user/user-details-form";
 import TrashUserBtn from "~/components/models/user/trash-user-btn";

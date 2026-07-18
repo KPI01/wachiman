@@ -5,7 +5,7 @@ import {
   PopoverTitle,
   PopoverTrigger,
 } from "~/components/ui/popover";
-import type { AccessLogVehicle } from "../../../../prisma/generated/prisma/client";
+import type { AccessLogVehicle } from "../../../../db/schema";
 import { InfoIcon } from "lucide-react";
 import FieldWrapper from "~/components/ui/wrappers/field-wrapper";
 import { Input } from "~/components/ui/input";

@@ -1,6 +1,3 @@
-import { mkdir } from "fs/promises";
-import { join, normalize, resolve as resolvePath } from "path";
-import { writeFile, unlink } from "fs/promises";
 import z from "zod";
 import { areFileUploadsSupported } from "../platform.server";
 import { WorkerDocumentEntity } from "../database/worker-document.server";
@@ -28,10 +25,11 @@ function getUploadsBasePath() {
   if (!envPath) {
     throw new Error("UPLOADS_BASE_PATH no esta definido en las variables de entorno.");
   }
-  return resolvePath(envPath);
+  return envPath;
 }
 
-export function toOsPath(storedRelativePath: string) {
+export async function toOsPath(storedRelativePath: string) {
+  const { join, normalize } = await import("path");
   return normalize(join(getUploadsBasePath(), ...storedRelativePath.split("/")));
 }
 
@@ -120,10 +118,13 @@ export async function uploadWorkerDocument(
 
   const safeFileName = sanitizeFileName(file.name);
   const posixRelativePath = `workers/${workerId}/${record.id}-${safeFileName}`;
-  const fullPath = toOsPath(posixRelativePath);
+  const fullPath = await toOsPath(posixRelativePath);
 
-  await mkdir(normalize(join(getUploadsBasePath(), "workers", workerId)), { recursive: true });
-  const buffer = Buffer.from(await file.arrayBuffer());
+  const { mkdir, writeFile } = await import("fs/promises");
+  const { join, normalize } = await import("path");
+  const dirPath = normalize(join(getUploadsBasePath(), "workers", workerId));
+  await mkdir(dirPath, { recursive: true });
+  const buffer = new Uint8Array(await file.arrayBuffer());
   await writeFile(fullPath, buffer);
 
   await WorkerDocumentEntity.update(record.id, { filePath: posixRelativePath });
@@ -194,8 +195,9 @@ export async function deleteWorkerDocument(
 
   await WorkerDocumentEntity.delete(documentId);
 
-  const fullPath = toOsPath(doc.filePath);
+  const fullPath = await toOsPath(doc.filePath);
   try {
+    const { unlink } = await import("fs/promises");
     await unlink(fullPath);
   } catch {
     // File may not exist on disk, ignore

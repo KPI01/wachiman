@@ -1,5 +1,5 @@
 import { createColumnHelper } from "@tanstack/react-table";
-import type { WorkCategory } from "../../../prisma/generated/prisma/client";
+import type { WorkCategory } from "../../../db/schema";
 import { formatTimestamp } from "../utils";
 import WorkCategoryDetailsForm from "~/components/models/work-category/work-category-details-form";
 import DeleteWorkCategoryBtn from "~/components/models/work-category/delete-work-category-btn";

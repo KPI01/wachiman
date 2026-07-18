@@ -4,10 +4,7 @@ import AlertDialogContainer, {
   AlertDialogAction,
   AlertDialogCancel,
 } from "~/components/containers/alert-dialog-container";
-import type {
-  Company,
-  WorkCategory,
-} from "../../../../prisma/generated/prisma/client";
+import type { Company, WorkCategory } from "../../../../db/schema";
 import type { ExternalWorkerListItem } from "~/lib/database/external-worker.server";
 import { useFetcher } from "react-router";
 import FieldWrapper from "~/components/ui/wrappers/field-wrapper";

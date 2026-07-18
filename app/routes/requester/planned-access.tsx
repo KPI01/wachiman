@@ -13,7 +13,7 @@ import {
 import type { Route } from "./+types/planned-access";
 import { getSessionDepartment, getSessionSite } from "~/lib/session.server";
 import { Badge } from "~/components/ui/badge";
-import type { PlannedAccessStatus } from "../../../prisma/generated/prisma/client";
+import type { PlannedAccessStatus } from "../../../db/enums";
 import type { AllowedAction } from "~/components/models/planned-access/planned-access-status-actions";
 import type { PlannedAccessListItem } from "~/lib/database/planned-access.server";
 

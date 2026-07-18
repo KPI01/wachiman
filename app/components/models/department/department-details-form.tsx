@@ -1,7 +1,7 @@
 import { InfoIcon } from "lucide-react";
 import { useState } from "react";
 import { useFetcher } from "react-router";
-import type { Department } from "../../../../prisma/generated/prisma/client";
+import type { Department } from "../../../../db/schema";
 import AlertDialogContainer, {
   AlertDialogAction,
   AlertDialogCancel,

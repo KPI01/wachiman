@@ -1,5 +1,5 @@
 import { createColumnHelper } from "@tanstack/react-table";
-import type { DocumentStatus } from "../../../prisma/generated/prisma/enums";
+import type { DocumentStatus } from "../../../db/enums";
 import { Badge } from "~/components/ui/badge";
 import {
   DOCUMENT_STATUS_LABELS,

@@ -1,4 +1,4 @@
-import type { DocumentType, DocumentStatus } from "../../../prisma/generated/prisma/client";
+import type { DocumentType, DocumentStatus } from "../../../db/enums";
 
 export const DOCUMENT_TYPE_LABELS: Record<DocumentType, string> = {
   IDENTIFICATION: "Identificacion",

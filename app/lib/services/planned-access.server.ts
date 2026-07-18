@@ -1,5 +1,5 @@
 import z from "zod";
-import type { PlannedAccessStatus } from "../../../prisma/generated/prisma/client";
+import type { PlannedAccessStatus } from "../../../db/enums";
 import { encryptValue } from "../crypt.server";
 import { DOCUMENT_TYPE_LABELS } from "../models/worker-document";
 import { validateWorkerDocumentsForApproval } from "./worker-document.server";
