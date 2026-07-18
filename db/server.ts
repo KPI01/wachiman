@@ -1,24 +1,34 @@
 import { createD1Db, createLocalDb, type DbClient } from "./client";
 
 let _db: DbClient | null = null;
+let _initPromise: Promise<void> | null = null;
 
-function getLocalDb(): DbClient {
-  if (!_db) {
-    _db = createLocalDb();
-  }
-  return _db;
+export function setDb(db: DbClient) {
+  _db = db;
+}
+
+export async function initLocalDb() {
+  if (_initPromise) return _initPromise;
+  _initPromise = createLocalDb().then((db) => {
+    _db = db as unknown as DbClient;
+  });
+  return _initPromise;
+}
+
+export async function initDb(d1: D1Database) {
+  _db = (await createD1Db(d1)) as unknown as DbClient;
 }
 
 const handler: ProxyHandler<DbClient> = {
   get(_, prop) {
-    const db = getLocalDb();
-    const value = (db as unknown as Record<string | symbol, unknown>)[prop];
+    if (!_db) {
+      throw new Error(
+        "Database not initialized. Call initLocalDb() or initDb() first.",
+      );
+    }
+    const value = (_db as unknown as Record<string | symbol, unknown>)[prop];
     return typeof value === "function" ? (value as Function).bind(db) : value;
   },
 };
 
 export const db = new Proxy({} as DbClient, handler);
-
-export async function initDb(d1: D1Database) {
-  _db = (await createD1Db(d1)) as unknown as DbClient;
-}
