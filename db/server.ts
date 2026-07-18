@@ -27,8 +27,11 @@ const handler: ProxyHandler<DbClient> = {
       );
     }
     const value = (_db as unknown as Record<string | symbol, unknown>)[prop];
-    return typeof value === "function" ? (value as Function).bind(db) : value;
+    return typeof value === "function" ? (value as Function).bind(_db) : value;
   },
 };
 
 export const db = new Proxy({} as DbClient, handler);
+
+// Expose initDb globally for the Worker entry to share the same _db reference
+(globalThis as Record<string, unknown>).__WACHIMAN_INIT_DB__ = initDb;

@@ -11,6 +11,14 @@ export default {
     env: Record<string, unknown>,
     ctx: ExecutionContext,
   ) {
+    if (env.DB) {
+      const initDb = (globalThis as Record<string, unknown>)
+        .__WACHIMAN_INIT_DB__ as ((d1: D1Database) => Promise<void>) | undefined;
+      if (initDb) {
+        await initDb(env.DB as D1Database);
+      }
+    }
+
     return handler({
       request,
       env,
