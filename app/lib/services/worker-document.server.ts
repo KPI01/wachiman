@@ -208,7 +208,7 @@ export async function deleteWorkerDocument(
     "WorkerDocument",
     documentId,
     "DELETE",
-    `Documento ${doc.fileName} eliminado del trabajador ${doc.externalWorker.firstName} ${doc.externalWorker.lastName}`,
+    `Documento ${doc.fileName} eliminado`,
   );
 
   return { success: true as const };
@@ -233,7 +233,7 @@ export async function checkExpiredDocuments() {
     });
   }
 
-  return { expired: result.count };
+  return { expired: result.length };
 }
 
 export async function validateWorkerDocumentsForApproval(
@@ -248,7 +248,7 @@ export async function validateWorkerDocumentsForApproval(
     "IDENTIFICATION",
   );
 
-  if (!identification) {
+  if (identification.length === 0) {
     const anyIdentification = await WorkerDocumentEntity.findByWorkerId(workerId);
     const idDoc = anyIdentification.find((d) => d.documentType === "IDENTIFICATION");
     if (!idDoc) {
@@ -266,7 +266,7 @@ export async function validateWorkerDocumentsForApproval(
       "TRAINING",
     );
 
-    if (!training) {
+    if (training.length === 0) {
       const anyDocs = await WorkerDocumentEntity.findByWorkerId(workerId);
       const trainingDoc = anyDocs.find((d) => d.documentType === "TRAINING");
       if (!trainingDoc) {

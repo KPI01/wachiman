@@ -262,23 +262,11 @@ export class PlannedAccessEntity {
     if (excludeId) conditions.push(ne(plannedAccesses.id, excludeId));
 
     const endDate = expectedEnd ?? new Date(2100, 0, 1);
-    const overlapCondition = or(
-      and(
+    const overlapCondition = and(
+      lte(plannedAccesses.expectedStartDatetime, endDate.toISOString()),
+      or(
         eq(plannedAccesses.expectedEndDatetime, null as unknown as string),
-        lte(
-          plannedAccesses.expectedStartDatetime,
-          endDate.toISOString(),
-        ),
-      ),
-      and(
-        lte(
-          plannedAccesses.expectedStartDatetime,
-          endDate.toISOString(),
-        ),
-        gte(
-          plannedAccesses.expectedEndDatetime ?? "",
-          expectedStart.toISOString(),
-        ),
+        gte(plannedAccesses.expectedEndDatetime, expectedStart.toISOString()),
       ),
     );
 
@@ -338,14 +326,11 @@ export class PlannedAccessEntity {
       conditions.push(ne(plannedAccesses.id, excludePlannedAccessId));
 
     const endDate = expectedEnd ?? new Date(2100, 0, 1);
-    const overlapCondition = or(
-      and(
+    const overlapCondition = and(
+      lte(plannedAccesses.expectedStartDatetime, endDate.toISOString()),
+      or(
         eq(plannedAccesses.expectedEndDatetime, null as unknown as string),
-        lte(plannedAccesses.expectedStartDatetime, endDate.toISOString()),
-      ),
-      and(
-        lte(plannedAccesses.expectedStartDatetime, endDate.toISOString()),
-        gte(plannedAccesses.expectedEndDatetime ?? "", expectedStart.toISOString()),
+        gte(plannedAccesses.expectedEndDatetime, expectedStart.toISOString()),
       ),
     );
 

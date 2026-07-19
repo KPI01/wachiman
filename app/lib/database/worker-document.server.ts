@@ -84,10 +84,15 @@ export class WorkerDocumentEntity {
   }
 
   public static async findAllWithWorker() {
-    return db
-      .select()
-      .from(workerDocuments)
-      .orderBy(desc(workerDocuments.createdAt))
-      .all();
+    return db.query.workerDocuments.findMany({
+      orderBy: (doc, { desc: d }) => [d(doc.createdAt)],
+      with: {
+        externalWorker: {
+          with: {
+            company: { columns: { id: true, name: true } },
+          },
+        },
+      },
+    });
   }
 }

@@ -154,8 +154,9 @@ export async function createPlannedAccess(
   return { success: true };
 }
 
-function formatPlannedDate(date: Date) {
-  return date.toLocaleDateString("es-AR", {
+function formatPlannedDate(date: Date | string) {
+  const d = typeof date === "string" ? new Date(date) : date;
+  return d.toLocaleDateString("es-ES", {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",

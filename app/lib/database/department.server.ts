@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, eq, ne } from "drizzle-orm";
 import { db } from "../../../db/server";
 import { departments } from "../../../db/schema";
 
@@ -17,11 +17,13 @@ export class DepartmentEntity {
     return department ?? null;
   }
 
-  public static async findBySlug(slug: string) {
+  public static async findBySlug(slug: string, excludeId?: string) {
+    const conditions = [eq(departments.slug, slug)];
+    if (excludeId) conditions.push(ne(departments.id, excludeId));
     const department = await db
       .select()
       .from(departments)
-      .where(eq(departments.slug, slug))
+      .where(and(...conditions))
       .get();
     return department ?? null;
   }
