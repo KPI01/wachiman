@@ -11,15 +11,13 @@ export default {
     env: Record<string, unknown>,
     ctx: ExecutionContext,
   ) {
-    // Workers bindings (vars + secrets) are NOT accessible via process.env.
-    // Copy string values to globalThis so getEnv() can read them.
-    if (env) {
-      const g = globalThis as Record<string, unknown>;
-      for (const key of Object.keys(env as Record<string, unknown>)) {
-        const val = (env as Record<string, unknown>)[key];
-        if (typeof val === "string") {
-          g[key] = val;
-        }
+    // Workers bindings (vars + secrets) are getter-based, not enumerable.
+    // Object.keys(env) returns [] so we must reference each key explicitly.
+    const g = globalThis as Record<string, unknown>;
+    const envVars = ["ENCRYPTION_KEY", "SESSION_SECRET", "APP_NAME", "APP_LOGO", "APP_FAVICON", "SESSION_COOKIE_SECRET", "DISABLE_FILE_UPLOADS"];
+    for (const name of envVars) {
+      if (name in env && typeof (env as Record<string, unknown>)[name] === "string") {
+        g[name] = (env as Record<string, unknown>)[name];
       }
     }
 
