@@ -1,3 +1,5 @@
+import { getEnv } from "./env.server";
+
 const ENCRYPTION_KEY_NAME = "ENCRYPTION_KEY";
 const ENVELOPE_ALGORITHM = "aes-256-gcm";
 const WEB_CRYPTO_ALGORITHM = "AES-GCM";
@@ -18,7 +20,7 @@ let _rawKey: Uint8Array | null = null;
 function getRawKey(): Uint8Array {
   if (_rawKey) return _rawKey;
 
-  const key = process.env[ENCRYPTION_KEY_NAME];
+  const key = getEnv(ENCRYPTION_KEY_NAME);
   if (!key) {
     throw new Error(`${ENCRYPTION_KEY_NAME} is not defined`);
   }

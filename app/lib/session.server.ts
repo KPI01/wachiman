@@ -1,3 +1,5 @@
+import { getEnv } from "./env.server";
+
 import { createCookieSessionStorage, redirect } from "react-router";
 import { USER_ROLES, type UserRole } from "../../db/enums";
 
@@ -39,12 +41,12 @@ export function getUserRedirectPath(role: SessionUser["role"]) {
   return paths[role];
 }
 
-const SESSION_SECRET = process.env.SESSION_SECRET ?? "dev-session-secret";
+const SESSION_SECRET = getEnv("SESSION_SECRET", "dev-session-secret")!;
 const SESSION_NAME = "wachiman-session";
 const SESSION_COOKIE_SECURE =
-  process.env.SESSION_COOKIE_SECURE === undefined
+  getEnv("SESSION_COOKIE_SECURE") === undefined
     ? process.env.NODE_ENV === "production"
-    : process.env.SESSION_COOKIE_SECURE.trim().toLowerCase() === "true";
+    : getEnv("SESSION_COOKIE_SECURE")!.trim().toLowerCase() === "true";
 const USER_ROLES_SET = new Set(Object.values(USER_ROLES));
 const SECONDS_IN_A_MINUTE = 60;
 const MINUTES_IN_A_HOUR = 60;

@@ -12,12 +12,13 @@ export default {
     ctx: ExecutionContext,
   ) {
     // Workers bindings (vars + secrets) are NOT accessible via process.env.
-    // Copy string values so code using process.env (crypt.server.ts, etc.) works.
-    if (env && typeof process !== "undefined" && process.env) {
+    // Copy string values to globalThis so getEnv() can read them.
+    if (env) {
+      const g = globalThis as Record<string, unknown>;
       for (const key of Object.keys(env as Record<string, unknown>)) {
         const val = (env as Record<string, unknown>)[key];
         if (typeof val === "string") {
-          (process.env as Record<string, unknown>)[key] = val;
+          g[key] = val;
         }
       }
     }

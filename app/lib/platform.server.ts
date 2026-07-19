@@ -1,3 +1,5 @@
+import { getEnv } from "./env.server";
+
 export function areFileUploadsSupported(): boolean {
-  return process.env.DISABLE_FILE_UPLOADS !== "true";
+  return getEnv("DISABLE_FILE_UPLOADS") !== "true";
 }
