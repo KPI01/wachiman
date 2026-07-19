@@ -1,9 +1,10 @@
-import { and, count, desc, eq, gte, inArray, lte, ne, or, sql } from "drizzle-orm";
+import { and, count, desc, eq, gte, inArray, lte, ne, or } from "drizzle-orm";
 import { db } from "../../../db/server";
 import {
   accessLogs,
   plannedAccessPersons,
   plannedAccesses,
+  users,
 } from "../../../db/schema";
 import type { PlannedAccessStatus } from "../../../db/enums";
 
@@ -172,13 +173,53 @@ export class PlannedAccessEntity {
     return row ?? null;
   }
 
-  public static async countByStatuses(statuses: PlannedAccessStatus[]) {
-    const result = await db
-      .select({ count: count() })
-      .from(plannedAccesses)
-      .where(inArray(plannedAccesses.status, statuses))
-      .get();
-    return result?.count ?? 0;
+  public static async countByStatuses(
+    input: {
+      statuses: PlannedAccessStatus[];
+      siteId?: string;
+      departmentId?: string;
+      requestedById?: string;
+    },
+  ) {
+    const results: Record<string, number> = {};
+
+    for (const status of input.statuses) {
+      const conditions = [eq(plannedAccesses.status, status)];
+      if (input.siteId) conditions.push(eq(plannedAccesses.siteId, input.siteId));
+      if (input.requestedById) conditions.push(eq(plannedAccesses.requestedById, input.requestedById));
+
+      const result = await db
+        .select({ count: count() })
+        .from(plannedAccesses)
+        .where(and(...conditions))
+        .get();
+      results[status] = result?.count ?? 0;
+    }
+
+    // Enfoque B: filter by departmentId separately
+    if (input.departmentId) {
+      const departmentUsers = await db
+        .select({ id: users.id })
+        .from(users)
+        .where(eq(users.departmentId, input.departmentId))
+        .all();
+      const userIds = departmentUsers.map((u) => u.id);
+
+      for (const status of input.statuses) {
+        const conditions = [eq(plannedAccesses.status, status)];
+        conditions.push(inArray(plannedAccesses.requestedById, userIds));
+        if (input.siteId) conditions.push(eq(plannedAccesses.siteId, input.siteId));
+
+        const result = await db
+          .select({ count: count() })
+          .from(plannedAccesses)
+          .where(and(...conditions))
+          .get();
+        results[status] = result?.count ?? 0;
+      }
+    }
+
+    return results;
   }
 
   public static async updateStatus(

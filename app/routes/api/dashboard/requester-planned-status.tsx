@@ -22,14 +22,15 @@ export async function loader({ request }: Route.LoaderArgs) {
     throw new Response("Forbidden", { status: 403 });
   }
 
-  const counts = await PlannedAccessEntity.countByStatuses(
-    [...DASHBOARD_STATUSES],
-    { siteId: site.id, departmentId: department.id },
-  );
+  const counts = await PlannedAccessEntity.countByStatuses({
+    statuses: [...DASHBOARD_STATUSES],
+    siteId: site.id,
+    requestedById: sessionUser.id,
+  });
 
   return {
-    pendingApproval: counts.PENDING_APPROVAL,
-    approved: counts.APPROVED,
-    partiallyUsed: counts.PARTIALLY_USED,
+    pendingApproval: counts.PENDING_APPROVAL ?? 0,
+    approved: counts.APPROVED ?? 0,
+    partiallyUsed: counts.PARTIALLY_USED ?? 0,
   };
 }

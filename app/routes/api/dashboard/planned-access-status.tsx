@@ -18,14 +18,14 @@ export async function loader({ request }: Route.LoaderArgs) {
     url.searchParams.get("scope"),
   );
 
-  const counts = await PlannedAccessEntity.countByStatuses(
-    [...DASHBOARD_STATUSES],
-    resolved.scope === "session-site" ? { siteId: resolved.siteId } : {},
-  );
+  const counts = await PlannedAccessEntity.countByStatuses({
+    statuses: [...DASHBOARD_STATUSES],
+    ...(resolved.scope === "session-site" ? { siteId: resolved.siteId } : {}),
+  });
 
   return {
-    pendingApproval: counts.PENDING_APPROVAL,
-    approved: counts.APPROVED,
-    partiallyUsed: counts.PARTIALLY_USED,
+    pendingApproval: counts.PENDING_APPROVAL ?? 0,
+    approved: counts.APPROVED ?? 0,
+    partiallyUsed: counts.PARTIALLY_USED ?? 0,
   };
 }
