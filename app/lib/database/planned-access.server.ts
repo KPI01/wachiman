@@ -101,23 +101,23 @@ export class PlannedAccessEntity {
   }
 
   public static async findMany(
-    input: GetPlannedAccessInput,
+    input?: GetPlannedAccessInput,
   ): Promise<PlannedAccessListItem[]> {
     const conditions = [];
 
-    if (input.status) {
+    if (input?.status) {
       const statuses = Array.isArray(input.status)
         ? input.status
         : [input.status];
       conditions.push(inArray(plannedAccesses.status, statuses));
     }
-    if (input.siteId) {
+    if (input?.siteId) {
       conditions.push(eq(plannedAccesses.siteId, input.siteId));
     }
-    if (input.requestedById) {
+    if (input?.requestedById) {
       conditions.push(eq(plannedAccesses.requestedById, input.requestedById));
     }
-    if (input.expectedDate) {
+    if (input?.expectedDate) {
       const startOfDay = new Date(input.expectedDate);
       startOfDay.setHours(0, 0, 0, 0);
       const endOfDay = new Date(input.expectedDate);
@@ -145,7 +145,7 @@ export class PlannedAccessEntity {
     });
 
     // Enfoque B: filter by departmentId in a second step
-    if (input.departmentId) {
+    if (input?.departmentId) {
       const userIds = await db
         .select({ id: plannedAccesses.requestedById })
         .from(plannedAccesses)

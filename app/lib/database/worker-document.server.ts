@@ -19,11 +19,11 @@ export class WorkerDocumentEntity {
   }
 
   public static async findById(id: string) {
-    return db
+    return (await db
       .select()
       .from(workerDocuments)
       .where(eq(workerDocuments.id, id))
-      .get() ?? null;
+      .get()) ?? null;
   }
 
   public static async update(id: string, data: Partial<typeof workerDocuments.$inferInsert>) {
