@@ -10,8 +10,16 @@ Sistema de control de acceso industrial para el registro, monitoreo y gestión d
 | **Framework** | React Router v7 (SSR + rutas API) |
 | **Frontend** | React 19, Tailwind CSS 4, shadcn/ui |
 | **Lenguaje** | TypeScript |
+## Demo en vivo
+
+| Recurso | Enlace |
+|---|---|
+| **App** | [wachiman.jorgelurd11-557.workers.dev](https://wachiman.jorgelurd11-557.workers.dev) |
+| **Video** | [Drive — Demostración](https://drive.google.com/file/d/1tZQwrjYUAJrD0YkDeFPJp387u6Y0Zall/view?usp=sharing) |
+| **Slides** | [Google Slides](https://docs.google.com/presentation/d/1WKexqDzOq1EyvmUZdhAC3LrWTSUXuFsu/edit?usp=sharing&ouid=100727549007529328567&rtpof=true&sd=true) |
+
 | **Base de datos** | SQLite (local) / Cloudflare D1 (producción) |
-| **ORM** | Prisma + driver adapters (libsql, d1) |
+| **ORM** | Drizzle ORM (better-sqlite3 / D1) |
 | **Autenticación** | Sesiones por cookie con PBKDF2 (Web Crypto) |
 | **Cifrado** | AES-256-GCM (Web Crypto) |
 | **Deploy** | Cloudflare Workers + Wrangler |
@@ -36,10 +44,10 @@ El seed usa la contraseña por defecto `demo123` para todos los usuarios de prue
 Variables obligatorias:
 
 | Variable | Descripción |
-|---|---|
-| `ENCRIPTION_KEY` | Clave AES-256-GCM en base64 (generar con `pnpm env:set-encryption-key`) |
-| `SESSION_SECRET` | Secreto para firmar cookies de sesión (generar con `pnpm env:set-session-secret`) |
-| `DATABASE_URL` | URL SQLite (`file:./prisma/dev.db`) |
+|---|---|---|
+| `ENCRYPTION_KEY` | Clave AES-256-GCM en base64 (32 bytes) |
+| `SESSION_SECRET` | Secreto para firmar cookies de sesión |
+| `DATABASE_URL` | URL SQLite (`file:./dev.db`) |
 
 Variables opcionales con valores por defecto en el seed:
 
@@ -61,15 +69,8 @@ pnpm install
 ### 3. Configurar la base de datos
 
 ```bash
-pnpm orm:generate        # Generar cliente Prisma
-pnpm exec prisma db push # Crear/esquema SQLite local
-pnpm db:seed             # Usuario admin (admin / demo123)
-```
-
-Para datos demo completos:
-
-```bash
-pnpm db:seed-populate    # 60 registros, 15 accesos, 18 trabajadores, 9 usuarios multirol
+pnpm db:push      # Crear/esquema SQLite local
+pnpm db:seed      # Datos demo completos (sitios, usuarios, trabajadores, accesos)
 ```
 
 ### 4. Iniciar en desarrollo
@@ -105,7 +106,7 @@ cp .dev.vars.example .dev.vars
 ### 2. Crear base de datos D1
 
 ```bash
-pnpm exec wrangler d1 create wachiman
+npx wrangler d1 create wachiman
 ```
 
 Copiar el `database_id` del output a `wrangler.jsonc`.
@@ -113,15 +114,20 @@ Copiar el `database_id` del output a `wrangler.jsonc`.
 ### 3. Aplicar migraciones D1
 
 ```bash
-pnpm db:apply-local   # Desarrollo local
-pnpm db:apply-remote  # Producción
+# Generar migraciones (desarrollo)
+pnpm db:generate
+
+# Aplicar a D1 remoto
+npx wrangler d1 execute wachiman --remote --file=db/migrations/0000_hard_dazzler.sql
+
+# Seed en D1 remoto
+pnpm db:seed-remote
 ```
 
 ### 4. Configurar secrets en Cloudflare
 
 ```bash
-pnpm exec wrangler secret put ENCRIPTION_KEY
-pnpm exec wrangler secret put SESSION_SECRET
+pnpm env:set-remote
 ```
 
 ### 5. Deploy
@@ -198,25 +204,22 @@ wachiman/
 │   │   ├── hash.server.ts          # Hash y validación de contraseñas (PBKDF2)
 │   │   ├── crypt.server.ts         # Cifrado/descifrado AES-256-GCM (Web Crypto)
 │   │   ├── platform.server.ts      # Detección de soporte de archivos (DISABLE_FILE_UPLOADS)
-│   │   ├── prisma.server.ts        # Cliente Prisma (auto-init SQLite local, D1 en Workers)
-│   │   ├── utils.ts                # Utilidades generales
+│   │   ├── env.server.ts            # Helper getEnv() para Workers + Node.js
 │   │   ├── database/               # Clases de acceso a datos (CRUD por entidad)
 │   │   ├── services/               # Lógica de negocio
 │   │   ├── schemas/                # Esquemas de validación Zod
 │   │   └── columns/                # Definiciones de columnas para tablas
 │   └── types/
 │       └── env.d.ts
-├── prisma/
-│   ├── schema.prisma               # Esquema de base de datos (15 modelos, 4 enums)
-│   ├── config.ts                   # Configuración de Prisma (migraciones + seed)
-│   ├── lib.ts                      # Helper createLocalPrismaClient() para scripts
-│   ├── seed.ts                     # Seeder inicial (admin, sitio, departamento)
-│   ├── seed-populate.ts            # Seeder de datos demo completos
-│   ├── migrations/                 # Migraciones D1 (0001_init.sql)
-│   └── dev.db                      # Base de datos SQLite local
-├── workers/
-│   └── app.ts                      # Entry point para Cloudflare Workers
-├── wrangler.jsonc                  # Configuración de Wrangler (D1 binding, assets)
+├── db/
+│   ├── schema.ts                   # Esquema Drizzle (12 tablas, 4 enums, 18 relaciones)
+│   ├── enums.ts                    # Enums como const + tipo
+│   ├── client.ts                   # createLocalDb() + createD1Db()
+│   ├── server.ts                   # Proxy singleton con initLocalDb() + initDb()
+│   └── migrations/                 # Migraciones Drizzle (0000_hard_dazzler.sql)
+├── worker/
+│   └── index.ts                    # Entry point para Cloudflare Workers
+├── wrangler.jsonc                  # Configuración de Wrangler (D1 binding, assets, vars) 
 ├── .env.example                    # Plantilla de variables de entorno
 ├── .dev.vars                       # Secrets para desarrollo local con Wrangler
 └── scripts/                        # Scripts auxiliares
@@ -268,27 +271,21 @@ Endpoints para widgets en tiempo real:
 - Estado de accesos planificados
 - Último acceso registrado
 
-## Usuario y contraseña de prueba
+## Usuarios de prueba
 
-El seed (`db:seed`) crea un usuario administrador inicial. Para datos demo completos con múltiples roles ejecuta `db:seed-populate`.
-
-**Contraseña común para todos los usuarios:** `demo123`
+**Contraseña para todos:** `demo123`
 
 | Usuario | Rol |
 |---|---|
 | `admin` | ADMIN |
-| `admin.principal` | ADMIN |
-| `operador.principal` | ACCESS_OPERATOR |
-| `operador.almacen` | ACCESS_OPERATOR |
-| `operador.cd` | ACCESS_OPERATOR |
-| `monitor.principal` | ACCESS_MONITOR |
-| `segur.principal` | SECURITY_MANAGER |
-| `aprobador.principal` | ACCESS_APPROVER |
-| `solicitante.principal` | ACCESS_REQUESTER |
-| `solicitante.norte` | ACCESS_REQUESTER |
+| `porteria` | ACCESS_OPERATOR |
+| `solicitante` | ACCESS_REQUESTER |
+| `aprobador` | ACCESS_APPROVER |
+| `visor` | ACCESS_MONITOR |
+| `director` | ADMIN |
 
 Para iniciar sesión:
 
 1. Configura las variables de entorno en `.env`
-2. Ejecuta `pnpm db:seed` (o `pnpm db:seed-populate` para datos demo)
+2. Ejecuta `pnpm db:seed`
 3. Accede a `http://localhost:5173/login` con cualquiera de los usuarios anteriores y contraseña `demo123`
