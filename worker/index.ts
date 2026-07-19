@@ -11,6 +11,17 @@ export default {
     env: Record<string, unknown>,
     ctx: ExecutionContext,
   ) {
+    // Workers bindings (vars + secrets) are NOT accessible via process.env.
+    // Copy string values so code using process.env (crypt.server.ts, etc.) works.
+    if (env && typeof process !== "undefined" && process.env) {
+      for (const key of Object.keys(env as Record<string, unknown>)) {
+        const val = (env as Record<string, unknown>)[key];
+        if (typeof val === "string") {
+          (process.env as Record<string, unknown>)[key] = val;
+        }
+      }
+    }
+
     if (env.DB) {
       const initDb = (globalThis as Record<string, unknown>)
         .__WACHIMAN_INIT_DB__ as ((d1: D1Database) => Promise<void>) | undefined;

@@ -18,9 +18,7 @@
 	},
 	"vars": {
 		"APP_NAME": "Wachiman App",
-		"SESSION_COOKIE_SECURE": "true",
-		"ENCRYPTION_KEY": "a1bbQq21s9nGleGNIV85vLBhtOaSfpOjuRbB+IxQ4No=",
-		"SESSION_SECRET": "SxoZE1MnUkij7Vf0sHdHdNR14x2WbNms5KLBkL8smCs="
+		"SESSION_COOKIE_SECURE": "true"
 	},
 	"observability": {
     "logs": {
