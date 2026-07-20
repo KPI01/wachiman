@@ -3,7 +3,7 @@ import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import process from "node:process";
 
-const ENCRYPTION_KEY_NAME = "ENCRIPTION_KEY";
+const ENCRYPTION_KEY_NAME = "ENCRYPTION_KEY";
 const KEY_LENGTH = 32;
 
 type CliOptions = {
@@ -17,15 +17,21 @@ function parseArgs(argv: string[]): CliOptions {
   for (let index = 0; index < argv.length; index += 1) {
     const argument = argv[index];
 
-    if (argument === "--env") {
-      const envPath = argv[index + 1];
+    if (argument === "--") {
+      continue;
+    }
+
+    if (argument === "--env" || argument.startsWith("--env=")) {
+      const envPath = argument.startsWith("--env=")
+        ? argument.slice("--env=".length)
+        : argv[index + 1];
 
       if (!envPath) {
         throw new Error("Missing value for --env");
       }
 
       options.envPath = path.resolve(process.cwd(), envPath);
-      index += 1;
+      if (argument === "--env") index += 1;
       continue;
     }
 

@@ -61,6 +61,16 @@ Variables opcionales con valores por defecto en el seed:
 | `DEPARTMENT_NAME` | `General` |
 | `DEPARTMENT_SLUG` | `GENERAL` |
 
+Para generar o actualizar secretos en un archivo concreto, usa `--env`:
+
+```bash
+pnpm env:set-encryption-key -- --env .env.production
+pnpm env:set-session-secret -- --env .env.production
+pnpm env:set-remote -- --env .env.production
+```
+
+También se admite la forma `--env=.env.production`. Si no se especifica, se usa `.env`.
+
 ### 2. Instalar dependencias
 
 ```bash

@@ -21,15 +21,17 @@ function parseArgs(argv: string[]): CliOptions {
       continue;
     }
 
-    if (argument === "--env") {
-      const envPath = argv[index + 1];
+    if (argument === "--env" || argument.startsWith("--env=")) {
+      const envPath = argument.startsWith("--env=")
+        ? argument.slice("--env=".length)
+        : argv[index + 1];
 
       if (!envPath) {
         throw new Error("Missing value for --env");
       }
 
       options.envPath = path.resolve(process.cwd(), envPath);
-      index += 1;
+      if (argument === "--env") index += 1;
       continue;
     }
 
