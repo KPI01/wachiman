@@ -1,9 +1,16 @@
 import { createRequestHandler } from "@react-router/cloudflare";
+import { RouterContextProvider } from "react-router";
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore — build output, exists after build completes
 import * as build from "../dist/server/index.js";
 
-const handler = createRequestHandler({ build, mode: "production" });
+const handler = createRequestHandler({
+  build,
+  mode: "production",
+  getLoadContext() {
+    return new RouterContextProvider();
+  },
+});
 
 export default {
   async fetch(
@@ -30,12 +37,9 @@ export default {
     }
 
     return handler({
-      request,
+      // Wrangler's Workers v5 request type is stricter than the adapter's v4 peer type.
+      request: request as Parameters<typeof handler>[0]["request"],
       env,
-      ctx: {
-        waitUntil: ctx.waitUntil.bind(ctx),
-        passThroughOnException: ctx.passThroughOnException.bind(ctx),
-      },
       waitUntil: ctx.waitUntil.bind(ctx),
       passThroughOnException: ctx.passThroughOnException.bind(ctx),
     });
