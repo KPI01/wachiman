@@ -1,27 +1,14 @@
 import { isbot } from "isbot";
 import { renderToReadableStream } from "react-dom/server";
-import type { AppLoadContext, EntryContext } from "react-router";
+import type { EntryContext } from "react-router";
 import { ServerRouter } from "react-router";
-
-let _initialized = false;
-async function ensureDbInitialized() {
-  if (_initialized) return;
-  _initialized = true;
-  if (typeof process !== "undefined" && process.versions?.node) {
-    const { initLocalDb } = await import("../db/server");
-    await initLocalDb();
-  }
-}
 
 export default async function handleRequest(
   request: Request,
   responseStatusCode: number,
   responseHeaders: Headers,
   routerContext: EntryContext,
-  _loadContext: AppLoadContext,
 ) {
-  await ensureDbInitialized();
-
   if (request.method.toUpperCase() === "HEAD") {
     return new Response(null, {
       status: responseStatusCode,

@@ -11,18 +11,18 @@ import {
 
 import type { Route } from "./+types/root";
 import { Toaster } from "~/components/ui/sonner";
-import { initDb } from "../db/server";
+import { initLocalDb, isDbInitialized } from "../db/server";
 import "./app.css";
 
-export async function loader({ context }: Route.LoaderArgs) {
-  const cloudflare = (context as Record<string, unknown>)?.cloudflare as
-    | { env: Record<string, unknown> }
-    | undefined;
-  if (cloudflare?.env?.DB) {
-    await initDb(cloudflare.env.DB as D1Database);
+export const middleware: Route.MiddlewareFunction[] = [
+  async (_, next) => {
+    // Cloudflare initializes D1 before the request handler; Node initializes SQLite here.
+    if (!isDbInitialized()) {
+      await initLocalDb();
+    }
+    return next();
   }
-  return null;
-}
+];
 
 export const links: Route.LinksFunction = () => [
   { rel: "icon", type: "image/svg", href: process.env.APP_FAVICON },

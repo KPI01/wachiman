@@ -7,7 +7,12 @@ export function setDb(db: DbClient) {
   _db = db;
 }
 
+export function isDbInitialized() {
+  return _db !== null;
+}
+
 export async function initLocalDb() {
+  if (_db) return;
   if (_initPromise) return _initPromise;
   _initPromise = createLocalDb().then((db) => {
     _db = db as unknown as DbClient;
@@ -16,6 +21,7 @@ export async function initLocalDb() {
 }
 
 export async function initDb(d1: D1Database) {
+  if (_db) return;
   _db = (await createD1Db(d1)) as unknown as DbClient;
 }
 
