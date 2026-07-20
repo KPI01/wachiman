@@ -26,18 +26,6 @@ async function main() {
   const reqPwd = await hashText("demo123");
 
   const sql = `
-DELETE FROM access_logs;
-DELETE FROM access_log_vehicles;
-DELETE FROM worker_documents;
-DELETE FROM planned_access_persons;
-DELETE FROM planned_accesses;
-DELETE FROM external_workers;
-DELETE FROM users;
-DELETE FROM work_categories;
-DELETE FROM companies;
-DELETE FROM departments;
-DELETE FROM sites;
-
 -- ───── SITES ────────────────────────────────────────
 INSERT INTO sites (id, name, slug, address, created_at, updated_at) VALUES
 ('site-1', 'Fabrica 1', 'FAB1', 'Pol. Ind. Oeste, Murcia', '${nowISO}', '${nowISO}'),
@@ -120,7 +108,9 @@ INSERT INTO access_logs (id, entry_timestamp, entry_signature_envelope, company_
 ('log-4', '${isoDate(now, "08:15:00.000")}', '{"v":1,"alg":"aes-256-gcm","iv":"test","tag":"test","ct":"test"}', 'Construcciones Murcianas SL', 'Maria', NULL, 'Rodriguez', 'Perez', '87654321B', 0, 'Visita programada', 'site-1', 'user-2', 'pa-1', 'pap-2');
 `;
 
-  process.stdout.write(sql.trim() + "\n");
+  process.stdout.write(
+    sql.replaceAll("INSERT INTO", "INSERT OR IGNORE INTO").trim() + "\n",
+  );
 }
 
 main();

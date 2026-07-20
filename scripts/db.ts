@@ -1,0 +1,144 @@
+import "dotenv/config";
+import { mkdirSync, rmSync, writeFileSync, openSync, closeSync } from "node:fs";
+import { dirname, resolve } from "node:path";
+import { spawnSync } from "node:child_process";
+import { createLocalDb } from "../db/client";
+import { departments, sites, users } from "../db/schema";
+import { hashText } from "../app/lib/hash.server";
+
+const command = process.argv[2] ?? "help";
+const target = getOption("target") ?? "sqlite";
+const mode = getOption("mode") ?? (process.argv.includes("--demo") ? "demo" : "base");
+const databasePath = resolve(
+  (process.env.DATABASE_URL ?? "file:./dev.db").replace(/^file:/, ""),
+);
+
+function getOption(name: string) {
+  const value = process.argv.find((arg) => arg.startsWith(`--${name}=`));
+  return value?.slice(name.length + 3);
+}
+
+function run(commandName: string, args: string[]) {
+  const result = spawnSync(commandName, args, { stdio: "inherit" });
+  if (result.status !== 0) process.exit(result.status ?? 1);
+}
+
+function runWrangler(args: string[]) {
+  run("pnpm", ["exec", "wrangler", ...args]);
+}
+
+async function seedSqlite() {
+  const db = await createLocalDb(databasePath);
+  const siteName = process.env.SITE_NAME || "Sitio principal";
+  const siteSlug = process.env.SITE_SLUG || "PRINCIPAL";
+  const departmentName = process.env.DEPARTMENT_NAME || "General";
+  const departmentSlug = process.env.DEPARTMENT_SLUG || "GENERAL";
+  const adminFullName = process.env.ADMIN_FULL_NAME || "Administrador";
+  const adminUsername = process.env.ADMIN_USERNAME || "admin";
+  const adminPassword = process.env.ADMIN_PASSWORD || "demo123";
+  const password = await hashText(adminPassword);
+
+  await db.insert(sites).values({ id: "site-1", name: siteName, slug: siteSlug })
+    .onConflictDoUpdate({ target: sites.id, set: { name: siteName, slug: siteSlug } });
+  await db.insert(departments).values({ id: "dept-3", name: departmentName, slug: departmentSlug })
+    .onConflictDoUpdate({ target: departments.id, set: { name: departmentName, slug: departmentSlug } });
+  await db.insert(users).values({
+    id: "user-1",
+    fullName: adminFullName,
+    username: adminUsername,
+    password,
+    role: "ADMIN",
+    siteId: "site-1",
+    departmentId: "dept-3",
+  }).onConflictDoUpdate({
+    target: users.id,
+    set: { fullName: adminFullName, username: adminUsername, password, role: "ADMIN" },
+  });
+  console.log(`Base seed completed. Admin username: ${adminUsername}`);
+}
+
+async function seedD1() {
+  if (mode === "demo") {
+    const result = spawnSync("pnpm", ["exec", "tsx", "scripts/seed-remote.ts"], {
+      encoding: "utf8",
+    });
+    if (result.status !== 0) process.exit(result.status ?? 1);
+    const sql = result.stdout;
+    const tempFile = "/tmp/wachiman-seed.sql";
+    writeFileSync(tempFile, sql);
+    runWrangler(["d1", "execute", "wachiman", "--remote", "--file", tempFile]);
+    return;
+  }
+
+  const password = await hashText(process.env.ADMIN_PASSWORD || "demo123");
+  const quote = (value: string) => `'${value.replaceAll("'", "''")}'`;
+  const sql = [
+    `INSERT INTO sites (id, name, slug) VALUES ('site-1', ${quote(process.env.SITE_NAME || "Sitio principal")}, ${quote(process.env.SITE_SLUG || "PRINCIPAL")}) ON CONFLICT(id) DO UPDATE SET name=excluded.name, slug=excluded.slug;`,
+    `INSERT INTO departments (id, name, slug) VALUES ('dept-3', ${quote(process.env.DEPARTMENT_NAME || "General")}, ${quote(process.env.DEPARTMENT_SLUG || "GENERAL")}) ON CONFLICT(id) DO UPDATE SET name=excluded.name, slug=excluded.slug;`,
+    `INSERT INTO users (id, full_name, username, password, role, is_active, is_trashed, site_id, department_id) VALUES ('user-1', ${quote(process.env.ADMIN_FULL_NAME || "Administrador")}, ${quote(process.env.ADMIN_USERNAME || "admin")}, ${quote(password)}, 'ADMIN', 1, 0, 'site-1', 'dept-3') ON CONFLICT(id) DO UPDATE SET full_name=excluded.full_name, username=excluded.username, password=excluded.password, role='ADMIN';`,
+  ].join("\n");
+  const tempFile = "/tmp/wachiman-base-seed.sql";
+  writeFileSync(tempFile, sql);
+  runWrangler(["d1", "execute", "wachiman", "--remote", "--file", tempFile]);
+}
+
+async function main() {
+  if (target !== "sqlite" && target !== "d1") {
+    throw new Error("Target must be sqlite or d1");
+  }
+
+  if (command === "create") {
+    if (target === "d1") runWrangler(["d1", "create", "wachiman"]);
+    else {
+      mkdirSync(dirname(databasePath), { recursive: true });
+      closeSync(openSync(databasePath, "a"));
+      console.log(`SQLite database created at ${databasePath}`);
+    }
+    return;
+  }
+
+  if (command === "migrate") {
+    if (target === "d1") runWrangler(["d1", "migrations", "apply", "wachiman", "--remote"]);
+    else run("pnpm", ["exec", "drizzle-kit", "migrate"]);
+    return;
+  }
+
+  if (command === "reset") {
+    if (target === "d1") {
+      if (!process.argv.includes("--force")) throw new Error("D1 reset requires --force");
+      const tables = [
+        "access_logs", "access_log_vehicles", "worker_documents",
+        "planned_access_persons", "planned_accesses", "external_workers",
+        "users", "work_categories", "companies", "departments", "sites",
+        "__drizzle_migrations",
+      ];
+      runWrangler([
+        "d1", "execute", "wachiman", "--remote", "--command",
+        tables.map((table) => `DROP TABLE IF EXISTS ${table};`).join(" "),
+      ]);
+      runWrangler(["d1", "migrations", "apply", "wachiman", "--remote"]);
+    } else {
+      rmSync(databasePath, { force: true });
+      rmSync(`${databasePath}-wal`, { force: true });
+      rmSync(`${databasePath}-shm`, { force: true });
+      run("pnpm", ["exec", "drizzle-kit", "migrate"]);
+      console.log(`SQLite database recreated at ${databasePath}`);
+    }
+    return;
+  }
+
+  if (command === "seed") {
+    if (target === "d1") await seedD1();
+    else if (mode === "demo") run("pnpm", ["exec", "tsx", "scripts/seed.ts", "--mode=demo"]);
+    else await seedSqlite();
+    return;
+  }
+
+  console.log(`Usage: pnpm db:<command> [--target=sqlite|d1] [--mode=base|demo]`);
+  console.log("Commands: create, migrate, reset, seed");
+}
+
+main().catch((error) => {
+  console.error(error);
+  process.exit(1);
+});
