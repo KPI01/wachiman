@@ -8,17 +8,16 @@ FROM dependencies AS build
 COPY . .
 RUN pnpm build
 
-FROM node:24.18.0-alpine AS production
+FROM dependencies AS production
 WORKDIR /app
 ENV NODE_ENV=production
 ENV HOST=0.0.0.0
 ENV PORT=3000
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-COPY --from=dependencies /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/public ./public
-COPY --from=build /app/db/migrations ./db/migrations
-COPY --from=build /app/db/schema.ts ./db/schema.ts
+COPY --from=build /app/db ./db
+COPY --from=build /app/scripts ./scripts
+COPY --from=build /app/app/lib/hash.server.ts ./app/lib/hash.server.ts
 COPY --from=build /app/drizzle.config.ts ./drizzle.config.ts
 EXPOSE 3000
 CMD ["pnpm", "start"]

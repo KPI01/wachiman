@@ -2,6 +2,6 @@
 build
 node_modules
 README.md
-.env
+.env*
 .git
 *.db
