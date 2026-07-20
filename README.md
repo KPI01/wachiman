@@ -55,6 +55,7 @@ Variables opcionales con valores por defecto en el seed:
 |---|---|
 | `ADMIN_FULL_NAME` | `Administrador` |
 | `ADMIN_USERNAME` | `admin` |
+| `ADMIN_PASSWORD` | `demo123` |
 | `SITE_NAME` | `Sitio principal` |
 | `SITE_SLUG` | `PRINCIPAL` |
 | `DEPARTMENT_NAME` | `General` |
@@ -69,8 +70,10 @@ pnpm install
 ### 3. Configurar la base de datos
 
 ```bash
-pnpm db:push      # Crear/esquema SQLite local
-pnpm db:seed      # Datos demo completos (sitios, usuarios, trabajadores, accesos)
+pnpm db:create
+pnpm db:migrate
+pnpm db:seed              # Sitio, departamento y administrador
+pnpm db:seed:demo         # Datos realistas adicionales, sin borrar datos
 ```
 
 ### 4. Iniciar en desarrollo
@@ -117,11 +120,14 @@ Copiar el `database_id` del output a `wrangler.jsonc`.
 # Generar migraciones (desarrollo)
 pnpm db:generate
 
-# Aplicar a D1 remoto
-npx wrangler d1 execute wachiman --remote --file=db/migrations/0000_hard_dazzler.sql
+# Aplicar migraciones a D1 remoto
+pnpm db:migrate -- --target=d1
 
-# Seed en D1 remoto
-pnpm db:seed-remote
+# Seed principal en D1 remoto
+pnpm db:seed -- --target=d1
+
+# Datos realistas adicionales en D1 remoto
+pnpm db:seed:demo -- --target=d1
 ```
 
 ### 4. Configurar secrets en Cloudflare
