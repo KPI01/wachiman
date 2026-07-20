@@ -158,13 +158,15 @@ pnpm deploy
 pnpm preview
 ```
 
-## Deploy en servidor propio con Podman
+## Deploy en servidor propio con Docker
 
-El proyecto incluye `Dockerfile` y `docker-compose.yml`, compatibles con Podman Compose:
+El proyecto incluye `Dockerfile` y `docker-compose.yml` para despliegue tradicional:
 
 ```bash
-podman compose up -d
+docker compose up -d
 ```
+
+La misma configuración también puede ejecutarse con `podman compose`.
 
 El branding se monta externamente para poder cambiarlo sin reconstruir la imagen:
 
