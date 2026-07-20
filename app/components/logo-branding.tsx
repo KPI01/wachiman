@@ -1,5 +1,6 @@
 import { NavLink } from "react-router";
 import { Separator } from "./ui/separator";
+import { useAppConfig } from "~/lib/app-config";
 
 interface LogoBrandingProps {
   title: string;
@@ -11,13 +12,15 @@ export default function LogoBranding({
   username,
   href,
 }: LogoBrandingProps) {
+  const { appName, appLogo } = useAppConfig();
+
   return (
     <div className="flex items-center gap-3 min-w-0">
       {!href ? (
         <div className="flex w-32 shrink-0 items-center justify-center">
           <img
-            src={process.env.APP_LOGO}
-            alt={`Logo de ${process.env.APP_NAME}`}
+            src={appLogo}
+            alt={`Logo de ${appName}`}
             className="max-h-full max-w-full object-contain"
           />
         </div>
@@ -27,8 +30,8 @@ export default function LogoBranding({
           className="flex w-32 shrink-0 items-center justify-center"
         >
           <img
-            src={process.env.APP_LOGO}
-            alt={`Logo de ${process.env.APP_NAME}`}
+            src={appLogo}
+            alt={`Logo de ${appName}`}
             className="max-h-full max-w-full object-contain"
           />
         </NavLink>

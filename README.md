@@ -166,6 +166,15 @@ El proyecto incluye `Dockerfile` y `docker-compose.yml` para despliegue tradicio
 docker compose up -d
 ```
 
+El branding se monta externamente para poder cambiarlo sin reconstruir la imagen:
+
+```text
+branding/
+└── app_logo.svg
+```
+
+Configura `APP_LOGO` y `APP_FAVICON` con rutas bajo `/branding/` en `.env.production`.
+
 ## Estructura del proyecto
 
 ```

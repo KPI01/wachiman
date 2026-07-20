@@ -14,14 +14,5 @@ export default defineConfig({
     "process.env.NODE_ENV": JSON.stringify(
       process.env.NODE_ENV || "development",
     ),
-    "process.env.APP_NAME": JSON.stringify(
-      process.env.APP_NAME ?? "Wachiman App",
-    ),
-    "process.env.APP_LOGO": JSON.stringify(
-      process.env.APP_LOGO ?? "/app_logo.svg",
-    ),
-    "process.env.APP_FAVICON": JSON.stringify(
-      process.env.APP_FAVICON ?? "/app_logo.svg",
-    ),
   },
 });

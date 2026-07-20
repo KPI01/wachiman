@@ -3,6 +3,7 @@ import type { Route } from "./+types/welcome";
 import CardContainer from "~/components/containers/card-container";
 import { buttonVariants } from "~/components/ui/button";
 import { getSessionUser, getUserRedirectPath } from "~/lib/session.server";
+import { useAppConfig } from "~/lib/app-config";
 
 export async function loader({ request }: Route.LoaderArgs) {
   const user = await getSessionUser(request);
@@ -15,12 +16,14 @@ export async function loader({ request }: Route.LoaderArgs) {
 }
 
 export default function Welcome() {
+  const { appName } = useAppConfig();
+
   return (
     <>
-      <title>{process.env.APP_NAME}</title>
+      <title>{appName}</title>
       <CardContainer
         className="min-w-xs md:min-w-lg"
-        title={`Bienvenido a ${process.env.APP_NAME}`}
+        title={`Bienvenido a ${appName}`}
         description="Software para el control de accesos de una fábrica"
       >
         <div className="flex gap-3 justify-end">

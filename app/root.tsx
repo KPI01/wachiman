@@ -7,12 +7,20 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
+  useLoaderData,
 } from "react-router";
 
 import type { Route } from "./+types/root";
 import { Toaster } from "~/components/ui/sonner";
 import { initLocalDb, isDbInitialized } from "../db/server";
+import { AppConfigContext } from "~/lib/app-config";
+import type { AppConfig } from "~/lib/app-config";
+import { getAppConfig } from "~/lib/app-config.server";
 import "./app.css";
+
+export function loader() {
+  return getAppConfig();
+}
 
 export const middleware: Route.MiddlewareFunction[] = [
   async (_, next) => {
@@ -24,21 +32,22 @@ export const middleware: Route.MiddlewareFunction[] = [
   }
 ];
 
-export const links: Route.LinksFunction = () => [
-  { rel: "icon", type: "image/svg", href: process.env.APP_FAVICON },
-];
-
 export function Layout({ children }: { children: React.ReactNode }) {
+  const appConfig = useLoaderData() as AppConfig;
+
   return (
     <html lang="es" suppressHydrationWarning>
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link rel="icon" type="image/svg+xml" href={appConfig.appFavicon} />
         <Meta />
         <Links />
       </head>
       <body className="min-h-dvh w-full max-w-dvw grid grid-cols-1 grid-rows-1">
-        {children}
+        <AppConfigContext.Provider value={appConfig}>
+          {children}
+        </AppConfigContext.Provider>
         <Toaster />
         <ScrollRestoration />
         <Scripts />

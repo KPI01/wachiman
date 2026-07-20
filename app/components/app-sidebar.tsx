@@ -21,6 +21,7 @@ import {
   CollapsibleTrigger,
 } from "./ui/collapsible";
 import { Separator } from "./ui/separator";
+import { useAppConfig } from "~/lib/app-config";
 
 type SidebarLink = {
   label: string;
@@ -44,14 +45,16 @@ function hasChildren(item: SidebarLinkItem): item is SidebarGroupLinks {
 }
 
 export default function AppSidebar({
-  title = process.env.APP_NAME,
+  title,
   items,
   ...props
 }: AppSidebarProps) {
+  const { appName } = useAppConfig();
+
   return (
     <Sidebar collapsible="offcanvas" {...props}>
       <SidebarHeader className="m-2">
-        <span className="font-bold text-4xl md:text-2xl">{title}</span>
+        <span className="font-bold text-4xl md:text-2xl">{title ?? appName}</span>
       </SidebarHeader>
       <Separator />
       <SidebarContent className="px-2">
