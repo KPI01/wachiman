@@ -1,6 +1,7 @@
 .DS_Store
 .env
 .env*
+/branding/
 /node_modules/
 
 # React Router
