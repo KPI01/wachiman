@@ -10,9 +10,4 @@ export default defineConfig({
   ssr: {
     external: ["better-sqlite3"],
   },
-  define: {
-    "process.env.NODE_ENV": JSON.stringify(
-      process.env.NODE_ENV || "development",
-    ),
-  },
 });

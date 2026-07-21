@@ -17,7 +17,7 @@ export default function LogoBranding({
   return (
     <div className="flex items-center gap-3 min-w-0">
       {!href ? (
-        <div className="flex w-32 shrink-0 items-center justify-center">
+        <div className="flex w-14 shrink-0 items-center justify-center">
           <img
             src={appLogo}
             alt={`Logo de ${appName}`}
