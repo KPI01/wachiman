@@ -1,4 +1,6 @@
-import "dotenv/config";
+import { config as loadEnv } from "dotenv";
+
+loadEnv({ quiet: true });
 import { defineConfig } from "drizzle-kit";
 
 export default defineConfig({

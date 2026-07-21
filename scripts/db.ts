@@ -8,7 +8,7 @@ import { hashText } from "../app/lib/hash.server";
 
 const options = parseOptions(process.argv.slice(2));
 if (options.envPath) {
-  loadEnv({ path: options.envPath, override: false });
+  loadEnv({ path: options.envPath, override: false, quiet: true });
 }
 
 const command = options.command;

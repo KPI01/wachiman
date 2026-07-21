@@ -1,4 +1,6 @@
-import "dotenv/config";
+import { config as loadEnv } from "dotenv";
+
+loadEnv({ quiet: true });
 import { createLocalDb } from "../db/client";
 import {
   accessLogs,
