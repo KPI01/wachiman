@@ -1,6 +1,8 @@
 .DS_Store
 .env
 .env*
+!.env.local.example
+!.env.production.example
 /branding/
 /node_modules/
 
