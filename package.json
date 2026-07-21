@@ -16,6 +16,7 @@
     "typecheck": "react-router typegen && tsc",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx scripts/db.ts migrate",
+    "db:setup": "tsx scripts/db.ts setup",
     "db:reset": "tsx scripts/db.ts reset",
     "db:seed": "tsx scripts/db.ts seed",
     "env:set-remote": "bash scripts/set-remote-secrets.sh",
