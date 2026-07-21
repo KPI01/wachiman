@@ -13,7 +13,7 @@ import {
 import type { Route } from "./+types/root";
 import { Toaster } from "~/components/ui/sonner";
 import { initLocalDb, isDbInitialized } from "../db/server";
-import { AppConfigContext } from "~/lib/app-config";
+import { AppConfigContext, DEFAULT_APP_CONFIG } from "~/lib/app-config";
 import type { AppConfig } from "~/lib/app-config";
 import { getAppConfig } from "~/lib/app-config.server";
 import "./app.css";
@@ -33,7 +33,8 @@ export const middleware: Route.MiddlewareFunction[] = [
 ];
 
 export function Layout({ children }: { children: React.ReactNode }) {
-  const appConfig = useLoaderData() as AppConfig;
+  const appConfig =
+    (useLoaderData() as AppConfig | undefined) ?? DEFAULT_APP_CONFIG;
 
   return (
     <html lang="es" suppressHydrationWarning>
