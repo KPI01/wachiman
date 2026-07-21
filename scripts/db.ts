@@ -1,21 +1,68 @@
-import "dotenv/config";
 import { mkdirSync, rmSync, writeFileSync, openSync, closeSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
+import { config as loadEnv } from "dotenv";
 import { createLocalDb } from "../db/client";
 import { departments, sites, users } from "../db/schema";
 import { hashText } from "../app/lib/hash.server";
 
-const command = process.argv[2] ?? "help";
-const target = getOption("target") ?? "sqlite";
-const mode = getOption("mode") ?? (process.argv.includes("--demo") ? "demo" : "base");
+const options = parseOptions(process.argv.slice(2));
+if (options.envPath) {
+  loadEnv({ path: options.envPath, override: false });
+}
+
+const command = options.command;
+const target = options.target;
+const mode = options.mode;
 const databasePath = resolve(
   (process.env.DATABASE_URL ?? "file:./dev.db").replace(/^file:/, ""),
 );
 
-function getOption(name: string) {
-  const value = process.argv.find((arg) => arg.startsWith(`--${name}=`));
-  return value?.slice(name.length + 3);
+type DbOptions = {
+  command: string;
+  target: string;
+  mode: string;
+  envPath?: string;
+};
+
+function parseOptions(args: string[]): DbOptions {
+  const options: DbOptions = {
+    command: args[0] ?? "help",
+    target: "sqlite",
+    mode: "base",
+  };
+
+  for (let index = 1; index < args.length; index += 1) {
+    const argument = args[index];
+
+    if (argument === "--") continue;
+
+    const equalIndex = argument.indexOf("=");
+    const name = equalIndex === -1 ? argument : argument.slice(0, equalIndex);
+    const inlineValue = equalIndex === -1 ? undefined : argument.slice(equalIndex + 1);
+    const value = inlineValue ?? args[index + 1];
+
+    if (name === "--target" || name === "--mode" || name === "--env") {
+      if (!value) throw new Error(`Missing value for ${name}`);
+      if (name === "--target") options.target = value;
+      if (name === "--mode") options.mode = value;
+      if (name === "--env") {
+        options.envPath = resolve(value);
+      }
+      if (inlineValue === undefined) index += 1;
+      continue;
+    }
+
+    if (argument === "--demo") {
+      options.mode = "demo";
+      continue;
+    }
+
+    if (argument === "--force") continue;
+    throw new Error(`Unknown argument: ${argument}`);
+  }
+
+  return options;
 }
 
 function run(commandName: string, args: string[]) {
@@ -57,6 +104,11 @@ async function seedSqlite() {
   console.log(`Base seed completed. Admin username: ${adminUsername}`);
 }
 
+function prepareSqlite() {
+  mkdirSync(dirname(databasePath), { recursive: true });
+  closeSync(openSync(databasePath, "a"));
+}
+
 async function seedD1() {
   if (mode === "demo") {
     const result = spawnSync("pnpm", ["exec", "tsx", "scripts/seed-remote.ts"], {
@@ -90,8 +142,7 @@ async function main() {
   if (command === "create") {
     if (target === "d1") runWrangler(["d1", "create", "wachiman"]);
     else {
-      mkdirSync(dirname(databasePath), { recursive: true });
-      closeSync(openSync(databasePath, "a"));
+      prepareSqlite();
       console.log(`SQLite database created at ${databasePath}`);
     }
     return;
@@ -100,6 +151,19 @@ async function main() {
   if (command === "migrate") {
     if (target === "d1") runWrangler(["d1", "migrations", "apply", "wachiman", "--remote"]);
     else run("pnpm", ["exec", "drizzle-kit", "migrate"]);
+    return;
+  }
+
+  if (command === "setup") {
+    if (target !== "sqlite") {
+      throw new Error("db:setup only supports SQLite; use db:migrate and db:seed for D1");
+    }
+    if (mode !== "base") {
+      throw new Error("db:setup does not accept --mode; run db:seed --mode=demo separately");
+    }
+    prepareSqlite();
+    run("pnpm", ["exec", "drizzle-kit", "migrate"]);
+    await seedSqlite();
     return;
   }
 
@@ -118,9 +182,11 @@ async function main() {
       ]);
       runWrangler(["d1", "migrations", "apply", "wachiman", "--remote"]);
     } else {
+      prepareSqlite();
       rmSync(databasePath, { force: true });
       rmSync(`${databasePath}-wal`, { force: true });
       rmSync(`${databasePath}-shm`, { force: true });
+      prepareSqlite();
       run("pnpm", ["exec", "drizzle-kit", "migrate"]);
       console.log(`SQLite database recreated at ${databasePath}`);
     }
@@ -135,7 +201,7 @@ async function main() {
   }
 
   console.log(`Usage: pnpm db:<command> [--target=sqlite|d1] [--mode=base|demo]`);
-  console.log("Commands: create, migrate, reset, seed");
+  console.log("Commands: migrate, setup, reset, seed");
 }
 
 main().catch((error) => {

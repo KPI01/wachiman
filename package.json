@@ -18,7 +18,6 @@
     "db:migrate": "tsx scripts/db.ts migrate",
     "db:reset": "tsx scripts/db.ts reset",
     "db:seed": "tsx scripts/db.ts seed",
-    "db:seed:demo": "tsx scripts/db.ts seed --mode=demo",
     "env:set-remote": "bash scripts/set-remote-secrets.sh",
     "env:set-encryption-key": "tsx scripts/set-encryption-key.ts",
     "env:set-session-secret": "tsx scripts/set-session-secret.ts"
