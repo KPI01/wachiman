@@ -33,10 +33,10 @@ Sistema de control de acceso industrial para el registro, monitoreo y gestión d
 
 ### 1. Variables de entorno
 
-Copia el archivo de ejemplo y configura las variables:
+Copia el archivo de ejemplo local y configura las variables:
 
 ```bash
-cp .env.example .env
+cp .env.local.example .env.local
 ```
 
 El seed usa la contraseña por defecto `demo123` para todos los usuarios de prueba.
@@ -80,19 +80,20 @@ pnpm install
 ### 3. Configurar la base de datos
 
 ```bash
-pnpm db:create
-pnpm db:migrate
-pnpm db:seed              # Sitio, departamento y administrador
-pnpm db:seed:demo         # Datos realistas adicionales, sin borrar datos
+pnpm db:setup -- --env=.env.local
+pnpm db:seed -- --env=.env.local --mode=demo  # Opcional: datos realistas
 ```
+
+`db:setup` prepara únicamente SQLite: crea el archivo, aplica migraciones y ejecuta el seed básico. El modo demo se carga después con `db:seed --mode=demo`.
 
 ### 4. Iniciar en desarrollo
 
 ```bash
-pnpm dev
+pnpm build:local
+pnpm start:local
 ```
 
-La aplicación estará disponible en `http://localhost:5173`.
+La aplicación estará disponible en `http://localhost:3000`.
 
 ### 5. Construcción para producción (Node.js)
 
@@ -137,7 +138,7 @@ pnpm db:migrate -- --target=d1
 pnpm db:seed -- --target=d1
 
 # Datos realistas adicionales en D1 remoto
-pnpm db:seed:demo -- --target=d1
+pnpm db:seed -- --target=d1 --mode=demo
 ```
 
 ### 4. Configurar secrets en Cloudflare
@@ -247,7 +248,8 @@ wachiman/
 ├── worker/
 │   └── index.ts                    # Entry point para Cloudflare Workers
 ├── wrangler.jsonc                  # Configuración de Wrangler (D1 binding, assets, vars) 
-├── .env.example                    # Plantilla de variables de entorno
+├── .env.local.example               # Plantilla de variables locales
+├── .env.production.example          # Plantilla de variables on-premise
 ├── .dev.vars                       # Secrets para desarrollo local con Wrangler
 └── scripts/                        # Scripts auxiliares
 ```
