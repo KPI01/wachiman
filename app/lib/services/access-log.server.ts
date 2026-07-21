@@ -31,7 +31,7 @@ export async function getManyAccessLogs(input?: GetManyAccessLogsInput) {
     status === "INSIDE"
       ? null
       : status === "OUTSIDE"
-        ? { not: null }
+        ? { not: null as null }
         : undefined;
 
   return await AccessLogEntity.findMany({

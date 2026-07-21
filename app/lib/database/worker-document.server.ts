@@ -50,7 +50,7 @@ export class WorkerDocumentEntity {
       .where(
         and(
           eq(workerDocuments.status, "VALIDATED" as DocumentStatus),
-          lte(workerDocuments.expiryDate, new Date().toISOString()),
+          lte(workerDocuments.expiryDate, new Date()),
         ),
       )
       .all();
@@ -77,7 +77,7 @@ export class WorkerDocumentEntity {
           eq(workerDocuments.externalWorkerId, workerId),
           eq(workerDocuments.documentType, documentType),
           eq(workerDocuments.status, "VALIDATED" as DocumentStatus),
-          gte(workerDocuments.expiryDate, new Date().toISOString()),
+          gte(workerDocuments.expiryDate, new Date()),
         ),
       )
       .all();

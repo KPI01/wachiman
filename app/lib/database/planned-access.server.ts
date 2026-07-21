@@ -1,4 +1,4 @@
-import { and, count, desc, eq, gte, inArray, lte, ne, or } from "drizzle-orm";
+import { and, count, desc, eq, gte, inArray, isNull, lte, ne, or } from "drizzle-orm";
 import { db } from "../../../db/server";
 import {
   accessLogs,
@@ -12,10 +12,8 @@ export type PlannedAccessListItem = typeof plannedAccesses.$inferSelect & {
   site?: { id: string; name: string } | null;
   requestedBy?: { id: string; fullName: string; username: string } | null;
   approvedBy?: { id: string; fullName: string; username: string } | null;
-  plannedAccessPersons?: Array<{
-    id: string;
-    legalIdSnapshot: string;
-    accessLogs?: Array<{ id: string }>;
+  plannedAccessPersons: Array<typeof plannedAccessPersons.$inferSelect & {
+    accessLogs: Array<{ id: string }>;
   }>;
 };
 
@@ -62,8 +60,8 @@ const ACTIVE_STATUSES: PlannedAccessStatus[] = [
 export type OverlappingPlannedAccess = {
   id: string;
   companySnapshot: string;
-  expectedStartDatetime: string;
-  expectedEndDatetime: string | null;
+  expectedStartDatetime: Date;
+  expectedEndDatetime: Date | null;
   plannedAccessPersons: Array<{ legalIdSnapshot: string }>;
 };
 
@@ -72,8 +70,8 @@ export class PlannedAccessEntity {
     const [pa] = await db
       .insert(plannedAccesses)
       .values({
-        expectedStartDatetime: data.expectedStartDatetime.toISOString(),
-        expectedEndDatetime: data.expectedEndDatetime?.toISOString(),
+        expectedStartDatetime: data.expectedStartDatetime,
+        expectedEndDatetime: data.expectedEndDatetime ?? null,
         companySnapshot: data.companySnapshot,
         visitReason: data.visitReason,
         requestedById: data.requestedById,
@@ -126,8 +124,8 @@ export class PlannedAccessEntity {
 
       conditions.push(
         and(
-          gte(plannedAccesses.expectedStartDatetime, startOfDay.toISOString()),
-          lte(plannedAccesses.expectedStartDatetime, endOfDay.toISOString()),
+          gte(plannedAccesses.expectedStartDatetime, startOfDay),
+          lte(plannedAccesses.expectedStartDatetime, endOfDay),
         )!,
       );
     }
@@ -230,7 +228,7 @@ export class PlannedAccessEntity {
       .set({
         status: data.status,
         approvedById: data.approvedById,
-        approvedAt: data.approvedAt?.toISOString(),
+        approvedAt: data.approvedAt ?? null,
       })
       .where(eq(plannedAccesses.id, data.id))
       .returning();
@@ -255,7 +253,7 @@ export class PlannedAccessEntity {
     excludeId?: string,
   ): Promise<OverlappingPlannedAccess[]> {
     const conditions = [
-      inArray(plannedAccesses.status, ACTIVE_STATUSES as string[]),
+      inArray(plannedAccesses.status, ACTIVE_STATUSES),
       eq(plannedAccesses.siteId, siteId),
     ];
 
@@ -263,10 +261,10 @@ export class PlannedAccessEntity {
 
     const endDate = expectedEnd ?? new Date(2100, 0, 1);
     const overlapCondition = and(
-      lte(plannedAccesses.expectedStartDatetime, endDate.toISOString()),
+      lte(plannedAccesses.expectedStartDatetime, endDate),
       or(
-        eq(plannedAccesses.expectedEndDatetime, null as unknown as string),
-        gte(plannedAccesses.expectedEndDatetime, expectedStart.toISOString()),
+        isNull(plannedAccesses.expectedEndDatetime),
+        gte(plannedAccesses.expectedEndDatetime, expectedStart),
       ),
     );
 
@@ -318,7 +316,7 @@ export class PlannedAccessEntity {
     if (paIds.length === 0) return [];
 
     const conditions = [
-      inArray(plannedAccesses.status, ACTIVE_STATUSES as string[]),
+      inArray(plannedAccesses.status, ACTIVE_STATUSES),
       inArray(plannedAccesses.id, paIds as [string, ...string[]]),
     ];
 
@@ -327,10 +325,10 @@ export class PlannedAccessEntity {
 
     const endDate = expectedEnd ?? new Date(2100, 0, 1);
     const overlapCondition = and(
-      lte(plannedAccesses.expectedStartDatetime, endDate.toISOString()),
+      lte(plannedAccesses.expectedStartDatetime, endDate),
       or(
-        eq(plannedAccesses.expectedEndDatetime, null as unknown as string),
-        gte(plannedAccesses.expectedEndDatetime, expectedStart.toISOString()),
+        isNull(plannedAccesses.expectedEndDatetime),
+        gte(plannedAccesses.expectedEndDatetime, expectedStart),
       ),
     );
 

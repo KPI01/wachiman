@@ -1,4 +1,4 @@
-import { and, eq, like, or, desc, sql } from "drizzle-orm";
+import { and, eq, like, or, desc, ne, sql } from "drizzle-orm";
 import { db } from "../../../db/server";
 import {
   externalWorkers,
@@ -15,13 +15,13 @@ export type ExternalWorkerDetail = typeof externalWorkers.$inferSelect & {
     status: string;
     fileName: string;
     filePath: string;
-    expiryDate: string;
-    createdAt: string;
+    expiryDate: Date;
+    createdAt: Date;
   }>;
   accessLogs?: Array<{
     id: string;
-    entryTimestamp: string;
-    exitTimestamp: string | null;
+    entryTimestamp: Date;
+    exitTimestamp: Date | null;
     site: { id: string; name: string } | null;
     createdBy: { id: string; fullName: string; username: string } | null;
   }>;
@@ -32,8 +32,8 @@ export type ExternalWorkerDetail = typeof externalWorkers.$inferSelect & {
     legalIdSnapshot: string;
     plannedAccess: {
       id: string;
-      expectedStartDatetime: string;
-      expectedEndDatetime: string | null;
+      expectedStartDatetime: Date;
+      expectedEndDatetime: Date | null;
       status: string;
       site: { id: string; name: string } | null;
       requestedBy: { id: string; fullName: string } | null;

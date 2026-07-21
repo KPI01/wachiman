@@ -8,6 +8,13 @@
       "when": 1784376913727,
       "tag": "0000_hard_dazzler",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1784640936067,
+      "tag": "0001_little_shockwave",
+      "breakpoints": true
     }
   ]
 }

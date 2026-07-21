@@ -28,6 +28,12 @@ twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
 const lastWeek = new Date(todayMidnight);
 lastWeek.setDate(lastWeek.getDate() - 7);
 
+function at(date: Date, hours: number, minutes = 0) {
+  const result = new Date(date);
+  result.setHours(hours, minutes, 0, 0);
+  return result;
+}
+
 async function main() {
   const db = await createLocalDb();
 
@@ -130,18 +136,18 @@ async function main() {
   ]).onConflictDoNothing();
 
   await db.insert(workerDocuments).values([
-    { id: "doc-1", documentType: "IDENTIFICATION", status: "VALIDATED", fileName: "DNI_Antonio.pdf", filePath: "/var/uploads/workers/worker-1/DNI_Antonio.pdf", fileSize: 245760, mimeType: "application/pdf", expiryDate: "2028-06-15T00:00:00.000Z", externalWorkerId: "worker-1" },
-    { id: "doc-2", documentType: "TRAINING", status: "VALIDATED", fileName: "Curso_electricidad_2026.pdf", filePath: "/var/uploads/workers/worker-1/Curso_electricidad.pdf", fileSize: 512000, mimeType: "application/pdf", expiryDate: "2027-03-20T00:00:00.000Z", externalWorkerId: "worker-1" },
-    { id: "doc-3", documentType: "IDENTIFICATION", status: "VALIDATED", fileName: "DNI_MariaR.pdf", filePath: "/var/uploads/workers/worker-2/DNI_MariaR.pdf", fileSize: 250000, mimeType: "application/pdf", expiryDate: "2029-11-30T00:00:00.000Z", externalWorkerId: "worker-2" },
-    { id: "doc-4", documentType: "IDENTIFICATION", status: "VALIDATED", fileName: "DNI_Francisco.pdf", filePath: "/var/uploads/workers/worker-3/DNI_Francisco.pdf", fileSize: 240000, mimeType: "application/pdf", expiryDate: "2027-08-15T00:00:00.000Z", externalWorkerId: "worker-3" },
-    { id: "doc-5", documentType: "TRAINING", status: "EXPIRED", fileName: "Curso_soldadura_2024.pdf", filePath: "/var/uploads/workers/worker-3/Curso_soldadura_2024.pdf", fileSize: 480000, mimeType: "application/pdf", expiryDate: "2025-01-10T00:00:00.000Z", notes: "Curso caducado", externalWorkerId: "worker-3" },
-    { id: "doc-6", documentType: "IDENTIFICATION", status: "VALIDATED", fileName: "DNI_Pedro.pdf", filePath: "/var/uploads/workers/worker-5/DNI_Pedro.pdf", fileSize: 235000, mimeType: "application/pdf", expiryDate: "2028-05-20T00:00:00.000Z", externalWorkerId: "worker-5" },
+    { id: "doc-1", documentType: "IDENTIFICATION", status: "VALIDATED", fileName: "DNI_Antonio.pdf", filePath: "/var/uploads/workers/worker-1/DNI_Antonio.pdf", fileSize: 245760, mimeType: "application/pdf", expiryDate: new Date("2028-06-15T00:00:00.000Z"), externalWorkerId: "worker-1" },
+    { id: "doc-2", documentType: "TRAINING", status: "VALIDATED", fileName: "Curso_electricidad_2026.pdf", filePath: "/var/uploads/workers/worker-1/Curso_electricidad.pdf", fileSize: 512000, mimeType: "application/pdf", expiryDate: new Date("2027-03-20T00:00:00.000Z"), externalWorkerId: "worker-1" },
+    { id: "doc-3", documentType: "IDENTIFICATION", status: "VALIDATED", fileName: "DNI_MariaR.pdf", filePath: "/var/uploads/workers/worker-2/DNI_MariaR.pdf", fileSize: 250000, mimeType: "application/pdf", expiryDate: new Date("2029-11-30T00:00:00.000Z"), externalWorkerId: "worker-2" },
+    { id: "doc-4", documentType: "IDENTIFICATION", status: "VALIDATED", fileName: "DNI_Francisco.pdf", filePath: "/var/uploads/workers/worker-3/DNI_Francisco.pdf", fileSize: 240000, mimeType: "application/pdf", expiryDate: new Date("2027-08-15T00:00:00.000Z"), externalWorkerId: "worker-3" },
+    { id: "doc-5", documentType: "TRAINING", status: "EXPIRED", fileName: "Curso_soldadura_2024.pdf", filePath: "/var/uploads/workers/worker-3/Curso_soldadura_2024.pdf", fileSize: 480000, mimeType: "application/pdf", expiryDate: new Date("2025-01-10T00:00:00.000Z"), notes: "Curso caducado", externalWorkerId: "worker-3" },
+    { id: "doc-6", documentType: "IDENTIFICATION", status: "VALIDATED", fileName: "DNI_Pedro.pdf", filePath: "/var/uploads/workers/worker-5/DNI_Pedro.pdf", fileSize: 235000, mimeType: "application/pdf", expiryDate: new Date("2028-05-20T00:00:00.000Z"), externalWorkerId: "worker-5" },
   ]).onConflictDoNothing();
 
   await db.insert(plannedAccesses).values([
-    { id: "pa-1", expectedStartDatetime: tomorrowMidnight.toISOString().replace("T00:00:00.000Z", "T08:00:00.000Z"), expectedEndDatetime: tomorrowMidnight.toISOString().replace("T00:00:00.000Z", "T18:00:00.000Z"), status: "APPROVED", companySnapshot: "Construcciones Murcianas SL", visitReason: "Reparacion de instalacion electrica en nave 3", approvedById: "user-1", requestedById: "user-4", siteId: "site-1" },
-    { id: "pa-2", expectedStartDatetime: tomorrowMidnight.toISOString().replace("T00:00:00.000Z", "T09:00:00.000Z"), status: "PENDING_APPROVAL", companySnapshot: "Grupo Electrica Levante SA", visitReason: "Mantenimiento climatizacion oficinas", approvedById: "user-1", requestedById: "user-4", siteId: "site-2" },
-    { id: "pa-3", expectedStartDatetime: lastWeek.toISOString().replace("T00:00:00.000Z", "T08:00:00.000Z"), expectedEndDatetime: lastWeek.toISOString().replace("T00:00:00.000Z", "T15:00:00.000Z"), status: "USED", companySnapshot: "Transportes Martinez SL", visitReason: "Carga de mercancia en almacen", approvedById: "user-1", requestedById: "user-4", siteId: "site-1" },
+    { id: "pa-1", expectedStartDatetime: at(tomorrowMidnight, 8), expectedEndDatetime: at(tomorrowMidnight, 18), status: "APPROVED", companySnapshot: "Construcciones Murcianas SL", visitReason: "Reparacion de instalacion electrica en nave 3", approvedById: "user-1", requestedById: "user-4", siteId: "site-1" },
+    { id: "pa-2", expectedStartDatetime: at(tomorrowMidnight, 9), status: "PENDING_APPROVAL", companySnapshot: "Grupo Electrica Levante SA", visitReason: "Mantenimiento climatizacion oficinas", approvedById: "user-1", requestedById: "user-4", siteId: "site-2" },
+    { id: "pa-3", expectedStartDatetime: at(lastWeek, 8), expectedEndDatetime: at(lastWeek, 15), status: "USED", companySnapshot: "Transportes Martinez SL", visitReason: "Carga de mercancia en almacen", approvedById: "user-1", requestedById: "user-4", siteId: "site-1" },
   ]).onConflictDoNothing();
 
   await db.insert(plannedAccessPersons).values([
@@ -157,16 +163,22 @@ async function main() {
     { id: "vehicle-1", typeSnapshot: "Camion", brandSnapshot: "Iveco", modelSnapshot: "Eurocargo", plateSnapshot: "1234ABC" },
   ]).onConflictDoNothing();
 
-  const log1entry = yesterdayMidnight.toISOString().replace("T00:00:00.000Z", "T07:30:00.000Z");
-  const log1exit = yesterdayMidnight.toISOString().replace("T00:00:00.000Z", "T16:00:00.000Z");
-  const log2entry = yesterdayMidnight.toISOString().replace("T00:00:00.000Z", "T08:00:00.000Z");
-  const log2exit = yesterdayMidnight.toISOString().replace("T00:00:00.000Z", "T17:30:00.000Z");
-  const log3entry = now.toISOString();
-  const log4entry = now.toISOString();
+  const log1entry = at(yesterdayMidnight, 7, 30);
+  const log1exit = at(yesterdayMidnight, 16);
+  const log2entry = at(yesterdayMidnight, 8);
+  const log2exit = at(yesterdayMidnight, 17, 30);
+  const log3entry = now;
+  const log4entry = now;
 
-  const demoEnvelope = '{"v":1,"alg":"aes-256-gcm","iv":"dGVzdA==","tag":"dGVzdA==","ct":"dGVzdA=="}';
+  const demoEnvelope = {
+    v: 1,
+    alg: "aes-256-gcm",
+    iv: "dGVzdA==",
+    tag: "dGVzdA==",
+    ct: "dGVzdA==",
+  };
 
-  await db.insert(accessLogs).values([
+  const demoLogs: Array<typeof accessLogs.$inferInsert> = [
     {
       id: "log-1",
       entryTimestamp: log1entry,
@@ -240,7 +252,8 @@ async function main() {
       plannedAccessId: "pa-1",
       plannedAccessPersonId: "pap-2",
     },
-  ]).onConflictDoNothing();
+  ];
+  await db.insert(accessLogs).values(demoLogs).onConflictDoNothing();
 
   console.log("Seed demo completado. Los usuarios demo usan la contraseña demo123.");
 }

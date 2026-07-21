@@ -13,6 +13,11 @@ function makeId() {
   return crypto.randomUUID();
 }
 
+const timestampDefault = sql`(
+  CAST(strftime('%s', 'now') AS INTEGER) * 1000
+  + CAST(substr(strftime('%f', 'now'), 4, 3) AS INTEGER)
+)`;
+
 // ───── Sites ─────────────────────────────────────────
 
 export const sites = sqliteTable("sites", {
@@ -20,12 +25,8 @@ export const sites = sqliteTable("sites", {
   name: text("name").notNull(),
   slug: text("slug").notNull().unique(),
   address: text("address"),
-  createdAt: text("created_at")
-    .notNull()
-    .default(sql`(CURRENT_TIMESTAMP)`),
-  updatedAt: text("updated_at")
-    .notNull()
-    .default(sql`(CURRENT_TIMESTAMP)`),
+  createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull().default(timestampDefault),
+  updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull().default(timestampDefault),
 });
 
 // ───── Departments ───────────────────────────────────
@@ -34,12 +35,8 @@ export const departments = sqliteTable("departments", {
   id: text("id").primaryKey().$default(makeId),
   name: text("name").notNull(),
   slug: text("slug").notNull().unique(),
-  createdAt: text("created_at")
-    .notNull()
-    .default(sql`(CURRENT_TIMESTAMP)`),
-  updatedAt: text("updated_at")
-    .notNull()
-    .default(sql`(CURRENT_TIMESTAMP)`),
+  createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull().default(timestampDefault),
+  updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull().default(timestampDefault),
 });
 
 // ───── Users ─────────────────────────────────────────
@@ -58,12 +55,8 @@ export const users = sqliteTable("users", {
   departmentId: text("department_id")
     .notNull()
     .references(() => departments.id),
-  createdAt: text("created_at")
-    .notNull()
-    .default(sql`(CURRENT_TIMESTAMP)`),
-  updatedAt: text("updated_at")
-    .notNull()
-    .default(sql`(CURRENT_TIMESTAMP)`),
+  createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull().default(timestampDefault),
+  updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull().default(timestampDefault),
 });
 
 // ───── Companies ─────────────────────────────────────
@@ -76,12 +69,8 @@ export const companies = sqliteTable("companies", {
   phone: text("phone"),
   email: text("email"),
   slug: text("slug").notNull().unique(),
-  createdAt: text("created_at")
-    .notNull()
-    .default(sql`(CURRENT_TIMESTAMP)`),
-  updatedAt: text("updated_at")
-    .notNull()
-    .default(sql`(CURRENT_TIMESTAMP)`),
+  createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull().default(timestampDefault),
+  updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull().default(timestampDefault),
 });
 
 // ───── Work Categories ───────────────────────────────
@@ -96,12 +85,8 @@ export const workCategories = sqliteTable("work_categories", {
   requiresTraining: integer("requires_training", { mode: "boolean" }).default(
     false,
   ),
-  createdAt: text("created_at")
-    .notNull()
-    .default(sql`(CURRENT_TIMESTAMP)`),
-  updatedAt: text("updated_at")
-    .notNull()
-    .default(sql`(CURRENT_TIMESTAMP)`),
+  createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull().default(timestampDefault),
+  updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull().default(timestampDefault),
 });
 
 // ───── External Workers ──────────────────────────────
@@ -120,12 +105,8 @@ export const externalWorkers = sqliteTable("external_workers", {
   workCategoryId: text("work_category_id")
     .notNull()
     .references(() => workCategories.id),
-  createdAt: text("created_at")
-    .notNull()
-    .default(sql`(CURRENT_TIMESTAMP)`),
-  updatedAt: text("updated_at")
-    .notNull()
-    .default(sql`(CURRENT_TIMESTAMP)`),
+  createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull().default(timestampDefault),
+  updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull().default(timestampDefault),
 });
 
 // ───── Worker Documents ──────────────────────────────
@@ -140,19 +121,15 @@ export const workerDocuments = sqliteTable("worker_documents", {
   filePath: text("file_path").notNull(),
   fileSize: integer("file_size"),
   mimeType: text("mime_type"),
-  expiryDate: text("expiry_date").notNull(),
+  expiryDate: integer("expiry_date", { mode: "timestamp_ms" }).notNull(),
   notes: text("notes"),
   externalWorkerId: text("external_worker_id")
     .notNull()
     .references(() => externalWorkers.id, {
       onDelete: "cascade",
     }),
-  createdAt: text("created_at")
-    .notNull()
-    .default(sql`(CURRENT_TIMESTAMP)`),
-  updatedAt: text("updated_at")
-    .notNull()
-    .default(sql`(CURRENT_TIMESTAMP)`),
+  createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull().default(timestampDefault),
+  updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull().default(timestampDefault),
 });
 
 // ───── Audit Logs ────────────────────────────────────
@@ -165,9 +142,7 @@ export const auditLogs = sqliteTable("audit_logs", {
   changedBy: text("changed_by").notNull(),
   summary: text("summary").notNull(),
   metadata: text("metadata", { mode: "json" }).$type<Record<string, unknown>>(),
-  createdAt: text("created_at")
-    .notNull()
-    .default(sql`(CURRENT_TIMESTAMP)`),
+  createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull().default(timestampDefault),
 });
 
 // ───── Access Log Vehicles ───────────────────────────
@@ -184,13 +159,13 @@ export const accessLogVehicles = sqliteTable("access_log_vehicles", {
 
 export const accessLogs = sqliteTable("access_logs", {
   id: text("id").primaryKey().$default(makeId),
-  entryTimestamp: text("entry_timestamp").notNull(),
+  entryTimestamp: integer("entry_timestamp", { mode: "timestamp_ms" }).notNull(),
   entrySignatureEnvelope: text("entry_signature_envelope", {
     mode: "json",
   })
     .$type<Record<string, unknown>>()
     .notNull(),
-  exitTimestamp: text("exit_timestamp"),
+  exitTimestamp: integer("exit_timestamp", { mode: "timestamp_ms" }),
   exitSignatureEnvelope: text("exit_signature_envelope", { mode: "json" })
     .$type<Record<string, unknown>>(),
   companyNameSnapshot: text("company_name_snapshot").notNull(),
@@ -225,14 +200,14 @@ export const accessLogs = sqliteTable("access_logs", {
 
 export const plannedAccesses = sqliteTable("planned_accesses", {
   id: text("id").primaryKey().$default(makeId),
-  expectedStartDatetime: text("expected_start_datetime").notNull(),
-  expectedEndDatetime: text("expected_end_datetime"),
+  expectedStartDatetime: integer("expected_start_datetime", { mode: "timestamp_ms" }).notNull(),
+  expectedEndDatetime: integer("expected_end_datetime", { mode: "timestamp_ms" }),
   status: text("status")
     .$type<PlannedAccessStatus>()
     .default("PENDING_APPROVAL"),
   companySnapshot: text("company_snapshot").notNull(),
   visitReason: text("visit_reason").notNull(),
-  approvedAt: text("approved_at"),
+  approvedAt: integer("approved_at", { mode: "timestamp_ms" }),
   approvedById: text("approved_by_id")
     .notNull()
     .references(() => users.id),
@@ -242,12 +217,8 @@ export const plannedAccesses = sqliteTable("planned_accesses", {
   siteId: text("site_id")
     .notNull()
     .references(() => sites.id),
-  createdAt: text("created_at")
-    .notNull()
-    .default(sql`(CURRENT_TIMESTAMP)`),
-  updatedAt: text("updated_at")
-    .notNull()
-    .default(sql`(CURRENT_TIMESTAMP)`),
+  createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull().default(timestampDefault),
+  updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull().default(timestampDefault),
 });
 
 // ───── Planned Access Persons ────────────────────────
@@ -266,12 +237,8 @@ export const plannedAccessPersons = sqliteTable("planned_access_persons", {
   externalWorkerId: text("external_worker_id").references(
     () => externalWorkers.id,
   ),
-  createdAt: text("created_at")
-    .notNull()
-    .default(sql`(CURRENT_TIMESTAMP)`),
-  updatedAt: text("updated_at")
-    .notNull()
-    .default(sql`(CURRENT_TIMESTAMP)`),
+  createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull().default(timestampDefault),
+  updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull().default(timestampDefault),
 });
 
 // ───── Convenience Types ─────────────────────────────

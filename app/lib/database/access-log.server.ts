@@ -1,4 +1,4 @@
-import { and, count, desc, eq, gte, inArray, isNull, lte, ne, or, sql } from "drizzle-orm";
+import { and, count, desc, eq, gte, inArray, isNotNull, isNull, lte, ne, or, sql, type SQL } from "drizzle-orm";
 import { db } from "../../../db/server";
 import {
   accessLogs,
@@ -24,7 +24,7 @@ type AccessLogDateFilter =
 export type GetAccessLogsInput = {
   siteId?: string;
   timestampField?: AccessLogTimestampField;
-  exitTimestamp?: string | null;
+  exitTimestamp?: Date | null | { not: null };
 } & AccessLogDateFilter;
 
 type AccessLogFindFirstInput = {
@@ -70,11 +70,11 @@ function getTimestampRangeFilter(input: AccessLogDateFilter) {
     start.setHours(0, 0, 0, 0);
     const end = new Date(input.date);
     end.setHours(23, 59, 59, 999);
-    return { gte: start.toISOString(), lte: end.toISOString() };
+    return { gte: start, lte: end };
   }
   return {
-    gte: input.from?.toISOString() ?? "",
-    lte: input.to?.toISOString() ?? "",
+    gte: input.from,
+    lte: input.to,
   };
 }
 
@@ -87,7 +87,11 @@ async function loadAccessLogRelations(rows: (typeof accessLogs.$inferSelect)[]):
     ...new Set(rows.map((r) => r.createdById).filter(Boolean)),
   ];
   const vehicleIds = [
-    ...new Set(rows.map((r) => r.vehicleAccessLogId).filter(Boolean)),
+    ...new Set(
+      rows
+        .map((r) => r.vehicleAccessLogId)
+        .filter((id): id is string => Boolean(id)),
+    ),
   ];
 
   const [siteRows, creatorRows, vehicleRows] = await Promise.all([
@@ -136,7 +140,7 @@ export class AccessLogEntity {
     const [log] = await db
       .insert(accessLogs)
       .values({
-        entryTimestamp: data.entryTimestamp.toISOString(),
+        entryTimestamp: data.entryTimestamp,
         entrySignatureEnvelope: data.entrySignatureEnvelope,
         companyNameSnapshot: data.companyNameSnapshot,
         firstNameSnapshot: data.firstNameSnapshot,
@@ -163,7 +167,7 @@ export class AccessLogEntity {
     const [log] = await db
       .update(accessLogs)
       .set({
-        exitTimestamp: new Date().toISOString(),
+        exitTimestamp: new Date(),
         exitSignatureEnvelope: data.exitSignatureEnvelope,
         exitRecordedById: data.exitRecordedById,
       })
@@ -173,9 +177,9 @@ export class AccessLogEntity {
   }
 
   public static async findMany(
-    input: GetAccessLogsInput,
+    input: GetAccessLogsInput = { date: new Date() },
   ): Promise<AccessLogListItem[]> {
-    const conditions = [];
+    const conditions: SQL[] = [];
     const timestampField = input.timestampField ?? "entryTimestamp";
     const range = getTimestampRangeFilter(input);
 
@@ -183,8 +187,10 @@ export class AccessLogEntity {
     if (input.exitTimestamp !== undefined) {
       if (input.exitTimestamp === null) {
         conditions.push(isNull(accessLogs.exitTimestamp));
-      } else {
+      } else if (input.exitTimestamp instanceof Date) {
         conditions.push(eq(accessLogs.exitTimestamp, input.exitTimestamp));
+      } else {
+        conditions.push(isNotNull(accessLogs.exitTimestamp));
       }
     }
 
@@ -257,14 +263,14 @@ export class AccessLogEntity {
     }
     if (input.entryTimestamp) {
       conditions.push(
-        gte(accessLogs.entryTimestamp, input.entryTimestamp.toISOString()),
+        gte(accessLogs.entryTimestamp, input.entryTimestamp),
       );
     }
     if (input.exitTimestamp !== undefined) {
       if (input.exitTimestamp === true) {
         conditions.push(isNull(accessLogs.exitTimestamp));
       } else if (input.exitTimestamp instanceof Date) {
-        conditions.push(eq(accessLogs.exitTimestamp, input.exitTimestamp.toISOString()));
+        conditions.push(eq(accessLogs.exitTimestamp, input.exitTimestamp));
       }
     }
 
@@ -307,8 +313,8 @@ export class AccessLogEntity {
     end.setHours(23, 59, 59, 999);
 
     const conditions = [
-      gte(accessLogs.entryTimestamp, start.toISOString()),
-      lte(accessLogs.entryTimestamp, end.toISOString()),
+      gte(accessLogs.entryTimestamp, start),
+      lte(accessLogs.entryTimestamp, end),
     ];
     if (input.siteId) conditions.push(eq(accessLogs.siteId, input.siteId));
 
@@ -380,7 +386,7 @@ export class AccessLogEntity {
         or(
           inArray(accessLogs.plannedAccessId, paIds),
           inArray(accessLogs.plannedAccessPersonId, papIds),
-        ),
+        )!,
       );
     } else if (paIds.length > 0) {
       conditions.push(inArray(accessLogs.plannedAccessId, paIds));
