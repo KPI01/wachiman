@@ -27,7 +27,7 @@ function parseArgs(argv: string[]): CliOptions {
         : argv[index + 1];
 
       if (!envPath) {
-        throw new Error("Missing value for --env");
+        throw new Error("Falta el valor para --env");
       }
 
       options.envPath = path.resolve(process.cwd(), envPath);
@@ -39,7 +39,7 @@ function parseArgs(argv: string[]): CliOptions {
       const key = argv[index + 1];
 
       if (!key) {
-        throw new Error("Missing value for --key");
+        throw new Error("Falta el valor para --key");
       }
 
       options.key = key;
@@ -47,7 +47,7 @@ function parseArgs(argv: string[]): CliOptions {
       continue;
     }
 
-    throw new Error(`Unknown argument: ${argument}`);
+    throw new Error(`Argumento desconocido: ${argument}`);
   }
 
   return {
@@ -65,13 +65,13 @@ function validateEncryptionKey(key: string) {
 
   if (decodedKey.length !== KEY_LENGTH) {
     throw new Error(
-      `${ENCRYPTION_KEY_NAME} must be a base64-encoded 32-byte key`,
+      `${ENCRYPTION_KEY_NAME} debe ser una clave de 32 bytes codificada en base64`,
     );
   }
 
   if (decodedKey.toString("base64") !== key) {
     throw new Error(
-      `${ENCRYPTION_KEY_NAME} must be a valid base64-encoded value`,
+      `${ENCRYPTION_KEY_NAME} debe ser un valor válido codificado en base64`,
     );
   }
 }
@@ -107,7 +107,7 @@ function main() {
 try {
   main();
 } catch (error) {
-  const message = error instanceof Error ? error.message : "Unknown error";
-  console.error(message);
+  const message = error instanceof Error ? error.message : "Error desconocido";
+  console.error("Error al configurar la clave de cifrado:", message);
   process.exit(1);
 }

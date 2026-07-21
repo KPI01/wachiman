@@ -27,7 +27,7 @@ export default async function handleRequest(
     {
       signal: request.signal,
       onError(error: unknown) {
-        console.error(error);
+        console.error("Error al renderizar la respuesta del servidor:", error);
         responseStatusCode = 500;
       },
     },

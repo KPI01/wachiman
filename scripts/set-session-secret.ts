@@ -27,7 +27,7 @@ function parseArgs(argv: string[]): CliOptions {
         : argv[index + 1];
 
       if (!envPath) {
-        throw new Error("Missing value for --env");
+        throw new Error("Falta el valor para --env");
       }
 
       options.envPath = path.resolve(process.cwd(), envPath);
@@ -39,7 +39,7 @@ function parseArgs(argv: string[]): CliOptions {
       const secret = argv[index + 1];
 
       if (!secret) {
-        throw new Error("Missing value for --secret");
+        throw new Error("Falta el valor para --secret");
       }
 
       options.secret = secret;
@@ -47,7 +47,7 @@ function parseArgs(argv: string[]): CliOptions {
       continue;
     }
 
-    throw new Error(`Unknown argument: ${argument}`);
+    throw new Error(`Argumento desconocido: ${argument}`);
   }
 
   return {
@@ -62,7 +62,7 @@ function generateSessionSecret() {
 
 function validateSessionSecret(secret: string) {
   if (secret.trim().length === 0) {
-    throw new Error(`${SESSION_SECRET_NAME} must not be empty`);
+    throw new Error(`${SESSION_SECRET_NAME} no puede estar vacío`);
   }
 }
 
@@ -101,7 +101,7 @@ function main() {
 try {
   main();
 } catch (error) {
-  const message = error instanceof Error ? error.message : "Unknown error";
-  console.error(message);
+  const message = error instanceof Error ? error.message : "Error desconocido";
+  console.error("Error al configurar el secreto de sesión:", message);
   process.exit(1);
 }

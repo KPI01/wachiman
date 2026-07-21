@@ -43,7 +43,7 @@ function parseOptions(args: string[]): DbOptions {
     const value = inlineValue ?? args[index + 1];
 
     if (name === "--target" || name === "--mode" || name === "--env") {
-      if (!value) throw new Error(`Missing value for ${name}`);
+      if (!value) throw new Error(`Falta el valor para ${name}`);
       if (name === "--target") options.target = value;
       if (name === "--mode") options.mode = value;
       if (name === "--env") {
@@ -59,7 +59,7 @@ function parseOptions(args: string[]): DbOptions {
     }
 
     if (argument === "--force") continue;
-    throw new Error(`Unknown argument: ${argument}`);
+    throw new Error(`Argumento desconocido: ${argument}`);
   }
 
   return options;
@@ -101,7 +101,7 @@ async function seedSqlite() {
     target: users.id,
     set: { fullName: adminFullName, username: adminUsername, password, role: "ADMIN" },
   });
-  console.log(`Base seed completed. Admin username: ${adminUsername}`);
+  console.log(`Seed básico completado. Usuario administrador: ${adminUsername}`);
 }
 
 function prepareSqlite() {
@@ -136,14 +136,14 @@ async function seedD1() {
 
 async function main() {
   if (target !== "sqlite" && target !== "d1") {
-    throw new Error("Target must be sqlite or d1");
+    throw new Error("El destino debe ser sqlite o d1");
   }
 
   if (command === "create") {
     if (target === "d1") runWrangler(["d1", "create", "wachiman"]);
     else {
       prepareSqlite();
-      console.log(`SQLite database created at ${databasePath}`);
+       console.log(`Base de datos SQLite creada en ${databasePath}`);
     }
     return;
   }
@@ -156,10 +156,10 @@ async function main() {
 
   if (command === "setup") {
     if (target !== "sqlite") {
-      throw new Error("db:setup only supports SQLite; use db:migrate and db:seed for D1");
+      throw new Error("db:setup solo admite SQLite; usa db:migrate y db:seed para D1");
     }
     if (mode !== "base") {
-      throw new Error("db:setup does not accept --mode; run db:seed --mode=demo separately");
+      throw new Error("db:setup no acepta --mode; ejecuta db:seed --mode=demo por separado");
     }
     prepareSqlite();
     run("pnpm", ["exec", "drizzle-kit", "migrate"]);
@@ -169,7 +169,7 @@ async function main() {
 
   if (command === "reset") {
     if (target === "d1") {
-      if (!process.argv.includes("--force")) throw new Error("D1 reset requires --force");
+      if (!process.argv.includes("--force")) throw new Error("El reset de D1 requiere --force");
       const tables = [
         "access_logs", "access_log_vehicles", "worker_documents",
         "planned_access_persons", "planned_accesses", "external_workers",
@@ -188,7 +188,7 @@ async function main() {
       rmSync(`${databasePath}-shm`, { force: true });
       prepareSqlite();
       run("pnpm", ["exec", "drizzle-kit", "migrate"]);
-      console.log(`SQLite database recreated at ${databasePath}`);
+      console.log(`Base de datos SQLite recreada en ${databasePath}`);
     }
     return;
   }
@@ -200,11 +200,11 @@ async function main() {
     return;
   }
 
-  console.log(`Usage: pnpm db:<command> [--target=sqlite|d1] [--mode=base|demo]`);
-  console.log("Commands: migrate, setup, reset, seed");
+  console.log(`Uso: pnpm db:<comando> [--target=sqlite|d1] [--mode=base|demo]`);
+  console.log("Comandos: migrate, setup, reset, seed");
 }
 
 main().catch((error) => {
-  console.error(error);
+  console.error("Error al ejecutar la operación de base de datos:", error);
   process.exit(1);
 });

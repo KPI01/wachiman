@@ -22,13 +22,13 @@ function getRawKey(): Uint8Array {
 
   const key = getEnv(ENCRYPTION_KEY_NAME);
   if (!key) {
-    throw new Error(`${ENCRYPTION_KEY_NAME} is not defined`);
+    throw new Error(`${ENCRYPTION_KEY_NAME} no está definida`);
   }
 
   const decoded = Uint8Array.from(atob(key), (c) => c.charCodeAt(0));
   if (decoded.length !== KEY_LENGTH) {
     throw new Error(
-      `${ENCRYPTION_KEY_NAME} must be a base64-encoded 32-byte key`,
+      `${ENCRYPTION_KEY_NAME} debe ser una clave de 32 bytes codificada en base64`,
     );
   }
 
@@ -63,7 +63,7 @@ function parseEnvelope(
   value: unknown,
 ): EncryptedValueEnvelope {
   if (typeof value !== "object" || value === null) {
-    throw new Error("Invalid encrypted value");
+    throw new Error("El valor cifrado no es válido");
   }
 
   const envelope = value as Record<string, unknown>;
@@ -75,7 +75,7 @@ function parseEnvelope(
     typeof envelope.tag !== "string" ||
     typeof envelope.ct !== "string"
   ) {
-    throw new Error("Invalid encrypted value");
+    throw new Error("El valor cifrado no es válido");
   }
 
   return {
@@ -124,7 +124,7 @@ export async function decryptValue(
     const ct = Uint8Array.from(atob(envelope.ct), (c) => c.charCodeAt(0));
 
     if (iv.length !== IV_LENGTH || tag.length !== AUTH_TAG_LENGTH) {
-      throw new Error("Invalid encrypted value");
+      throw new Error("El valor cifrado no es válido");
     }
 
     const combined = new Uint8Array(ct.length + tag.length);
@@ -140,7 +140,7 @@ export async function decryptValue(
 
     return new TextDecoder().decode(decrypted);
   } catch {
-    throw new Error("Invalid encrypted value");
+    throw new Error("El valor cifrado no es válido");
   }
 }
 

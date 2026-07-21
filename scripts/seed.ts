@@ -77,7 +77,7 @@ async function main() {
   });
 
   if (mode === "base") {
-    console.log(`Base seed completed. Admin username: ${adminUsername}`);
+    console.log(`Seed básico completado. Usuario administrador: ${adminUsername}`);
     return;
   }
 
@@ -240,10 +240,10 @@ async function main() {
     },
   ]).onConflictDoNothing();
 
-  console.log("Demo seed completed. Demo users use password demo123.");
+  console.log("Seed demo completado. Los usuarios demo usan la contraseña demo123.");
 }
 
 main().catch((error) => {
-  console.error(error);
+  console.error("Error al ejecutar el seed:", error);
   process.exit(1);
 });
