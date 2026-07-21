@@ -7,9 +7,7 @@ import { departments, sites, users } from "../db/schema";
 import { hashText } from "../app/lib/hash.server";
 
 const options = parseOptions(process.argv.slice(2));
-if (options.envPath) {
-  loadEnv({ path: options.envPath, override: false, quiet: true });
-}
+loadEnvironment(options.envPath);
 
 const command = options.command;
 const target = options.target;
@@ -17,6 +15,15 @@ const mode = options.mode;
 const databasePath = resolve(
   (process.env.DATABASE_URL ?? "file:./dev.db").replace(/^file:/, ""),
 );
+
+function loadEnvironment(envPath?: string) {
+  if (!envPath) return;
+
+  const result = loadEnv({ path: envPath, override: true, quiet: true });
+  if (result.error) {
+    throw new Error(`No se pudo cargar el archivo de entorno: ${envPath}`);
+  }
+}
 
 type DbOptions = {
   command: string;
@@ -174,7 +181,7 @@ async function main() {
         "access_logs", "access_log_vehicles", "worker_documents",
         "planned_access_persons", "planned_accesses", "external_workers",
         "users", "work_categories", "companies", "departments", "sites",
-        "__drizzle_migrations",
+        "audit_logs", "d1_migrations", "__drizzle_migrations",
       ];
       runWrangler([
         "d1", "execute", "wachiman", "--remote", "--command",
@@ -182,7 +189,7 @@ async function main() {
       ]);
       runWrangler(["d1", "migrations", "apply", "wachiman", "--remote"]);
     } else {
-      prepareSqlite();
+      console.log(`Restableciendo la base de datos SQLite: ${databasePath}`);
       rmSync(databasePath, { force: true });
       rmSync(`${databasePath}-wal`, { force: true });
       rmSync(`${databasePath}-shm`, { force: true });
