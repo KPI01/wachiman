@@ -1,5 +1,4 @@
 import { NavLink } from "react-router";
-import { Separator } from "./ui/separator";
 import { useAppConfig } from "~/lib/app-config";
 
 interface LogoBrandingProps {
@@ -27,7 +26,7 @@ export default function LogoBranding({
       ) : (
         <NavLink
           to={href}
-          className="flex w-32 shrink-0 items-center justify-center"
+          className="flex w-14 shrink-0 items-center justify-center"
         >
           <img
             src={appLogo}
@@ -36,16 +35,6 @@ export default function LogoBranding({
           />
         </NavLink>
       )}
-      <Separator orientation="vertical" className="shrink-0 hidden md:flex" />
-
-      <div className="hidden md:flex md:flex-col md:min-w-0">
-        <h2 className="text-xl font-bold uppercase tracking-tight truncate">
-          {title}
-        </h2>
-        <div className="text-foreground/50 truncate">
-          <span>Usuario:</span> {username}
-        </div>
-      </div>
     </div>
   );
 }
