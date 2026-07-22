@@ -3,6 +3,7 @@ import MarkAccessLogExit from "~/components/models/access-logs/mark-access-log-e
 import { formatTimestamp } from "../utils";
 import type { AccessLogListItem } from "../database/access-log.server";
 import VehiclePopover from "~/components/models/access-logs/vehicle-popover";
+import EditAccessLog from "~/components/models/access-logs/edit-access-log";
 
 const accessLogColHelper = createColumnHelper<AccessLogListItem>();
 
@@ -77,7 +78,7 @@ const visitReasonColumn = accessLogColHelper.accessor("visitReason", {
 });
 
 const siteNameColumn = accessLogColHelper.accessor(
-  (accessLog) => accessLog.site.name,
+  (accessLog) => accessLog.site?.name ?? "-",
   {
     id: "siteName",
     header: "Centro",
@@ -85,7 +86,7 @@ const siteNameColumn = accessLogColHelper.accessor(
 );
 
 const createdByNameColumn = accessLogColHelper.accessor(
-  (accessLog) => accessLog.createdBy.fullName,
+  (accessLog) => accessLog.createdBy?.fullName ?? "-",
   {
     id: "createdByName",
     header: "Registrado por",
@@ -93,7 +94,7 @@ const createdByNameColumn = accessLogColHelper.accessor(
 );
 
 const createdByColumn = accessLogColHelper.accessor(
-  (accessLog) => accessLog.createdBy.fullName,
+  (accessLog) => accessLog.createdBy?.fullName ?? "-",
   {
     id: "createdBy",
     header: "Registrado por",
@@ -118,6 +119,19 @@ const actionsColumn = accessLogColHelper.display({
   },
 });
 
+const editableActionsColumn = accessLogColHelper.display({
+  id: "actions",
+  header: "Acciones",
+  cell: ({ row }) => (
+    <div className="flex justify-end gap-1">
+      <EditAccessLog accessLog={row.original} />
+      {!row.original.exitTimestamp ? (
+        <MarkAccessLogExit accessLogId={row.original.id} />
+      ) : null}
+    </div>
+  ),
+});
+
 type AccessLogColumnDef =
   | typeof entryTimestampColumn
   | typeof exitTimestampColumn
@@ -129,7 +143,8 @@ type AccessLogColumnDef =
   | typeof siteNameColumn
   | typeof createdByNameColumn
   | typeof createdByColumn
-  | typeof actionsColumn;
+  | typeof actionsColumn
+  | typeof editableActionsColumn;
 
 export type OptionalColumnsOptions =
   | "visitReason"
@@ -147,7 +162,7 @@ export const accessLogColumns: AccessLogColumnDef[] = [
   visitReasonColumn,
   siteNameColumn,
   createdByNameColumn,
-  actionsColumn,
+  editableActionsColumn,
 ];
 
 const baseColumns: AccessLogColumnDef[] = [

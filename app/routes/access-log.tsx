@@ -1,13 +1,12 @@
 import { redirect } from "react-router";
-import { USER_ROLES, type UserRole } from "../../db/enums";
+import { USER_ROLES } from "../../db/enums";
 import type { Route } from "./+types/access-log";
-import { encryptValue } from "~/lib/crypt.server";
-import { AccessLogEntity } from "~/lib/database/access-log.server";
-import { markAccessLogExitSchema } from "~/lib/schemas/access-log";
 import { getSessionSite } from "~/lib/session.server";
-import { UserEntity } from "~/lib/database/user.server";
-import z from "zod";
-import { isAuthenticated } from "~/lib/auth.server";
+import { isAuthenticated, validateUserRole } from "~/lib/auth.server";
+import {
+  markAccessLogExit,
+  updateAccessLog,
+} from "~/lib/services/access-log.server";
 
 export async function loader({ request }: Route.LoaderArgs) {
   await isAuthenticated(request);
@@ -33,40 +32,66 @@ export async function action({ params, request }: Route.ActionArgs) {
 
   const rawFormData = await request.formData();
   const jsonData = Object.fromEntries(rawFormData);
-  const { error, data } = markAccessLogExitSchema.safeParse(jsonData);
 
-  if (error) {
-    return { errors: z.treeifyError(error) };
+  if (request.method === "PATCH") {
+    const sessionUser = await validateUserRole(request, [
+      USER_ROLES.ADMIN,
+      USER_ROLES.SECURITY_MANAGER,
+      USER_ROLES.ACCESS_APPROVER,
+    ]);
+    const result = await updateAccessLog(jsonData, params.id, {
+      authorUsername: sessionUser.username,
+      lockedSiteId:
+        sessionUser.role === USER_ROLES.ACCESS_APPROVER
+          ? sessionUser.site.id
+          : undefined,
+    });
+
+    const status =
+      !result.success && result.errors === "not_found"
+        ? 404
+        : !result.success && "code" in result && result.code === "conflict"
+          ? 409
+          : !result.success
+            ? 400
+            : 200;
+    return Response.json(result, { status });
   }
 
-  const sessionUser = await isAuthenticated(request);
-
-  const exitRecordedBy = await UserEntity.getByUsername(sessionUser.username);
-
-  if (!exitRecordedBy) {
-    throw new Response("Unauthorized", { status: 401 });
+  if (request.method !== "POST") {
+    throw new Response("Method Not Allowed", { status: 405 });
   }
 
+  const sessionUser = await validateUserRole(request, [
+    USER_ROLES.ADMIN,
+    USER_ROLES.SECURITY_MANAGER,
+    USER_ROLES.ACCESS_APPROVER,
+    USER_ROLES.ACCESS_OPERATOR,
+  ]);
   const sessionSite =
-    sessionUser.role === USER_ROLES.ACCESS_OPERATOR
+    sessionUser.role === USER_ROLES.ACCESS_OPERATOR ||
+    sessionUser.role === USER_ROLES.ACCESS_APPROVER
       ? await getSessionSite(request)
       : null;
 
-  if (sessionUser.role === USER_ROLES.ACCESS_OPERATOR && !sessionSite) {
+  if (
+    (sessionUser.role === USER_ROLES.ACCESS_OPERATOR ||
+      sessionUser.role === USER_ROLES.ACCESS_APPROVER) &&
+    !sessionSite
+  ) {
     throw new Response("Unauthorized", { status: 401 });
   }
 
-  const wasExitRecorded = await AccessLogEntity.markExit({
-    accessLogId: params.id,
-    exitSignatureEnvelope: await encryptValue(
-      JSON.stringify(data.exitSignaturePayload),
-    ),
-    exitRecordedById: exitRecordedBy.id,
+  const result = await markAccessLogExit(jsonData, params.id, {
+    authorUsername: sessionUser.username,
     siteId: sessionSite?.id,
   });
 
-  if (!wasExitRecorded) {
-    throw new Response("Conflict", { status: 409 });
+  if (!result.success) {
+    if (result.errors === "conflict") {
+      throw new Response("Conflict", { status: 409 });
+    }
+    return Response.json(result, { status: 400 });
   }
 
   return redirect(
@@ -74,7 +99,7 @@ export async function action({ params, request }: Route.ActionArgs) {
       request,
       sessionUser.role === USER_ROLES.ACCESS_OPERATOR
         ? "/operator"
-        : "/admin/access-logs",
+        : `/${sessionUser.role === USER_ROLES.ACCESS_APPROVER ? "approver" : sessionUser.role === USER_ROLES.SECURITY_MANAGER ? "security" : "admin"}/access-logs`,
     ),
   );
 }

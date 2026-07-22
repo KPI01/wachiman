@@ -1,13 +1,16 @@
 import { and, count, desc, eq, gte, inArray, isNotNull, isNull, lte, ne, or, sql, type SQL } from "drizzle-orm";
-import { db } from "../../../db/server";
+import type { DrizzleD1Database } from "drizzle-orm/d1";
+import { db, isLocalDb } from "../../../db/server";
 import {
   accessLogs,
   accessLogVehicles,
+  auditLogs,
   plannedAccessPersons,
   plannedAccesses,
   sites,
   users,
 } from "../../../db/schema";
+import type { CreateAuditLogInput } from "./audit-log.server";
 
 export type AccessLogListItem = typeof accessLogs.$inferSelect & {
   site?: { id: string; name: string } | null;
@@ -62,6 +65,22 @@ export type MarkAccessLogExitInput = {
   exitSignatureEnvelope: Record<string, unknown>;
   exitRecordedById: string;
   siteId?: string;
+};
+
+export type UpdateAccessLogInput = {
+  entryTimestamp: Date;
+  exitTimestamp: Date | null;
+  exitSignatureEnvelope: Record<string, unknown> | null;
+  exitRecordedById: string | null;
+  companyNameSnapshot: string;
+  firstNameSnapshot: string;
+  middleNameSnapshot: string | null;
+  lastNameSnapshot: string;
+  secondLastNameSnapshot: string | null;
+  phoneNumber: string | null;
+  legalIdSnapshot: string;
+  visitReason: string;
+  externalWorkerId: string | null;
 };
 
 function getTimestampRangeFilter(input: AccessLogDateFilter) {
@@ -164,6 +183,12 @@ export class AccessLogEntity {
   }
 
   public static async markExit(data: MarkAccessLogExitInput) {
+    const conditions = [
+      eq(accessLogs.id, data.accessLogId),
+      isNull(accessLogs.exitTimestamp),
+    ];
+    if (data.siteId) conditions.push(eq(accessLogs.siteId, data.siteId));
+
     const [log] = await db
       .update(accessLogs)
       .set({
@@ -171,9 +196,77 @@ export class AccessLogEntity {
         exitSignatureEnvelope: data.exitSignatureEnvelope,
         exitRecordedById: data.exitRecordedById,
       })
-      .where(eq(accessLogs.id, data.accessLogId))
+      .where(and(...conditions))
       .returning();
     return log;
+  }
+
+  public static async updateWithAudit(
+    accessLogId: string,
+    data: UpdateAccessLogInput,
+    auditData: CreateAuditLogInput,
+    expectedTimestamps: {
+      entryTimestamp: Date;
+      exitTimestamp: Date | null;
+    },
+    siteId?: string,
+  ) {
+    const conditions = [
+      eq(accessLogs.id, accessLogId),
+      eq(accessLogs.entryTimestamp, expectedTimestamps.entryTimestamp),
+      expectedTimestamps.exitTimestamp === null
+        ? isNull(accessLogs.exitTimestamp)
+        : eq(accessLogs.exitTimestamp, expectedTimestamps.exitTimestamp),
+    ];
+    if (siteId) conditions.push(eq(accessLogs.siteId, siteId));
+
+    if (isLocalDb()) {
+      return db.transaction((tx) => {
+        const log = tx
+          .update(accessLogs)
+          .set(data)
+          .where(and(...conditions))
+          .returning()
+          .get();
+        if (!log) return undefined;
+
+        tx.insert(auditLogs).values(auditData).run();
+        return log;
+      });
+    }
+
+    const d1 = db as unknown as DrizzleD1Database<
+      typeof import("../../../db/schema")
+    >;
+    const updateClaim = `__access_log_update_${crypto.randomUUID()}__`;
+    const claimedRow = and(
+      eq(accessLogs.id, accessLogId),
+      eq(accessLogs.visitReason, updateClaim),
+    );
+    const auditInsert = d1.insert(auditLogs).select(sql`
+      SELECT
+        ${crypto.randomUUID()},
+        ${auditData.entityType},
+        ${auditData.entityId},
+        ${auditData.action},
+        ${auditData.changedBy},
+        ${auditData.summary},
+        ${auditData.metadata ? JSON.stringify(auditData.metadata) : null},
+        ${Date.now()}
+      FROM ${accessLogs}
+      WHERE ${claimedRow}
+    `);
+    const [, , updatedRows] = await d1.batch([
+      d1
+        .update(accessLogs)
+        .set({ visitReason: updateClaim })
+        .where(and(...conditions))
+        .returning(),
+      auditInsert,
+      d1.update(accessLogs).set(data).where(claimedRow).returning(),
+    ] as const);
+
+    return updatedRows[0];
   }
 
   public static async findMany(
@@ -233,16 +326,22 @@ export class AccessLogEntity {
   public static async findOpenByLegalIdInSite(
     legalId: string,
     siteId: string,
+    excludedAccessLogId?: string,
   ) {
+    const conditions = [
+      eq(accessLogs.legalIdSnapshot, legalId),
+      eq(accessLogs.siteId, siteId),
+      isNull(accessLogs.exitTimestamp),
+    ];
+    if (excludedAccessLogId) {
+      conditions.push(ne(accessLogs.id, excludedAccessLogId));
+    }
+
     const row = await db
       .select()
       .from(accessLogs)
       .where(
-        and(
-          eq(accessLogs.legalIdSnapshot, legalId),
-          eq(accessLogs.siteId, siteId),
-          isNull(accessLogs.exitTimestamp),
-        ),
+        and(...conditions),
       )
       .orderBy(desc(accessLogs.entryTimestamp))
       .limit(1)

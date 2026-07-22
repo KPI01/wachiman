@@ -78,3 +78,35 @@ export const createAccessLogSchema = z
 export const markAccessLogExitSchema = z.object({
   exitSignaturePayload: signaturePayloadFromStringSchema,
 });
+
+export const updateAccessLogSchema = z
+  .object({
+    entryTimestamp: z.coerce.date(),
+    exitTimestamp: z.preprocess(
+      (value) => (value === "" || value === undefined ? null : value),
+      z.coerce.date().nullable(),
+    ),
+    expectedEntryTimestamp: z.coerce.date(),
+    expectedExitTimestamp: z.preprocess(
+      (value) => (value === "" || value === undefined ? null : value),
+      z.coerce.date().nullable(),
+    ),
+    companyNameSnapshot: requiredString,
+    firstNameSnapshot: requiredString,
+    middleNameSnapshot: optionalString,
+    lastNameSnapshot: requiredString,
+    secondLastNameSnapshot: optionalString,
+    phoneNumber: optionalString,
+    legalIdSnapshot: requiredString.transform((value) => value.toUpperCase()),
+    visitReason: requiredString,
+    externalWorkerId: optionalString,
+  })
+  .refine(
+    (data) =>
+      data.exitTimestamp === null ||
+      data.exitTimestamp.getTime() >= data.entryTimestamp.getTime(),
+    {
+      message: "La salida no puede ser anterior al ingreso.",
+      path: ["exitTimestamp"],
+    },
+  );

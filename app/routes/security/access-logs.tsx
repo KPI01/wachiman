@@ -75,6 +75,7 @@ export async function action({ request }: Route.ActionArgs) {
   const data = await getFormData(request);
 
   const result = await createAccessLog(data, { authorUsername: user.username });
+  return result;
 }
 
 export default function IndexAccessLogs({ loaderData }: Route.ComponentProps) {

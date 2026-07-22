@@ -7,6 +7,7 @@ export async function loader({ request }: { request: Request }) {
     "SECURITY_MANAGER",
     "ACCESS_OPERATOR",
     "ACCESS_REQUESTER",
+    "ACCESS_APPROVER",
   ]);
 
   const query = new URL(request.url).searchParams.get("q")?.trim() ?? "";

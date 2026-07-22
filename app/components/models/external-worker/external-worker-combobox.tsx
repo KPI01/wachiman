@@ -5,6 +5,7 @@ import type { ExternalWorkerListItem } from "~/lib/database/external-worker.serv
 type ExternalWorkerComboboxProps = {
   searchBy: "legalId" | "name";
   onSelect: (worker: ExternalWorkerListItem) => void;
+  id?: string;
   placeholder?: string;
   className?: string;
   inputRef?: React.RefObject<HTMLInputElement | null>;
@@ -24,6 +25,7 @@ async function searchWorkers(query: string): Promise<ExternalWorkerListItem[]> {
 export default function ExternalWorkerCombobox({
   searchBy,
   onSelect,
+  id,
   placeholder,
   className,
   inputRef: externalInputRef,
@@ -101,6 +103,7 @@ export default function ExternalWorkerCombobox({
     <div className="relative">
       <Input
         ref={inputRef}
+        id={id}
         type="text"
         value={query}
         onChange={(event) => setQuery(event.currentTarget.value)}
@@ -111,15 +114,22 @@ export default function ExternalWorkerCombobox({
         placeholder={placeholder}
         className={className}
         autoComplete="off"
+        role="combobox"
+        aria-expanded={isOpen}
+        aria-controls={id ? `${id}-suggestions` : undefined}
       />
       {isOpen && results.length > 0 && (
         <ul
           ref={listRef}
+          id={id ? `${id}-suggestions` : undefined}
+          role="listbox"
           className="absolute z-50 mt-1 max-h-48 w-full overflow-auto rounded-md border bg-popover p-1 shadow-md"
         >
           {results.map((worker, index) => (
             <li
               key={worker.id}
+              role="option"
+              aria-selected={index === selectedIndex}
               className={`cursor-pointer rounded-sm px-2 py-1.5 text-sm ${
                 index === selectedIndex
                   ? "bg-accent text-accent-foreground"
@@ -138,7 +148,7 @@ export default function ExternalWorkerCombobox({
                 {worker.legalId}
               </span>
               <span className="ml-2 text-xs text-muted-foreground">
-                {worker.company.name}
+                {worker.company?.name}
               </span>
             </li>
           ))}
