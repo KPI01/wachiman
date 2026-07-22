@@ -137,53 +137,63 @@ export default function IndexAccessLogs({ loaderData }: Route.ComponentProps) {
 
   return (
     <div className="grid space-y-6">
-      <h2 className="text-3xl font-bold">Registros de acceso</h2>
+      <div className="flex justify-between items-center">
+
+        <h2 className="text-3xl font-bold">Registros de acceso</h2>
+        <CreateAccessLog
+          sites={loaderData.sites ?? []}
+          actionPath="/admin/access-logs"
+        />
+      </div>
       <div className="">
-        <div className="flex flex-wrap justify-between gap-2">
-          <Select
-            value={filterMode}
-            onValueChange={(v) => handleModeChange(v as "single" | "range")}
-          >
-            <SelectTrigger className="max-w-lg">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="single">Fecha específica</SelectItem>
-              <SelectItem value="range">Rango de fechas</SelectItem>
-            </SelectContent>
-          </Select>
-          {filterMode === "single" ? (
-            <DatePicker
-              className="grow max-w-56"
-              value={loaderData.date}
-              onChange={(v) =>
-                navigation(
-                  `/admin/access-logs?date=${formatTimestamp({ date: v, template: "yyyy-MM-dd" })}${loaderData.status ? `&status=${loaderData.status}` : ""}`,
-                )
-              }
-            />
-          ) : (
-            <DateRangePicker
-              className="grow max-w-56"
-              value={loaderData.dateRange}
-              onChange={(range) => {
-                if (range?.from && range.to) {
-                  const from = formatTimestamp({
-                    date: range.from,
-                    template: "yyyy-MM-dd",
-                  });
-                  const to = formatTimestamp({
-                    date: range.to,
-                    template: "yyyy-MM-dd",
-                  });
+        <div className="flex gap-8 items-end justify-start">
+          <div className="flex flex-col gap-2">
+            <Select
+              value={filterMode}
+              onValueChange={(v) => handleModeChange(v as "single" | "range")}
+            >
+              <SelectTrigger className="max-w-lg">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="single">Fecha específica</SelectItem>
+                <SelectItem value="range">Rango de fechas</SelectItem>
+              </SelectContent>
+            </Select>
+            {filterMode === "single" ? (
+              <DatePicker
+                className="max-w-48 m-0"
+                value={loaderData.date}
+                onChange={(v) =>
                   navigation(
-                    `/admin/access-logs?dateFrom=${from}&dateTo=${to}${loaderData.status ? `&status=${loaderData.status}` : ""}`,
-                  );
+                    `/admin/access-logs?date=${formatTimestamp({ date: v, template: "yyyy-MM-dd" })}${loaderData.status ? `&status=${loaderData.status}` : ""}`,
+                  )
                 }
-              }}
-            />
-          )}
-          <FieldWrapper label="Estado" htmlFor="status">
+              />
+            ) : (
+              <DateRangePicker
+                className="grow max-w-56"
+                value={loaderData.dateRange}
+                onChange={(range) => {
+                  if (range?.from && range.to) {
+                    const from = formatTimestamp({
+                      date: range.from,
+                      template: "yyyy-MM-dd",
+                    });
+                    const to = formatTimestamp({
+                      date: range.to,
+                      template: "yyyy-MM-dd",
+                    });
+                    navigation(
+                      `/admin/access-logs?dateFrom=${from}&dateTo=${to}${loaderData.status ? `&status=${loaderData.status}` : ""}`,
+                    );
+                  }
+                }}
+              />
+            )}
+          </div>
+          <Separator orientation="vertical" />
+          <FieldWrapper label="Estado" htmlFor="status" className="max-w-48">
             <Select
               value={loaderData.status ?? "ALL"}
               onValueChange={handleStatusChange}
@@ -199,11 +209,6 @@ export default function IndexAccessLogs({ loaderData }: Route.ComponentProps) {
             </Select>
           </FieldWrapper>
         </div>
-        <Separator className="my-4" />
-        <CreateAccessLog
-          sites={loaderData.sites ?? []}
-          actionPath="/admin/access-logs"
-        />
       </div>
       <DataTable
         columns={accessLogColumns}

@@ -57,7 +57,6 @@ export default function WorkCategoriesIndex({
         <h2 className="text-3xl font-bold">Categorias Laborales</h2>
         <CreateWorkCategoryForm errors={actionData?.errors} />
       </div>
-      <Separator />
       <DataTable
         columns={workCategoryColumns}
         data={loaderData.workCategories ?? []}

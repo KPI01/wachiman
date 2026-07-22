@@ -23,7 +23,6 @@ export default function AuditLogIndex({
   return (
     <div className="flex flex-col gap-y-4">
       <h2 className="text-3xl font-bold">Auditoria</h2>
-      <Separator />
       <DataTable
         columns={auditLogColumns}
         data={loaderData.logs ?? []}

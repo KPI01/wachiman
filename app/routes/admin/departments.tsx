@@ -48,7 +48,6 @@ export default function IndexDepartments({
         <h2 className="text-3xl font-bold">Departamentos</h2>
         <CreateDepartmentForm errors={actionData?.errors} />
       </div>
-      <Separator className="my-2" />
       <DataTable
         columns={departmentColumns}
         data={loaderData.departments ?? []}

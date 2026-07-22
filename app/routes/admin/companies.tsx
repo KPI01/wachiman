@@ -57,7 +57,6 @@ export default function CompaniesIndex({
         <h2 className="text-3xl font-bold">Empresas</h2>
         <CreateCompanyForm errors={actionData?.errors} />
       </div>
-      <Separator />
       <DataTable
         columns={companyColumns}
         data={loaderData.companies ?? []}

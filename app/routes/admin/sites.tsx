@@ -48,7 +48,6 @@ export default function IndexSites({
         <h2 className="text-3xl font-bold">Centros</h2>
         <CreateSiteForm errors={actionData?.errors} />
       </div>
-      <Separator />
       <DataTable
         columns={siteColumns}
         data={loaderData.sites ?? []}

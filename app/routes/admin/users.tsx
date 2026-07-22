@@ -73,7 +73,6 @@ export default function IndexUsers({
           errors={actionData?.error}
         />
       </div>
-      <Separator className="my-2" />
       <DataTable
         columns={columns}
         data={users}

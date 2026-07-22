@@ -67,7 +67,6 @@ export default function ExternalWorkersIndex({
           workCategories={loaderData.workCategories}
         />
       </div>
-      <Separator />
       <DataTable
         columns={getExternalWorkerColumns(
           loaderData.companies,
