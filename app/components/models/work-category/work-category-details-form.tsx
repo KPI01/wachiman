@@ -75,13 +75,24 @@ export default function WorkCategoryDetailsForm({
             id={`requiresSpecialPermission-${workCategory.id}`}
             name="requiresSpecialPermission"
             value="true"
-            defaultChecked={workCategory.requiresSpecialPermission}
+            defaultChecked={Boolean(workCategory.requiresSpecialPermission)}
           />
           <label
             htmlFor={`requiresSpecialPermission-${workCategory.id}`}
             className="text-sm font-medium"
           >
             Requiere permiso especial
+          </label>
+        </div>
+        <div className="flex items-center gap-3 rounded-md border px-3 py-2">
+          <Checkbox
+            id={`requiresTraining-${workCategory.id}`}
+            name="requiresTraining"
+            value="true"
+            defaultChecked={Boolean(workCategory.requiresTraining)}
+          />
+          <label htmlFor={`requiresTraining-${workCategory.id}`} className="text-sm font-medium">
+            Requiere formación
           </label>
         </div>
       </patchFetcher.Form>

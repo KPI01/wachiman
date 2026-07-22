@@ -10,6 +10,10 @@ export const createWorkCategorySchema = z.object({
     (value) => value === "true" || value === "on",
     z.boolean(),
   ).optional().default(false),
+  requiresTraining: z.preprocess(
+    (value) => value === "true" || value === "on",
+    z.boolean(),
+  ).optional().default(false),
 });
 
 export const updateWorkCategorySchema = z
@@ -18,6 +22,10 @@ export const updateWorkCategorySchema = z
     name: requiredString,
     description: optionalString,
     requiresSpecialPermission: z.preprocess(
+      (value) => value === "true" || value === "on",
+      z.boolean(),
+    ).optional().default(false),
+    requiresTraining: z.preprocess(
       (value) => value === "true" || value === "on",
       z.boolean(),
     ).optional().default(false),

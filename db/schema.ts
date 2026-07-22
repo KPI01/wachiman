@@ -231,6 +231,7 @@ export const plannedAccessPersons = sqliteTable("planned_access_persons", {
   secondLastNameSnapshot: text("second_last_name_snapshot"),
   phoneNumber: text("phone_number"),
   legalIdSnapshot: text("legal_id_snapshot").notNull(),
+  workCategoryId: text("work_category_id").references(() => workCategories.id),
   plannedAccessId: text("planned_access_id")
     .notNull()
     .references(() => plannedAccesses.id),
@@ -290,6 +291,7 @@ export const companiesRelations = relations(companies, ({ many }) => ({
 
 export const workCategoriesRelations = relations(workCategories, ({ many }) => ({
   externalWorkers: many(externalWorkers),
+  plannedAccessPersons: many(plannedAccessPersons),
 }));
 
 export const externalWorkersRelations = relations(
@@ -381,6 +383,10 @@ export const plannedAccessPersonsRelations = relations(
     externalWorker: one(externalWorkers, {
       fields: [plannedAccessPersons.externalWorkerId],
       references: [externalWorkers.id],
+    }),
+    workCategory: one(workCategories, {
+      fields: [plannedAccessPersons.workCategoryId],
+      references: [workCategories.id],
     }),
     accessLogs: many(accessLogs),
   }),

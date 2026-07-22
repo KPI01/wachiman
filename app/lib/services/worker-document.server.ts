@@ -242,6 +242,8 @@ export async function validateWorkerDocumentsForApproval(
 ): Promise<{ valid: boolean; missingTypes: string[]; expiredTypes: string[] }> {
   const missingTypes: string[] = [];
   const expiredTypes: string[] = [];
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
 
   const identification = await WorkerDocumentEntity.findValidByWorkerIdAndType(
     workerId,
@@ -253,7 +255,7 @@ export async function validateWorkerDocumentsForApproval(
     const idDoc = anyIdentification.find((d) => d.documentType === "IDENTIFICATION");
     if (!idDoc) {
       missingTypes.push("IDENTIFICATION");
-    } else if (idDoc.status === "EXPIRED") {
+    } else if (idDoc.status === "EXPIRED" || idDoc.expiryDate < today) {
       expiredTypes.push("IDENTIFICATION");
     } else {
       missingTypes.push("IDENTIFICATION");
@@ -271,7 +273,7 @@ export async function validateWorkerDocumentsForApproval(
       const trainingDoc = anyDocs.find((d) => d.documentType === "TRAINING");
       if (!trainingDoc) {
         missingTypes.push("TRAINING");
-      } else if (trainingDoc.status === "EXPIRED") {
+      } else if (trainingDoc.status === "EXPIRED" || trainingDoc.expiryDate < today) {
         expiredTypes.push("TRAINING");
       } else {
         missingTypes.push("TRAINING");

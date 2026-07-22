@@ -7,6 +7,7 @@ import {
 } from "~/lib/services/planned-access.server";
 import type { Route } from "./+types/planned-access";
 import { getSessionSite } from "~/lib/session.server";
+import { redirect } from "react-router";
 
 const PLANNED_ACCESS_GLOBAL_FILTER_COLUMNS = [
   "companySnapshot",
@@ -36,22 +37,24 @@ export async function action({ request }: Route.ActionArgs) {
   const method = request.method.toUpperCase();
   const rawFormData = await request.formData();
 
-  if (method === "PUT" || method === "PATCH") {
-    return await updatePlannedAccessStatus(Object.fromEntries(rawFormData), {
+  if (method === "POST" || method === "PUT" || method === "PATCH") {
+    const result = await updatePlannedAccessStatus(Object.fromEntries(rawFormData), {
       authorUsername: user.username,
+      canApprove: true,
+      lockedSiteId: (await getSessionSite(request))?.id,
     });
+    return result.success ? redirect("/approver/planned-access") : result;
   }
 
   return null;
 }
 
-const columns = plannedAccessColumns({
-  actionPath: "/approver/planned-access",
-});
-
 export default function ApproverPlannedAccess({
   loaderData,
 }: Route.ComponentProps) {
+  const columns = plannedAccessColumns({
+    actionPath: "/approver/planned-access",
+  });
   return (
     <DataTable
       columns={columns}

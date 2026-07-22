@@ -5,6 +5,11 @@ import {
   DOCUMENT_TYPE_REQUIRED,
 } from "./messages";
 
+function parseDateOnly(value: string) {
+  const [year, month, day] = value.split("-").map(Number);
+  return new Date(year, month - 1, day);
+}
+
 export const uploadDocumentSchema = z.object({
   documentType: requiredString.refine(
     (v) => ["IDENTIFICATION", "TRAINING"].includes(v as string),
@@ -13,7 +18,7 @@ export const uploadDocumentSchema = z.object({
   expiryDate: requiredString.refine((v) => {
     const date = new Date(v);
     return !isNaN(date.getTime());
-  }, DOCUMENT_EXPIRY_REQUIRED).transform((v) => new Date(v)),
+  }, DOCUMENT_EXPIRY_REQUIRED).transform(parseDateOnly),
   notes: z.string().optional(),
 });
 
@@ -32,10 +37,10 @@ export const updateDocumentSchema = z.object({
     .optional()
     .refine((v) => {
       if (!v) return true;
-      const date = new Date(v);
+      const date = parseDateOnly(v);
       return !isNaN(date.getTime());
     }, DOCUMENT_EXPIRY_REQUIRED)
-    .transform((v) => (v ? new Date(v) : undefined)),
+    .transform((v) => (v ? parseDateOnly(v) : undefined)),
   notes: z.string().optional(),
 });
 

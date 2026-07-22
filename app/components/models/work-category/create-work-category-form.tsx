@@ -71,6 +71,12 @@ export default function CreateWorkCategoryForm({
             Requiere permiso especial
           </label>
         </div>
+        <div className="flex items-center gap-3 rounded-md border px-3 py-2">
+          <Checkbox id="requiresTraining" name="requiresTraining" value="true" />
+          <label htmlFor="requiresTraining" className="text-sm font-medium">
+            Requiere formación
+          </label>
+        </div>
       </Form>
     </AlertDialogContainer>
   );

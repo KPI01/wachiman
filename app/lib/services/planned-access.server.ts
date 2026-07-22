@@ -7,6 +7,9 @@ import { ExternalWorkerEntity } from "../database/external-worker.server";
 import { AccessLogEntity } from "../database/access-log.server";
 import { PlannedAccessEntity } from "../database/planned-access.server";
 import { UserEntity } from "../database/user.server";
+import { WorkCategoryEntity } from "../database/work-category.server";
+import { CompanyEntity } from "../database/company.server";
+import { uploadWorkerDocument } from "./worker-document.server";
 import {
   createAccessLogFromPlannedAccessSchema,
   createPlannedAccessSchema,
@@ -69,7 +72,43 @@ function isPlannedForToday(expectedStart: Date, expectedEnd?: Date | null) {
 type PlannedAccessAuthorOptions = {
   authorUsername: string;
   lockedSiteId?: string;
+  canApprove?: boolean;
+  requestedById?: string;
 };
+
+function normalizeLegalId(value: string) {
+  return value.trim().toUpperCase();
+}
+
+function normalizeCompanyName(value: string) {
+  return value.trim().replace(/\s+/g, " ");
+}
+
+function companySlug(value: string) {
+  return normalizeCompanyName(value)
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-zA-Z0-9]+/g, "-")
+    .replace(/^-|-$/g, "")
+    .toUpperCase() || "EMPRESA";
+}
+
+async function findOrCreateCompany(name: string) {
+  const normalizedName = normalizeCompanyName(name);
+  const companies = await CompanyEntity.findMany();
+  const existing = companies.find(
+    (company) => normalizeCompanyName(company.name).toUpperCase() === normalizedName.toUpperCase(),
+  );
+  if (existing) return existing;
+
+  let slug = companySlug(normalizedName);
+  let suffix = 1;
+  while (companies.some((company) => company.slug === slug)) {
+    suffix += 1;
+    slug = `${companySlug(normalizedName)}-${suffix}`;
+  }
+  return CompanyEntity.create({ name: normalizedName, slug });
+}
 
 export async function createPlannedAccess(
   input: Record<string, unknown>,
@@ -167,7 +206,16 @@ export async function updatePlannedAccessStatus(
   input: Record<string, unknown>,
   options: PlannedAccessAuthorOptions,
 ) {
-  const parsed = await updatePlannedAccessStatusSchema.safeParseAsync(input);
+  const personWorkCategories: Record<string, string | null> = {};
+  for (const [key, value] of Object.entries(input)) {
+    const match = /^personWorkCategories\[(.+)]$/.exec(key);
+    if (match) personWorkCategories[match[1]] = String(value) || null;
+  }
+
+  const parsed = await updatePlannedAccessStatusSchema.safeParseAsync({
+    ...input,
+    personWorkCategories,
+  });
 
   if (!parsed.success) {
     return { success: false, errors: z.treeifyError(parsed.error) };
@@ -179,22 +227,116 @@ export async function updatePlannedAccessStatus(
     return { success: false, errors: "unauthorized" };
   }
 
+  if (parsed.data.status !== "CANCELED" && !options.canApprove) {
+    return { success: false, errors: "No tienes permisos para aprobar solicitudes." };
+  }
+
+  const existingPlannedAccess = await PlannedAccessEntity.findById(parsed.data.id);
+  if (!existingPlannedAccess) {
+    return { success: false, errors: "La solicitud planificada no existe." };
+  }
+
+  if (options.lockedSiteId && existingPlannedAccess.siteId !== options.lockedSiteId) {
+    return { success: false, errors: "No tienes permisos para esta solicitud." };
+  }
+
+  if (options.requestedById && existingPlannedAccess.requestedById !== options.requestedById) {
+    return { success: false, errors: "Solo puedes modificar tus propias solicitudes." };
+  }
+
   if (parsed.data.status === "APPROVED") {
-    const plannedAccess = await PlannedAccessEntity.findById(parsed.data.id);
+    const plannedAccess = existingPlannedAccess;
 
     if (!plannedAccess) {
       return { success: false, errors: "La solicitud planificada no existe." };
     }
 
-    for (const person of plannedAccess.plannedAccessPersons) {
-      if (!person.externalWorkerId) continue;
+    if (plannedAccess.status !== "PENDING_APPROVAL") {
+      return { success: false, errors: "La solicitud ya no está pendiente de aprobación." };
+    }
 
-      const worker = await ExternalWorkerEntity.findById(person.externalWorkerId);
-      if (!worker) continue;
+    const selectedCategories = parsed.data.personWorkCategories ?? {};
+    const personWorkCategories: Array<{ personId: string; workCategoryId: string | null; externalWorkerId: string }> = [];
+    const validationErrors: string[] = [];
+
+    for (const person of plannedAccess.plannedAccessPersons) {
+      const categoryId = selectedCategories[person.id] || null;
+      const legalId = normalizeLegalId(person.legalIdSnapshot);
+      const matchedWorker = await ExternalWorkerEntity.findByLegalId(legalId);
+      let worker = matchedWorker
+        ? await ExternalWorkerEntity.findById(matchedWorker.id)
+        : null;
+
+      if (!worker && person.externalWorkerId) {
+        const linkedWorker = await ExternalWorkerEntity.findById(person.externalWorkerId);
+        if (linkedWorker && normalizeLegalId(linkedWorker.legalId) !== legalId) {
+          validationErrors.push(`El trabajador vinculado a ${person.firstNameSnapshot} ${person.lastNameSnapshot} tiene un DNI diferente al de la solicitud.`);
+          continue;
+        }
+        worker = linkedWorker;
+      }
+
+      if (!worker) {
+        if (!categoryId) {
+          validationErrors.push(`La persona ${person.firstNameSnapshot} ${person.lastNameSnapshot} es nueva y necesita una categoría laboral.`);
+          continue;
+        }
+        const company = await findOrCreateCompany(plannedAccess.companySnapshot);
+        const createdWorker = await ExternalWorkerEntity.create({
+          firstName: person.firstNameSnapshot,
+          middleName: person.middleNameSnapshot ?? undefined,
+          lastName: person.lastNameSnapshot,
+          secondLastName: person.secondLastNameSnapshot ?? undefined,
+          phoneNumber: person.phoneNumber ?? undefined,
+          legalId,
+          companyId: company.id,
+          workCategoryId: categoryId,
+        });
+        worker = createdWorker;
+      }
+
+      if (!worker) {
+        validationErrors.push(`No se pudo resolver el trabajador de ${person.firstNameSnapshot} ${person.lastNameSnapshot}.`);
+        continue;
+      }
+
+      const workerId = worker.id;
+      personWorkCategories.push({ personId: person.id, workCategoryId: categoryId, externalWorkerId: workerId });
+
+      let requiresTraining = false;
+      if (categoryId) {
+        const category = await WorkCategoryEntity.findById(categoryId);
+        if (!category) {
+          validationErrors.push(`La categoría seleccionada para ${worker.firstName} ${worker.lastName} no existe.`);
+          continue;
+        }
+        requiresTraining = Boolean(category.requiresTraining);
+      }
+
+      for (const documentType of ["IDENTIFICATION", "TRAINING"] as const) {
+        const fileValue = input[`documentFiles[${person.id}][${documentType}]`];
+        if (!(fileValue instanceof File) || fileValue.size === 0) continue;
+        const expiryDate = input[`documentExpiry[${person.id}][${documentType}]`];
+        const uploadResult = await uploadWorkerDocument(
+          workerId,
+          fileValue,
+          {
+            documentType,
+            expiryDate: typeof expiryDate === "string" ? expiryDate : "",
+            notes: typeof input[`documentNotes[${person.id}][${documentType}]`] === "string"
+              ? String(input[`documentNotes[${person.id}][${documentType}]`])
+              : "",
+          },
+          author.id,
+        );
+        if (!uploadResult.success) {
+          validationErrors.push(`No se pudo subir ${DOCUMENT_TYPE_LABELS[documentType]} para ${worker.firstName} ${worker.lastName}.`);
+        }
+      }
 
       const docResult = await validateWorkerDocumentsForApproval(
-        person.externalWorkerId,
-        worker.workCategory.requiresTraining,
+        workerId,
+        requiresTraining,
       );
 
       if (!docResult.valid) {
@@ -215,20 +357,46 @@ export async function updatePlannedAccessStatus(
           errorParts.push(`expirados: ${expiredLabels.join(", ")}`);
         }
 
-        return {
-          success: false,
-          errors: `El trabajador ${workerName} (${legalId}) no tiene la documentacion requerida vigente (${errorParts.join("; ")}).`,
-        };
+        validationErrors.push(`El trabajador ${workerName} (${legalId}) no tiene la documentación requerida vigente (${errorParts.join("; ")}).`);
       }
     }
+
+    if (validationErrors.length > 0) {
+      return { success: false, errors: validationErrors.join(" ") };
+    }
+
+    const approved = await PlannedAccessEntity.approve({
+      id: parsed.data.id,
+      status: "APPROVED",
+      approvedById: author.id,
+      approvedAt: new Date(),
+      personWorkCategories,
+    });
+
+    if (!approved) {
+      return { success: false, errors: "La solicitud ya no está pendiente de aprobación." };
+    }
+
+    return { success: true };
   }
 
-  await PlannedAccessEntity.updateStatus({
+  const allowedPreviousStatuses = parsed.data.status === "REJECTED"
+    ? ["PENDING_APPROVAL"]
+    : ["PENDING_APPROVAL", "APPROVED"];
+  if (!allowedPreviousStatuses.includes(existingPlannedAccess.status ?? "")) {
+    return { success: false, errors: "La transición solicitada no es válida para el estado actual." };
+  }
+
+  const updated = await PlannedAccessEntity.updateStatus({
     id: parsed.data.id,
     status: parsed.data.status,
     approvedById: author.id,
-    approvedAt: parsed.data.status === "APPROVED" ? new Date() : null,
+    approvedAt: null,
   });
+
+  if (!updated) {
+    return { success: false, errors: "La solicitud no pudo actualizarse." };
+  }
 
   return { success: true };
 }

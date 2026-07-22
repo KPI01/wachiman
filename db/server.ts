@@ -2,9 +2,15 @@ import { createD1Db, createLocalDb, type DbClient } from "./client";
 
 let _db: DbClient | null = null;
 let _initPromise: Promise<void> | null = null;
+let _dbRuntime: "local" | "d1" | null = null;
 
 export function setDb(db: DbClient) {
   _db = db;
+  _dbRuntime = "local";
+}
+
+export function isLocalDb() {
+  return _dbRuntime === "local";
 }
 
 export function isDbInitialized() {
@@ -16,6 +22,7 @@ export async function initLocalDb() {
   if (_initPromise) return _initPromise;
   _initPromise = createLocalDb().then((db) => {
     _db = db as unknown as DbClient;
+    _dbRuntime = "local";
   });
   return _initPromise;
 }
@@ -23,6 +30,7 @@ export async function initLocalDb() {
 export async function initDb(d1: D1Database) {
   if (_db) return;
   _db = (await createD1Db(d1)) as unknown as DbClient;
+  _dbRuntime = "d1";
 }
 
 const handler: ProxyHandler<DbClient> = {

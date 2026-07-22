@@ -30,7 +30,8 @@ export default [
     route("sites", "routes/admin/sites.tsx"),
     route("departments", "routes/admin/departments.tsx"),
     route("access-logs", "routes/admin/access-logs.tsx"),
-    route("planned-access", "routes/admin/planned-access.tsx"),
+     route("planned-access", "routes/admin/planned-access.tsx"),
+     route("planned-access/:id/approve", "routes/admin/planned-access.$id.approve.tsx"),
     route("external-workers", "routes/admin/external-workers.tsx"),
     route("external-worker/:id", "routes/admin/external-worker.$id.tsx"),
     route("companies", "routes/admin/companies.tsx"),
@@ -53,7 +54,8 @@ export default [
   route("security", "routes/security/layout.tsx", [
     index("routes/security/home.tsx"),
     route("access-logs", "routes/security/access-logs.tsx"),
-    route("planned-access", "routes/security/planned-access.tsx"),
+     route("planned-access", "routes/security/planned-access.tsx"),
+     route("planned-access/:id/approve", "routes/security/planned-access.$id.approve.tsx"),
     route("external-workers", "routes/security/external-workers.tsx"),
     route("external-worker/:id", "routes/security/external-worker.$id.tsx"),
     route("companies", "routes/security/companies.tsx"),
@@ -71,7 +73,8 @@ export default [
   // Aprobador de accesos
   route("approver", "routes/approver/layout.tsx", [
     index("routes/approver/home.tsx"),
-    route("planned-access", "routes/approver/planned-access.tsx"),
+     route("planned-access", "routes/approver/planned-access.tsx"),
+     route("planned-access/:id/approve", "routes/approver/planned-access.$id.approve.tsx"),
     route("access-logs", "routes/approver/access-logs.tsx"),
     route("external-workers", "routes/approver/external-workers.tsx"),
     route("external-worker/:id", "routes/approver/external-worker.$id.tsx"),

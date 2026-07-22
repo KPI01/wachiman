@@ -115,7 +115,7 @@ export class ExternalWorkerEntity {
 
   public static async findByLegalId(legalId: string) {
     const row = await db.query.externalWorkers.findFirst({
-      where: eq(externalWorkers.legalId, legalId),
+      where: sql`upper(${externalWorkers.legalId}) = ${legalId.trim().toUpperCase()}`,
       with: {
         company: { columns: { id: true, name: true } },
         workCategory: { columns: { id: true, name: true } },

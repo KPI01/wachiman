@@ -67,6 +67,7 @@ export const createPlannedAccessSchema = z
 export const updatePlannedAccessStatusSchema = z.object({
   id: requiredString,
   status: z.enum(["APPROVED", "REJECTED", "CANCELED"]),
+  personWorkCategories: z.record(z.string(), z.string().nullable()).optional(),
 });
 
 export const createAccessLogFromPlannedAccessSchema = z.object({

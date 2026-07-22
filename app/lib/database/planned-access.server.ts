@@ -1,5 +1,6 @@
 import { and, count, desc, eq, gte, inArray, isNull, lte, ne, or } from "drizzle-orm";
-import { db } from "../../../db/server";
+import { db, isLocalDb } from "../../../db/server";
+import type { DrizzleD1Database } from "drizzle-orm/d1";
 import {
   accessLogs,
   plannedAccessPersons,
@@ -41,14 +42,16 @@ export type CreatePlannedAccessInput = {
     phoneNumber?: string;
     legalIdSnapshot: string;
     externalWorkerId?: string;
+    workCategoryId?: string;
   }>;
 };
 
 export type UpdatePlannedAccessStatusInput = {
-  id: string;
-  status: PlannedAccessStatus;
-  approvedById: string;
-  approvedAt?: Date | null;
+    id: string;
+    status: PlannedAccessStatus;
+    approvedById: string;
+    approvedAt?: Date | null;
+    personWorkCategories?: Array<{ personId: string; workCategoryId: string | null; externalWorkerId?: string }>;
 };
 
 const ACTIVE_STATUSES: PlannedAccessStatus[] = [
@@ -90,6 +93,7 @@ export class PlannedAccessEntity {
           secondLastNameSnapshot: p.secondLastNameSnapshot,
           phoneNumber: p.phoneNumber,
           legalIdSnapshot: p.legalIdSnapshot,
+          workCategoryId: p.workCategoryId,
           externalWorkerId: p.externalWorkerId,
           plannedAccessId: pa.id,
         })),
@@ -137,7 +141,10 @@ export class PlannedAccessEntity {
         requestedBy: { columns: { id: true, fullName: true, username: true } },
         approvedBy: { columns: { id: true, fullName: true, username: true } },
         plannedAccessPersons: {
-          with: { accessLogs: { columns: { id: true } } },
+          with: {
+            accessLogs: { columns: { id: true } },
+            workCategory: { columns: { id: true, name: true, requiresTraining: true } },
+          },
         },
       },
       orderBy: (pa, { desc: d }) => [d(pa.createdAt)],
@@ -164,7 +171,10 @@ export class PlannedAccessEntity {
         requestedBy: { columns: { id: true, fullName: true, username: true } },
         approvedBy: { columns: { id: true, fullName: true, username: true } },
         plannedAccessPersons: {
-          with: { accessLogs: { columns: { id: true } } },
+          with: {
+            accessLogs: { columns: { id: true } },
+            workCategory: { columns: { id: true, name: true, requiresTraining: true } },
+          },
         },
       },
     });
@@ -233,6 +243,89 @@ export class PlannedAccessEntity {
       .where(eq(plannedAccesses.id, data.id))
       .returning();
     return pa;
+  }
+
+  public static async approve(
+    data: UpdatePlannedAccessStatusInput & { personWorkCategories: Array<{ personId: string; workCategoryId: string | null; externalWorkerId: string }> },
+  ) {
+    const personIds = [...new Set(data.personWorkCategories.map((person) => person.personId))];
+    if (personIds.length !== data.personWorkCategories.length) return undefined;
+
+    if (personIds.length > 0) {
+      const linkedPersons = await db
+        .select({ id: plannedAccessPersons.id })
+        .from(plannedAccessPersons)
+        .where(and(
+          eq(plannedAccessPersons.plannedAccessId, data.id),
+          inArray(plannedAccessPersons.id, personIds),
+        ))
+        .all();
+      if (linkedPersons.length !== personIds.length) return undefined;
+    }
+
+    const approvalValues = {
+      status: "APPROVED" as const,
+      approvedById: data.approvedById,
+      approvedAt: data.approvedAt ?? new Date(),
+      updatedAt: new Date(),
+    };
+
+    if (isLocalDb()) {
+      return db.transaction((tx) => {
+        const pa = tx
+          .update(plannedAccesses)
+          .set(approvalValues)
+          .where(and(eq(plannedAccesses.id, data.id), eq(plannedAccesses.status, "PENDING_APPROVAL")))
+          .returning()
+          .get();
+        if (!pa) return undefined;
+
+        for (const person of data.personWorkCategories) {
+          tx
+            .update(plannedAccessPersons)
+            .set({
+              workCategoryId: person.workCategoryId,
+              externalWorkerId: person.externalWorkerId,
+              updatedAt: new Date(),
+            })
+            .where(and(
+              eq(plannedAccessPersons.id, person.personId),
+              eq(plannedAccessPersons.plannedAccessId, data.id),
+            ))
+            .run();
+        }
+
+        return pa;
+      });
+    }
+
+    const d1 = db as unknown as DrizzleD1Database<typeof import("../../../db/schema")>;
+    return d1.transaction(async (tx) => {
+      const pa = await tx
+        .update(plannedAccesses)
+        .set(approvalValues)
+        .where(and(eq(plannedAccesses.id, data.id), eq(plannedAccesses.status, "PENDING_APPROVAL")))
+        .returning()
+        .get();
+      if (!pa) return undefined;
+
+      for (const person of data.personWorkCategories) {
+        await tx
+          .update(plannedAccessPersons)
+          .set({
+            workCategoryId: person.workCategoryId,
+            externalWorkerId: person.externalWorkerId,
+            updatedAt: new Date(),
+          })
+          .where(and(
+            eq(plannedAccessPersons.id, person.personId),
+            eq(plannedAccessPersons.plannedAccessId, data.id),
+          ))
+          .run();
+      }
+
+      return pa;
+    });
   }
 
   public static async countLinkedAccessLogs(

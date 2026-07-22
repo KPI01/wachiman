@@ -10,6 +10,7 @@ import {
 } from "~/lib/services/planned-access.server";
 import { getManySites } from "~/lib/services/sites.server";
 import type { Route } from "./+types/planned-access";
+import { redirect } from "react-router";
 
 const PLANNED_ACCESS_GLOBAL_FILTER_COLUMNS = [
   "companySnapshot",
@@ -18,10 +19,6 @@ const PLANNED_ACCESS_GLOBAL_FILTER_COLUMNS = [
   "siteName",
   "requestedByName",
 ];
-
-const columns = plannedAccessColumns({
-  actionPath: "/admin/planned-access",
-});
 
 export async function loader({ request }: Route.LoaderArgs) {
   await validateUserRole(request, "ADMIN");
@@ -40,15 +37,24 @@ export async function action({ request }: Route.ActionArgs) {
   const rawFormData = await request.formData();
 
   if (method === "POST") {
+    if (rawFormData.has("status")) {
+      const result = await updatePlannedAccessStatus(Object.fromEntries(rawFormData), {
+        authorUsername: user.username,
+        canApprove: true,
+      });
+      return result.success ? redirect("/admin/planned-access") : result;
+    }
     return await createPlannedAccess(getPlannedAccessFormInput(rawFormData), {
       authorUsername: user.username,
     });
   }
 
   if (method === "PUT" || method === "PATCH") {
-    return await updatePlannedAccessStatus(Object.fromEntries(rawFormData), {
+    const result = await updatePlannedAccessStatus(Object.fromEntries(rawFormData), {
       authorUsername: user.username,
+      canApprove: true,
     });
+    return result.success ? redirect("/admin/planned-access") : result;
   }
 
   return null;
@@ -57,6 +63,10 @@ export async function action({ request }: Route.ActionArgs) {
 export default function PlannedAccessIndex({
   loaderData,
 }: Route.ComponentProps) {
+  const columns = plannedAccessColumns({
+    actionPath: "/admin/planned-access",
+  });
+
   return (
     <div className="grid space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

@@ -58,80 +58,83 @@ export const plannedAccessColumns = ({
   actionPath?: string;
   allowedActions?: AllowedAction[];
 } = {}) => [
-  plannedAccessColHelper.accessor("expectedStartDatetime", {
-    header: "Inicio previsto",
-    cell: ({ getValue }) =>
-      formatTimestamp({ date: getValue(), template: "dd/MM/yyyy HH:mm" }),
-  }),
-  plannedAccessColHelper.accessor("expectedEndDatetime", {
-    header: "Fin previsto",
-    cell: ({ getValue }) => {
-      const value = getValue();
+    plannedAccessColHelper.accessor("expectedStartDatetime", {
+      header: "Inicio previsto",
+      cell: ({ getValue }) =>
+        formatTimestamp({ date: getValue(), template: "dd/MM/yyyy HH:mm" }),
+    }),
+    plannedAccessColHelper.accessor("expectedEndDatetime", {
+      header: "Fin previsto",
+      cell: ({ getValue }) => {
+        const value = getValue();
 
-      return value
-        ? formatTimestamp({ date: value, template: "dd/MM/yyyy HH:mm" })
-        : "Todo el dia";
-    },
-  }),
-  plannedAccessColHelper.accessor("status", {
-    header: "Estado",
-    cell: ({ getValue }) => {
-      const status = getValue();
+        return value
+          ? formatTimestamp({ date: value, template: "dd/MM/yyyy HH:mm" })
+          : "Todo el dia";
+      },
+    }),
+    plannedAccessColHelper.accessor("status", {
+      header: "Estado",
+      cell: ({ getValue }) => {
+        const status = getValue() ?? "PENDING_APPROVAL";
 
-      return (
-        <Badge variant={PLANNED_ACCESS_STATUS_VARIANTS[status]}>
-          {PLANNED_ACCESS_STATUS_LABELS[status]}
-        </Badge>
-      );
-    },
-  }),
-  plannedAccessColHelper.accessor("companySnapshot", {
-    header: "Empresa",
-  }),
-  plannedAccessColHelper.accessor(getPersonsDetails, {
-    id: "personsDetails",
-    header: "Visitantes",
-    cell: ({ row, getValue }) => (
-      <div className="flex flex-col gap-1">
-        <span>{row.original.plannedAccessPersons.length} visitante(s)</span>
-        <span className="text-muted-foreground max-w-96 truncate text-sm">
-          {getValue()}
-        </span>
-      </div>
+        return (
+          <Badge variant={PLANNED_ACCESS_STATUS_VARIANTS[status]}>
+            {PLANNED_ACCESS_STATUS_LABELS[status]}
+          </Badge>
+        );
+      },
+    }),
+    plannedAccessColHelper.accessor("companySnapshot", {
+      header: "Empresa",
+    }),
+    plannedAccessColHelper.accessor(getPersonsDetails, {
+      id: "personsDetails",
+      header: "Visitantes",
+      cell: ({ row, getValue }) => (
+        <div className="flex flex-col gap-1">
+          <span>{row.original.plannedAccessPersons.length} visitante(s)</span>
+          <span className="text-muted-foreground max-w-96 truncate text-sm">
+            {getValue()}
+          </span>
+        </div>
+      ),
+    }),
+    plannedAccessColHelper.accessor("visitReason", {
+      header: "Motivo",
+    }),
+    plannedAccessColHelper.accessor(
+      (plannedAccess) => plannedAccess.site?.name ?? "-",
+      {
+        id: "siteName",
+        header: "Centro",
+      },
     ),
-  }),
-  plannedAccessColHelper.accessor("visitReason", {
-    header: "Motivo",
-  }),
-  plannedAccessColHelper.accessor((plannedAccess) => plannedAccess.site.name, {
-    id: "siteName",
-    header: "Centro",
-  }),
-  plannedAccessColHelper.accessor(
-    (plannedAccess) => plannedAccess.requestedBy.fullName,
-    {
-      id: "requestedByName",
-      header: "Solicitado por",
-    },
-  ),
-  plannedAccessColHelper.accessor(
-    (plannedAccess) =>
-      plannedAccess.approvedAt ? plannedAccess.approvedBy.fullName : "-",
-    {
-      id: "approvedByName",
-      header: "Aprobado por",
-    },
-  ),
-  plannedAccessColHelper.display({
-    id: "actions",
-    header: "Acciones",
-    cell: ({ row }) => (
-      <PlannedAccessStatusActions
-        plannedAccessId={row.original.id}
-        status={row.original.status}
+    plannedAccessColHelper.accessor(
+      (plannedAccess) => plannedAccess.requestedBy?.fullName ?? "-",
+      {
+        id: "requestedByName",
+        header: "Solicitado por",
+      },
+    ),
+    plannedAccessColHelper.accessor(
+      (plannedAccess) =>
+        plannedAccess.approvedAt ? plannedAccess.approvedBy?.fullName : "-",
+      {
+        id: "approvedByName",
+        header: "Aprobado por",
+      },
+    ),
+    plannedAccessColHelper.display({
+      id: "actions",
+      header: "Acciones",
+      cell: ({ row }) => (
+        <PlannedAccessStatusActions
+          plannedAccessId={row.original.id}
+        status={row.original.status ?? "PENDING_APPROVAL"}
         actionPath={actionPath}
         allowedActions={allowedActions}
-      />
-    ),
-  }),
-];
+        />
+      ),
+    }),
+  ];

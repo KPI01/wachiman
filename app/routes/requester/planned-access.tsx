@@ -16,6 +16,7 @@ import { Badge } from "~/components/ui/badge";
 import type { PlannedAccessStatus } from "../../../db/enums";
 import type { AllowedAction } from "~/components/models/planned-access/planned-access-status-actions";
 import type { PlannedAccessListItem } from "~/lib/database/planned-access.server";
+import { redirect } from "react-router";
 
 type EnrichedPlannedAccess = PlannedAccessListItem & {
   _entryStatus: {
@@ -100,6 +101,15 @@ export async function action({ request }: Route.ActionArgs) {
   const rawFormData = await request.formData();
 
   if (method === "POST") {
+    if (rawFormData.has("status")) {
+      const result = await updatePlannedAccessStatus(Object.fromEntries(rawFormData), {
+        authorUsername: user.username,
+        canApprove: false,
+        lockedSiteId: site.id,
+        requestedById: user.id,
+      });
+      return result.success ? redirect("/requester/planned-access") : result;
+    }
     return await createPlannedAccess(getPlannedAccessFormInput(rawFormData), {
       authorUsername: user.username,
       lockedSiteId: site.id,
@@ -107,9 +117,13 @@ export async function action({ request }: Route.ActionArgs) {
   }
 
   if (method === "PUT" || method === "PATCH") {
-    return await updatePlannedAccessStatus(Object.fromEntries(rawFormData), {
+    const result = await updatePlannedAccessStatus(Object.fromEntries(rawFormData), {
       authorUsername: user.username,
+      canApprove: false,
+      lockedSiteId: site.id,
+      requestedById: user.id,
     });
+    return result.success ? redirect("/requester/planned-access") : result;
   }
 
   return null;

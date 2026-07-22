@@ -44,13 +44,16 @@ export class WorkerDocumentEntity {
   }
 
   public static async findExpiredValidated() {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    today.setMilliseconds(today.getMilliseconds() - 1);
     return db
       .select()
       .from(workerDocuments)
       .where(
         and(
           eq(workerDocuments.status, "VALIDATED" as DocumentStatus),
-          lte(workerDocuments.expiryDate, new Date()),
+           lte(workerDocuments.expiryDate, today),
         ),
       )
       .all();
@@ -77,7 +80,7 @@ export class WorkerDocumentEntity {
           eq(workerDocuments.externalWorkerId, workerId),
           eq(workerDocuments.documentType, documentType),
           eq(workerDocuments.status, "VALIDATED" as DocumentStatus),
-          gte(workerDocuments.expiryDate, new Date()),
+           gte(workerDocuments.expiryDate, new Date(new Date().setHours(23, 59, 59, 999))),
         ),
       )
       .all();
