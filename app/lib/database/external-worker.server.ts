@@ -164,7 +164,7 @@ export class ExternalWorkerEntity {
         company: { columns: { id: true, name: true } },
         workCategory: { columns: { id: true, name: true } },
       },
-      limit: 10,
+      limit: 5,
       orderBy: (worker, { desc: d }) => [d(worker.createdAt)],
     });
     return rows;

@@ -27,6 +27,7 @@ import FieldWrapper from "~/components/ui/wrappers/field-wrapper";
 import { getFieldErrors } from "~/lib/utils/zod-errors";
 import type { Site } from "../../../../db/schema";
 import type { ExternalWorkerListItem } from "~/lib/database/external-worker.server";
+import CompanyCombobox from "~/components/models/company/company-combobox";
 
 type PlannedAccessSiteOption = Pick<Site, "id" | "name">;
 
@@ -151,6 +152,7 @@ export default function CreatePlannedAccessForm({
   const [visitorDraftErrors, setVisitorDraftErrors] =
     useState<VisitorDraftErrors>({});
   const [visitorPopoverOpen, setVisitorPopoverOpen] = useState(false);
+  const [companySnapshot, setCompanySnapshot] = useState("");
   const [localVisitorsError, setLocalVisitorsError] = useState<string | null>(
     null,
   );
@@ -183,6 +185,7 @@ export default function CreatePlannedAccessForm({
     setVisitorDraftErrors({});
     setVisitorPopoverOpen(false);
     setLocalVisitorsError(null);
+    setCompanySnapshot("");
     setLegalIdSuggestions([]);
     setShowLegalIdSuggestions(false);
   }, [fetcher.data, fetcher.state]);
@@ -266,6 +269,7 @@ export default function CreatePlannedAccessForm({
     setVisitorDraftErrors({});
     setVisitorPopoverOpen(false);
     setLocalVisitorsError(null);
+    setCompanySnapshot("");
     setLegalIdSuggestions([]);
     setShowLegalIdSuggestions(false);
   }
@@ -388,7 +392,13 @@ export default function CreatePlannedAccessForm({
           htmlFor="companySnapshot"
           errors={getFieldErrors(fetcher.data?.errors, "companySnapshot")}
         >
-          <Input id="companySnapshot" name="companySnapshot" required />
+          <CompanyCombobox
+            id="companySnapshot"
+            name="companySnapshot"
+            required
+            value={companySnapshot}
+            onValueChange={setCompanySnapshot}
+          />
         </FieldWrapper>
         <FieldWrapper
           label="Inicio previsto *"
@@ -496,7 +506,7 @@ export default function CreatePlannedAccessForm({
                                 {worker.legalId}
                               </span>
                               <span className="ml-2 text-xs text-muted-foreground">
-                                {worker.company.name}
+                          {worker.company?.name}
                               </span>
                             </li>
                           ))}

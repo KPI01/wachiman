@@ -1,4 +1,4 @@
-import { and, eq, ne } from "drizzle-orm";
+import { and, eq, like, ne } from "drizzle-orm";
 import { db } from "../../../db/server";
 import { companies } from "../../../db/schema";
 
@@ -37,6 +37,15 @@ export class CompanyEntity {
 
   public static async findMany() {
     return db.select().from(companies).all();
+  }
+
+  public static async searchByName(query: string) {
+    return db
+      .select({ id: companies.id, name: companies.name })
+      .from(companies)
+      .where(like(companies.name, `%${query}%`))
+      .limit(5)
+      .all();
   }
 
   public static async update(

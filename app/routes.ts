@@ -99,5 +99,6 @@ export default [
     route(":workerId/documents/:docId", "routes/api/external-workers/$workerId.documents.$docId.tsx"),
     route(":workerId/documents/:docId/file", "routes/api/external-workers/$workerId.documents.$docId.file.tsx"),
   ]),
+  route("api/companies/search", "routes/api/companies/search.tsx"),
   route("api/worker-documents/check-expiry", "routes/api/worker-documents/check-expiry.tsx"),
 ] satisfies RouteConfig;

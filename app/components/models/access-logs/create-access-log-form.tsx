@@ -22,6 +22,7 @@ import { getFieldErrors } from "~/lib/utils/zod-errors";
 import { Textarea } from "~/components/ui/textarea";
 import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
 import type { ExternalWorkerListItem } from "~/lib/database/external-worker.server";
+import CompanyCombobox from "~/components/models/company/company-combobox";
 
 type FetcherErrors = {
   errors?: {
@@ -64,6 +65,7 @@ export default function CreateAccessLog({
     string | null
   >(null);
   const [legalIdValue, setLegalIdValue] = useState("");
+  const [companyNameValue, setCompanyNameValue] = useState("");
   const [suggestions, setSuggestions] = useState<ExternalWorkerListItem[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(0);
@@ -71,7 +73,6 @@ export default function CreateAccessLog({
   const formRef = useRef<HTMLFormElement>(null);
   const firstNameRef = useRef<HTMLInputElement>(null);
   const lastNameRef = useRef<HTMLInputElement>(null);
-  const companyRef = useRef<HTMLInputElement>(null);
   const phoneRef = useRef<HTMLInputElement>(null);
   const suggestionContainerRef = useRef<HTMLDivElement>(null);
   const selectedSiteId = lockedSiteId ?? sites[0]?.id;
@@ -84,7 +85,6 @@ export default function CreateAccessLog({
 
     if (firstNameRef.current) firstNameRef.current.value = worker.firstName;
     if (lastNameRef.current) lastNameRef.current.value = worker.lastName;
-    if (companyRef.current) companyRef.current.value = worker.company.name;
     if (phoneRef.current) phoneRef.current.value = worker.phoneNumber ?? "";
     setSuggestions([]);
     setShowSuggestions(false);
@@ -161,6 +161,7 @@ export default function CreateAccessLog({
     setPendingFormEntries([]);
     setSelectedExternalWorkerId(null);
     setLegalIdValue("");
+    setCompanyNameValue("");
     setSuggestions([]);
     setShowSuggestions(false);
   }, [fetcher.data, fetcher.state]);
@@ -180,6 +181,7 @@ export default function CreateAccessLog({
           setPendingFormEntries([]);
           setSelectedExternalWorkerId(null);
           setLegalIdValue("");
+          setCompanyNameValue("");
           setSuggestions([]);
           setShowSuggestions(false);
         }
@@ -357,7 +359,7 @@ export default function CreateAccessLog({
                           {worker.legalId}
                         </span>
                         <span className="ml-2 text-xs text-muted-foreground">
-                          {worker.company.name}
+                          {worker.company?.name}
                         </span>
                       </li>
                     ))}
@@ -371,21 +373,31 @@ export default function CreateAccessLog({
               htmlFor="firstNameSnapshot"
               errors={getFieldErrors(fetcher.data?.errors, "firstNameSnapshot")}
             >
-              <Input id="firstNameSnapshot" name="firstNameSnapshot" required />
+              <Input
+                ref={firstNameRef}
+                id="firstNameSnapshot"
+                name="firstNameSnapshot"
+                required
+              />
             </FieldWrapper>
             <FieldWrapper
               label="Apellido(s) *"
               htmlFor="lastNameSnapshot"
               errors={getFieldErrors(fetcher.data?.errors, "lastNameSnapshot")}
             >
-              <Input id="lastNameSnapshot" name="lastNameSnapshot" required />
+              <Input
+                ref={lastNameRef}
+                id="lastNameSnapshot"
+                name="lastNameSnapshot"
+                required
+              />
             </FieldWrapper>
             <FieldWrapper
               label="Telefono"
               htmlFor="phoneNumber"
               errors={getFieldErrors(fetcher.data?.errors, "phoneNumber")}
             >
-              <Input id="phoneNumber" name="phoneNumber" />
+              <Input ref={phoneRef} id="phoneNumber" name="phoneNumber" />
             </FieldWrapper>
             <FieldWrapper
               label="Empresa *"
@@ -395,10 +407,12 @@ export default function CreateAccessLog({
                 "companyNameSnapshot",
               )}
             >
-              <Input
+              <CompanyCombobox
                 id="companyNameSnapshot"
                 name="companyNameSnapshot"
                 required
+                value={companyNameValue}
+                onValueChange={setCompanyNameValue}
               />
             </FieldWrapper>
 
