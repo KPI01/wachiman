@@ -171,7 +171,7 @@ function DocumentRequirement({
       {!valid ? (
         <div className="flex flex-col gap-2">
           <p className="text-xs text-muted-foreground">
-            Carga la evidencia aquí. Quedará pendiente de revisión y no habilitará la aprobación hasta ser validada.
+             Carga el documento aquí. Quedará pendiente de revisión y no habilitará la aprobación hasta ser validado.
           </p>
           <UploadWorkerDocumentBtn
             workerId={worker?.id}

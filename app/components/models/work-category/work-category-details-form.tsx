@@ -84,7 +84,7 @@ export default function WorkCategoryDetailsForm({
               defaultChecked={Boolean(workCategory.requiresTraining)}
             />
             <label htmlFor={`requiresTraining-${workCategory.id}`} className="text-sm font-medium">
-              Exigir evidencia de formación
+              Exigir documento de formación
             </label>
           </Field>
           <Field orientation="horizontal">

@@ -62,12 +62,12 @@ export default function CreateWorkCategoryForm({
         <FieldSet>
           <FieldLegend>Requisitos documentales</FieldLegend>
           <FieldDescription>
-            Activa los tipos de evidencia que deben estar validados antes de autorizar el acceso.
+            Activa los tipos de documento que deben estar validados antes de autorizar el acceso.
           </FieldDescription>
           <Field orientation="horizontal">
             <Checkbox id="requiresTraining" name="requiresTraining" value="true" />
             <label htmlFor="requiresTraining" className="text-sm font-medium">
-              Exigir evidencia de formación
+              Exigir documento de formación
             </label>
           </Field>
           <Field orientation="horizontal">

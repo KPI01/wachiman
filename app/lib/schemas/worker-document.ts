@@ -5,6 +5,11 @@ import {
   DOCUMENT_TYPE_REQUIRED,
 } from "./messages";
 import { parseUtcDateOnly } from "../document-expiry";
+import {
+  hasDocumentField,
+  isDocumentRecordTypeAllowed,
+} from "../models/worker-document";
+import type { DocumentRecordType, DocumentType } from "../../../db/enums";
 
 const documentTypes = ["IDENTIFICATION", "TRAINING", "SPECIAL_PERMISSION"] as const;
 const recordTypes = [
@@ -34,6 +39,42 @@ const optionalDate = z
   .refine((value) => value === null || !isNaN(value.getTime()), DOCUMENT_EXPIRY_REQUIRED);
 
 const optionalString = z.string().trim().optional().transform((value) => value || null);
+
+const scopedFields = [
+  "completedAt",
+  "issuedAt",
+  "validFrom",
+  "validUntil",
+  "refresherDueAt",
+  "reviewDueAt",
+  "lastPerformedAt",
+  "legalSource",
+  "jurisdiction",
+  "sector",
+  "taskScope",
+  "riskScopes",
+  "equipmentTypes",
+  "procedureVersion",
+  "issuer",
+  "employerAuthorizer",
+] as const;
+
+function addInapplicableFieldIssues(
+  data: Record<string, unknown> & { recordType: string },
+  context: z.RefinementCtx,
+) {
+  for (const field of scopedFields) {
+    const value = data[field];
+    const hasValue = Array.isArray(value) ? value.length > 0 : value !== null && value !== undefined && value !== "";
+    if (hasValue && !hasDocumentField(data.recordType as DocumentRecordType, field)) {
+      context.addIssue({
+        code: "custom",
+        path: [field],
+        message: "Este campo no aplica a la naturaleza del documento.",
+      });
+    }
+  }
+}
 
 function optionalList(value: string | undefined) {
   if (value === undefined) return undefined;
@@ -70,6 +111,15 @@ export const uploadDocumentSchema = z.object({
   employerAuthorizer: optionalString,
   supersedesDocumentId: optionalString,
   notes: optionalString,
+}).superRefine((data, context) => {
+  if (!isDocumentRecordTypeAllowed(data.documentType as DocumentType, data.recordType as DocumentRecordType)) {
+    context.addIssue({
+      code: "custom",
+      path: ["recordType"],
+      message: "La naturaleza no corresponde al tipo de documento seleccionado.",
+    });
+  }
+  addInapplicableFieldIssues(data, context);
 });
 
 export const updateDocumentSchema = z.object({
@@ -96,6 +146,8 @@ export const updateDocumentSchema = z.object({
   employerAuthorizer: optionalString.optional(),
   supersedesDocumentId: optionalString.optional(),
   notes: optionalString.optional(),
+}).superRefine((data, context) => {
+  if (data.recordType) addInapplicableFieldIssues(data as Record<string, unknown> & { recordType: string }, context);
 });
 
 export const reviewDocumentSchema = z.object({

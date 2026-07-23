@@ -47,7 +47,7 @@ export default function WorkerDocumentList({
           <thead>
             <tr className="border-b bg-muted/50">
               <th className="px-3 py-2 text-left font-medium">Tipo</th>
-              <th className="px-3 py-2 text-left font-medium">Evidencia</th>
+              <th className="px-3 py-2 text-left font-medium">Documento</th>
               <th className="px-3 py-2 text-left font-medium">Estado</th>
               <th className="px-3 py-2 text-left font-medium">Archivo</th>
               <th className="px-3 py-2 text-left font-medium">Vigencia</th>

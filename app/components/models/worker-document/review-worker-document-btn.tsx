@@ -44,7 +44,7 @@ export default function ReviewWorkerDocumentBtn({
       buttonVariant="ghost"
       buttonSize="icon"
       title="Revisar documento"
-      description={`Decide sobre ${DOCUMENT_TYPE_LABELS[document.documentType]}: ${document.fileName}. La decisión y la evidencia quedarán registradas.`}
+      description={`Decide sobre ${DOCUMENT_TYPE_LABELS[document.documentType]}: ${document.fileName}. La decisión y el documento quedarán registrados.`}
       footer={
         <>
           <AlertDialogCancel variant="secondary">Cancelar</AlertDialogCancel>
@@ -66,8 +66,8 @@ export default function ReviewWorkerDocumentBtn({
               <SelectValue />
             </SelectTrigger>
             <SelectContent position="popper">
-              <SelectItem value="VALIDATED">Validar evidencia</SelectItem>
-              <SelectItem value="REJECTED">Rechazar evidencia</SelectItem>
+              <SelectItem value="VALIDATED">Validar documento</SelectItem>
+              <SelectItem value="REJECTED">Rechazar documento</SelectItem>
             </SelectContent>
           </Select>
         </FieldWrapper>
@@ -76,7 +76,7 @@ export default function ReviewWorkerDocumentBtn({
             id={`review-reason-${document.id}`}
             name="reviewReason"
             required
-            placeholder="Indica la evidencia comprobada y el motivo de la decisión."
+            placeholder="Indica el documento comprobado y el motivo de la decisión."
           />
         </FieldWrapper>
         {fetcher.data?.errors ? (

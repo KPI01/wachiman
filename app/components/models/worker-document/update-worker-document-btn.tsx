@@ -19,7 +19,11 @@ import {
   DOCUMENT_EXPIRY_BASIS_LABELS,
   DOCUMENT_RECORD_TYPE_LABELS,
   DOCUMENT_TYPE_LABELS,
+  DOCUMENT_RECORD_TYPES_BY_DOCUMENT_TYPE,
+  hasDocumentField,
 } from "~/lib/models/worker-document";
+import type { DocumentField } from "~/lib/models/worker-document";
+import type { DocumentRecordType } from "../../../../db/enums";
 import { formatTimestamp } from "~/lib/utils";
 import type { WorkerDocumentListItem } from "~/lib/database/worker-document.server";
 import { getActionErrorMessage } from "~/lib/utils/action-errors";
@@ -34,9 +38,12 @@ export default function UpdateWorkerDocumentBtn({
   workerId,
 }: UpdateWorkerDocumentBtnProps) {
   const [open, setOpen] = useState(false);
+  const [recordType, setRecordType] = useState<DocumentRecordType>(document.recordType);
+  const [hasValidityDate, setHasValidityDate] = useState(Boolean(document.validUntil));
   const fetcher = useFetcher<{ errors?: string }>();
 
   const formId = `update-document-${document.id}`;
+  const show = (field: DocumentField) => hasDocumentField(recordType, field);
 
   useEffect(() => {
     if (fetcher.state !== "idle" || !fetcher.data) return;
@@ -44,7 +51,7 @@ export default function UpdateWorkerDocumentBtn({
       toast.error(getActionErrorMessage(fetcher.data.errors));
       return;
     }
-    toast.success("Datos de la evidencia actualizados");
+     toast.success("Datos del documento actualizados");
     setOpen(false);
   }, [fetcher.data, fetcher.state]);
 
@@ -72,20 +79,20 @@ export default function UpdateWorkerDocumentBtn({
         action={`/api/external-workers/${workerId}/documents/${document.id}`}
         className="grid gap-4"
       >
-        <input name="id" value={document.id} type="hidden" />
+        <Input name="id" value={document.id} type="hidden" readOnly />
 
-        <FieldWrapper label="Naturaleza de la evidencia" htmlFor={`recordType-${document.id}`}>
-          <Select name="recordType" defaultValue={document.recordType}>
+        <FieldWrapper label="Naturaleza del documento" htmlFor={`recordType-${document.id}`}>
+           <Select name="recordType" value={recordType} onValueChange={(value) => setRecordType(value as DocumentRecordType)}>
             <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
             <SelectContent position="popper">
-              {Object.entries(DOCUMENT_RECORD_TYPE_LABELS).map(([value, label]) => (
-                <SelectItem key={value} value={value}>{label}</SelectItem>
+              {DOCUMENT_RECORD_TYPES_BY_DOCUMENT_TYPE[document.documentType].map((value) => (
+                <SelectItem key={value} value={value}>{DOCUMENT_RECORD_TYPE_LABELS[value]}</SelectItem>
               ))}
             </SelectContent>
           </Select>
         </FieldWrapper>
 
-        <FieldWrapper
+        {show("validUntil") ? <FieldWrapper
           label="Vigente hasta"
           htmlFor={`validUntil-${document.id}`}
         >
@@ -93,14 +100,15 @@ export default function UpdateWorkerDocumentBtn({
             id={`validUntil-${document.id}`}
             name="validUntil"
             type="date"
+            onChange={(event) => setHasValidityDate(Boolean(event.currentTarget.value))}
             defaultValue={document.validUntil ? formatTimestamp({
               date: document.validUntil,
               template: "yyyy-MM-dd",
             }) : ""}
           />
-        </FieldWrapper>
+        </FieldWrapper> : null}
 
-        <FieldWrapper label="Base de la vigencia" htmlFor={`expiryBasis-${document.id}`}>
+        {show("validUntil") && hasValidityDate ? <FieldWrapper label="Origen de la vigencia" htmlFor={`expiryBasis-${document.id}`}>
           <Select name="expiryBasis" defaultValue={document.expiryBasis}>
             <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
             <SelectContent position="popper">
@@ -109,60 +117,60 @@ export default function UpdateWorkerDocumentBtn({
               ))}
             </SelectContent>
           </Select>
-        </FieldWrapper>
+        </FieldWrapper> : null}
 
         <div className="grid gap-4 sm:grid-cols-2">
-          <FieldWrapper label="Realizado el" htmlFor={`completedAt-${document.id}`}>
+          {show("completedAt") ? <FieldWrapper label="Realizado el" htmlFor={`completedAt-${document.id}`}>
             <Input id={`completedAt-${document.id}`} name="completedAt" type="date" defaultValue={document.completedAt ? formatTimestamp({ date: document.completedAt, template: "yyyy-MM-dd" }) : ""} />
-          </FieldWrapper>
-          <FieldWrapper label="Emitido el" htmlFor={`issuedAt-${document.id}`}>
+          </FieldWrapper> : null}
+          {show("issuedAt") ? <FieldWrapper label="Emitido el" htmlFor={`issuedAt-${document.id}`}>
             <Input id={`issuedAt-${document.id}`} name="issuedAt" type="date" defaultValue={document.issuedAt ? formatTimestamp({ date: document.issuedAt, template: "yyyy-MM-dd" }) : ""} />
-          </FieldWrapper>
-          <FieldWrapper label="Vigente desde" htmlFor={`validFrom-${document.id}`}>
+          </FieldWrapper> : null}
+          {show("validFrom") ? <FieldWrapper label="Vigente desde" htmlFor={`validFrom-${document.id}`}>
             <Input id={`validFrom-${document.id}`} name="validFrom" type="date" defaultValue={document.validFrom ? formatTimestamp({ date: document.validFrom, template: "yyyy-MM-dd" }) : ""} />
-          </FieldWrapper>
-          <FieldWrapper label="Ultima practica" htmlFor={`lastPerformedAt-${document.id}`}>
+          </FieldWrapper> : null}
+          {show("lastPerformedAt") ? <FieldWrapper label="Ultima practica" htmlFor={`lastPerformedAt-${document.id}`}>
             <Input id={`lastPerformedAt-${document.id}`} name="lastPerformedAt" type="date" defaultValue={document.lastPerformedAt ? formatTimestamp({ date: document.lastPerformedAt, template: "yyyy-MM-dd" }) : ""} />
-          </FieldWrapper>
-          <FieldWrapper label="Reciclaje previsto" htmlFor={`refresherDueAt-${document.id}`}>
+          </FieldWrapper> : null}
+          {show("refresherDueAt") ? <FieldWrapper label="Reciclaje previsto" htmlFor={`refresherDueAt-${document.id}`}>
             <Input id={`refresherDueAt-${document.id}`} name="refresherDueAt" type="date" defaultValue={document.refresherDueAt ? formatTimestamp({ date: document.refresherDueAt, template: "yyyy-MM-dd" }) : ""} />
-          </FieldWrapper>
-          <FieldWrapper label="Revision prevista" htmlFor={`reviewDueAt-${document.id}`}>
+          </FieldWrapper> : null}
+          {show("reviewDueAt") ? <FieldWrapper label="Revision prevista" htmlFor={`reviewDueAt-${document.id}`}>
             <Input id={`reviewDueAt-${document.id}`} name="reviewDueAt" type="date" defaultValue={document.reviewDueAt ? formatTimestamp({ date: document.reviewDueAt, template: "yyyy-MM-dd" }) : ""} />
-          </FieldWrapper>
+          </FieldWrapper> : null}
         </div>
 
-        <FieldWrapper label="Emisor o autorizador" htmlFor={`issuer-${document.id}`}>
+        {show("issuer") ? <FieldWrapper label="Emisor" htmlFor={`issuer-${document.id}`}>
           <Input id={`issuer-${document.id}`} name="issuer" defaultValue={document.issuer ?? ""} />
-        </FieldWrapper>
+        </FieldWrapper> : null}
 
-        <FieldWrapper label="Fuente de la regla" htmlFor={`legalSource-${document.id}`}>
+        {show("legalSource") ? <FieldWrapper label="Fuente normativa o procedencia" htmlFor={`legalSource-${document.id}`}>
           <Input id={`legalSource-${document.id}`} name="legalSource" defaultValue={document.legalSource ?? ""} />
-        </FieldWrapper>
+        </FieldWrapper> : null}
 
-        <FieldWrapper label="Alcance de tarea" htmlFor={`taskScope-${document.id}`}>
+        {show("taskScope") ? <FieldWrapper label="Tarea, oficio o zona" htmlFor={`taskScope-${document.id}`}>
           <Input id={`taskScope-${document.id}`} name="taskScope" defaultValue={document.taskScope ?? ""} />
-        </FieldWrapper>
+        </FieldWrapper> : null}
 
         <div className="grid gap-4 sm:grid-cols-2">
-          <FieldWrapper label="Riesgos cubiertos" htmlFor={`riskScopes-${document.id}`}>
+          {show("riskScopes") ? <FieldWrapper label="Riesgos cubiertos" htmlFor={`riskScopes-${document.id}`}>
             <Input id={`riskScopes-${document.id}`} name="riskScopes" defaultValue={document.riskScopes?.join(", ") ?? ""} />
-          </FieldWrapper>
-          <FieldWrapper label="Equipos cubiertos" htmlFor={`equipmentTypes-${document.id}`}>
+          </FieldWrapper> : null}
+          {show("equipmentTypes") ? <FieldWrapper label="Equipos cubiertos" htmlFor={`equipmentTypes-${document.id}`}>
             <Input id={`equipmentTypes-${document.id}`} name="equipmentTypes" defaultValue={document.equipmentTypes?.join(", ") ?? ""} />
-          </FieldWrapper>
-          <FieldWrapper label="Jurisdiccion" htmlFor={`jurisdiction-${document.id}`}>
+          </FieldWrapper> : null}
+          {show("jurisdiction") ? <FieldWrapper label="Jurisdiccion" htmlFor={`jurisdiction-${document.id}`}>
             <Input id={`jurisdiction-${document.id}`} name="jurisdiction" defaultValue={document.jurisdiction ?? ""} />
-          </FieldWrapper>
-          <FieldWrapper label="Sector" htmlFor={`sector-${document.id}`}>
+          </FieldWrapper> : null}
+          {show("sector") ? <FieldWrapper label="Sector" htmlFor={`sector-${document.id}`}>
             <Input id={`sector-${document.id}`} name="sector" defaultValue={document.sector ?? ""} />
-          </FieldWrapper>
-          <FieldWrapper label="Version de procedimiento" htmlFor={`procedureVersion-${document.id}`}>
+          </FieldWrapper> : null}
+          {show("procedureVersion") ? <FieldWrapper label="Version de procedimiento" htmlFor={`procedureVersion-${document.id}`}>
             <Input id={`procedureVersion-${document.id}`} name="procedureVersion" defaultValue={document.procedureVersion ?? ""} />
-          </FieldWrapper>
-          <FieldWrapper label="Autorizador empresarial" htmlFor={`employerAuthorizer-${document.id}`}>
+          </FieldWrapper> : null}
+          {show("employerAuthorizer") ? <FieldWrapper label="Autorizador empresarial" htmlFor={`employerAuthorizer-${document.id}`}>
             <Input id={`employerAuthorizer-${document.id}`} name="employerAuthorizer" defaultValue={document.employerAuthorizer ?? ""} />
-          </FieldWrapper>
+          </FieldWrapper> : null}
         </div>
 
         <FieldWrapper label="Notas" htmlFor={`notes-${document.id}`}>

@@ -38,7 +38,7 @@ export default function DeleteWorkerDocumentBtn({
       buttonVariant="ghost"
       buttonSize="icon"
       title="Archivar documento"
-      description="El documento dejará de estar vigente, pero se conservará como evidencia histórica."
+      description="El documento dejará de estar vigente, pero se conservará como documento histórico."
       footer={
         <>
           <AlertDialogCancel variant="secondary">Cancelar</AlertDialogCancel>

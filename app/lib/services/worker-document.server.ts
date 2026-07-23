@@ -11,7 +11,10 @@ import {
 import { INVALID_FILE_TYPE, FILE_TOO_LARGE, FILE_REQUIRED } from "../schemas/messages";
 import type { DocumentType } from "../../../db/enums";
 import { isDateExpired, isDateValidThrough } from "../document-expiry";
-import { defaultRecordTypeForDocumentType } from "../models/worker-document";
+import {
+  defaultRecordTypeForDocumentType,
+  isDocumentRecordTypeAllowed,
+} from "../models/worker-document";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 
@@ -157,6 +160,13 @@ export async function uploadWorkerDocument(
     return { success: false as const, errors: z.treeifyError(parsed.error) };
   }
 
+  if (!isDocumentRecordTypeAllowed(parsed.data.documentType, parsed.data.recordType)) {
+    return {
+      success: false as const,
+      errors: "La naturaleza no corresponde al tipo de documento seleccionado.",
+    };
+  }
+
   if (!file || file.size === 0) {
     return { success: false as const, errors: FILE_REQUIRED };
   }
@@ -281,10 +291,17 @@ export async function updateWorkerDocument(
     return { success: false as const, errors: z.treeifyError(parsed.error) };
   }
 
+  if (!isDocumentRecordTypeAllowed(doc.documentType, parsed.data.recordType ?? doc.recordType)) {
+    return {
+      success: false as const,
+      errors: "La naturaleza no corresponde al tipo de documento seleccionado.",
+    };
+  }
+
   if (doc.status !== "PENDING_REVIEW") {
     return {
       success: false as const,
-      errors: "Solo los documentos pendientes pueden modificarse. Carga una nueva evidencia para sustituir un documento revisado.",
+      errors: "Solo los documentos pendientes pueden modificarse. Carga un nuevo documento para sustituir un documento revisado.",
     };
   }
 

@@ -42,7 +42,7 @@ export const workerDocumentColumns = () => [
     cell: ({ getValue }) => DOCUMENT_TYPE_LABELS[getValue()],
   }),
   colHelper.accessor("recordType", {
-    header: "Evidencia",
+    header: "Documento",
     cell: ({ getValue }) => DOCUMENT_RECORD_TYPE_LABELS[getValue()],
   }),
   colHelper.accessor("status", {
