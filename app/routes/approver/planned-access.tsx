@@ -8,6 +8,7 @@ import {
 import type { Route } from "./+types/planned-access";
 import { getSessionSite } from "~/lib/session.server";
 import { redirect } from "react-router";
+import { useMemo } from "react";
 
 const PLANNED_ACCESS_GLOBAL_FILTER_COLUMNS = [
   "companySnapshot",
@@ -59,9 +60,10 @@ export async function action({ request }: Route.ActionArgs) {
 export default function ApproverPlannedAccess({
   loaderData,
 }: Route.ComponentProps) {
-  const columns = plannedAccessColumns({
-    actionPath: "/approver/planned-access",
-  });
+  const columns = useMemo(
+    () => plannedAccessColumns({ actionPath: "/approver/planned-access" }),
+    [],
+  );
   return (
     <DataTable
       columns={columns}

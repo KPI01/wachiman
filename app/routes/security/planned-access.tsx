@@ -11,6 +11,7 @@ import {
 import { getManySites } from "~/lib/services/sites.server";
 import type { Route } from "./+types/planned-access";
 import { redirect } from "react-router";
+import { useMemo } from "react";
 
 const PLANNED_ACCESS_GLOBAL_FILTER_COLUMNS = [
   "companySnapshot",
@@ -62,9 +63,10 @@ export async function action({ request }: Route.ActionArgs) {
 export default function SecurityPlannedAccess({
   loaderData,
 }: Route.ComponentProps) {
-  const columns = plannedAccessColumns({
-    actionPath: "/security/planned-access",
-  });
+  const columns = useMemo(
+    () => plannedAccessColumns({ actionPath: "/security/planned-access" }),
+    [],
+  );
   return (
     <div className="grid space-y-6">
       <div className="flex items-center justify-end">
