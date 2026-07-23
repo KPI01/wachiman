@@ -19,10 +19,19 @@ export function endOfUtcDay(date: Date) {
   ));
 }
 
-export function isDateValidThrough(expiryDate: Date, validThrough: Date) {
-  return startOfUtcDay(expiryDate).getTime() >= startOfUtcDay(validThrough).getTime();
+export function isDateValidThrough(
+  validUntil: Date | null,
+  validThrough: Date,
+) {
+  return (
+    validUntil === null ||
+    startOfUtcDay(validUntil).getTime() >= startOfUtcDay(validThrough).getTime()
+  );
 }
 
-export function isDateExpired(expiryDate: Date, now = new Date()) {
-  return startOfUtcDay(expiryDate).getTime() < startOfUtcDay(now).getTime();
+export function isDateExpired(validUntil: Date | null, now = new Date()) {
+  return (
+    validUntil !== null &&
+    startOfUtcDay(validUntil).getTime() < startOfUtcDay(now).getTime()
+  );
 }

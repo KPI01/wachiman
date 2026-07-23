@@ -334,18 +334,28 @@ export async function updatePlannedAccessStatus(
       for (const documentType of documentTypes) {
         const fileValue = input[`documentFiles[${person.id}][${documentType}]`];
         if (!(fileValue instanceof File) || fileValue.size === 0) continue;
-        const expiryDate = input[`documentExpiry[${person.id}][${documentType}]`];
+        const validUntil = input[`documentExpiry[${person.id}][${documentType}]`];
+        const expiryBasis = input[`documentExpiryBasis[${person.id}][${documentType}]`];
         const uploadResult = await uploadWorkerDocument(
           workerId,
           fileValue,
           {
             documentType,
-            expiryDate: typeof expiryDate === "string" ? expiryDate : "",
+            validUntil: typeof validUntil === "string" ? validUntil : "",
+            expiryBasis: typeof expiryBasis === "string"
+              ? expiryBasis
+              : documentType === "IDENTIFICATION"
+                ? "LAW"
+                : "NOT_APPLICABLE",
             notes: typeof input[`documentNotes[${person.id}][${documentType}]`] === "string"
               ? String(input[`documentNotes[${person.id}][${documentType}]`])
               : "",
           },
           author.id,
+          {
+            validateImmediately: true,
+            reviewReason: "Validado durante la aprobacion del acceso planificado.",
+          },
         );
         if (!uploadResult.success) {
           validationErrors.push(`No se pudo subir ${DOCUMENT_TYPE_LABELS[documentType]} para ${worker.firstName} ${worker.lastName}.`);

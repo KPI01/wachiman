@@ -4,6 +4,7 @@ import { Badge } from "~/components/ui/badge";
 import {
   DOCUMENT_STATUS_LABELS,
   DOCUMENT_TYPE_LABELS,
+  DOCUMENT_RECORD_TYPE_LABELS,
 } from "~/lib/models/worker-document";
 import { formatTimestamp } from "~/lib/utils";
 import type { WorkerDocumentWithWorker } from "~/lib/database/worker-document.server";
@@ -12,7 +13,9 @@ import { ExternalLinkIcon } from "lucide-react";
 const colHelper = createColumnHelper<WorkerDocumentWithWorker>();
 
 const STATUS_VARIANT: Record<DocumentStatus, "default" | "destructive" | "outline"> = {
+  PENDING_REVIEW: "outline",
   VALIDATED: "default",
+  REJECTED: "destructive",
   EXPIRED: "destructive",
   ARCHIVED: "outline",
 };
@@ -38,6 +41,10 @@ export const workerDocumentColumns = () => [
     header: "Tipo",
     cell: ({ getValue }) => DOCUMENT_TYPE_LABELS[getValue()],
   }),
+  colHelper.accessor("recordType", {
+    header: "Evidencia",
+    cell: ({ getValue }) => DOCUMENT_RECORD_TYPE_LABELS[getValue()],
+  }),
   colHelper.accessor("status", {
     header: "Estado",
     cell: ({ getValue }) => {
@@ -49,10 +56,14 @@ export const workerDocumentColumns = () => [
       );
     },
   }),
-  colHelper.accessor("expiryDate", {
-    header: "Expiracion",
-    cell: ({ getValue }) =>
-      formatTimestamp({ date: getValue(), template: "dd/MM/yyyy" }),
+  colHelper.accessor("validUntil", {
+    header: "Vigencia",
+    cell: ({ getValue }) => {
+      const validUntil = getValue();
+      return validUntil
+        ? formatTimestamp({ date: validUntil, template: "dd/MM/yyyy" })
+        : "Sin vencimiento";
+    },
   }),
   colHelper.accessor("fileName", {
     header: "Archivo",

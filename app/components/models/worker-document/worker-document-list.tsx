@@ -4,6 +4,7 @@ import { Button } from "~/components/ui/button";
 import {
   DOCUMENT_STATUS_LABELS,
   DOCUMENT_TYPE_LABELS,
+  DOCUMENT_RECORD_TYPE_LABELS,
 } from "~/lib/models/worker-document";
 import { formatTimestamp } from "~/lib/utils";
 import type { WorkerDocumentListItem } from "~/lib/database/worker-document.server";
@@ -12,7 +13,9 @@ import UpdateWorkerDocumentBtn from "./update-worker-document-btn";
 import { DownloadIcon, ExternalLinkIcon } from "lucide-react";
 
 const STATUS_VARIANT: Record<DocumentStatus, "default" | "secondary" | "destructive" | "outline"> = {
+  PENDING_REVIEW: "secondary",
   VALIDATED: "default",
+  REJECTED: "destructive",
   EXPIRED: "destructive",
   ARCHIVED: "outline",
 };
@@ -41,9 +44,11 @@ export default function WorkerDocumentList({
           <thead>
             <tr className="border-b bg-muted/50">
               <th className="px-3 py-2 text-left font-medium">Tipo</th>
+              <th className="px-3 py-2 text-left font-medium">Evidencia</th>
               <th className="px-3 py-2 text-left font-medium">Estado</th>
               <th className="px-3 py-2 text-left font-medium">Archivo</th>
-              <th className="px-3 py-2 text-left font-medium">Expiracion</th>
+              <th className="px-3 py-2 text-left font-medium">Vigencia</th>
+              <th className="px-3 py-2 text-left font-medium">Seguimiento</th>
               <th className="px-3 py-2 text-left font-medium">Notas</th>
               <th className="px-3 py-2 text-right font-medium">Acciones</th>
             </tr>
@@ -55,9 +60,19 @@ export default function WorkerDocumentList({
                   {DOCUMENT_TYPE_LABELS[doc.documentType]}
                 </td>
                 <td className="px-3 py-2">
+                  {DOCUMENT_RECORD_TYPE_LABELS[doc.recordType]}
+                </td>
+                <td className="px-3 py-2">
                   <Badge variant={STATUS_VARIANT[doc.status]}>
                     {DOCUMENT_STATUS_LABELS[doc.status]}
                   </Badge>
+                </td>
+                <td className="px-3 py-2 text-xs text-muted-foreground">
+                  {doc.refresherDueAt
+                    ? `Reciclaje: ${formatTimestamp({ date: doc.refresherDueAt, template: "dd/MM/yyyy" })}`
+                    : doc.reviewDueAt
+                      ? `Revision: ${formatTimestamp({ date: doc.reviewDueAt, template: "dd/MM/yyyy" })}`
+                      : "-"}
                 </td>
                 <td className="px-3 py-2">
                   <a
@@ -71,10 +86,12 @@ export default function WorkerDocumentList({
                   </a>
                 </td>
                 <td className="px-3 py-2">
-                  {formatTimestamp({
-                    date: doc.expiryDate,
-                    template: "dd/MM/yyyy",
-                  })}
+                  {doc.validUntil
+                    ? formatTimestamp({
+                        date: doc.validUntil,
+                        template: "dd/MM/yyyy",
+                      })
+                    : "Sin vencimiento"}
                 </td>
                 <td className="px-3 py-2 text-muted-foreground max-w-48 truncate">
                   {doc.notes || "-"}

@@ -11,6 +11,7 @@ import {
 import { INVALID_FILE_TYPE, FILE_TOO_LARGE, FILE_REQUIRED } from "../schemas/messages";
 import type { DocumentType } from "../../../db/enums";
 import { isDateExpired, isDateValidThrough } from "../document-expiry";
+import { defaultRecordTypeForDocumentType } from "../models/worker-document";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 
@@ -78,6 +79,7 @@ export async function uploadWorkerDocument(
   file: File,
   formData: Record<string, string>,
   userId: string,
+  options?: { validateImmediately?: boolean; reviewReason?: string },
 ) {
   if (!areFileUploadsSupported()) {
     return { success: false as const, errors: "Carga de documentos no disponible en este entorno." };
@@ -90,7 +92,27 @@ export async function uploadWorkerDocument(
 
   const parsed = await uploadDocumentSchema.safeParseAsync({
     documentType: formData.documentType,
-    expiryDate: formData.expiryDate,
+    recordType: formData.recordType ?? defaultRecordTypeForDocumentType(formData.documentType as DocumentType),
+    completedAt: formData.completedAt,
+    issuedAt: formData.issuedAt,
+    validFrom: formData.validFrom,
+    validUntil: formData.validUntil ?? formData.expiryDate,
+    refresherDueAt: formData.refresherDueAt,
+    reviewDueAt: formData.reviewDueAt,
+    lastPerformedAt: formData.lastPerformedAt,
+    expiryBasis: formData.expiryBasis ?? "NOT_APPLICABLE",
+    legalSource: formData.legalSource,
+    jurisdiction: formData.jurisdiction,
+    sector: formData.sector,
+    siteId: formData.siteId,
+    workCategoryId: formData.workCategoryId,
+    taskScope: formData.taskScope,
+    riskScopes: formData.riskScopes,
+    equipmentTypes: formData.equipmentTypes,
+    procedureVersion: formData.procedureVersion,
+    issuer: formData.issuer,
+    employerAuthorizer: formData.employerAuthorizer,
+    supersedesDocumentId: formData.supersedesDocumentId,
     notes: formData.notes,
   });
 
@@ -112,12 +134,35 @@ export async function uploadWorkerDocument(
 
   const record = await WorkerDocumentEntity.create({
     documentType: parsed.data.documentType,
-    status: "VALIDATED",
+    recordType: parsed.data.recordType,
+    status: options?.validateImmediately ? "VALIDATED" : "PENDING_REVIEW",
     fileName: file.name,
     filePath: "",
     fileSize: file.size,
     mimeType: file.type,
-    expiryDate: parsed.data.expiryDate,
+    completedAt: parsed.data.completedAt,
+    issuedAt: parsed.data.issuedAt,
+    validFrom: parsed.data.validFrom,
+    validUntil: parsed.data.validUntil,
+    refresherDueAt: parsed.data.refresherDueAt,
+    reviewDueAt: parsed.data.reviewDueAt,
+    lastPerformedAt: parsed.data.lastPerformedAt,
+    expiryBasis: parsed.data.expiryBasis,
+    legalSource: parsed.data.legalSource,
+    jurisdiction: parsed.data.jurisdiction,
+    sector: parsed.data.sector,
+    siteId: parsed.data.siteId,
+    workCategoryId: parsed.data.workCategoryId ?? worker.workCategoryId,
+    taskScope: parsed.data.taskScope,
+    riskScopes: parsed.data.riskScopes,
+    equipmentTypes: parsed.data.equipmentTypes,
+    procedureVersion: parsed.data.procedureVersion,
+    issuer: parsed.data.issuer,
+    employerAuthorizer: parsed.data.employerAuthorizer,
+    supersedesDocumentId: parsed.data.supersedesDocumentId,
+    reviewedById: options?.validateImmediately ? userId : null,
+    reviewedAt: options?.validateImmediately ? new Date() : null,
+    reviewReason: options?.reviewReason ?? null,
     notes: parsed.data.notes,
     externalWorkerId: workerId,
   });
@@ -141,7 +186,14 @@ export async function uploadWorkerDocument(
     record.id,
     "CREATE",
     `Documento de tipo ${parsed.data.documentType} subido para ${worker.firstName} ${worker.lastName}`,
-    { documentType: parsed.data.documentType, fileName: file.name, expiryDate: parsed.data.expiryDate },
+    {
+      documentType: parsed.data.documentType,
+      recordType: parsed.data.recordType,
+      fileName: file.name,
+      validUntil: parsed.data.validUntil,
+      expiryBasis: parsed.data.expiryBasis,
+      status: record.status,
+    },
   );
 
   return { success: true as const, document: record };
@@ -160,7 +212,28 @@ export async function updateWorkerDocument(
   const parsed = await updateDocumentSchema.safeParseAsync({
     id: data.id,
     status: data.status,
-    expiryDate: data.expiryDate,
+    recordType: data.recordType,
+    completedAt: data.completedAt,
+    issuedAt: data.issuedAt,
+    validFrom: data.validFrom,
+    validUntil: data.validUntil,
+    refresherDueAt: data.refresherDueAt,
+    reviewDueAt: data.reviewDueAt,
+    lastPerformedAt: data.lastPerformedAt,
+    expiryBasis: data.expiryBasis,
+    legalSource: data.legalSource,
+    jurisdiction: data.jurisdiction,
+    sector: data.sector,
+    siteId: data.siteId,
+    workCategoryId: data.workCategoryId,
+    taskScope: data.taskScope,
+    riskScopes: data.riskScopes,
+    equipmentTypes: data.equipmentTypes,
+    procedureVersion: data.procedureVersion,
+    issuer: data.issuer,
+    employerAuthorizer: data.employerAuthorizer,
+    supersedesDocumentId: data.supersedesDocumentId,
+    reviewReason: data.reviewReason,
     notes: data.notes,
   });
 
@@ -168,10 +241,35 @@ export async function updateWorkerDocument(
     return { success: false as const, errors: z.treeifyError(parsed.error) };
   }
 
+  const isReview = parsed.data.status === "VALIDATED" || parsed.data.status === "REJECTED";
   await WorkerDocumentEntity.update(documentId, {
     status: parsed.data.status,
-    expiryDate: parsed.data.expiryDate,
+    recordType: parsed.data.recordType,
+    completedAt: parsed.data.completedAt,
+    issuedAt: parsed.data.issuedAt,
+    validFrom: parsed.data.validFrom,
+    validUntil: parsed.data.validUntil,
+    refresherDueAt: parsed.data.refresherDueAt,
+    reviewDueAt: parsed.data.reviewDueAt,
+    lastPerformedAt: parsed.data.lastPerformedAt,
+    expiryBasis: parsed.data.expiryBasis,
+    legalSource: parsed.data.legalSource,
+    jurisdiction: parsed.data.jurisdiction,
+    sector: parsed.data.sector,
+    siteId: parsed.data.siteId,
+    workCategoryId: parsed.data.workCategoryId,
+    taskScope: parsed.data.taskScope,
+    riskScopes: parsed.data.riskScopes,
+    equipmentTypes: parsed.data.equipmentTypes,
+    procedureVersion: parsed.data.procedureVersion,
+    issuer: parsed.data.issuer,
+    employerAuthorizer: parsed.data.employerAuthorizer,
+    supersedesDocumentId: parsed.data.supersedesDocumentId,
+    reviewReason: parsed.data.reviewReason,
+    reviewedById: isReview ? userId : undefined,
+    reviewedAt: isReview ? new Date() : undefined,
     notes: parsed.data.notes,
+    updatedAt: new Date(),
   });
 
   await audit(
@@ -270,13 +368,13 @@ export async function validateWorkerDocumentsForAccess(
     const hasValidDocument = documentsOfType.some(
       (document) =>
         document.status === "VALIDATED" &&
-        isDateValidThrough(document.expiryDate, validThrough),
+        isDateValidThrough(document.validUntil, validThrough),
     );
 
     if (hasValidDocument) continue;
 
     const hasExpiredDocument = documentsOfType.some(
-      (document) => document.status === "EXPIRED" || isDateExpired(document.expiryDate),
+      (document) => document.status === "EXPIRED" || isDateExpired(document.validUntil),
     );
     if (hasExpiredDocument) {
       expiredTypes.push(documentType);

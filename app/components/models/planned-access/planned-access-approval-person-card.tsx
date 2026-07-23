@@ -114,6 +114,7 @@ function DocumentRequirement({
   required: boolean;
   validThrough: Date;
 }) {
+  const requiresValidUntil = documentType === "IDENTIFICATION";
   const documents =
     worker?.documents?.filter(
       (document) => document.documentType === documentType,
@@ -121,7 +122,7 @@ function DocumentRequirement({
   const valid = documents.some(
     (document) =>
       document.status === "VALIDATED" &&
-      isDateValidThrough(document.expiryDate, validThrough),
+      isDateValidThrough(document.validUntil, validThrough),
   );
 
   return (
@@ -139,7 +140,7 @@ function DocumentRequirement({
           {documents
             .map(
               (document) =>
-                `${document.fileName} (${document.expiryDate.toLocaleDateString("es-ES")})`,
+                `${document.fileName} (${document.validUntil?.toLocaleDateString("es-ES") ?? "Sin vencimiento"})`,
             )
             .join(", ")}
         </p>
@@ -159,14 +160,19 @@ function DocumentRequirement({
             />
           </FieldWrapper>
           <FieldWrapper
-            label={`Vencimiento${required ? " *" : ""}`}
+            label={`Vigente hasta${requiresValidUntil ? " *" : " (si aplica)"}`}
             htmlFor={`expiry-${personId}-${documentType}`}
           >
             <DatePicker
               id={`expiry-${personId}-${documentType}`}
               name={`documentExpiry[${personId}][${documentType}]`}
-              required={required}
+              required={requiresValidUntil}
               placeholder="DD/MM/AAAA"
+            />
+            <input
+              type="hidden"
+              name={`documentExpiryBasis[${personId}][${documentType}]`}
+              value={requiresValidUntil ? "LAW" : "NOT_APPLICABLE"}
             />
           </FieldWrapper>
         </div>

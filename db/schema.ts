@@ -1,6 +1,8 @@
 import { relations, sql } from "drizzle-orm";
 import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
 import type {
+  DocumentExpiryBasis,
+  DocumentRecordType,
   DocumentStatus,
   DocumentType,
   PlannedAccessStatus,
@@ -116,12 +118,44 @@ export const workerDocuments = sqliteTable("worker_documents", {
   documentType: text("document_type")
     .$type<DocumentType>()
     .notNull(),
-  status: text("status").$type<DocumentStatus>().default("VALIDATED"),
+  recordType: text("record_type")
+    .$type<DocumentRecordType>()
+    .notNull()
+    .default("TRAINING_EVIDENCE"),
+  status: text("status")
+    .$type<DocumentStatus>()
+    .notNull()
+    .default("PENDING_REVIEW"),
   fileName: text("file_name").notNull(),
   filePath: text("file_path").notNull(),
   fileSize: integer("file_size"),
   mimeType: text("mime_type"),
-  expiryDate: integer("expiry_date", { mode: "timestamp_ms" }).notNull(),
+  completedAt: integer("completed_at", { mode: "timestamp_ms" }),
+  issuedAt: integer("issued_at", { mode: "timestamp_ms" }),
+  validFrom: integer("valid_from", { mode: "timestamp_ms" }),
+  validUntil: integer("expiry_date", { mode: "timestamp_ms" }),
+  refresherDueAt: integer("refresher_due_at", { mode: "timestamp_ms" }),
+  reviewDueAt: integer("review_due_at", { mode: "timestamp_ms" }),
+  lastPerformedAt: integer("last_performed_at", { mode: "timestamp_ms" }),
+  expiryBasis: text("expiry_basis")
+    .$type<DocumentExpiryBasis>()
+    .notNull()
+    .default("NOT_APPLICABLE"),
+  legalSource: text("legal_source"),
+  jurisdiction: text("jurisdiction"),
+  sector: text("sector"),
+  siteId: text("site_id").references(() => sites.id),
+  workCategoryId: text("work_category_id").references(() => workCategories.id),
+  taskScope: text("task_scope"),
+  riskScopes: text("risk_scopes", { mode: "json" }).$type<string[]>(),
+  equipmentTypes: text("equipment_types", { mode: "json" }).$type<string[]>(),
+  procedureVersion: text("procedure_version"),
+  issuer: text("issuer"),
+  employerAuthorizer: text("employer_authorizer"),
+  reviewedById: text("reviewed_by_id").references(() => users.id),
+  reviewedAt: integer("reviewed_at", { mode: "timestamp_ms" }),
+  reviewReason: text("review_reason"),
+  supersedesDocumentId: text("supersedes_document_id"),
   notes: text("notes"),
   externalWorkerId: text("external_worker_id")
     .notNull()

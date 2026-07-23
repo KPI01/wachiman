@@ -6,38 +6,106 @@ import {
 } from "./messages";
 import { parseUtcDateOnly } from "../document-expiry";
 
+const documentTypes = ["IDENTIFICATION", "TRAINING", "SPECIAL_PERMISSION"] as const;
+const recordTypes = [
+  "IDENTITY_CREDENTIAL",
+  "TRAINING_EVIDENCE",
+  "LEGAL_AUTHORIZATION",
+  "ISSUER_CARD",
+  "EMPLOYER_AUTHORIZATION",
+  "SITE_INDUCTION",
+  "MEDICAL_SUITABILITY",
+  "WORK_PERMIT",
+] as const;
+const expiryBases = [
+  "LAW",
+  "COLLECTIVE_AGREEMENT",
+  "ISSUER",
+  "EMPLOYER_POLICY",
+  "CLIENT_POLICY",
+  "RISK_ASSESSMENT",
+  "LEGACY_UNKNOWN",
+  "NOT_APPLICABLE",
+] as const;
+const documentStatuses = [
+  "PENDING_REVIEW",
+  "VALIDATED",
+  "REJECTED",
+  "EXPIRED",
+  "ARCHIVED",
+] as const;
+
+const optionalDate = z
+  .string()
+  .optional()
+  .transform((value) => (value ? parseUtcDateOnly(value) : null))
+  .refine((value) => value === null || !isNaN(value.getTime()), DOCUMENT_EXPIRY_REQUIRED);
+
+const optionalString = z.string().trim().optional().transform((value) => value || null);
+
+function optionalList(value: string | undefined) {
+  if (value === undefined) return undefined;
+  return (value ?? "")
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
 export const uploadDocumentSchema = z.object({
   documentType: requiredString.refine(
-    (v) => ["IDENTIFICATION", "TRAINING", "SPECIAL_PERMISSION"].includes(v as string),
+    (v) => documentTypes.includes(v as (typeof documentTypes)[number]),
     DOCUMENT_TYPE_REQUIRED,
-  ).transform((v) => v as "IDENTIFICATION" | "TRAINING" | "SPECIAL_PERMISSION"),
-  expiryDate: requiredString.refine((v) => {
-    const date = parseUtcDateOnly(v);
-    return !isNaN(date.getTime());
-  }, DOCUMENT_EXPIRY_REQUIRED).transform(parseUtcDateOnly),
-  notes: z.string().optional(),
+  ).transform((v) => v as (typeof documentTypes)[number]),
+  recordType: z.enum(recordTypes),
+  completedAt: optionalDate,
+  issuedAt: optionalDate,
+  validFrom: optionalDate,
+  validUntil: optionalDate,
+  refresherDueAt: optionalDate,
+  reviewDueAt: optionalDate,
+  lastPerformedAt: optionalDate,
+  expiryBasis: z.enum(expiryBases),
+  legalSource: optionalString,
+  jurisdiction: optionalString,
+  sector: optionalString,
+  siteId: optionalString,
+  workCategoryId: optionalString,
+  taskScope: optionalString,
+  riskScopes: z.string().optional().transform(optionalList),
+  equipmentTypes: z.string().optional().transform(optionalList),
+  procedureVersion: optionalString,
+  issuer: optionalString,
+  employerAuthorizer: optionalString,
+  supersedesDocumentId: optionalString,
+  notes: optionalString,
 });
 
 export const updateDocumentSchema = z.object({
   id: requiredString,
-  status: z
-    .string()
-    .optional()
-    .refine(
-      (v) => !v || ["VALIDATED", "EXPIRED", "ARCHIVED"].includes(v as string),
-      "El estado no es valido.",
-    )
-    .transform((v) => v as "VALIDATED" | "EXPIRED" | "ARCHIVED" | undefined),
-  expiryDate: z
-    .string()
-    .optional()
-    .refine((v) => {
-      if (!v) return true;
-      const date = parseUtcDateOnly(v);
-      return !isNaN(date.getTime());
-    }, DOCUMENT_EXPIRY_REQUIRED)
-    .transform((v) => (v ? parseUtcDateOnly(v) : undefined)),
-  notes: z.string().optional(),
+  status: z.enum(documentStatuses).optional(),
+  recordType: z.enum(recordTypes).optional(),
+  completedAt: optionalDate.optional(),
+  issuedAt: optionalDate.optional(),
+  validFrom: optionalDate.optional(),
+  validUntil: optionalDate.optional(),
+  refresherDueAt: optionalDate.optional(),
+  reviewDueAt: optionalDate.optional(),
+  lastPerformedAt: optionalDate.optional(),
+  expiryBasis: z.enum(expiryBases).optional(),
+  legalSource: optionalString.optional(),
+  jurisdiction: optionalString.optional(),
+  sector: optionalString.optional(),
+  siteId: optionalString.optional(),
+  workCategoryId: optionalString.optional(),
+  taskScope: optionalString.optional(),
+  riskScopes: z.string().optional().transform(optionalList),
+  equipmentTypes: z.string().optional().transform(optionalList),
+  procedureVersion: optionalString.optional(),
+  issuer: optionalString.optional(),
+  employerAuthorizer: optionalString.optional(),
+  supersedesDocumentId: optionalString.optional(),
+  reviewReason: optionalString.optional(),
+  notes: optionalString.optional(),
 });
 
 export const deleteDocumentSchema = z.object({

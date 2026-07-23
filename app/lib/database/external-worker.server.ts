@@ -4,20 +4,13 @@ import {
   externalWorkers,
   companies,
   workCategories,
+  workerDocuments,
 } from "../../../db/schema";
 
 export type ExternalWorkerDetail = typeof externalWorkers.$inferSelect & {
   company?: typeof companies.$inferSelect;
   workCategory?: typeof workCategories.$inferSelect;
-  documents?: Array<{
-    id: string;
-    documentType: string;
-    status: string;
-    fileName: string;
-    filePath: string;
-    expiryDate: Date;
-    createdAt: Date;
-  }>;
+  documents?: Array<typeof workerDocuments.$inferSelect>;
   accessLogs?: Array<{
     id: string;
     entryTimestamp: Date;

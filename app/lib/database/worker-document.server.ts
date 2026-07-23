@@ -1,8 +1,15 @@
 import { and, desc, eq, inArray, lte } from "drizzle-orm";
 import { db } from "../../../db/server";
-import { workerDocuments } from "../../../db/schema";
+import { companies, externalWorkers, workerDocuments } from "../../../db/schema";
 import type { DocumentStatus } from "../../../db/enums";
 import { startOfUtcDay } from "../document-expiry";
+
+export type WorkerDocumentListItem = typeof workerDocuments.$inferSelect;
+export type WorkerDocumentWithWorker = WorkerDocumentListItem & {
+  externalWorker: typeof externalWorkers.$inferSelect & {
+    company: Pick<typeof companies.$inferSelect, "id" | "name">;
+  };
+};
 
 export class WorkerDocumentEntity {
   public static async create(data: (typeof workerDocuments.$inferInsert)) {
@@ -65,7 +72,7 @@ export class WorkerDocumentEntity {
       .where(
         and(
           eq(workerDocuments.status, "VALIDATED" as DocumentStatus),
-           lte(workerDocuments.expiryDate, yesterdayEnd),
+            lte(workerDocuments.validUntil, yesterdayEnd),
         ),
       )
       .all();
