@@ -72,12 +72,12 @@ INSERT INTO external_workers (id, first_name, middle_name, last_name, second_las
 
 -- ───── WORKER DOCUMENTS ─────────────────────────────
 INSERT INTO worker_documents (id, document_type, record_type, status, file_name, file_path, file_size, mime_type, expiry_date, expiry_basis, notes, external_worker_id, created_at, updated_at) VALUES
-('doc-1', 'IDENTIFICATION', 'IDENTITY_CREDENTIAL', 'VALIDATED', 'DNI_Antonio.pdf', '/var/uploads/workers/worker-1/DNI_Antonio.pdf', 245760, 'application/pdf', ${Date.parse("2028-06-15T00:00:00.000Z")}, 'LAW', NULL, 'worker-1', '${nowISO}', '${nowISO}'),
-('doc-2', 'TRAINING', 'TRAINING_EVIDENCE', 'VALIDATED', 'Curso_electricidad_2026.pdf', '/var/uploads/workers/worker-1/Curso_electricidad.pdf', 512000, 'application/pdf', NULL, 'NOT_APPLICABLE', NULL, 'worker-1', '${nowISO}', '${nowISO}'),
-('doc-3', 'IDENTIFICATION', 'IDENTITY_CREDENTIAL', 'VALIDATED', 'DNI_MariaR.pdf', '/var/uploads/workers/worker-2/DNI_MariaR.pdf', 250000, 'application/pdf', ${Date.parse("2029-11-30T00:00:00.000Z")}, 'LAW', NULL, 'worker-2', '${nowISO}', '${nowISO}'),
-('doc-4', 'IDENTIFICATION', 'IDENTITY_CREDENTIAL', 'VALIDATED', 'DNI_Francisco.pdf', '/var/uploads/workers/worker-3/DNI_Francisco.pdf', 240000, 'application/pdf', ${Date.parse("2027-08-15T00:00:00.000Z")}, 'LAW', NULL, 'worker-3', '${nowISO}', '${nowISO}'),
-('doc-5', 'TRAINING', 'TRAINING_EVIDENCE', 'EXPIRED', 'Curso_soldadura_2024.pdf', '/var/uploads/workers/worker-3/Curso_soldadura_2024.pdf', 480000, 'application/pdf', ${Date.parse("2025-01-10T00:00:00.000Z")}, 'ISSUER', 'Curso caducado', 'worker-3', '${nowISO}', '${nowISO}'),
-('doc-6', 'IDENTIFICATION', 'IDENTITY_CREDENTIAL', 'VALIDATED', 'DNI_Pedro.pdf', '/var/uploads/workers/worker-5/DNI_Pedro.pdf', 235000, 'application/pdf', ${Date.parse("2028-05-20T00:00:00.000Z")}, 'LAW', NULL, 'worker-5', '${nowISO}', '${nowISO}');
+('doc-1', 'IDENTIFICATION', 'IDENTITY_CREDENTIAL', 'VALIDATED', 'DNI_Antonio.pdf', 'workers/worker-1/doc-1-DNI_Antonio.pdf', 245760, 'application/pdf', ${Date.parse("2028-06-15T00:00:00.000Z")}, 'LAW', NULL, 'worker-1', '${nowISO}', '${nowISO}'),
+('doc-2', 'TRAINING', 'TRAINING_EVIDENCE', 'VALIDATED', 'Curso_electricidad_2026.pdf', 'workers/worker-1/doc-2-Curso_electricidad_2026.pdf', 512000, 'application/pdf', NULL, 'NOT_APPLICABLE', NULL, 'worker-1', '${nowISO}', '${nowISO}'),
+('doc-3', 'IDENTIFICATION', 'IDENTITY_CREDENTIAL', 'VALIDATED', 'DNI_MariaR.pdf', 'workers/worker-2/doc-3-DNI_MariaR.pdf', 250000, 'application/pdf', ${Date.parse("2029-11-30T00:00:00.000Z")}, 'LAW', NULL, 'worker-2', '${nowISO}', '${nowISO}'),
+('doc-4', 'IDENTIFICATION', 'IDENTITY_CREDENTIAL', 'VALIDATED', 'DNI_Francisco.pdf', 'workers/worker-3/doc-4-DNI_Francisco.pdf', 240000, 'application/pdf', ${Date.parse("2027-08-15T00:00:00.000Z")}, 'LAW', NULL, 'worker-3', '${nowISO}', '${nowISO}'),
+('doc-5', 'TRAINING', 'TRAINING_EVIDENCE', 'EXPIRED', 'Curso_soldadura_2024.pdf', 'workers/worker-3/doc-5-Curso_soldadura_2024.pdf', 480000, 'application/pdf', ${Date.parse("2025-01-10T00:00:00.000Z")}, 'ISSUER', 'Curso caducado', 'worker-3', '${nowISO}', '${nowISO}'),
+('doc-6', 'IDENTIFICATION', 'IDENTITY_CREDENTIAL', 'VALIDATED', 'DNI_Pedro.pdf', 'workers/worker-5/doc-6-DNI_Pedro.pdf', 235000, 'application/pdf', ${Date.parse("2028-05-20T00:00:00.000Z")}, 'LAW', NULL, 'worker-5', '${nowISO}', '${nowISO}');
 
 -- ───── PLANNED ACCESSES ─────────────────────────────
 INSERT INTO planned_accesses (id, expected_start_datetime, expected_end_datetime, status, company_snapshot, visit_reason, approved_by_id, requested_by_id, site_id, created_at, updated_at) VALUES

@@ -131,9 +131,9 @@ export const plannedAccessColumns = ({
       cell: ({ row }) => (
         <PlannedAccessStatusActions
           plannedAccessId={row.original.id}
-        status={row.original.status ?? "PENDING_APPROVAL"}
-        actionPath={actionPath}
-        allowedActions={allowedActions}
+          status={row.original.status ?? "PENDING_APPROVAL"}
+          actionPath={actionPath}
+          allowedActions={allowedActions}
         />
       ),
     }),

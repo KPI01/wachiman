@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router";
 import type { WorkCategory } from "../../../../db/schema";
 import type { PlannedAccessListItem } from "~/lib/database/planned-access.server";
 import type { ExternalWorkerDetail } from "~/lib/database/external-worker.server";
@@ -6,10 +7,16 @@ import { DOCUMENT_TYPE_LABELS } from "~/lib/models/worker-document";
 import { isDateValidThrough } from "~/lib/document-expiry";
 import type { DocumentType } from "../../../../db/enums";
 import { Badge } from "~/components/ui/badge";
-import CardContainer from "~/components/containers/card-container";
-import { DatePicker } from "~/components/ui/date-picker";
 import FieldWrapper from "~/components/ui/wrappers/field-wrapper";
-import { Input } from "~/components/ui/input";
+import UploadWorkerDocumentBtn from "~/components/models/worker-document/upload-worker-document-btn";
+import {
+  Item,
+  ItemActions,
+  ItemContent,
+  ItemDescription,
+  ItemFooter,
+  ItemTitle,
+} from "~/components/ui/item";
 import {
   Select,
   SelectContent,
@@ -25,11 +32,17 @@ export default function PlannedAccessApprovalPersonCard({
   worker,
   workCategories,
   validThrough,
+  actionPath,
+  workerPath,
+  formId,
 }: {
   person: Person;
   worker: ExternalWorkerDetail | null;
   workCategories: WorkCategory[];
   validThrough: Date;
+  actionPath: string;
+  workerPath: string;
+  formId: string;
 }) {
   const [categoryId, setCategoryId] = useState(
     person.workCategoryId ?? worker?.workCategoryId ?? "",
@@ -39,12 +52,10 @@ export default function PlannedAccessApprovalPersonCard({
   const requiresSpecialPermission = Boolean(category?.requiresSpecialPermission);
 
   return (
-    <CardContainer
-      className="max-w-1/3"
-      title={`${person.firstNameSnapshot} ${person.lastNameSnapshot}`}
-      description={<span>Identificación: {person.legalIdSnapshot}</span>}
-    >
-      <div className="flex flex-col gap-5">
+    <Item variant="outline" className="items-start">
+        <ItemContent className="min-w-0">
+          <ItemTitle>{`${person.firstNameSnapshot} ${person.lastNameSnapshot}`}</ItemTitle>
+          <ItemDescription className="break-words">Identificación: {person.legalIdSnapshot}</ItemDescription>
         <FieldWrapper
           label="Categoría laboral *"
           htmlFor={`category-${person.id}`}
@@ -75,10 +86,20 @@ export default function PlannedAccessApprovalPersonCard({
             type="hidden"
             name={`personWorkCategories[${person.id}]`}
             value={categoryId}
+            form={formId}
           />
         </FieldWrapper>
-        <div className="flex flex-col gap-3">
-          <h4 className="text-sm font-semibold">Documentación</h4>
+        </ItemContent>
+        <ItemActions className="self-start">
+          {worker ? (
+            <Link className="text-sm text-primary hover:underline" to={`${workerPath}/${worker.id}`}>
+              Ver expediente
+            </Link>
+          ) : null}
+        </ItemActions>
+        <ItemFooter className="flex-col items-stretch gap-3">
+          <div className="flex flex-col gap-3">
+            <h4 className="text-sm font-semibold">Documentación requerida</h4>
           {(
             [
               "IDENTIFICATION",
@@ -88,33 +109,35 @@ export default function PlannedAccessApprovalPersonCard({
           ).map((documentType) => (
             <DocumentRequirement
               key={documentType}
-              personId={person.id}
               worker={worker}
               documentType={documentType}
-              required
               validThrough={validThrough}
+              personId={person.id}
+              workCategoryId={categoryId}
+              actionPath={actionPath}
             />
           ))}
-        </div>
-      </div>
-    </CardContainer>
+          </div>
+        </ItemFooter>
+    </Item>
   );
 }
 
 function DocumentRequirement({
-  personId,
   worker,
   documentType,
-  required,
   validThrough,
+  personId,
+  workCategoryId,
+  actionPath,
 }: {
-  personId: string;
   worker: ExternalWorkerDetail | null;
   documentType: DocumentType;
-  required: boolean;
   validThrough: Date;
+  personId: string;
+  workCategoryId: string;
+  actionPath: string;
 }) {
-  const requiresValidUntil = documentType === "IDENTIFICATION";
   const documents =
     worker?.documents?.filter(
       (document) => document.documentType === documentType,
@@ -146,35 +169,17 @@ function DocumentRequirement({
         </p>
       ) : null}
       {!valid ? (
-        <div className="grid gap-3 md:grid-cols-2">
-          <FieldWrapper
-            label={`Archivo${required ? " *" : ""}`}
-            htmlFor={`file-${personId}-${documentType}`}
-          >
-            <Input
-              id={`file-${personId}-${documentType}`}
-              type="file"
-              name={`documentFiles[${personId}][${documentType}]`}
-              accept=".jpg,.jpeg,.png,.pdf,.doc,.docx"
-              required={required}
-            />
-          </FieldWrapper>
-          <FieldWrapper
-            label={`Vigente hasta${requiresValidUntil ? " *" : " (si aplica)"}`}
-            htmlFor={`expiry-${personId}-${documentType}`}
-          >
-            <DatePicker
-              id={`expiry-${personId}-${documentType}`}
-              name={`documentExpiry[${personId}][${documentType}]`}
-              required={requiresValidUntil}
-              placeholder="DD/MM/AAAA"
-            />
-            <input
-              type="hidden"
-              name={`documentExpiryBasis[${personId}][${documentType}]`}
-              value={requiresValidUntil ? "LAW" : "NOT_APPLICABLE"}
-            />
-          </FieldWrapper>
+        <div className="flex flex-col gap-2">
+          <p className="text-xs text-muted-foreground">
+            Carga la evidencia aquí. Quedará pendiente de revisión y no habilitará la aprobación hasta ser validada.
+          </p>
+          <UploadWorkerDocumentBtn
+            workerId={worker?.id}
+            personId={personId}
+            workCategoryId={workCategoryId}
+            actionPath={actionPath}
+            initialDocumentType={documentType}
+          />
         </div>
       ) : null}
     </div>

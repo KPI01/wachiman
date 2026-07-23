@@ -37,12 +37,19 @@ export async function action({ request }: Route.ActionArgs) {
   const method = request.method.toUpperCase();
   const rawFormData = await request.formData();
 
+  if (method === "POST" && rawFormData.get("intent") !== "decision") {
+    return null;
+  }
+
   if (method === "POST" || method === "PUT" || method === "PATCH") {
     const result = await updatePlannedAccessStatus(Object.fromEntries(rawFormData), {
       authorUsername: user.username,
       canApprove: true,
       lockedSiteId: (await getSessionSite(request))?.id,
     });
+    if (method === "POST" && rawFormData.get("intent") === "decision") {
+      return result;
+    }
     return result.success ? redirect("/approver/planned-access") : result;
   }
 

@@ -2,13 +2,17 @@ import { data, Form, redirect } from "react-router";
 import { validateUserRole } from "~/lib/auth.server";
 import { PlannedAccessEntity } from "~/lib/database/planned-access.server";
 import { WorkCategoryEntity } from "~/lib/database/work-category.server";
-import { updatePlannedAccessStatus } from "~/lib/services/planned-access.server";
+import {
+  updatePlannedAccessStatus,
+  uploadPlannedAccessPersonDocument,
+} from "~/lib/services/planned-access.server";
 import type { Route } from "./+types/planned-access.$id.approve";
 import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
 import { Button } from "~/components/ui/button";
 import { getSessionSite } from "~/lib/session.server";
 import { ExternalWorkerEntity } from "~/lib/database/external-worker.server";
 import PlannedAccessApprovalPersonCard from "~/components/models/planned-access/planned-access-approval-person-card";
+import { ItemGroup } from "~/components/ui/item";
 
 export async function loader({ request, params }: Route.LoaderArgs) {
   const user = await validateUserRole(request, [
@@ -51,7 +55,9 @@ export async function loader({ request, params }: Route.LoaderArgs) {
         ? "/security/planned-access"
         : "/approver/planned-access";
 
-  return { plannedAccess, workCategories, people, listPath };
+  const workerPath = listPath.replace("/planned-access", "/external-worker");
+  const approvePath = `${listPath}/${params.id}/approve`;
+  return { plannedAccess, workCategories, people, listPath, workerPath, approvePath };
 }
 
 export async function action({ request, params }: Route.ActionArgs) {
@@ -63,6 +69,29 @@ export async function action({ request, params }: Route.ActionArgs) {
   const sessionSite =
     user.role === "ACCESS_APPROVER" ? await getSessionSite(request) : null;
   const formData = await request.formData();
+  if (formData.get("intent") === "upload-document") {
+    const file = formData.get("file");
+    const personId = String(formData.get("personId") ?? "");
+    const data: Record<string, string> = {};
+    for (const [key, value] of formData.entries()) {
+      if (key !== "file" && typeof value === "string") data[key] = value;
+    }
+    if (!(file instanceof File)) {
+      return { errors: "Selecciona un archivo para cargar." };
+    }
+    const result = await uploadPlannedAccessPersonDocument(
+      params.id,
+      personId,
+      file,
+      data,
+      {
+        authorUsername: user.username,
+        canApprove: true,
+        lockedSiteId: sessionSite?.id,
+      },
+    );
+    return result.success ? { upload: result.document } : { errors: result.errors };
+  }
   const result = await updatePlannedAccessStatus(
     { ...Object.fromEntries(formData), id: params.id, status: "APPROVED" },
     {
@@ -115,25 +144,24 @@ export default function ApprovePlannedAccess({
           <AlertDescription>{formatErrors(actionData.errors)}</AlertDescription>
         </Alert>
       ) : null}
-      <Form
-        id="documentation-form"
-        method="post"
-        encType="multipart/form-data"
-        className="flex gap-4 flex-wrap"
-      >
-        {loaderData.people.map(({ person, worker }) => (
-          <PlannedAccessApprovalPersonCard
-            key={person.id}
-            person={person}
-            worker={worker}
-            workCategories={loaderData.workCategories}
-            validThrough={
-              loaderData.plannedAccess.expectedEndDatetime ??
-              loaderData.plannedAccess.expectedStartDatetime
-            }
-          />
-        ))}
-      </Form>
+      <Form id="documentation-form" method="post" className="hidden" />
+      <ItemGroup>
+          {loaderData.people.map(({ person, worker }) => (
+            <PlannedAccessApprovalPersonCard
+              key={person.id}
+              person={person}
+              worker={worker}
+              workCategories={loaderData.workCategories}
+              validThrough={
+                loaderData.plannedAccess.expectedEndDatetime ??
+                loaderData.plannedAccess.expectedStartDatetime
+              }
+              actionPath={loaderData.approvePath}
+              workerPath={loaderData.workerPath}
+              formId="documentation-form"
+            />
+          ))}
+      </ItemGroup>
     </div>
   );
 }

@@ -16,7 +16,7 @@ async function initializeWorkerEnvironment(env: Record<string, unknown>) {
   // Workers bindings (vars + secrets) are getter-based, not enumerable.
   // Object.keys(env) returns [] so we must reference each key explicitly.
   const g = globalThis as Record<string, unknown>;
-  const envVars = ["ENCRYPTION_KEY", "SESSION_SECRET", "APP_NAME", "APP_LOGO", "APP_FAVICON", "SESSION_COOKIE_SECRET", "DISABLE_FILE_UPLOADS"];
+  const envVars = ["ENCRYPTION_KEY", "SESSION_SECRET", "APP_NAME", "APP_LOGO", "APP_FAVICON", "SESSION_COOKIE_SECRET", "FILE_STORAGE_MODE", "UPLOADS_BASE_PATH"];
   for (const name of envVars) {
     if (name in env && typeof (env as Record<string, unknown>)[name] === "string") {
       g[name] = (env as Record<string, unknown>)[name];
@@ -30,12 +30,6 @@ async function initializeWorkerEnvironment(env: Record<string, unknown>) {
       await initDb(env.DB as D1Database);
     }
   }
-}
-
-async function expireWorkerDocuments(env: Record<string, unknown>) {
-  await initializeWorkerEnvironment(env);
-  const { checkExpiredDocuments } = await import("../app/lib/services/worker-document.server");
-  await checkExpiredDocuments();
 }
 
 export default {
@@ -53,13 +47,5 @@ export default {
       waitUntil: ctx.waitUntil.bind(ctx),
       passThroughOnException: ctx.passThroughOnException.bind(ctx),
     });
-  },
-
-  scheduled(
-    _controller: ScheduledController,
-    env: Record<string, unknown>,
-    ctx: ExecutionContext,
-  ) {
-    ctx.waitUntil(expireWorkerDocuments(env));
   },
 };

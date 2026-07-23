@@ -9,6 +9,7 @@ import { PlannedAccessEntity } from "../database/planned-access.server";
 import { UserEntity } from "../database/user.server";
 import { WorkCategoryEntity } from "../database/work-category.server";
 import { CompanyEntity } from "../database/company.server";
+import { AuditLogEntity } from "../database/audit-log.server";
 import { uploadWorkerDocument } from "./worker-document.server";
 import { endOfUtcDay } from "../document-expiry";
 import {
@@ -197,14 +198,85 @@ export async function createPlannedAccess(
     };
   }
 
-  await PlannedAccessEntity.create({
+  const plannedAccess = await PlannedAccessEntity.create({
     ...parsed.data,
     siteId,
     requestedById: author.id,
-    approvedById: author.id,
   });
 
+  if (plannedAccess) {
+    await AuditLogEntity.create({
+      entityType: "PlannedAccess",
+      entityId: plannedAccess.id,
+      action: "PLANNED_ACCESS_CREATED",
+      changedBy: author.id,
+      summary: "Solicitud de acceso planificado creada",
+      metadata: {
+        siteId,
+        expectedStartDatetime: plannedAccess.expectedStartDatetime,
+        expectedEndDatetime: plannedAccess.expectedEndDatetime,
+        persons: plannedAccess.plannedAccessPersons.map((person) => ({
+          id: person.id,
+          externalWorkerId: person.externalWorkerId,
+        })),
+      },
+    });
+  }
+
   return { success: true };
+}
+
+export async function uploadPlannedAccessPersonDocument(
+  plannedAccessId: string,
+  personId: string,
+  file: File,
+  input: Record<string, string>,
+  options: PlannedAccessAuthorOptions,
+) {
+  const author = await UserEntity.getByUsername(options.authorUsername);
+  if (!author) return { success: false as const, errors: "unauthorized" };
+
+  const plannedAccess = await PlannedAccessEntity.findById(plannedAccessId);
+  if (!plannedAccess) return { success: false as const, errors: "La solicitud no existe." };
+  if (plannedAccess.status !== "PENDING_APPROVAL") {
+    return { success: false as const, errors: "Solo puedes cargar documentación de solicitudes pendientes." };
+  }
+  if (options.lockedSiteId && plannedAccess.siteId !== options.lockedSiteId) {
+    return { success: false as const, errors: "No tienes permisos para esta solicitud." };
+  }
+
+  const person = plannedAccess.plannedAccessPersons.find((item) => item.id === personId);
+  if (!person) return { success: false as const, errors: "La persona no pertenece a esta solicitud." };
+
+  const categoryId = input.workCategoryId || person.workCategoryId;
+  let worker = person.externalWorkerId
+    ? await ExternalWorkerEntity.findById(person.externalWorkerId)
+    : await ExternalWorkerEntity.findByLegalId(normalizeLegalId(person.legalIdSnapshot));
+
+  if (!worker) {
+    if (!categoryId) return { success: false as const, errors: "Selecciona una categoría laboral antes de cargar documentación." };
+    const company = await findOrCreateCompany(plannedAccess.companySnapshot);
+    worker = await ExternalWorkerEntity.create({
+      firstName: person.firstNameSnapshot,
+      middleName: person.middleNameSnapshot ?? undefined,
+      lastName: person.lastNameSnapshot,
+      secondLastName: person.secondLastNameSnapshot ?? undefined,
+      phoneNumber: person.phoneNumber ?? undefined,
+      legalId: normalizeLegalId(person.legalIdSnapshot),
+      companyId: company.id,
+      workCategoryId: categoryId,
+    });
+  }
+
+  const effectiveCategoryId = categoryId ?? worker.workCategoryId;
+  if (!effectiveCategoryId) return { success: false as const, errors: "Selecciona una categoría laboral antes de cargar documentación." };
+  const linked = await PlannedAccessEntity.linkPersonWorker(plannedAccessId, personId, worker.id, effectiveCategoryId);
+  if (!linked) return { success: false as const, errors: "No se pudo vincular la persona al trabajador." };
+
+  return uploadWorkerDocument(worker.id, file, {
+    ...input,
+    workCategoryId: effectiveCategoryId,
+  }, author.id);
 }
 
 function formatPlannedDate(date: Date | string) {
@@ -258,6 +330,26 @@ export async function updatePlannedAccessStatus(
     return { success: false, errors: "Solo puedes modificar tus propias solicitudes." };
   }
 
+  // Older rows may have a null status because the column predates its default.
+  // The list already treats those rows as pending, so transitions must use the
+  // same effective value instead of rejecting them inconsistently.
+  const currentStatus = existingPlannedAccess.status ?? "PENDING_APPROVAL";
+
+  if (
+    (parsed.data.status === "APPROVED" || parsed.data.status === "REJECTED") &&
+    existingPlannedAccess.requestedById === author.id
+  ) {
+    await AuditLogEntity.create({
+      entityType: "PlannedAccess",
+      entityId: existingPlannedAccess.id,
+      action: "SELF_APPROVAL_BLOCKED",
+      changedBy: author.id,
+      summary: "Se bloqueó una decisión sobre una solicitud propia",
+      metadata: { attemptedStatus: parsed.data.status },
+    });
+    return { success: false, errors: "No puedes aprobar ni rechazar una solicitud creada por ti." };
+  }
+
   if (parsed.data.status === "APPROVED") {
     const plannedAccess = existingPlannedAccess;
 
@@ -265,13 +357,14 @@ export async function updatePlannedAccessStatus(
       return { success: false, errors: "La solicitud planificada no existe." };
     }
 
-    if (plannedAccess.status !== "PENDING_APPROVAL") {
+    if (currentStatus !== "PENDING_APPROVAL") {
       return { success: false, errors: "La solicitud ya no está pendiente de aprobación." };
     }
 
     const selectedCategories = parsed.data.personWorkCategories ?? {};
     const personWorkCategories: Array<{ personId: string; workCategoryId: string; externalWorkerId: string }> = [];
     const validationErrors: string[] = [];
+    const decisionEvidence: Array<Record<string, unknown>> = [];
 
     for (const person of plannedAccess.plannedAccessPersons) {
       const categoryId = selectedCategories[person.id] || null;
@@ -327,41 +420,6 @@ export async function updatePlannedAccessStatus(
         requiresTraining: Boolean(category.requiresTraining),
         requiresSpecialPermission: Boolean(category.requiresSpecialPermission),
       };
-      const documentTypes: DocumentType[] = ["IDENTIFICATION"];
-      if (requirements.requiresTraining) documentTypes.push("TRAINING");
-      if (requirements.requiresSpecialPermission) documentTypes.push("SPECIAL_PERMISSION");
-
-      for (const documentType of documentTypes) {
-        const fileValue = input[`documentFiles[${person.id}][${documentType}]`];
-        if (!(fileValue instanceof File) || fileValue.size === 0) continue;
-        const validUntil = input[`documentExpiry[${person.id}][${documentType}]`];
-        const expiryBasis = input[`documentExpiryBasis[${person.id}][${documentType}]`];
-        const uploadResult = await uploadWorkerDocument(
-          workerId,
-          fileValue,
-          {
-            documentType,
-            validUntil: typeof validUntil === "string" ? validUntil : "",
-            expiryBasis: typeof expiryBasis === "string"
-              ? expiryBasis
-              : documentType === "IDENTIFICATION"
-                ? "LAW"
-                : "NOT_APPLICABLE",
-            notes: typeof input[`documentNotes[${person.id}][${documentType}]`] === "string"
-              ? String(input[`documentNotes[${person.id}][${documentType}]`])
-              : "",
-          },
-          author.id,
-          {
-            validateImmediately: true,
-            reviewReason: "Validado durante la aprobacion del acceso planificado.",
-          },
-        );
-        if (!uploadResult.success) {
-          validationErrors.push(`No se pudo subir ${DOCUMENT_TYPE_LABELS[documentType]} para ${worker.firstName} ${worker.lastName}.`);
-        }
-      }
-
       const docResult = await validateWorkerDocumentsForAccess(
         workerId,
         requirements,
@@ -373,6 +431,14 @@ export async function updatePlannedAccessStatus(
 
       if (!docResult.valid) {
         validationErrors.push(formatDocumentValidationError(worker, docResult));
+      } else {
+        decisionEvidence.push({
+          personId: person.id,
+          workerId,
+          workCategoryId: effectiveCategoryId,
+          requirements,
+          documents: docResult.evaluatedDocuments,
+        });
       }
     }
 
@@ -385,6 +451,9 @@ export async function updatePlannedAccessStatus(
       status: "APPROVED",
       approvedById: author.id,
       approvedAt: new Date(),
+      decisionReason: parsed.data.decisionReason ?? null,
+      decisionById: author.id,
+      decisionAt: new Date(),
       personWorkCategories,
     });
 
@@ -392,24 +461,55 @@ export async function updatePlannedAccessStatus(
       return { success: false, errors: "La solicitud ya no está pendiente de aprobación." };
     }
 
+    await AuditLogEntity.create({
+      entityType: "PlannedAccess",
+      entityId: approved.id,
+      action: "PLANNED_ACCESS_APPROVED",
+      changedBy: author.id,
+      summary: "Solicitud de acceso planificado aprobada",
+      metadata: {
+        reason: parsed.data.decisionReason ?? null,
+        evidence: decisionEvidence,
+      },
+    });
+
     return { success: true };
   }
 
   const allowedPreviousStatuses = parsed.data.status === "REJECTED"
     ? ["PENDING_APPROVAL"]
     : ["PENDING_APPROVAL", "APPROVED"];
-  if (!allowedPreviousStatuses.includes(existingPlannedAccess.status ?? "")) {
+  if (!allowedPreviousStatuses.includes(currentStatus)) {
     return { success: false, errors: "La transición solicitada no es válida para el estado actual." };
   }
 
   const updated = await PlannedAccessEntity.updateStatus({
     id: parsed.data.id,
     status: parsed.data.status,
+    decisionReason: parsed.data.decisionReason ?? null,
+    decisionById: author.id,
+    decisionAt: new Date(),
   });
 
   if (!updated) {
     return { success: false, errors: "La solicitud no pudo actualizarse." };
   }
+
+  await AuditLogEntity.create({
+    entityType: "PlannedAccess",
+    entityId: updated.id,
+    action: parsed.data.status === "REJECTED"
+      ? "PLANNED_ACCESS_REJECTED"
+      : "PLANNED_ACCESS_CANCELED",
+    changedBy: author.id,
+    summary: parsed.data.status === "REJECTED"
+      ? "Solicitud de acceso planificado rechazada"
+      : "Solicitud de acceso planificado cancelada",
+    metadata: {
+      previousStatus: currentStatus,
+      reason: parsed.data.decisionReason,
+    },
+  });
 
   return { success: true };
 }

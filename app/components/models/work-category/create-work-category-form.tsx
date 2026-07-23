@@ -8,6 +8,7 @@ import { Input } from "~/components/ui/input";
 import { Checkbox } from "~/components/ui/checkbox";
 import FieldWrapper from "~/components/ui/wrappers/field-wrapper";
 import { getFieldErrors } from "~/lib/utils/zod-errors";
+import { Field, FieldDescription, FieldLegend, FieldSet } from "~/components/ui/field";
 
 type CreateWorkCategoryProps = {
   errors?: unknown;
@@ -58,25 +59,24 @@ export default function CreateWorkCategoryForm({
         >
           <Input id="description" name="description" />
         </FieldWrapper>
-        <div className="flex items-center gap-3 rounded-md border px-3 py-2">
-          <Checkbox
-            id="requiresSpecialPermission"
-            name="requiresSpecialPermission"
-            value="true"
-          />
-          <label
-            htmlFor="requiresSpecialPermission"
-            className="text-sm font-medium"
-          >
-            Requiere permiso especial
-          </label>
-        </div>
-        <div className="flex items-center gap-3 rounded-md border px-3 py-2">
-          <Checkbox id="requiresTraining" name="requiresTraining" value="true" />
-          <label htmlFor="requiresTraining" className="text-sm font-medium">
-            Requiere formación
-          </label>
-        </div>
+        <FieldSet>
+          <FieldLegend>Requisitos documentales</FieldLegend>
+          <FieldDescription>
+            Activa los tipos de evidencia que deben estar validados antes de autorizar el acceso.
+          </FieldDescription>
+          <Field orientation="horizontal">
+            <Checkbox id="requiresTraining" name="requiresTraining" value="true" />
+            <label htmlFor="requiresTraining" className="text-sm font-medium">
+              Exigir evidencia de formación
+            </label>
+          </Field>
+          <Field orientation="horizontal">
+            <Checkbox id="requiresSpecialPermission" name="requiresSpecialPermission" value="true" />
+            <label htmlFor="requiresSpecialPermission" className="text-sm font-medium">
+              Exigir autorización o permiso especial
+            </label>
+          </Field>
+        </FieldSet>
       </Form>
     </AlertDialogContainer>
   );

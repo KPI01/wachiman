@@ -23,7 +23,12 @@ export async function loader({
   const { createReadStream } = await import("fs");
   const { stat } = await import("fs/promises");
 
-  const fullPath = await toOsPath(document.filePath);
+  let fullPath: string;
+  try {
+    fullPath = await toOsPath(document.filePath);
+  } catch {
+    return new Response("Invalid document path", { status: 404 });
+  }
 
   try {
     const fileStat = await stat(fullPath);
@@ -51,8 +56,9 @@ export async function loader({
       headers: {
         "Content-Type": document.mimeType || "application/octet-stream",
         "Content-Length": String(fileStat.size),
-        "Content-Disposition": `inline; filename="${encodeURIComponent(document.fileName)}"`,
+        "Content-Disposition": `attachment; filename="${encodeURIComponent(document.fileName)}"`,
         "Cache-Control": "private, max-age=3600",
+        "X-Content-Type-Options": "nosniff",
       },
     });
   } catch {

@@ -130,6 +130,7 @@ export const workerDocuments = sqliteTable("worker_documents", {
   filePath: text("file_path").notNull(),
   fileSize: integer("file_size"),
   mimeType: text("mime_type"),
+  contentHash: text("content_hash"),
   completedAt: integer("completed_at", { mode: "timestamp_ms" }),
   issuedAt: integer("issued_at", { mode: "timestamp_ms" }),
   validFrom: integer("valid_from", { mode: "timestamp_ms" }),
@@ -164,6 +165,22 @@ export const workerDocuments = sqliteTable("worker_documents", {
     }),
   createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull().default(timestampDefault),
   updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull().default(timestampDefault),
+});
+
+export const documentReviews = sqliteTable("document_reviews", {
+  id: text("id").primaryKey().$default(makeId),
+  documentId: text("document_id")
+    .notNull()
+    .references(() => workerDocuments.id),
+  decision: text("decision").$type<"VALIDATED" | "REJECTED">().notNull(),
+  reason: text("reason").notNull(),
+  evidenceSnapshot: text("evidence_snapshot", { mode: "json" })
+    .$type<Record<string, unknown>>()
+    .notNull(),
+  reviewedById: text("reviewed_by_id")
+    .notNull()
+    .references(() => users.id),
+  reviewedAt: integer("reviewed_at", { mode: "timestamp_ms" }).notNull().default(timestampDefault),
 });
 
 // ───── Audit Logs ────────────────────────────────────
@@ -243,8 +260,10 @@ export const plannedAccesses = sqliteTable("planned_accesses", {
   visitReason: text("visit_reason").notNull(),
   approvedAt: integer("approved_at", { mode: "timestamp_ms" }),
   approvedById: text("approved_by_id")
-    .notNull()
     .references(() => users.id),
+  decisionReason: text("decision_reason"),
+  decisionAt: integer("decision_at", { mode: "timestamp_ms" }),
+  decisionById: text("decision_by_id").references(() => users.id),
   requestedById: text("requested_by_id")
     .notNull()
     .references(() => users.id),
@@ -285,6 +304,7 @@ export type Company = typeof companies.$inferSelect;
 export type WorkCategory = typeof workCategories.$inferSelect;
 export type ExternalWorker = typeof externalWorkers.$inferSelect;
 export type WorkerDocument = typeof workerDocuments.$inferSelect;
+export type DocumentReview = typeof documentReviews.$inferSelect;
 export type AuditLog = typeof auditLogs.$inferSelect;
 export type AccessLogVehicle = typeof accessLogVehicles.$inferSelect;
 export type AccessLog = typeof accessLogs.$inferSelect;
@@ -317,6 +337,10 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   validatedPlannedAccess: many(plannedAccesses, {
     relationName: "approvedBy",
   }),
+  decidedPlannedAccesses: many(plannedAccesses, {
+    relationName: "decisionBy",
+  }),
+  documentReviews: many(documentReviews),
 }));
 
 export const companiesRelations = relations(companies, ({ many }) => ({
@@ -347,13 +371,25 @@ export const externalWorkersRelations = relations(
 
 export const workerDocumentsRelations = relations(
   workerDocuments,
-  ({ one }) => ({
+  ({ one, many }) => ({
     externalWorker: one(externalWorkers, {
       fields: [workerDocuments.externalWorkerId],
       references: [externalWorkers.id],
     }),
+    reviews: many(documentReviews),
   }),
 );
+
+export const documentReviewsRelations = relations(documentReviews, ({ one }) => ({
+  document: one(workerDocuments, {
+    fields: [documentReviews.documentId],
+    references: [workerDocuments.id],
+  }),
+  reviewedBy: one(users, {
+    fields: [documentReviews.reviewedById],
+    references: [users.id],
+  }),
+}));
 
 export const accessLogsRelations = relations(accessLogs, ({ one }) => ({
   site: one(sites, { fields: [accessLogs.siteId], references: [sites.id] }),
@@ -401,6 +437,11 @@ export const plannedAccessesRelations = relations(
       fields: [plannedAccesses.approvedById],
       references: [users.id],
       relationName: "approvedBy",
+    }),
+    decisionBy: one(users, {
+      fields: [plannedAccesses.decisionById],
+      references: [users.id],
+      relationName: "decisionBy",
     }),
     plannedAccessPersons: many(plannedAccessPersons),
     accessLogs: many(accessLogs),

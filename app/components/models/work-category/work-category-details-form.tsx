@@ -10,6 +10,7 @@ import FieldWrapper from "~/components/ui/wrappers/field-wrapper";
 import { Input } from "~/components/ui/input";
 import { Checkbox } from "~/components/ui/checkbox";
 import { getFieldErrors } from "~/lib/utils/zod-errors";
+import { Field, FieldDescription, FieldLegend, FieldSet } from "~/components/ui/field";
 
 type WorkCategoryDetailsProps = {
   workCategory: WorkCategory;
@@ -70,31 +71,34 @@ export default function WorkCategoryDetailsForm({
             defaultValue={workCategory.description ?? ""}
           />
         </FieldWrapper>
-        <div className="flex items-center gap-3 rounded-md border px-3 py-2">
-          <Checkbox
-            id={`requiresSpecialPermission-${workCategory.id}`}
-            name="requiresSpecialPermission"
-            value="true"
-            defaultChecked={Boolean(workCategory.requiresSpecialPermission)}
-          />
-          <label
-            htmlFor={`requiresSpecialPermission-${workCategory.id}`}
-            className="text-sm font-medium"
-          >
-            Requiere permiso especial
-          </label>
-        </div>
-        <div className="flex items-center gap-3 rounded-md border px-3 py-2">
-          <Checkbox
-            id={`requiresTraining-${workCategory.id}`}
-            name="requiresTraining"
-            value="true"
-            defaultChecked={Boolean(workCategory.requiresTraining)}
-          />
-          <label htmlFor={`requiresTraining-${workCategory.id}`} className="text-sm font-medium">
-            Requiere formación
-          </label>
-        </div>
+        <FieldSet>
+          <FieldLegend>Requisitos documentales</FieldLegend>
+          <FieldDescription>
+            Estos requisitos se aplican al aprobar y registrar el acceso.
+          </FieldDescription>
+          <Field orientation="horizontal">
+            <Checkbox
+              id={`requiresTraining-${workCategory.id}`}
+              name="requiresTraining"
+              value="true"
+              defaultChecked={Boolean(workCategory.requiresTraining)}
+            />
+            <label htmlFor={`requiresTraining-${workCategory.id}`} className="text-sm font-medium">
+              Exigir evidencia de formación
+            </label>
+          </Field>
+          <Field orientation="horizontal">
+            <Checkbox
+              id={`requiresSpecialPermission-${workCategory.id}`}
+              name="requiresSpecialPermission"
+              value="true"
+              defaultChecked={Boolean(workCategory.requiresSpecialPermission)}
+            />
+            <label htmlFor={`requiresSpecialPermission-${workCategory.id}`} className="text-sm font-medium">
+              Exigir autorización o permiso especial
+            </label>
+          </Field>
+        </FieldSet>
       </patchFetcher.Form>
     </AlertDialogContainer>
   );

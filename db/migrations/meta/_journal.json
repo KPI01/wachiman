@@ -29,6 +29,13 @@
       "when": 1784788150365,
       "tag": "0003_lonely_doctor_faustus",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1784789820228,
+      "tag": "0004_late_rhino",
+      "breakpoints": true
     }
   ]
 }

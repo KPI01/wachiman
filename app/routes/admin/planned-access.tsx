@@ -37,12 +37,11 @@ export async function action({ request }: Route.ActionArgs) {
   const rawFormData = await request.formData();
 
   if (method === "POST") {
-    if (rawFormData.has("status")) {
-      const result = await updatePlannedAccessStatus(Object.fromEntries(rawFormData), {
+    if (rawFormData.get("intent") === "decision") {
+      return updatePlannedAccessStatus(Object.fromEntries(rawFormData), {
         authorUsername: user.username,
         canApprove: true,
       });
-      return result.success ? redirect("/admin/planned-access") : result;
     }
     return await createPlannedAccess(getPlannedAccessFormInput(rawFormData), {
       authorUsername: user.username,

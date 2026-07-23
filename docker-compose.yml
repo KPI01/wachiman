@@ -9,6 +9,7 @@ services:
       - .env.production
     environment:
       DATABASE_URL: file:/data/wachiman.db
+      FILE_STORAGE_MODE: filesystem
       UPLOADS_BASE_PATH: /uploads
       SESSION_COOKIE_SECURE: "false"
     ports:

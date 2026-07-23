@@ -28,7 +28,7 @@ const PLANNED_ACCESS_STATUS_LABELS: Record<PlannedAccessStatus, string> = {
 };
 
 export async function loader({ request, params }: Route.LoaderArgs) {
-  await validateUserRole(request, [
+  const user = await validateUserRole(request, [
     "ADMIN",
     "SECURITY_MANAGER",
     "ACCESS_APPROVER",
@@ -40,7 +40,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
     throw data("Trabajador no encontrado", { status: 404 });
   }
 
-  return { worker };
+  return { worker, canReviewDocuments: user.role === "SECURITY_MANAGER" };
 }
 
 export default function ExternalWorkerDetail({
@@ -132,7 +132,11 @@ export default function ExternalWorkerDetail({
           <h3 className="text-xl font-semibold">Documentacion</h3>
           <UploadWorkerDocumentBtn workerId={worker.id} />
         </div>
-        <WorkerDocumentList documents={worker.documents} workerId={worker.id} />
+        <WorkerDocumentList
+          documents={worker.documents}
+          workerId={worker.id}
+          canReviewDocuments={loaderData.canReviewDocuments}
+        />
       </div>
 
       <Separator />

@@ -1,4 +1,4 @@
-import { TrashIcon } from "lucide-react";
+import { ArchiveIcon } from "lucide-react";
 import { useState } from "react";
 import { useFetcher } from "react-router";
 import AlertDialogContainer, {
@@ -22,16 +22,16 @@ export default function DeleteWorkerDocumentBtn({
     <AlertDialogContainer
       open={open}
       onOpenChange={setOpen}
-      buttonLabel={<TrashIcon />}
-      buttonVariant="destructive"
+      buttonLabel={<ArchiveIcon />}
+      buttonVariant="ghost"
       buttonSize="icon"
-      title="Eliminar documento"
-      description="Esta accion no se puede deshacer. El archivo sera eliminado permanentemente."
+      title="Archivar documento"
+      description="El documento dejará de estar vigente, pero se conservará como evidencia histórica."
       footer={
         <>
           <AlertDialogCancel variant="secondary">Cancelar</AlertDialogCancel>
           <AlertDialogAction
-            variant="destructive"
+            variant="secondary"
             onClick={() => {
               fetcher.submit(
                 { id: documentId },
@@ -43,7 +43,7 @@ export default function DeleteWorkerDocumentBtn({
               setOpen(false);
             }}
           >
-            Eliminar
+            Archivar
           </AlertDialogAction>
         </>
       }

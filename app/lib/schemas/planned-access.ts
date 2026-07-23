@@ -64,11 +64,22 @@ export const createPlannedAccessSchema = z
     });
   });
 
-export const updatePlannedAccessStatusSchema = z.object({
-  id: requiredString,
-  status: z.enum(["APPROVED", "REJECTED", "CANCELED"]),
-  personWorkCategories: z.record(z.string(), z.string().nullable()).optional(),
-});
+export const updatePlannedAccessStatusSchema = z
+  .object({
+    id: requiredString,
+    status: z.enum(["APPROVED", "REJECTED", "CANCELED"]),
+    decisionReason: optionalString,
+    personWorkCategories: z.record(z.string(), z.string().nullable()).optional(),
+  })
+  .superRefine((value, context) => {
+    if (value.status !== "APPROVED" && !value.decisionReason) {
+      context.addIssue({
+        code: "custom",
+        path: ["decisionReason"],
+        message: "Indica el motivo de la decisión.",
+      });
+    }
+  });
 
 export const createAccessLogFromPlannedAccessSchema = z.object({
   plannedAccessId: requiredString,

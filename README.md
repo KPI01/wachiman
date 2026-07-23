@@ -233,7 +233,7 @@ wachiman/
 │   │   ├── session.server.ts       # Gestión de sesiones con cookies
 │   │   ├── hash.server.ts          # Hash y validación de contraseñas (PBKDF2)
 │   │   ├── crypt.server.ts         # Cifrado/descifrado AES-256-GCM (Web Crypto)
-│   │   ├── platform.server.ts      # Detección de soporte de archivos (DISABLE_FILE_UPLOADS)
+│   │   ├── platform.server.ts      # Detección del modo de almacenamiento documental
 │   │   ├── env.server.ts            # Helper getEnv() para Workers + Node.js
 │   │   ├── database/               # Clases de acceso a datos (CRUD por entidad)
 │   │   ├── services/               # Lógica de negocio
@@ -287,8 +287,25 @@ El sistema cuenta con 6 roles con dashboards y permisos segmentados:
 ### Trabajadores externos
 
 - Registro de trabajadores externos vinculados a empresas y categorías de trabajo
-- Gestión de documentos: identificaciones y certificados de capacitación
+- Gestión de documentos en filesystem: PDF, JPEG y PNG
 - Control de vencimiento de documentos con verificación automática
+
+El almacenamiento documental se configura con `FILE_STORAGE_MODE=filesystem` y
+`UPLOADS_BASE_PATH`. Las rutas guardadas en la base de datos son relativas a ese
+directorio. En Cloudflare Workers se mantiene `FILE_STORAGE_MODE=disabled`.
+
+La expiración documental se ejecuta mediante `pnpm job:expire-documents`,
+programado por el cron del servidor. El endpoint HTTP y el scheduler de Cloudflare
+no forman parte del flujo operativo.
+
+En el despliegue Docker, el cron del servidor puede invocarlo dentro del contenedor:
+
+```cron
+5 0 * * * cd /opt/wachiman && flock -n /tmp/wachiman-expiry.lock docker compose exec -T app pnpm job:expire-documents >> /var/log/wachiman-jobs.log 2>&1
+```
+
+El contenedor no es un requisito de SQLite; garantiza que el job use el mismo
+`DATABASE_URL`, dependencias y volumen `/data` que la aplicación.
 
 ### Bitácora de auditoría
 

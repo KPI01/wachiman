@@ -1,6 +1,8 @@
-import { Link, Form } from "react-router";
 import type { PlannedAccessStatus } from "../../../../db/enums";
+import { Link } from "react-router";
 import { Button } from "~/components/ui/button";
+import CancelPlannedAccessButton from "./cancel-planned-access-button";
+import RejectPlannedAccessButton from "./reject-planned-access-button";
 
 export type AllowedAction = "APPROVE" | "REJECT" | "CANCEL";
 
@@ -21,36 +23,19 @@ export default function PlannedAccessStatusActions({
     return <span className="sr-only">Sin acciones disponibles</span>;
   }
 
-  const simpleAction = (
-    action: "REJECT" | "CANCEL",
-    variant: "destructive" | "outline",
-  ) => (
-    <Form method="post" action={actionPath} className="inline-flex">
-      <input type="hidden" name="id" value={plannedAccessId} />
-      <input
-        type="hidden"
-        name="status"
-        value={action === "REJECT" ? "REJECTED" : "CANCELED"}
-      />
-      <Button type="submit" size="sm" variant={variant}>
-        {action === "REJECT" ? "Rechazar" : "Cancelar"}
-      </Button>
-    </Form>
-  );
-
   return (
     <div className="flex justify-end gap-2">
       {status === "PENDING_APPROVAL" && allowedActions.includes("APPROVE") ? (
-        <Button asChild type="button" size="sm">
+        <Button asChild size="sm">
           <Link to={`${actionPath}/${plannedAccessId}/approve`}>Aprobar</Link>
         </Button>
       ) : null}
-      {status === "PENDING_APPROVAL" && allowedActions.includes("REJECT")
-        ? simpleAction("REJECT", "destructive")
-        : null}
-      {allowedActions.includes("CANCEL")
-        ? simpleAction("CANCEL", "outline")
-        : null}
+      {status === "PENDING_APPROVAL" && allowedActions.includes("REJECT") ? (
+        <RejectPlannedAccessButton actionPath={actionPath} plannedAccessId={plannedAccessId} />
+      ) : null}
+      {allowedActions.includes("CANCEL") ? (
+        <CancelPlannedAccessButton actionPath={actionPath} plannedAccessId={plannedAccessId} />
+      ) : null}
     </div>
   );
 }

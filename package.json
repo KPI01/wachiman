@@ -20,6 +20,7 @@
     "db:setup": "tsx scripts/db.ts setup",
     "db:reset": "tsx scripts/db.ts reset",
     "db:seed": "tsx scripts/db.ts seed",
+    "job:expire-documents": "tsx scripts/jobs/expire-documents.ts",
     "env:set-remote": "bash scripts/set-remote-secrets.sh",
     "env:set-encryption-key": "tsx scripts/set-encryption-key.ts",
     "env:set-session-secret": "tsx scripts/set-session-secret.ts"

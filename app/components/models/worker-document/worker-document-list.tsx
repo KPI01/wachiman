@@ -9,6 +9,7 @@ import {
 import { formatTimestamp } from "~/lib/utils";
 import type { WorkerDocumentListItem } from "~/lib/database/worker-document.server";
 import DeleteWorkerDocumentBtn from "./delete-worker-document-btn";
+import ReviewWorkerDocumentBtn from "./review-worker-document-btn";
 import UpdateWorkerDocumentBtn from "./update-worker-document-btn";
 import { DownloadIcon, ExternalLinkIcon } from "lucide-react";
 
@@ -23,11 +24,13 @@ const STATUS_VARIANT: Record<DocumentStatus, "default" | "secondary" | "destruct
 type WorkerDocumentListProps = {
   documents: WorkerDocumentListItem[];
   workerId: string;
+  canReviewDocuments: boolean;
 };
 
 export default function WorkerDocumentList({
   documents,
   workerId,
+  canReviewDocuments,
 }: WorkerDocumentListProps) {
   if (documents.length === 0) {
     return (
@@ -106,14 +109,24 @@ export default function WorkerDocumentList({
                         <DownloadIcon />
                       </a>
                     </Button>
-                    <UpdateWorkerDocumentBtn
-                      document={doc}
-                      workerId={workerId}
-                    />
-                    <DeleteWorkerDocumentBtn
-                      documentId={doc.id}
-                      workerId={workerId}
-                    />
+                    {doc.status === "PENDING_REVIEW" ? (
+                      <UpdateWorkerDocumentBtn
+                        document={doc}
+                        workerId={workerId}
+                      />
+                    ) : null}
+                    {canReviewDocuments && doc.status === "PENDING_REVIEW" ? (
+                      <ReviewWorkerDocumentBtn
+                        document={doc}
+                        workerId={workerId}
+                      />
+                    ) : null}
+                    {canReviewDocuments && doc.status !== "ARCHIVED" ? (
+                      <DeleteWorkerDocumentBtn
+                        documentId={doc.id}
+                        workerId={workerId}
+                      />
+                    ) : null}
                   </div>
                 </td>
               </tr>

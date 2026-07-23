@@ -17,7 +17,6 @@ import FieldWrapper from "~/components/ui/wrappers/field-wrapper";
 import {
   DOCUMENT_EXPIRY_BASIS_LABELS,
   DOCUMENT_RECORD_TYPE_LABELS,
-  DOCUMENT_STATUS_LABELS,
   DOCUMENT_TYPE_LABELS,
 } from "~/lib/models/worker-document";
 import { formatTimestamp } from "~/lib/utils";
@@ -45,7 +44,7 @@ export default function UpdateWorkerDocumentBtn({
       buttonVariant="ghost"
       buttonSize="icon"
       title="Editar Documento"
-      description={`${DOCUMENT_TYPE_LABELS[document.documentType]} - ${document.fileName}`}
+      description={`${DOCUMENT_TYPE_LABELS[document.documentType]} - ${document.fileName}. Solo puede editarse mientras esté pendiente de revisión.`}
       footer={
         <>
           <AlertDialogCancel variant="destructive">Cancelar</AlertDialogCancel>
@@ -62,31 +61,6 @@ export default function UpdateWorkerDocumentBtn({
         className="grid gap-4"
       >
         <input name="id" value={document.id} type="hidden" />
-
-        <FieldWrapper label="Estado" htmlFor={`status-${document.id}`}>
-          <Select name="status" defaultValue={document.status}>
-            <SelectTrigger className="w-full">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent position="popper">
-              <SelectItem value="PENDING_REVIEW">
-                {DOCUMENT_STATUS_LABELS.PENDING_REVIEW}
-              </SelectItem>
-              <SelectItem value="VALIDATED">
-                {DOCUMENT_STATUS_LABELS.VALIDATED}
-              </SelectItem>
-              <SelectItem value="REJECTED">
-                {DOCUMENT_STATUS_LABELS.REJECTED}
-              </SelectItem>
-              <SelectItem value="EXPIRED">
-                {DOCUMENT_STATUS_LABELS.EXPIRED}
-              </SelectItem>
-              <SelectItem value="ARCHIVED">
-                {DOCUMENT_STATUS_LABELS.ARCHIVED}
-              </SelectItem>
-            </SelectContent>
-          </Select>
-        </FieldWrapper>
 
         <FieldWrapper label="Naturaleza de la evidencia" htmlFor={`recordType-${document.id}`}>
           <Select name="recordType" defaultValue={document.recordType}>
@@ -145,10 +119,6 @@ export default function UpdateWorkerDocumentBtn({
             <Input id={`reviewDueAt-${document.id}`} name="reviewDueAt" type="date" defaultValue={document.reviewDueAt ? formatTimestamp({ date: document.reviewDueAt, template: "yyyy-MM-dd" }) : ""} />
           </FieldWrapper>
         </div>
-
-        <FieldWrapper label="Motivo de revision" htmlFor={`reviewReason-${document.id}`}>
-          <Input id={`reviewReason-${document.id}`} name="reviewReason" defaultValue={document.reviewReason ?? ""} />
-        </FieldWrapper>
 
         <FieldWrapper label="Emisor o autorizador" htmlFor={`issuer-${document.id}`}>
           <Input id={`issuer-${document.id}`} name="issuer" defaultValue={document.issuer ?? ""} />

@@ -27,14 +27,6 @@ const expiryBases = [
   "LEGACY_UNKNOWN",
   "NOT_APPLICABLE",
 ] as const;
-const documentStatuses = [
-  "PENDING_REVIEW",
-  "VALIDATED",
-  "REJECTED",
-  "EXPIRED",
-  "ARCHIVED",
-] as const;
-
 const optionalDate = z
   .string()
   .optional()
@@ -82,7 +74,6 @@ export const uploadDocumentSchema = z.object({
 
 export const updateDocumentSchema = z.object({
   id: requiredString,
-  status: z.enum(documentStatuses).optional(),
   recordType: z.enum(recordTypes).optional(),
   completedAt: optionalDate.optional(),
   issuedAt: optionalDate.optional(),
@@ -104,8 +95,12 @@ export const updateDocumentSchema = z.object({
   issuer: optionalString.optional(),
   employerAuthorizer: optionalString.optional(),
   supersedesDocumentId: optionalString.optional(),
-  reviewReason: optionalString.optional(),
   notes: optionalString.optional(),
+});
+
+export const reviewDocumentSchema = z.object({
+  decision: z.enum(["VALIDATED", "REJECTED"]),
+  reviewReason: requiredString,
 });
 
 export const deleteDocumentSchema = z.object({

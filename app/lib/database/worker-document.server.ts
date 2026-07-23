@@ -1,6 +1,13 @@
 import { and, desc, eq, inArray, lte } from "drizzle-orm";
-import { db } from "../../../db/server";
-import { companies, externalWorkers, workerDocuments } from "../../../db/schema";
+import type { DrizzleD1Database } from "drizzle-orm/d1";
+import { db, isLocalDb } from "../../../db/server";
+import {
+  auditLogs,
+  companies,
+  documentReviews,
+  externalWorkers,
+  workerDocuments,
+} from "../../../db/schema";
 import type { DocumentStatus } from "../../../db/enums";
 import { startOfUtcDay } from "../document-expiry";
 
@@ -92,6 +99,95 @@ export class WorkerDocumentEntity {
       )
       .returning();
     return updated;
+  }
+
+  public static async review(
+    documentId: string,
+    data: {
+      decision: "VALIDATED" | "REJECTED";
+      reason: string;
+      reviewedById: string;
+      reviewedAt: Date;
+      evidenceSnapshot: Record<string, unknown>;
+      summary: string;
+    },
+  ) {
+    const documentUpdate = {
+      status: data.decision,
+      reviewedById: data.reviewedById,
+      reviewedAt: data.reviewedAt,
+      reviewReason: data.reason,
+      updatedAt: data.reviewedAt,
+    };
+    const reviewValues = {
+      documentId,
+      decision: data.decision,
+      reason: data.reason,
+      evidenceSnapshot: data.evidenceSnapshot,
+      reviewedById: data.reviewedById,
+      reviewedAt: data.reviewedAt,
+    };
+
+    if (isLocalDb()) {
+      return db.transaction((tx) => {
+        const reviewedDocument = tx
+          .update(workerDocuments)
+          .set(documentUpdate)
+          .where(and(
+            eq(workerDocuments.id, documentId),
+            eq(workerDocuments.status, "PENDING_REVIEW"),
+          ))
+          .returning()
+          .get();
+        if (!reviewedDocument) return null;
+
+        const review = tx.insert(documentReviews).values(reviewValues).returning().get();
+        tx.insert(auditLogs).values({
+          entityType: "WorkerDocument",
+          entityId: documentId,
+          action: "DOCUMENT_REVIEWED",
+          changedBy: data.reviewedById,
+          summary: data.summary,
+          metadata: {
+            reviewId: review.id,
+            decision: data.decision,
+            reason: data.reason,
+            evidenceSnapshot: data.evidenceSnapshot,
+          },
+        }).run();
+        return review;
+      });
+    }
+
+    const d1 = db as unknown as DrizzleD1Database<typeof import("../../../db/schema")>;
+    return d1.transaction(async (tx) => {
+      const reviewedDocument = await tx
+        .update(workerDocuments)
+        .set(documentUpdate)
+        .where(and(
+          eq(workerDocuments.id, documentId),
+          eq(workerDocuments.status, "PENDING_REVIEW"),
+        ))
+        .returning()
+        .get();
+      if (!reviewedDocument) return null;
+
+      const review = await tx.insert(documentReviews).values(reviewValues).returning().get();
+      await tx.insert(auditLogs).values({
+        entityType: "WorkerDocument",
+        entityId: documentId,
+        action: "DOCUMENT_REVIEWED",
+        changedBy: data.reviewedById,
+        summary: data.summary,
+        metadata: {
+          reviewId: review.id,
+          decision: data.decision,
+          reason: data.reason,
+          evidenceSnapshot: data.evidenceSnapshot,
+        },
+      }).run();
+      return review;
+    });
   }
 
   public static async findAllWithWorker() {

@@ -32,7 +32,7 @@ export type CreatePlannedAccessInput = {
   companySnapshot: string;
   visitReason: string;
   requestedById: string;
-  approvedById: string;
+  approvedById?: string;
   siteId: string;
   persons: Array<{
     firstNameSnapshot: string;
@@ -51,6 +51,9 @@ export type UpdatePlannedAccessStatusInput = {
   status: PlannedAccessStatus;
   approvedById: string;
   approvedAt?: Date | null;
+  decisionReason: string | null;
+  decisionById: string;
+  decisionAt?: Date;
   personWorkCategories?: Array<{ personId: string; workCategoryId: string | null; externalWorkerId?: string }>;
 };
 
@@ -78,7 +81,7 @@ export class PlannedAccessEntity {
         companySnapshot: data.companySnapshot,
         visitReason: data.visitReason,
         requestedById: data.requestedById,
-        approvedById: data.approvedById,
+        approvedById: data.approvedById ?? null,
         siteId: data.siteId,
         status: "PENDING_APPROVAL",
       })
@@ -245,12 +248,15 @@ export class PlannedAccessEntity {
   }
 
   public static async updateStatus(
-    data: Pick<UpdatePlannedAccessStatusInput, "id" | "status">,
+    data: Pick<UpdatePlannedAccessStatusInput, "id" | "status" | "decisionReason" | "decisionById" | "decisionAt">,
   ) {
     const [pa] = await db
       .update(plannedAccesses)
       .set({
         status: data.status,
+        decisionReason: data.decisionReason,
+        decisionById: data.decisionById,
+        decisionAt: data.decisionAt ?? new Date(),
         updatedAt: new Date(),
       })
       .where(eq(plannedAccesses.id, data.id))
@@ -268,6 +274,23 @@ export class PlannedAccessEntity {
       .where(eq(plannedAccesses.id, id))
       .returning();
     return pa;
+  }
+
+  public static async linkPersonWorker(
+    plannedAccessId: string,
+    personId: string,
+    externalWorkerId: string,
+    workCategoryId: string,
+  ) {
+    const [person] = await db
+      .update(plannedAccessPersons)
+      .set({ externalWorkerId, workCategoryId, updatedAt: new Date() })
+      .where(and(
+        eq(plannedAccessPersons.id, personId),
+        eq(plannedAccessPersons.plannedAccessId, plannedAccessId),
+      ))
+      .returning();
+    return person;
   }
 
   public static async approve(
@@ -292,6 +315,9 @@ export class PlannedAccessEntity {
       status: "APPROVED" as const,
       approvedById: data.approvedById,
       approvedAt: data.approvedAt ?? new Date(),
+      decisionReason: data.decisionReason,
+      decisionById: data.decisionById,
+      decisionAt: data.decisionAt ?? new Date(),
       updatedAt: new Date(),
     };
 

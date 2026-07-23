@@ -2,7 +2,8 @@ import { validateUserRole } from "~/lib/auth.server";
 import {
   getDocumentByWorkerId,
   updateWorkerDocument,
-  deleteWorkerDocument,
+  reviewWorkerDocument,
+  archiveWorkerDocument,
 } from "~/lib/services/worker-document.server";
 
 export async function loader({
@@ -43,6 +44,22 @@ export async function action({
     const data = Object.fromEntries(formData) as Record<string, string>;
     data.id = params.docId;
 
+    if (data.reviewDecision) {
+      if (user.role !== "SECURITY_MANAGER") {
+        return Response.json({ errors: "Solo seguridad puede revisar documentos." }, { status: 403 });
+      }
+
+      const result = await reviewWorkerDocument(params.docId, {
+        decision: data.reviewDecision,
+        reviewReason: data.reviewReason,
+      }, user.id);
+      if (!result.success) {
+        return Response.json({ errors: result.errors }, { status: 400 });
+      }
+
+      return Response.json(result);
+    }
+
     const result = await updateWorkerDocument(params.docId, data, user.id);
     if (!result.success) {
       return Response.json({ errors: result.errors }, { status: 400 });
@@ -52,7 +69,11 @@ export async function action({
   }
 
   if (method === "DELETE") {
-    const result = await deleteWorkerDocument(params.docId, user.id);
+    if (user.role !== "SECURITY_MANAGER") {
+      return Response.json({ errors: "Solo seguridad puede archivar documentos." }, { status: 403 });
+    }
+
+    const result = await archiveWorkerDocument(params.docId, user.id);
     if (!result.success) {
       return Response.json({ errors: result.errors }, { status: 400 });
     }
