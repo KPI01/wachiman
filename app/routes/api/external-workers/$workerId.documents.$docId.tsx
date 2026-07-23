@@ -1,6 +1,6 @@
 import { validateUserRole } from "~/lib/auth.server";
 import {
-  getDocumentById,
+  getDocumentByWorkerId,
   updateWorkerDocument,
   deleteWorkerDocument,
 } from "~/lib/services/worker-document.server";
@@ -13,7 +13,7 @@ export async function loader({
   params: { workerId: string; docId: string };
 }) {
   await validateUserRole(request, ["ADMIN", "SECURITY_MANAGER", "ACCESS_APPROVER"]);
-  const document = await getDocumentById(params.docId);
+  const document = await getDocumentByWorkerId(params.docId, params.workerId);
 
   if (!document) {
     return Response.json({ error: "Not found" }, { status: 404 });
@@ -32,6 +32,11 @@ export async function action({
   const user = await validateUserRole(request, ["ADMIN", "SECURITY_MANAGER", "ACCESS_APPROVER"]);
 
   const method = request.method.toUpperCase();
+  const document = await getDocumentByWorkerId(params.docId, params.workerId);
+
+  if (!document) {
+    return Response.json({ error: "Not found" }, { status: 404 });
+  }
 
   if (method === "PATCH" || method === "PUT") {
     const formData = await request.formData();

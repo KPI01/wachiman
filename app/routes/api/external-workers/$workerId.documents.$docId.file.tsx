@@ -1,14 +1,16 @@
+import { validateUserRole } from "~/lib/auth.server";
 import { areFileUploadsSupported } from "~/lib/platform.server";
-import { toOsPath } from "~/lib/services/worker-document.server";
-import { WorkerDocumentEntity } from "~/lib/database/worker-document.server";
+import { getDocumentByWorkerId, toOsPath } from "~/lib/services/worker-document.server";
 
 export async function loader({
+  request,
   params,
 }: {
   request: Request;
   params: { workerId: string; docId: string };
 }) {
-  const document = await WorkerDocumentEntity.findById(params.docId);
+  await validateUserRole(request, ["ADMIN", "SECURITY_MANAGER", "ACCESS_APPROVER"]);
+  const document = await getDocumentByWorkerId(params.docId, params.workerId);
 
   if (!document) {
     return new Response("Not found", { status: 404 });

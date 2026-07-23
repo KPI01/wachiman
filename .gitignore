@@ -19,6 +19,9 @@
 *.db-shm
 *.db-wal
 
+# Sensitive uploaded worker documents
+/uploads/
+
 # Cloudflare
 .wrangler/
 .dev.vars

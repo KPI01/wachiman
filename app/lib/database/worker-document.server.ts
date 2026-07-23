@@ -26,6 +26,19 @@ export class WorkerDocumentEntity {
       .get()) ?? null;
   }
 
+  public static async findByIdAndWorkerId(id: string, workerId: string) {
+    return (await db
+      .select()
+      .from(workerDocuments)
+      .where(
+        and(
+          eq(workerDocuments.id, id),
+          eq(workerDocuments.externalWorkerId, workerId),
+        ),
+      )
+      .get()) ?? null;
+  }
+
   public static async update(id: string, data: Partial<typeof workerDocuments.$inferInsert>) {
     const [doc] = await db
       .update(workerDocuments)

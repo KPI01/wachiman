@@ -67,6 +67,10 @@ export async function getDocumentById(id: string) {
   return WorkerDocumentEntity.findById(id);
 }
 
+export async function getDocumentByWorkerId(id: string, workerId: string) {
+  return WorkerDocumentEntity.findByIdAndWorkerId(id, workerId);
+}
+
 export async function uploadWorkerDocument(
   workerId: string,
   file: File,

@@ -147,6 +147,8 @@ pnpm db:seed -- --target=d1 --mode=demo
 pnpm env:set-remote
 ```
 
+`ENCRYPTION_KEY` y `SESSION_SECRET` se gestionan exclusivamente como secrets de Cloudflare; no deben declararse en `wrangler.jsonc`. Tras retirar o exponer un secreto, genera valores nuevos y vuelve a ejecutar este comando.
+
 ### 5. Deploy
 
 ```bash
