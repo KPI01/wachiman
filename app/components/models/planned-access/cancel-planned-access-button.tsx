@@ -1,6 +1,7 @@
 import { BanIcon, LoaderCircleIcon } from "lucide-react";
-import { useState } from "react";
-import { Form, useNavigation } from "react-router";
+import { useEffect, useState } from "react";
+import { useFetcher } from "react-router";
+import { toast } from "sonner";
 import { Button } from "~/components/ui/button";
 import {
   Popover,
@@ -12,6 +13,7 @@ import {
 } from "~/components/ui/popover";
 import { Textarea } from "~/components/ui/textarea";
 import FieldWrapper from "~/components/ui/wrappers/field-wrapper";
+import { getActionErrorMessage } from "~/lib/utils/action-errors";
 
 type Props = {
   actionPath: string;
@@ -20,10 +22,19 @@ type Props = {
 
 export default function CancelPlannedAccessButton(props: Props) {
   const [open, setOpen] = useState(false);
-  const navigation = useNavigation();
+  const fetcher = useFetcher<{ success?: boolean; errors?: unknown }>();
   const formId = `canceled-planned-access-${props.plannedAccessId}`;
-  const isPending =
-    navigation.state !== "idle" && navigation.formAction === props.actionPath;
+  const isPending = fetcher.state !== "idle";
+
+  useEffect(() => {
+    if (fetcher.state !== "idle" || !fetcher.data) return;
+    if (fetcher.data.success) {
+      toast.success("Solicitud cancelada");
+      setOpen(false);
+    } else if (fetcher.data.errors) {
+      toast.error(getActionErrorMessage(fetcher.data.errors));
+    }
+  }, [fetcher.data, fetcher.state]);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -41,7 +52,7 @@ export default function CancelPlannedAccessButton(props: Props) {
         <PopoverHeader>
           <PopoverTitle>Cancelar solicitud</PopoverTitle>
         </PopoverHeader>
-        <Form
+        <fetcher.Form
           id={formId}
           method="post"
           action={props.actionPath}
@@ -70,7 +81,7 @@ export default function CancelPlannedAccessButton(props: Props) {
             ) : null}
             {isPending ? "Cancelar…" : "Confirmar cancelación"}
           </Button>
-        </Form>
+        </fetcher.Form>
       </PopoverContent>
     </Popover>
   );

@@ -1,6 +1,7 @@
 import { AlertTriangleIcon, PencilIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useFetcher } from "react-router";
+import { toast } from "sonner";
 import AlertDialogContainer, {
   AlertDialogCancel,
 } from "~/components/containers/alert-dialog-container";
@@ -16,6 +17,7 @@ import type { AccessLogListItem } from "~/lib/database/access-log.server";
 import type { ExternalWorkerListItem } from "~/lib/database/external-worker.server";
 import { formatTimestamp } from "~/lib/utils";
 import { getFieldErrors } from "~/lib/utils/zod-errors";
+import { getActionErrorMessage } from "~/lib/utils/action-errors";
 
 type EditStep = "warning" | "form" | "confirmation";
 
@@ -124,9 +126,11 @@ export default function EditAccessLog({
     if (fetcher.state !== "idle" || !fetcher.data) return;
 
     if (fetcher.data.success) {
+      toast.success("Registro de acceso actualizado");
       setOpen(false);
       resetForm();
     } else if (fetcher.data.errors) {
+      toast.error(getActionErrorMessage(fetcher.data.errors));
       setStep("form");
     }
   }, [fetcher.data, fetcher.state]);

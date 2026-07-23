@@ -1,6 +1,7 @@
 import { AlertTriangleIcon, PenLineIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useFetcher } from "react-router";
+import { toast } from "sonner";
 import AlertDialogContainer, {
   AlertDialogCancel,
 } from "~/components/containers/alert-dialog-container";
@@ -8,6 +9,7 @@ import AccessLogSignature from "~/components/models/access-logs/access-log-signa
 import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
 import { Button } from "~/components/ui/button";
 import type { PlannedAccessListItem } from "~/lib/database/planned-access.server";
+import { getActionErrorMessage } from "~/lib/utils/action-errors";
 
 type PlannedAccessPerson = PlannedAccessListItem["plannedAccessPersons"][number];
 
@@ -46,10 +48,16 @@ export default function PlannedAccessPersonSignatureAction({
         : null;
 
   useEffect(() => {
-    if (fetcher.state !== "idle" || !fetcher.data || fetcher.data.errors) {
+    if (fetcher.state !== "idle" || !fetcher.data) {
       return;
     }
 
+    if (fetcher.data.errors) {
+      toast.error(getActionErrorMessage(fetcher.data.errors));
+      return;
+    }
+
+    toast.success("Acceso registrado correctamente");
     setOpen(false);
     setHasSignature(false);
     setEntrySignaturePayload("");

@@ -1,6 +1,7 @@
 import { AlertTriangleIcon, PlusIcon, TrashIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useFetcher } from "react-router";
+import { toast } from "sonner";
 import AlertDialogContainer, {
   AlertDialogCancel,
 } from "~/components/containers/alert-dialog-container";
@@ -28,6 +29,7 @@ import { getFieldErrors } from "~/lib/utils/zod-errors";
 import type { Site } from "../../../../db/schema";
 import type { ExternalWorkerListItem } from "~/lib/database/external-worker.server";
 import CompanyCombobox from "~/components/models/company/company-combobox";
+import { getActionErrorMessage } from "~/lib/utils/action-errors";
 
 type PlannedAccessSiteOption = Pick<Site, "id" | "name">;
 
@@ -177,6 +179,8 @@ export default function CreatePlannedAccessForm({
       return;
     }
 
+    toast.success("Solicitud de acceso creada");
+
     setOpen(false);
     setDatePickerResetKey((currentKey) => currentKey + 1);
     setVisitors([]);
@@ -188,6 +192,12 @@ export default function CreatePlannedAccessForm({
     setCompanySnapshot("");
     setLegalIdSuggestions([]);
     setShowLegalIdSuggestions(false);
+  }, [fetcher.data, fetcher.state]);
+
+  useEffect(() => {
+    if (fetcher.state === "idle" && fetcher.data?.errors) {
+      toast.error(getActionErrorMessage(fetcher.data.errors));
+    }
   }, [fetcher.data, fetcher.state]);
 
   function handleLegalIdChange(value: string) {

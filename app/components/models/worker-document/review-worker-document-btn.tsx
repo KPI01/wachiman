@@ -1,6 +1,7 @@
 import { ShieldCheckIcon } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useFetcher } from "react-router";
+import { toast } from "sonner";
 import AlertDialogContainer, {
   AlertDialogAction,
   AlertDialogCancel,
@@ -10,6 +11,7 @@ import { Textarea } from "~/components/ui/textarea";
 import FieldWrapper from "~/components/ui/wrappers/field-wrapper";
 import type { WorkerDocumentListItem } from "~/lib/database/worker-document.server";
 import { DOCUMENT_TYPE_LABELS } from "~/lib/models/worker-document";
+import { getActionErrorMessage } from "~/lib/utils/action-errors";
 
 type ReviewWorkerDocumentBtnProps = {
   document: WorkerDocumentListItem;
@@ -23,6 +25,16 @@ export default function ReviewWorkerDocumentBtn({
   const [open, setOpen] = useState(false);
   const fetcher = useFetcher<{ errors?: string }>();
   const formId = `review-document-${document.id}`;
+
+  useEffect(() => {
+    if (fetcher.state !== "idle" || !fetcher.data) return;
+    if (fetcher.data.errors) {
+      toast.error(getActionErrorMessage(fetcher.data.errors));
+      return;
+    }
+    toast.success("Revisión documental registrada");
+    setOpen(false);
+  }, [fetcher.data, fetcher.state]);
 
   return (
     <AlertDialogContainer

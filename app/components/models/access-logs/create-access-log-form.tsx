@@ -15,6 +15,7 @@ import {
 } from "~/components/ui/select";
 import { Checkbox } from "~/components/ui/checkbox";
 import { useFetcher } from "react-router";
+import { toast } from "sonner";
 import { useEffect, useRef, useState } from "react";
 import type { Site } from "../../../../db/schema";
 import AccessLogSignature from "./access-log-signature";
@@ -23,6 +24,7 @@ import { Textarea } from "~/components/ui/textarea";
 import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
 import type { ExternalWorkerListItem } from "~/lib/database/external-worker.server";
 import CompanyCombobox from "~/components/models/company/company-combobox";
+import { getActionErrorMessage } from "~/lib/utils/action-errors";
 
 type FetcherErrors = {
   errors?: {
@@ -148,10 +150,16 @@ export default function CreateAccessLog({
   }
 
   useEffect(() => {
-    if (fetcher.state !== "idle" || !fetcher.data || fetcher.data.errors) {
+    if (fetcher.state !== "idle" || !fetcher.data) {
       return;
     }
 
+    if (fetcher.data.errors) {
+      toast.error(getActionErrorMessage(fetcher.data.errors));
+      return;
+    }
+
+    toast.success("Acceso registrado correctamente");
     setOpen(false);
     setWithVehicle(false);
     setEntryTimestamp(getDefaultEntryTimestamp());

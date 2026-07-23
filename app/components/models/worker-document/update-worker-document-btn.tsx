@@ -1,6 +1,7 @@
 import { PencilIcon } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useFetcher } from "react-router";
+import { toast } from "sonner";
 import AlertDialogContainer, {
   AlertDialogAction,
   AlertDialogCancel,
@@ -21,6 +22,7 @@ import {
 } from "~/lib/models/worker-document";
 import { formatTimestamp } from "~/lib/utils";
 import type { WorkerDocumentListItem } from "~/lib/database/worker-document.server";
+import { getActionErrorMessage } from "~/lib/utils/action-errors";
 
 type UpdateWorkerDocumentBtnProps = {
   document: WorkerDocumentListItem;
@@ -35,6 +37,16 @@ export default function UpdateWorkerDocumentBtn({
   const fetcher = useFetcher<{ errors?: string }>();
 
   const formId = `update-document-${document.id}`;
+
+  useEffect(() => {
+    if (fetcher.state !== "idle" || !fetcher.data) return;
+    if (fetcher.data.errors) {
+      toast.error(getActionErrorMessage(fetcher.data.errors));
+      return;
+    }
+    toast.success("Datos de la evidencia actualizados");
+    setOpen(false);
+  }, [fetcher.data, fetcher.state]);
 
   return (
     <AlertDialogContainer

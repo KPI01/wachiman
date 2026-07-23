@@ -1,6 +1,7 @@
 import { LoaderCircleIcon, UploadIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useFetcher } from "react-router";
+import { toast } from "sonner";
 import AlertDialogContainer, {
   AlertDialogAction,
   AlertDialogCancel,
@@ -21,6 +22,7 @@ import {
   DOCUMENT_RECORD_TYPE_LABELS,
 } from "~/lib/models/worker-document";
 import type { DocumentRecordType, DocumentType } from "../../../../db/enums";
+import { getActionErrorMessage } from "~/lib/utils/action-errors";
 
 type UploadWorkerDocumentBtnProps = {
   workerId?: string;
@@ -48,8 +50,14 @@ export default function UploadWorkerDocumentBtn({
   const formAction = actionPath ?? `/api/external-workers/${workerId}/documents`;
 
   useEffect(() => {
-    if (fetcher.data && !fetcher.data.errors) setOpen(false);
-  }, [fetcher.data]);
+    if (fetcher.state !== "idle" || !fetcher.data) return;
+    if (fetcher.data.errors) {
+      toast.error(getActionErrorMessage(fetcher.data.errors));
+      return;
+    }
+    toast.success("Evidencia subida y pendiente de revisión");
+    setOpen(false);
+  }, [fetcher.data, fetcher.state]);
 
   return (
     <AlertDialogContainer

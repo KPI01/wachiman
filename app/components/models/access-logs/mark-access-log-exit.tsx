@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
 import { useFetcher } from "react-router";
+import { toast } from "sonner";
 import AlertDialogContainer, {
   AlertDialogCancel,
 } from "~/components/containers/alert-dialog-container";
 import { Button } from "~/components/ui/button";
 import AccessLogSignature from "./access-log-signature";
+import { getActionErrorMessage } from "~/lib/utils/action-errors";
 
 type MarkAccessLogExitProps = {
   accessLogId: string;
@@ -19,10 +21,16 @@ export default function MarkAccessLogExit({
   const [exitSignaturePayload, setExitSignaturePayload] = useState("");
 
   useEffect(() => {
-    if (fetcher.state !== "idle" || !fetcher.data || fetcher.data.errors) {
+    if (fetcher.state !== "idle" || !fetcher.data) {
       return;
     }
 
+    if (fetcher.data.errors) {
+      toast.error(getActionErrorMessage(fetcher.data.errors));
+      return;
+    }
+
+    toast.success("Salida registrada correctamente");
     setOpen(false);
     setHasSignature(false);
     setExitSignaturePayload("");
