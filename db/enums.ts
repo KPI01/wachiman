@@ -12,6 +12,7 @@ export type UserRole = (typeof USER_ROLES)[keyof typeof USER_ROLES];
 export const DOCUMENT_TYPES = {
   IDENTIFICATION: "IDENTIFICATION",
   TRAINING: "TRAINING",
+  SPECIAL_PERMISSION: "SPECIAL_PERMISSION",
 } as const;
 
 export type DocumentType = (typeof DOCUMENT_TYPES)[keyof typeof DOCUMENT_TYPES];

@@ -69,6 +69,9 @@ export default function UploadWorkerDocumentBtn({
               <SelectItem value="TRAINING">
                 {DOCUMENT_TYPE_LABELS.TRAINING}
               </SelectItem>
+              <SelectItem value="SPECIAL_PERMISSION">
+                {DOCUMENT_TYPE_LABELS.SPECIAL_PERMISSION}
+              </SelectItem>
             </SelectContent>
           </Select>
         </FieldWrapper>

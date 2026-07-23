@@ -1,8 +1,8 @@
 import z from "zod";
-import type { PlannedAccessStatus } from "../../../db/enums";
+import type { DocumentType, PlannedAccessStatus } from "../../../db/enums";
 import { encryptValue } from "../crypt.server";
 import { DOCUMENT_TYPE_LABELS } from "../models/worker-document";
-import { validateWorkerDocumentsForApproval } from "./worker-document.server";
+import { validateWorkerDocumentsForAccess } from "./worker-document.server";
 import { ExternalWorkerEntity } from "../database/external-worker.server";
 import { AccessLogEntity } from "../database/access-log.server";
 import { PlannedAccessEntity } from "../database/planned-access.server";
@@ -10,6 +10,7 @@ import { UserEntity } from "../database/user.server";
 import { WorkCategoryEntity } from "../database/work-category.server";
 import { CompanyEntity } from "../database/company.server";
 import { uploadWorkerDocument } from "./worker-document.server";
+import { endOfUtcDay } from "../document-expiry";
 import {
   createAccessLogFromPlannedAccessSchema,
   createPlannedAccessSchema,
@@ -55,18 +56,31 @@ export async function getManyPlannedAccesses(input?: {
   return await PlannedAccessEntity.findMany(input);
 }
 
-function isPlannedForToday(expectedStart: Date, expectedEnd?: Date | null) {
-  const start = new Date();
-  start.setHours(0, 0, 0, 0);
+function getPlannedAccessEnd(expectedStart: Date, expectedEnd?: Date | null) {
+  return expectedEnd ?? endOfUtcDay(expectedStart);
+}
 
-  const end = new Date(start);
-  end.setDate(end.getDate() + 1);
+function isPlannedForCurrentTime(expectedStart: Date, expectedEnd?: Date | null) {
+  const now = new Date();
+  return expectedStart <= now && now <= getPlannedAccessEnd(expectedStart, expectedEnd);
+}
 
-  if (!expectedEnd) {
-    return expectedStart >= start && expectedStart < end;
+function formatDocumentValidationError(
+  worker: { firstName: string; lastName: string; legalId: string },
+  result: { missingTypes: DocumentType[]; expiredTypes: DocumentType[] },
+) {
+  const errorParts: string[] = [];
+  if (result.missingTypes.length > 0) {
+    errorParts.push(
+      `faltan: ${result.missingTypes.map((type) => DOCUMENT_TYPE_LABELS[type]).join(", ")}`,
+    );
   }
-
-  return expectedStart < end && expectedEnd >= start;
+  if (result.expiredTypes.length > 0) {
+    errorParts.push(
+      `expirados: ${result.expiredTypes.map((type) => DOCUMENT_TYPE_LABELS[type]).join(", ")}`,
+    );
+  }
+  return `El trabajador ${worker.firstName} ${worker.lastName} (${worker.legalId}) no tiene la documentación requerida vigente (${errorParts.join("; ")}).`;
 }
 
 type PlannedAccessAuthorOptions = {
@@ -256,7 +270,7 @@ export async function updatePlannedAccessStatus(
     }
 
     const selectedCategories = parsed.data.personWorkCategories ?? {};
-    const personWorkCategories: Array<{ personId: string; workCategoryId: string | null; externalWorkerId: string }> = [];
+    const personWorkCategories: Array<{ personId: string; workCategoryId: string; externalWorkerId: string }> = [];
     const validationErrors: string[] = [];
 
     for (const person of plannedAccess.plannedAccessPersons) {
@@ -300,20 +314,24 @@ export async function updatePlannedAccessStatus(
         continue;
       }
 
-      const workerId = worker.id;
-      personWorkCategories.push({ personId: person.id, workCategoryId: categoryId, externalWorkerId: workerId });
-
-      let requiresTraining = false;
-      if (categoryId) {
-        const category = await WorkCategoryEntity.findById(categoryId);
-        if (!category) {
-          validationErrors.push(`La categoría seleccionada para ${worker.firstName} ${worker.lastName} no existe.`);
-          continue;
-        }
-        requiresTraining = Boolean(category.requiresTraining);
+      const effectiveCategoryId = categoryId ?? worker.workCategoryId;
+      const category = await WorkCategoryEntity.findById(effectiveCategoryId);
+      if (!category) {
+        validationErrors.push(`La categoría seleccionada para ${worker.firstName} ${worker.lastName} no existe.`);
+        continue;
       }
 
-      for (const documentType of ["IDENTIFICATION", "TRAINING"] as const) {
+      const workerId = worker.id;
+      personWorkCategories.push({ personId: person.id, workCategoryId: effectiveCategoryId, externalWorkerId: workerId });
+      const requirements = {
+        requiresTraining: Boolean(category.requiresTraining),
+        requiresSpecialPermission: Boolean(category.requiresSpecialPermission),
+      };
+      const documentTypes: DocumentType[] = ["IDENTIFICATION"];
+      if (requirements.requiresTraining) documentTypes.push("TRAINING");
+      if (requirements.requiresSpecialPermission) documentTypes.push("SPECIAL_PERMISSION");
+
+      for (const documentType of documentTypes) {
         const fileValue = input[`documentFiles[${person.id}][${documentType}]`];
         if (!(fileValue instanceof File) || fileValue.size === 0) continue;
         const expiryDate = input[`documentExpiry[${person.id}][${documentType}]`];
@@ -334,30 +352,17 @@ export async function updatePlannedAccessStatus(
         }
       }
 
-      const docResult = await validateWorkerDocumentsForApproval(
+      const docResult = await validateWorkerDocumentsForAccess(
         workerId,
-        requiresTraining,
+        requirements,
+        getPlannedAccessEnd(
+          plannedAccess.expectedStartDatetime,
+          plannedAccess.expectedEndDatetime,
+        ),
       );
 
       if (!docResult.valid) {
-        const workerName = `${worker.firstName} ${worker.lastName}`;
-        const legalId = worker.legalId;
-        const missingLabels = docResult.missingTypes.map(
-          (t) => DOCUMENT_TYPE_LABELS[t as keyof typeof DOCUMENT_TYPE_LABELS],
-        );
-        const expiredLabels = docResult.expiredTypes.map(
-          (t) => DOCUMENT_TYPE_LABELS[t as keyof typeof DOCUMENT_TYPE_LABELS],
-        );
-
-        const errorParts: string[] = [];
-        if (missingLabels.length > 0) {
-          errorParts.push(`faltan: ${missingLabels.join(", ")}`);
-        }
-        if (expiredLabels.length > 0) {
-          errorParts.push(`expirados: ${expiredLabels.join(", ")}`);
-        }
-
-        validationErrors.push(`El trabajador ${workerName} (${legalId}) no tiene la documentación requerida vigente (${errorParts.join("; ")}).`);
+        validationErrors.push(formatDocumentValidationError(worker, docResult));
       }
     }
 
@@ -390,8 +395,6 @@ export async function updatePlannedAccessStatus(
   const updated = await PlannedAccessEntity.updateStatus({
     id: parsed.data.id,
     status: parsed.data.status,
-    approvedById: author.id,
-    approvedAt: null,
   });
 
   if (!updated) {
@@ -445,14 +448,14 @@ export async function createAccessLogFromPlannedAccess(
   }
 
   if (
-    !isPlannedForToday(
+    !isPlannedForCurrentTime(
       plannedAccess.expectedStartDatetime,
       plannedAccess.expectedEndDatetime,
     )
   ) {
     return {
       success: false,
-      errors: "La solicitud planificada no corresponde al dia actual.",
+       errors: "La solicitud planificada no corresponde al intervalo actual.",
     };
   }
 
@@ -466,6 +469,38 @@ export async function createAccessLogFromPlannedAccess(
       success: false,
       errors: "La persona no pertenece a esta solicitud planificada.",
     };
+  }
+
+  if (!person.externalWorkerId) {
+    return {
+      success: false,
+      errors: "La persona no está vinculada a un trabajador externo validable.",
+    };
+  }
+
+  const worker = await ExternalWorkerEntity.findById(person.externalWorkerId);
+  if (!worker) {
+    return { success: false, errors: "El trabajador externo vinculado ya no existe." };
+  }
+
+  const category = person.workCategory ?? worker.workCategory;
+  if (!category) {
+    return { success: false, errors: "La persona no tiene una categoría laboral válida." };
+  }
+
+  const documentResult = await validateWorkerDocumentsForAccess(
+    worker.id,
+    {
+      requiresTraining: Boolean(category.requiresTraining),
+      requiresSpecialPermission: Boolean(category.requiresSpecialPermission),
+    },
+    getPlannedAccessEnd(
+      plannedAccess.expectedStartDatetime,
+      plannedAccess.expectedEndDatetime,
+    ),
+  );
+  if (!documentResult.valid) {
+    return { success: false, errors: formatDocumentValidationError(worker, documentResult) };
   }
 
   const personHasRegisteredAccess = await PlannedAccessEntity.hasPersonAccessLog(
@@ -520,17 +555,9 @@ export async function createAccessLogFromPlannedAccess(
   );
 
   if (usedPersons >= totalPersons) {
-    await PlannedAccessEntity.updateStatus({
-      id: plannedAccess.id,
-      status: "USED",
-      approvedById: author.id,
-    });
+    await PlannedAccessEntity.transitionUsageStatus(plannedAccess.id, "USED");
   } else if (usedPersons > 0) {
-    await PlannedAccessEntity.updateStatus({
-      id: plannedAccess.id,
-      status: "PARTIALLY_USED",
-      approvedById: author.id,
-    });
+    await PlannedAccessEntity.transitionUsageStatus(plannedAccess.id, "PARTIALLY_USED");
   }
 
   return { success: true };

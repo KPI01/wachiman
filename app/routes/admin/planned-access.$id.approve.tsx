@@ -77,6 +77,10 @@ export default function ApprovePlannedAccess({ loaderData, actionData }: Route.C
             person={person}
             worker={worker}
             workCategories={loaderData.workCategories}
+            validThrough={
+              loaderData.plannedAccess.expectedEndDatetime ??
+              loaderData.plannedAccess.expectedStartDatetime
+            }
           />
         ))}
         <div className="flex justify-end gap-2">

@@ -4,21 +4,17 @@ import {
   DOCUMENT_EXPIRY_REQUIRED,
   DOCUMENT_TYPE_REQUIRED,
 } from "./messages";
-
-function parseDateOnly(value: string) {
-  const [year, month, day] = value.split("-").map(Number);
-  return new Date(year, month - 1, day);
-}
+import { parseUtcDateOnly } from "../document-expiry";
 
 export const uploadDocumentSchema = z.object({
   documentType: requiredString.refine(
-    (v) => ["IDENTIFICATION", "TRAINING"].includes(v as string),
+    (v) => ["IDENTIFICATION", "TRAINING", "SPECIAL_PERMISSION"].includes(v as string),
     DOCUMENT_TYPE_REQUIRED,
-  ).transform((v) => v as "IDENTIFICATION" | "TRAINING"),
+  ).transform((v) => v as "IDENTIFICATION" | "TRAINING" | "SPECIAL_PERMISSION"),
   expiryDate: requiredString.refine((v) => {
-    const date = new Date(v);
+    const date = parseUtcDateOnly(v);
     return !isNaN(date.getTime());
-  }, DOCUMENT_EXPIRY_REQUIRED).transform(parseDateOnly),
+  }, DOCUMENT_EXPIRY_REQUIRED).transform(parseUtcDateOnly),
   notes: z.string().optional(),
 });
 
@@ -37,10 +33,10 @@ export const updateDocumentSchema = z.object({
     .optional()
     .refine((v) => {
       if (!v) return true;
-      const date = parseDateOnly(v);
+      const date = parseUtcDateOnly(v);
       return !isNaN(date.getTime());
     }, DOCUMENT_EXPIRY_REQUIRED)
-    .transform((v) => (v ? parseDateOnly(v) : undefined)),
+    .transform((v) => (v ? parseUtcDateOnly(v) : undefined)),
   notes: z.string().optional(),
 });
 

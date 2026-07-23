@@ -3,6 +3,7 @@ import type { WorkCategory } from "../../../../db/schema";
 import type { PlannedAccessListItem } from "~/lib/database/planned-access.server";
 import type { ExternalWorkerDetail } from "~/lib/database/external-worker.server";
 import { DOCUMENT_TYPE_LABELS } from "~/lib/models/worker-document";
+import { isDateValidThrough } from "~/lib/document-expiry";
 import { Badge } from "~/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
 import { DatePicker } from "~/components/ui/date-picker";
@@ -11,15 +12,18 @@ import { Input } from "~/components/ui/input";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select";
 
 type Person = PlannedAccessListItem["plannedAccessPersons"][number];
-type DocumentType = "IDENTIFICATION" | "TRAINING";
+type DocumentType = "IDENTIFICATION" | "TRAINING" | "SPECIAL_PERMISSION";
 
 export default function PlannedAccessApprovalPersonCard({
   person,
   worker,
   workCategories,
-}: { person: Person; worker: ExternalWorkerDetail | null; workCategories: WorkCategory[] }) {
-  const [categoryId, setCategoryId] = useState(person.workCategoryId ?? "");
-  const requiresTraining = Boolean(workCategories.find((category) => category.id === categoryId)?.requiresTraining);
+  validThrough,
+}: { person: Person; worker: ExternalWorkerDetail | null; workCategories: WorkCategory[]; validThrough: Date }) {
+  const [categoryId, setCategoryId] = useState(person.workCategoryId ?? worker?.workCategoryId ?? "");
+  const category = workCategories.find((item) => item.id === categoryId);
+  const requiresTraining = Boolean(category?.requiresTraining);
+  const requiresSpecialPermission = Boolean(category?.requiresSpecialPermission);
 
   return (
     <Card>
@@ -34,7 +38,7 @@ export default function PlannedAccessApprovalPersonCard({
       </CardHeader>
       <CardContent className="flex flex-col gap-5">
         <FieldWrapper label={`Categoría laboral${worker ? " (opcional)" : " *"}`} htmlFor={`category-${person.id}`}>
-          <Select value={categoryId} onValueChange={setCategoryId} required={!worker}>
+          <Select value={categoryId} onValueChange={setCategoryId} required>
             <SelectTrigger id={`category-${person.id}`} className="w-full">
               <SelectValue placeholder="Sin categoría adicional" />
             </SelectTrigger>
@@ -43,6 +47,9 @@ export default function PlannedAccessApprovalPersonCard({
                 {workCategories.map((category) => (
                   <SelectItem key={category.id} value={category.id}>
                     {category.name}{category.requiresTraining ? " (requiere formación)" : ""}
+                    {category.requiresSpecialPermission
+                      ? " (requiere permiso especial)"
+                      : ""}
                   </SelectItem>
                 ))}
               </SelectGroup>
@@ -56,13 +63,18 @@ export default function PlannedAccessApprovalPersonCard({
         </FieldWrapper>
         <div className="flex flex-col gap-3">
           <h4 className="text-sm font-semibold">Documentación</h4>
-          {(["IDENTIFICATION", ...(requiresTraining ? ["TRAINING"] : [])] as DocumentType[]).map((documentType) => (
+          {([
+            "IDENTIFICATION",
+            ...(requiresTraining ? ["TRAINING"] : []),
+            ...(requiresSpecialPermission ? ["SPECIAL_PERMISSION"] : []),
+          ] as DocumentType[]).map((documentType) => (
             <DocumentRequirement
               key={documentType}
               personId={person.id}
               worker={worker}
               documentType={documentType}
-              required={documentType === "IDENTIFICATION" || requiresTraining}
+              required
+              validThrough={validThrough}
             />
           ))}
         </div>
@@ -71,16 +83,19 @@ export default function PlannedAccessApprovalPersonCard({
   );
 }
 
-function DocumentRequirement({ personId, worker, documentType, required }: {
+function DocumentRequirement({ personId, worker, documentType, required, validThrough }: {
   personId: string;
   worker: ExternalWorkerDetail | null;
   documentType: DocumentType;
   required: boolean;
+  validThrough: Date;
 }) {
   const documents = worker?.documents?.filter((document) => document.documentType === documentType) ?? [];
-  const todayEnd = new Date();
-  todayEnd.setHours(23, 59, 59, 999);
-  const valid = documents.some((document) => document.status === "VALIDATED" && document.expiryDate >= todayEnd);
+  const valid = documents.some(
+    (document) =>
+      document.status === "VALIDATED" &&
+      isDateValidThrough(document.expiryDate, validThrough),
+  );
 
   return (
     <div className="flex flex-col gap-3 rounded-md border p-3 text-sm">

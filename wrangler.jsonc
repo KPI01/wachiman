@@ -17,6 +17,9 @@
 	"assets": {
 		"directory": "./dist/client"
 	},
+	"triggers": {
+		"crons": ["5 0 * * *"]
+	},
 	"vars": {
 		"APP_NAME": "Wachiman App",
 		"SESSION_COOKIE_SECURE": "true"

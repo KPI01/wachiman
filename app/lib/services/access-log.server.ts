@@ -11,6 +11,9 @@ import {
 } from "../database/access-log.server";
 import { encryptValue } from "../crypt.server";
 import { ExternalWorkerEntity } from "../database/external-worker.server";
+import { validateWorkerDocumentsForAccess } from "./worker-document.server";
+import { DOCUMENT_TYPE_LABELS } from "../models/worker-document";
+import type { DocumentType } from "../../../db/enums";
 
 export type AccessLogStatus = "INSIDE" | "OUTSIDE";
 
@@ -20,6 +23,31 @@ export type GetManyAccessLogsInput = GetAccessLogsInput & {
 
 async function isPersonAlreadyInside(legalId: string, siteId: string) {
   return (await AccessLogEntity.findOpenByLegalIdInSite(legalId, siteId)) !== null;
+}
+
+function formatDocumentValidationError(
+  result: { missingTypes: DocumentType[]; expiredTypes: DocumentType[] },
+) {
+  const details: string[] = [];
+  if (result.missingTypes.length > 0) {
+    details.push(`faltan: ${result.missingTypes.map((type) => DOCUMENT_TYPE_LABELS[type]).join(", ")}`);
+  }
+  if (result.expiredTypes.length > 0) {
+    details.push(`expirados: ${result.expiredTypes.map((type) => DOCUMENT_TYPE_LABELS[type]).join(", ")}`);
+  }
+  return `El trabajador no tiene la documentación requerida vigente (${details.join("; ")}).`;
+}
+
+function matchesWorkerIdentity(
+  worker: NonNullable<Awaited<ReturnType<typeof ExternalWorkerEntity.findById>>>,
+  data: z.infer<typeof createAccessLogSchema>,
+) {
+  return worker.firstName === data.firstNameSnapshot &&
+    (worker.middleName ?? null) === (data.middleNameSnapshot ?? null) &&
+    worker.lastName === data.lastNameSnapshot &&
+    (worker.secondLastName ?? null) === (data.secondLastNameSnapshot ?? null) &&
+    (worker.phoneNumber ?? null) === (data.phoneNumber ?? null) &&
+    worker.legalId.toUpperCase() === data.legalIdSnapshot;
 }
 
 export async function getManyAccessLogs(input?: GetManyAccessLogsInput) {
@@ -100,6 +128,32 @@ export async function createAccessLog(
   }
 
   const siteId = options.lockedSiteId ?? data.siteId;
+
+  if (data.externalWorkerId) {
+    const worker = await ExternalWorkerEntity.findById(data.externalWorkerId);
+    if (!worker || !matchesWorkerIdentity(worker, data)) {
+      return {
+        success: false,
+        errors: "El trabajador externo no coincide con los datos de la persona registrada.",
+      };
+    }
+
+    if (!worker.workCategory) {
+      return { success: false, errors: "El trabajador externo no tiene una categoría laboral válida." };
+    }
+
+    const documentResult = await validateWorkerDocumentsForAccess(
+      worker.id,
+      {
+        requiresTraining: Boolean(worker.workCategory.requiresTraining),
+        requiresSpecialPermission: Boolean(worker.workCategory.requiresSpecialPermission),
+      },
+      new Date(),
+    );
+    if (!documentResult.valid) {
+      return { success: false, errors: formatDocumentValidationError(documentResult) };
+    }
+  }
 
   const personIsAlreadyInside = await isPersonAlreadyInside(
     data.legalIdSnapshot,

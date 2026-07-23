@@ -47,11 +47,11 @@ export type CreatePlannedAccessInput = {
 };
 
 export type UpdatePlannedAccessStatusInput = {
-    id: string;
-    status: PlannedAccessStatus;
-    approvedById: string;
-    approvedAt?: Date | null;
-    personWorkCategories?: Array<{ personId: string; workCategoryId: string | null; externalWorkerId?: string }>;
+  id: string;
+  status: PlannedAccessStatus;
+  approvedById: string;
+  approvedAt?: Date | null;
+  personWorkCategories?: Array<{ personId: string; workCategoryId: string | null; externalWorkerId?: string }>;
 };
 
 const ACTIVE_STATUSES: PlannedAccessStatus[] = [
@@ -143,7 +143,14 @@ export class PlannedAccessEntity {
         plannedAccessPersons: {
           with: {
             accessLogs: { columns: { id: true } },
-            workCategory: { columns: { id: true, name: true, requiresTraining: true } },
+            workCategory: {
+              columns: {
+                id: true,
+                name: true,
+                requiresTraining: true,
+                requiresSpecialPermission: true,
+              },
+            },
           },
         },
       },
@@ -173,7 +180,14 @@ export class PlannedAccessEntity {
         plannedAccessPersons: {
           with: {
             accessLogs: { columns: { id: true } },
-            workCategory: { columns: { id: true, name: true, requiresTraining: true } },
+            workCategory: {
+              columns: {
+                id: true,
+                name: true,
+                requiresTraining: true,
+                requiresSpecialPermission: true,
+              },
+            },
           },
         },
       },
@@ -231,16 +245,27 @@ export class PlannedAccessEntity {
   }
 
   public static async updateStatus(
-    data: UpdatePlannedAccessStatusInput,
+    data: Pick<UpdatePlannedAccessStatusInput, "id" | "status">,
   ) {
     const [pa] = await db
       .update(plannedAccesses)
       .set({
         status: data.status,
-        approvedById: data.approvedById,
-        approvedAt: data.approvedAt ?? null,
+        updatedAt: new Date(),
       })
       .where(eq(plannedAccesses.id, data.id))
+      .returning();
+    return pa;
+  }
+
+  public static async transitionUsageStatus(
+    id: string,
+    status: "PARTIALLY_USED" | "USED",
+  ) {
+    const [pa] = await db
+      .update(plannedAccesses)
+      .set({ status, updatedAt: new Date() })
+      .where(eq(plannedAccesses.id, id))
       .returning();
     return pa;
   }

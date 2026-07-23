@@ -1,7 +1,8 @@
-import { and, desc, eq, gte, lte } from "drizzle-orm";
+import { and, desc, eq, inArray, lte } from "drizzle-orm";
 import { db } from "../../../db/server";
 import { workerDocuments } from "../../../db/schema";
-import type { DocumentStatus, DocumentType } from "../../../db/enums";
+import type { DocumentStatus } from "../../../db/enums";
+import { startOfUtcDay } from "../document-expiry";
 
 export class WorkerDocumentEntity {
   public static async create(data: (typeof workerDocuments.$inferInsert)) {
@@ -57,46 +58,33 @@ export class WorkerDocumentEntity {
   }
 
   public static async findExpiredValidated() {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    today.setMilliseconds(today.getMilliseconds() - 1);
+    const yesterdayEnd = new Date(startOfUtcDay(new Date()).getTime() - 1);
     return db
       .select()
       .from(workerDocuments)
       .where(
         and(
           eq(workerDocuments.status, "VALIDATED" as DocumentStatus),
-           lte(workerDocuments.expiryDate, today),
+           lte(workerDocuments.expiryDate, yesterdayEnd),
         ),
       )
       .all();
   }
 
   public static async markManyAsExpired(ids: string[]) {
+    if (ids.length === 0) return [];
+
     const updated = await db
       .update(workerDocuments)
       .set({ status: "EXPIRED" as DocumentStatus })
-      .where(and(...ids.map((id) => eq(workerDocuments.id, id))))
-      .returning();
-    return updated;
-  }
-
-  public static async findValidByWorkerIdAndType(
-    workerId: string,
-    documentType: DocumentType,
-  ) {
-    return db
-      .select()
-      .from(workerDocuments)
       .where(
         and(
-          eq(workerDocuments.externalWorkerId, workerId),
-          eq(workerDocuments.documentType, documentType),
+          inArray(workerDocuments.id, ids),
           eq(workerDocuments.status, "VALIDATED" as DocumentStatus),
-           gte(workerDocuments.expiryDate, new Date(new Date().setHours(23, 59, 59, 999))),
         ),
       )
-      .all();
+      .returning();
+    return updated;
   }
 
   public static async findAllWithWorker() {

@@ -9,6 +9,8 @@ import {
   deleteDocumentSchema,
 } from "../schemas/worker-document";
 import { INVALID_FILE_TYPE, FILE_TOO_LARGE, FILE_REQUIRED } from "../schemas/messages";
+import type { DocumentType } from "../../../db/enums";
+import { isDateExpired, isDateValidThrough } from "../document-expiry";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 
@@ -227,7 +229,7 @@ export async function checkExpiredDocuments() {
   const ids = expiredDocs.map((d) => d.id);
   const result = await WorkerDocumentEntity.markManyAsExpired(ids);
 
-  for (const doc of expiredDocs) {
+  for (const doc of result) {
     await AuditLogEntity.create({
       entityType: "WorkerDocument",
       entityId: doc.id,
@@ -240,48 +242,46 @@ export async function checkExpiredDocuments() {
   return { expired: result.length };
 }
 
-export async function validateWorkerDocumentsForApproval(
+type DocumentRequirements = {
+  requiresTraining: boolean;
+  requiresSpecialPermission: boolean;
+};
+
+export type WorkerDocumentValidation = {
+  valid: boolean;
+  missingTypes: DocumentType[];
+  expiredTypes: DocumentType[];
+};
+
+export async function validateWorkerDocumentsForAccess(
   workerId: string,
-  requiresTraining: boolean,
-): Promise<{ valid: boolean; missingTypes: string[]; expiredTypes: string[] }> {
-  const missingTypes: string[] = [];
-  const expiredTypes: string[] = [];
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  requirements: DocumentRequirements,
+  validThrough: Date,
+): Promise<WorkerDocumentValidation> {
+  const missingTypes: DocumentType[] = [];
+  const expiredTypes: DocumentType[] = [];
+  const requiredTypes: DocumentType[] = ["IDENTIFICATION"];
+  if (requirements.requiresTraining) requiredTypes.push("TRAINING");
+  if (requirements.requiresSpecialPermission) requiredTypes.push("SPECIAL_PERMISSION");
 
-  const identification = await WorkerDocumentEntity.findValidByWorkerIdAndType(
-    workerId,
-    "IDENTIFICATION",
-  );
-
-  if (identification.length === 0) {
-    const anyIdentification = await WorkerDocumentEntity.findByWorkerId(workerId);
-    const idDoc = anyIdentification.find((d) => d.documentType === "IDENTIFICATION");
-    if (!idDoc) {
-      missingTypes.push("IDENTIFICATION");
-    } else if (idDoc.status === "EXPIRED" || idDoc.expiryDate < today) {
-      expiredTypes.push("IDENTIFICATION");
-    } else {
-      missingTypes.push("IDENTIFICATION");
-    }
-  }
-
-  if (requiresTraining) {
-    const training = await WorkerDocumentEntity.findValidByWorkerIdAndType(
-      workerId,
-      "TRAINING",
+  const documents = await WorkerDocumentEntity.findByWorkerId(workerId);
+  for (const documentType of requiredTypes) {
+    const documentsOfType = documents.filter((document) => document.documentType === documentType);
+    const hasValidDocument = documentsOfType.some(
+      (document) =>
+        document.status === "VALIDATED" &&
+        isDateValidThrough(document.expiryDate, validThrough),
     );
 
-    if (training.length === 0) {
-      const anyDocs = await WorkerDocumentEntity.findByWorkerId(workerId);
-      const trainingDoc = anyDocs.find((d) => d.documentType === "TRAINING");
-      if (!trainingDoc) {
-        missingTypes.push("TRAINING");
-      } else if (trainingDoc.status === "EXPIRED" || trainingDoc.expiryDate < today) {
-        expiredTypes.push("TRAINING");
-      } else {
-        missingTypes.push("TRAINING");
-      }
+    if (hasValidDocument) continue;
+
+    const hasExpiredDocument = documentsOfType.some(
+      (document) => document.status === "EXPIRED" || isDateExpired(document.expiryDate),
+    );
+    if (hasExpiredDocument) {
+      expiredTypes.push(documentType);
+    } else {
+      missingTypes.push(documentType);
     }
   }
 
