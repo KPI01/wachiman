@@ -11,7 +11,7 @@ import { cn } from "~/lib/utils";
 
 interface CardContainerProps {
   title?: string;
-  description?: string;
+  description?: ReactNode;
   className?: string;
   children: ReactNode;
   footer?: ReactNode;
