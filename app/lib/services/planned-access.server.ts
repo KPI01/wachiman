@@ -10,8 +10,10 @@ import { UserEntity } from "../database/user.server";
 import { WorkCategoryEntity } from "../database/work-category.server";
 import { CompanyEntity } from "../database/company.server";
 import { AuditLogEntity } from "../database/audit-log.server";
+import { AppSettingsEntity } from "../database/app-settings.server";
 import { uploadWorkerDocument } from "./worker-document.server";
 import { endOfUtcDay } from "../document-expiry";
+import { isPlannedAccessEnterableAt } from "../planned-access-time";
 import {
   createAccessLogFromPlannedAccessSchema,
   createPlannedAccessSchema,
@@ -59,11 +61,6 @@ export async function getManyPlannedAccesses(input?: {
 
 function getPlannedAccessEnd(expectedStart: Date, expectedEnd?: Date | null) {
   return expectedEnd ?? endOfUtcDay(expectedStart);
-}
-
-function isPlannedForCurrentTime(expectedStart: Date, expectedEnd?: Date | null) {
-  const now = new Date();
-  return expectedStart <= now && now <= getPlannedAccessEnd(expectedStart, expectedEnd);
 }
 
 function formatDocumentValidationError(
@@ -557,15 +554,26 @@ export async function createAccessLogFromPlannedAccess(
     };
   }
 
+  const settings = await AppSettingsEntity.getGlobal();
+  if (!settings) {
+    return {
+      success: false,
+      errors: "La configuración global de accesos no está disponible.",
+    };
+  }
+
+  const now = new Date();
   if (
-    !isPlannedForCurrentTime(
-      plannedAccess.expectedStartDatetime,
-      plannedAccess.expectedEndDatetime,
-    )
+    !isPlannedAccessEnterableAt({
+      expectedStart: plannedAccess.expectedStartDatetime,
+      expectedEnd: plannedAccess.expectedEndDatetime,
+      earlyArrivalToleranceMinutes: settings.earlyArrivalToleranceMinutes,
+      now,
+    })
   ) {
     return {
       success: false,
-       errors: "La solicitud planificada no corresponde al intervalo actual.",
+      errors: "La solicitud planificada no corresponde al intervalo actual.",
     };
   }
 
@@ -639,7 +647,7 @@ export async function createAccessLogFromPlannedAccess(
   }
 
   await AccessLogEntity.create({
-    entryTimestamp: new Date(),
+    entryTimestamp: now,
     entrySignatureEnvelope: await encryptValue(
       JSON.stringify(parsed.data.entrySignaturePayload),
     ),
