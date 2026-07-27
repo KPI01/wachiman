@@ -104,6 +104,7 @@ export default function UploadWorkerDocumentBtn({
 
   const changeRecordType = (value: string) => {
     const nextRecordType = value as DocumentRecordType;
+    if (!recordTypeOptions.includes(nextRecordType)) return;
     setRecordType(nextRecordType);
     if (!hasDocumentField(nextRecordType, "validUntil")) setValidUntil(undefined);
   };
@@ -164,7 +165,13 @@ export default function UploadWorkerDocumentBtn({
                       <Input type="hidden" name="recordType" value={recordType} />
                     </>
                   ) : (
-                    <Select name="recordType" value={recordType} onValueChange={changeRecordType} required>
+                    <Select
+                      key={documentType}
+                      name="recordType"
+                      value={recordType}
+                      onValueChange={changeRecordType}
+                      required
+                    >
                       <SelectTrigger id={`recordType-${formKey}`} className="w-full">
                         <SelectValue />
                       </SelectTrigger>

@@ -129,11 +129,11 @@ export function isDocumentRecordTypeAllowed(
   documentType: DocumentType,
   recordType: DocumentRecordType,
 ) {
-  return DOCUMENT_RECORD_TYPES_BY_DOCUMENT_TYPE[documentType].includes(recordType);
+  return DOCUMENT_RECORD_TYPES_BY_DOCUMENT_TYPE[documentType]?.includes(recordType) ?? false;
 }
 
 export function hasDocumentField(recordType: DocumentRecordType, field: DocumentField) {
-  return DOCUMENT_FIELDS_BY_RECORD_TYPE[recordType].includes(field);
+  return DOCUMENT_FIELDS_BY_RECORD_TYPE[recordType]?.includes(field) ?? false;
 }
 
 export const DOCUMENT_EXPIRY_BASIS_LABELS: Record<DocumentExpiryBasis, string> = {
