@@ -396,7 +396,9 @@ export async function reviewWorkerDocument(
 
   const review = await WorkerDocumentEntity.review(documentId, {
     decision: parsed.data.decision,
-    reason: parsed.data.reviewReason,
+    reason:
+      parsed.data.reviewReason ??
+      "Documento validado tras comprobar su contenido y vigencia.",
     reviewedById: userId,
     reviewedAt,
     evidenceSnapshot,

@@ -152,7 +152,15 @@ export const updateDocumentSchema = z.object({
 
 export const reviewDocumentSchema = z.object({
   decision: z.enum(["VALIDATED", "REJECTED"]),
-  reviewReason: requiredString,
+  reviewReason: z.string().trim().optional(),
+}).superRefine((data, context) => {
+  if (data.decision === "REJECTED" && !data.reviewReason) {
+    context.addIssue({
+      code: "custom",
+      path: ["reviewReason"],
+      message: "El motivo es obligatorio al rechazar un documento.",
+    });
+  }
 });
 
 export const deleteDocumentSchema = z.object({

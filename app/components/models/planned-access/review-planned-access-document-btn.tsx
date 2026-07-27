@@ -1,6 +1,6 @@
 import { ShieldCheckIcon } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useFetcher } from "react-router";
+import { useFetcher, useRevalidator } from "react-router";
 import { toast } from "sonner";
 import AlertDialogContainer, {
   AlertDialogAction,
@@ -9,23 +9,29 @@ import AlertDialogContainer, {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select";
 import { Textarea } from "~/components/ui/textarea";
 import FieldWrapper from "~/components/ui/wrappers/field-wrapper";
-import type { WorkerDocumentListItem } from "~/lib/database/worker-document.server";
 import { DOCUMENT_TYPE_LABELS } from "~/lib/models/worker-document";
 import { getActionErrorMessage } from "~/lib/utils/action-errors";
 
-type ReviewWorkerDocumentBtnProps = {
-  document: WorkerDocumentListItem;
-  workerId: string;
+type ReviewPlannedAccessDocumentBtnProps = {
+  actionPath: string;
+  documentId: string;
+  documentType: keyof typeof DOCUMENT_TYPE_LABELS;
+  fileName: string;
+  personId: string;
 };
 
-export default function ReviewWorkerDocumentBtn({
-  document,
-  workerId,
-}: ReviewWorkerDocumentBtnProps) {
+export default function ReviewPlannedAccessDocumentBtn({
+  actionPath,
+  documentId,
+  documentType,
+  fileName,
+  personId,
+}: ReviewPlannedAccessDocumentBtnProps) {
   const [open, setOpen] = useState(false);
   const [decision, setDecision] = useState<"VALIDATED" | "REJECTED">("VALIDATED");
-  const fetcher = useFetcher<{ errors?: string }>();
-  const formId = `review-document-${document.id}`;
+  const fetcher = useFetcher<{ errors?: unknown; success?: boolean }>();
+  const revalidator = useRevalidator();
+  const formId = `review-planned-document-${documentId}`;
 
   useEffect(() => {
     if (fetcher.state !== "idle" || !fetcher.data) return;
@@ -33,9 +39,10 @@ export default function ReviewWorkerDocumentBtn({
       toast.error(getActionErrorMessage(fetcher.data.errors));
       return;
     }
-    toast.success("Revisión documental registrada");
+    toast.success("Decisión del documento registrada");
     setOpen(false);
-  }, [fetcher.data, fetcher.state]);
+    revalidator.revalidate();
+  }, [fetcher.data, fetcher.state, revalidator]);
 
   return (
     <AlertDialogContainer
@@ -45,29 +52,27 @@ export default function ReviewWorkerDocumentBtn({
       buttonVariant="ghost"
       buttonSize="icon"
       title="Revisar documento"
-      description={`Decide sobre ${DOCUMENT_TYPE_LABELS[document.documentType]}: ${document.fileName}. La decisión y el documento quedarán registrados.`}
+      description={`Decide sobre ${DOCUMENT_TYPE_LABELS[documentType]}: ${fileName}.`}
       footer={
         <>
-          <AlertDialogCancel variant="secondary">Cancelar</AlertDialogCancel>
+          <AlertDialogCancel variant="secondary">Cerrar</AlertDialogCancel>
           <AlertDialogAction type="submit" form={formId}>
             Registrar decisión
           </AlertDialogAction>
         </>
       }
     >
-      <fetcher.Form
-        id={formId}
-        method="patch"
-        action={`/api/external-workers/${workerId}/documents/${document.id}`}
-        className="grid gap-4"
-      >
-        <FieldWrapper label="Decisión" htmlFor={`review-decision-${document.id}`}>
+      <fetcher.Form id={formId} method="post" action={actionPath} className="grid gap-4">
+        <input type="hidden" name="intent" value="review-document" />
+        <input type="hidden" name="documentId" value={documentId} />
+        <input type="hidden" name="personId" value={personId} />
+        <FieldWrapper label="Decisión" htmlFor={`${formId}-decision`}>
           <Select
             name="reviewDecision"
             value={decision}
             onValueChange={(value) => setDecision(value as "VALIDATED" | "REJECTED")}
           >
-            <SelectTrigger id={`review-decision-${document.id}`} className="w-full">
+            <SelectTrigger id={`${formId}-decision`} className="w-full">
               <SelectValue />
             </SelectTrigger>
             <SelectContent position="popper">
@@ -76,19 +81,21 @@ export default function ReviewWorkerDocumentBtn({
             </SelectContent>
           </Select>
         </FieldWrapper>
-          <FieldWrapper
-            label={decision === "REJECTED" ? "Motivo de la revisión *" : "Motivo de la revisión (opcional)"}
-            htmlFor={`review-reason-${document.id}`}
-          >
+        <FieldWrapper
+          label={decision === "REJECTED" ? "Motivo de la revisión *" : "Motivo de la revisión (opcional)"}
+          htmlFor={`${formId}-reason`}
+        >
           <Textarea
-            id={`review-reason-${document.id}`}
+            id={`${formId}-reason`}
             name="reviewReason"
             required={decision === "REJECTED"}
-            placeholder="Indica el documento comprobado y el motivo de la decisión."
+            placeholder="Indica qué has comprobado y el motivo de la decisión."
           />
         </FieldWrapper>
         {fetcher.data?.errors ? (
-          <p className="text-sm text-destructive">{fetcher.data.errors}</p>
+          <p className="text-sm text-destructive" role="alert">
+            {getActionErrorMessage(fetcher.data.errors)}
+          </p>
         ) : null}
       </fetcher.Form>
     </AlertDialogContainer>

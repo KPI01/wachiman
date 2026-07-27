@@ -9,6 +9,7 @@ import type { DocumentType } from "../../../../db/enums";
 import { Badge } from "~/components/ui/badge";
 import FieldWrapper from "~/components/ui/wrappers/field-wrapper";
 import UploadWorkerDocumentBtn from "~/components/models/worker-document/upload-worker-document-btn";
+import ReviewPlannedAccessDocumentBtn from "./review-planned-access-document-btn";
 import {
   Item,
   ItemActions,
@@ -147,6 +148,7 @@ function DocumentRequirement({
       document.status === "VALIDATED" &&
       isDateValidThrough(document.validUntil, validThrough),
   );
+  const pendingDocuments = documents.filter((document) => document.status === "PENDING_REVIEW");
 
   return (
     <div className="flex flex-col gap-3 rounded-md border p-3 text-sm">
@@ -154,8 +156,16 @@ function DocumentRequirement({
         <span className="font-medium">
           {DOCUMENT_TYPE_LABELS[documentType]}
         </span>
-        <Badge variant={valid ? "secondary" : "destructive"}>
-          {valid ? "Vigente" : documents.length ? "Actualizar" : "Faltante"}
+        <Badge variant={valid ? "secondary" : pendingDocuments.length ? "outline" : "destructive"}>
+          {valid
+            ? "Vigente"
+            : pendingDocuments.length
+              ? "Pendiente de revisión"
+              : documents.some((document) => document.status === "REJECTED")
+                ? "Rechazado"
+                : documents.some((document) => document.status === "EXPIRED")
+                  ? "Expirado"
+                  : "Faltante"}
         </Badge>
       </div>
       {documents.length ? (
@@ -168,7 +178,28 @@ function DocumentRequirement({
             .join(", ")}
         </p>
       ) : null}
-      {!valid ? (
+      {documents.map((document) => (
+        <div key={document.id} className="flex flex-wrap items-center justify-between gap-2 text-xs">
+          <Link
+            className="max-w-full truncate text-primary hover:underline"
+            to={`/api/external-workers/${worker?.id}/documents/${document.id}/file`}
+            target="_blank"
+            rel="noreferrer"
+          >
+            {document.fileName}
+          </Link>
+          {document.status === "PENDING_REVIEW" && worker ? (
+            <ReviewPlannedAccessDocumentBtn
+              actionPath={actionPath}
+              documentId={document.id}
+              documentType={documentType}
+              fileName={document.fileName}
+              personId={personId}
+            />
+          ) : null}
+        </div>
+      ))}
+      {!valid && !pendingDocuments.length ? (
         <div className="flex flex-col gap-2">
           <p className="text-xs text-muted-foreground">
              Carga el documento aquí. Quedará pendiente de revisión y no habilitará la aprobación hasta ser validado.
