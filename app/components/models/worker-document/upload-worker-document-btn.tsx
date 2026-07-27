@@ -123,8 +123,7 @@ export default function UploadWorkerDocumentBtn({
         <SheetHeader>
           <SheetTitle className="text-lg">Subir documento</SheetTitle>
           <SheetDescription>
-            Registra el documento, su alcance y sólo las fechas aplicables a su
-            naturaleza.
+            Registra el documento y sólo las fechas aplicables a su naturaleza.
           </SheetDescription>
         </SheetHeader>
 
@@ -291,101 +290,30 @@ export default function UploadWorkerDocumentBtn({
               </FieldGroup>
             </FieldSet>
 
-            <FieldSet>
-              <FieldLegend>Alcance y responsables</FieldLegend>
-              <FieldGroup className="grid gap-4 sm:grid-cols-2">
-                {show("issuer") ? (
-                  <Field>
-                    <FieldLabel htmlFor={`issuer-${formKey}`}>
-                      Emisor
-                    </FieldLabel>
-                    <Input id={`issuer-${formKey}`} name="issuer" />
-                  </Field>
-                ) : null}
-                {show("employerAuthorizer") ? (
-                  <Field>
-                    <FieldLabel htmlFor={`employerAuthorizer-${formKey}`}>
-                      Autorizador empresarial
-                    </FieldLabel>
-                    <Input
-                      id={`employerAuthorizer-${formKey}`}
-                      name="employerAuthorizer"
-                    />
-                  </Field>
-                ) : null}
-                {show("legalSource") ? (
-                  <Field>
-                    <FieldLabel htmlFor={`legalSource-${formKey}`}>
-                      Fuente normativa o procedencia
-                    </FieldLabel>
-                    <Input id={`legalSource-${formKey}`} name="legalSource" />
-                  </Field>
-                ) : null}
-                {show("jurisdiction") ? (
-                  <Field>
-                    <FieldLabel htmlFor={`jurisdiction-${formKey}`}>
-                      Jurisdicción
-                    </FieldLabel>
-                    <Input
-                      id={`jurisdiction-${formKey}`}
-                      name="jurisdiction"
-                      placeholder="Ej. ES-Murcia"
-                    />
-                  </Field>
-                ) : null}
-                {show("sector") ? (
-                  <Field>
-                    <FieldLabel htmlFor={`sector-${formKey}`}>
-                      Sector
-                    </FieldLabel>
-                    <Input id={`sector-${formKey}`} name="sector" />
-                  </Field>
-                ) : null}
-                {show("taskScope") ? (
-                  <Field>
-                    <FieldLabel htmlFor={`taskScope-${formKey}`}>
-                      Tarea, oficio o zona
-                    </FieldLabel>
-                    <Input id={`taskScope-${formKey}`} name="taskScope" />
-                  </Field>
-                ) : null}
-                {show("procedureVersion") ? (
-                  <Field>
-                    <FieldLabel htmlFor={`procedureVersion-${formKey}`}>
-                      Versión del procedimiento
-                    </FieldLabel>
-                    <Input
-                      id={`procedureVersion-${formKey}`}
-                      name="procedureVersion"
-                    />
-                  </Field>
-                ) : null}
-                {show("riskScopes") ? (
-                  <Field>
-                    <FieldLabel htmlFor={`riskScopes-${formKey}`}>
-                      Riesgos cubiertos
-                    </FieldLabel>
-                    <Input
-                      id={`riskScopes-${formKey}`}
-                      name="riskScopes"
-                      placeholder="Separados por comas"
-                    />
-                  </Field>
-                ) : null}
-                {show("equipmentTypes") ? (
-                  <Field>
-                    <FieldLabel htmlFor={`equipmentTypes-${formKey}`}>
-                      Equipos cubiertos
-                    </FieldLabel>
-                    <Input
-                      id={`equipmentTypes-${formKey}`}
-                      name="equipmentTypes"
-                      placeholder="Separados por comas"
-                    />
-                  </Field>
-                ) : null}
-              </FieldGroup>
-            </FieldSet>
+            {show("issuer") || show("employerAuthorizer") ? (
+              <FieldSet>
+                <FieldLegend>Emisión y autorización</FieldLegend>
+                <FieldGroup className="grid gap-4 sm:grid-cols-2">
+                  {show("issuer") ? (
+                    <Field>
+                      <FieldLabel htmlFor={`issuer-${formKey}`}>Emisor</FieldLabel>
+                      <Input id={`issuer-${formKey}`} name="issuer" />
+                    </Field>
+                  ) : null}
+                  {show("employerAuthorizer") ? (
+                    <Field>
+                      <FieldLabel htmlFor={`employerAuthorizer-${formKey}`}>
+                        Autorizador empresarial
+                      </FieldLabel>
+                      <Input
+                        id={`employerAuthorizer-${formKey}`}
+                        name="employerAuthorizer"
+                      />
+                    </Field>
+                  ) : null}
+                </FieldGroup>
+              </FieldSet>
+            ) : null}
 
             <FieldSet>
               <FieldLegend>Archivo y notas</FieldLegend>

@@ -144,34 +144,16 @@ export default function UpdateWorkerDocumentBtn({
           <Input id={`issuer-${document.id}`} name="issuer" defaultValue={document.issuer ?? ""} />
         </FieldWrapper> : null}
 
-        {show("legalSource") ? <FieldWrapper label="Fuente normativa o procedencia" htmlFor={`legalSource-${document.id}`}>
-          <Input id={`legalSource-${document.id}`} name="legalSource" defaultValue={document.legalSource ?? ""} />
-        </FieldWrapper> : null}
-
-        {show("taskScope") ? <FieldWrapper label="Tarea, oficio o zona" htmlFor={`taskScope-${document.id}`}>
-          <Input id={`taskScope-${document.id}`} name="taskScope" defaultValue={document.taskScope ?? ""} />
-        </FieldWrapper> : null}
-
-        <div className="grid gap-4 sm:grid-cols-2">
-          {show("riskScopes") ? <FieldWrapper label="Riesgos cubiertos" htmlFor={`riskScopes-${document.id}`}>
-            <Input id={`riskScopes-${document.id}`} name="riskScopes" defaultValue={document.riskScopes?.join(", ") ?? ""} />
-          </FieldWrapper> : null}
-          {show("equipmentTypes") ? <FieldWrapper label="Equipos cubiertos" htmlFor={`equipmentTypes-${document.id}`}>
-            <Input id={`equipmentTypes-${document.id}`} name="equipmentTypes" defaultValue={document.equipmentTypes?.join(", ") ?? ""} />
-          </FieldWrapper> : null}
-          {show("jurisdiction") ? <FieldWrapper label="Jurisdiccion" htmlFor={`jurisdiction-${document.id}`}>
-            <Input id={`jurisdiction-${document.id}`} name="jurisdiction" defaultValue={document.jurisdiction ?? ""} />
-          </FieldWrapper> : null}
-          {show("sector") ? <FieldWrapper label="Sector" htmlFor={`sector-${document.id}`}>
-            <Input id={`sector-${document.id}`} name="sector" defaultValue={document.sector ?? ""} />
-          </FieldWrapper> : null}
-          {show("procedureVersion") ? <FieldWrapper label="Version de procedimiento" htmlFor={`procedureVersion-${document.id}`}>
-            <Input id={`procedureVersion-${document.id}`} name="procedureVersion" defaultValue={document.procedureVersion ?? ""} />
-          </FieldWrapper> : null}
-          {show("employerAuthorizer") ? <FieldWrapper label="Autorizador empresarial" htmlFor={`employerAuthorizer-${document.id}`}>
-            <Input id={`employerAuthorizer-${document.id}`} name="employerAuthorizer" defaultValue={document.employerAuthorizer ?? ""} />
-          </FieldWrapper> : null}
-        </div>
+        {show("issuer") || show("employerAuthorizer") ? (
+          <div className="grid gap-4 sm:grid-cols-2">
+            {show("issuer") ? <FieldWrapper label="Emisor" htmlFor={`issuer-${document.id}`}>
+              <Input id={`issuer-${document.id}`} name="issuer" defaultValue={document.issuer ?? ""} />
+            </FieldWrapper> : null}
+            {show("employerAuthorizer") ? <FieldWrapper label="Autorizador empresarial" htmlFor={`employerAuthorizer-${document.id}`}>
+              <Input id={`employerAuthorizer-${document.id}`} name="employerAuthorizer" defaultValue={document.employerAuthorizer ?? ""} />
+            </FieldWrapper> : null}
+          </div>
+        ) : null}
 
         <FieldWrapper label="Notas" htmlFor={`notes-${document.id}`}>
           <Input
