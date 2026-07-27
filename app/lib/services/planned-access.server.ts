@@ -332,9 +332,14 @@ export async function updatePlannedAccessStatus(
   // same effective value instead of rejecting them inconsistently.
   const currentStatus = existingPlannedAccess.status ?? "PENDING_APPROVAL";
 
+  const isOwnRequest = existingPlannedAccess.requestedById === author.id;
+  const canApproveOwnRequest =
+    author.role === "ADMIN" || author.role === "SECURITY_MANAGER";
+
   if (
-    (parsed.data.status === "APPROVED" || parsed.data.status === "REJECTED") &&
-    existingPlannedAccess.requestedById === author.id
+    isOwnRequest &&
+    (parsed.data.status === "REJECTED" ||
+      (parsed.data.status === "APPROVED" && !canApproveOwnRequest))
   ) {
     await AuditLogEntity.create({
       entityType: "PlannedAccess",
@@ -344,7 +349,12 @@ export async function updatePlannedAccessStatus(
       summary: "Se bloqueó una decisión sobre una solicitud propia",
       metadata: { attemptedStatus: parsed.data.status },
     });
-    return { success: false, errors: "No puedes aprobar ni rechazar una solicitud creada por ti." };
+    return {
+      success: false,
+      errors: parsed.data.status === "REJECTED"
+        ? "No puedes rechazar una solicitud creada por ti."
+        : "No puedes aprobar una solicitud propia con este rol.",
+    };
   }
 
   if (parsed.data.status === "APPROVED") {
@@ -466,6 +476,7 @@ export async function updatePlannedAccessStatus(
       summary: "Solicitud de acceso planificado aprobada",
       metadata: {
         reason: parsed.data.decisionReason ?? null,
+        selfApproval: isOwnRequest,
         evidence: decisionEvidence,
       },
     });
