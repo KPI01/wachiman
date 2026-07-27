@@ -50,22 +50,22 @@ export default function PlannedAccessApprovalPersonCard({
   );
   const category = workCategories.find((item) => item.id === categoryId);
   const requiresTraining = Boolean(category?.requiresTraining);
-  const requiresSpecialPermission = Boolean(category?.requiresSpecialPermission);
+  const requiresSpecialPermission = Boolean(
+    category?.requiresSpecialPermission,
+  );
 
   return (
     <Item variant="outline" className="items-start">
-        <ItemContent className="min-w-0">
-          <ItemTitle>{`${person.firstNameSnapshot} ${person.lastNameSnapshot}`}</ItemTitle>
-          <ItemDescription className="break-words">Identificación: {person.legalIdSnapshot}</ItemDescription>
+      <ItemContent className="min-w-0">
+        <ItemTitle>{`${person.firstNameSnapshot} ${person.lastNameSnapshot}`}</ItemTitle>
+        <ItemDescription className="wrap-break-word">
+          Identificación: {person.legalIdSnapshot}
+        </ItemDescription>
         <FieldWrapper
           label="Categoría laboral *"
           htmlFor={`category-${person.id}`}
         >
-          <Select
-            value={categoryId}
-            onValueChange={setCategoryId}
-            required
-          >
+          <Select value={categoryId} onValueChange={setCategoryId} required>
             <SelectTrigger id={`category-${person.id}`} className="w-full">
               <SelectValue placeholder="Sin categoría adicional" />
             </SelectTrigger>
@@ -90,17 +90,20 @@ export default function PlannedAccessApprovalPersonCard({
             form={formId}
           />
         </FieldWrapper>
-        </ItemContent>
-        <ItemActions className="self-start">
-          {worker ? (
-            <Link className="text-sm text-primary hover:underline" to={`${workerPath}/${worker.id}`}>
-              Ver expediente
-            </Link>
-          ) : null}
-        </ItemActions>
-        <ItemFooter className="flex-col items-stretch gap-3">
-          <div className="flex flex-col gap-3">
-            <h4 className="text-sm font-semibold">Documentación requerida</h4>
+      </ItemContent>
+      <ItemActions className="self-start">
+        {worker ? (
+          <Link
+            className="text-sm text-primary hover:underline"
+            to={`${workerPath}/${worker.id}`}
+          >
+            Ver expediente
+          </Link>
+        ) : null}
+      </ItemActions>
+      <ItemFooter className="flex-col items-stretch gap-3">
+        <div className="flex flex-col gap-3">
+          <h4 className="text-sm font-semibold">Documentación requerida</h4>
           {(
             [
               "IDENTIFICATION",
@@ -118,8 +121,8 @@ export default function PlannedAccessApprovalPersonCard({
               actionPath={actionPath}
             />
           ))}
-          </div>
-        </ItemFooter>
+        </div>
+      </ItemFooter>
     </Item>
   );
 }
@@ -148,7 +151,9 @@ function DocumentRequirement({
       document.status === "VALIDATED" &&
       isDateValidThrough(document.validUntil, validThrough),
   );
-  const pendingDocuments = documents.filter((document) => document.status === "PENDING_REVIEW");
+  const pendingDocuments = documents.filter(
+    (document) => document.status === "PENDING_REVIEW",
+  );
 
   return (
     <div className="flex flex-col gap-3 rounded-md border p-3 text-sm">
@@ -156,7 +161,15 @@ function DocumentRequirement({
         <span className="font-medium">
           {DOCUMENT_TYPE_LABELS[documentType]}
         </span>
-        <Badge variant={valid ? "secondary" : pendingDocuments.length ? "outline" : "destructive"}>
+        <Badge
+          variant={
+            valid
+              ? "secondary"
+              : pendingDocuments.length
+                ? "outline"
+                : "destructive"
+          }
+        >
           {valid
             ? "Vigente"
             : pendingDocuments.length
@@ -179,7 +192,10 @@ function DocumentRequirement({
         </p>
       ) : null}
       {documents.map((document) => (
-        <div key={document.id} className="flex flex-wrap items-center justify-between gap-2 text-xs">
+        <div
+          key={document.id}
+          className="flex flex-wrap items-center justify-between gap-2 text-xs"
+        >
           <Link
             className="max-w-full truncate text-primary hover:underline"
             to={`/api/external-workers/${worker?.id}/documents/${document.id}/file`}
@@ -202,7 +218,8 @@ function DocumentRequirement({
       {!valid && !pendingDocuments.length ? (
         <div className="flex flex-col gap-2">
           <p className="text-xs text-muted-foreground">
-             Carga el documento aquí. Quedará pendiente de revisión y no habilitará la aprobación hasta ser validado.
+            Carga el documento aquí. Quedará pendiente de revisión y no
+            habilitará la aprobación hasta ser validado.
           </p>
           <UploadWorkerDocumentBtn
             workerId={worker?.id}
