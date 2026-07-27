@@ -196,6 +196,19 @@ export const auditLogs = sqliteTable("audit_logs", {
   createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull().default(timestampDefault),
 });
 
+// ───── Application Settings ──────────────────────────
+
+export const appSettings = sqliteTable("app_settings", {
+  id: text("id").primaryKey(),
+  earlyArrivalToleranceMinutes: integer("early_arrival_tolerance_minutes")
+    .notNull()
+    .default(60),
+  updatedById: text("updated_by_id").references(() => users.id),
+  updatedAt: integer("updated_at", { mode: "timestamp_ms" })
+    .notNull()
+    .default(timestampDefault),
+});
+
 // ───── Access Log Vehicles ───────────────────────────
 
 export const accessLogVehicles = sqliteTable("access_log_vehicles", {
@@ -306,6 +319,7 @@ export type ExternalWorker = typeof externalWorkers.$inferSelect;
 export type WorkerDocument = typeof workerDocuments.$inferSelect;
 export type DocumentReview = typeof documentReviews.$inferSelect;
 export type AuditLog = typeof auditLogs.$inferSelect;
+export type AppSettings = typeof appSettings.$inferSelect;
 export type AccessLogVehicle = typeof accessLogVehicles.$inferSelect;
 export type AccessLog = typeof accessLogs.$inferSelect;
 export type PlannedAccess = typeof plannedAccesses.$inferSelect;
@@ -341,6 +355,14 @@ export const usersRelations = relations(users, ({ one, many }) => ({
     relationName: "decisionBy",
   }),
   documentReviews: many(documentReviews),
+  updatedAppSettings: many(appSettings),
+}));
+
+export const appSettingsRelations = relations(appSettings, ({ one }) => ({
+  updatedBy: one(users, {
+    fields: [appSettings.updatedById],
+    references: [users.id],
+  }),
 }));
 
 export const companiesRelations = relations(companies, ({ many }) => ({

@@ -16,6 +16,10 @@ const SIDEBAR_ITEMS: Array<SidebarLinkItem> = [
     ],
   },
   {
+    label: "Sistema",
+    children: [{ label: "Configuración", href: "/admin/settings" }],
+  },
+  {
     label: "Trabajadores",
     children: [
       { label: "Trabajadores externos", href: "/admin/external-workers" },

@@ -180,7 +180,7 @@ async function main() {
       const tables = [
         "access_logs", "access_log_vehicles", "worker_documents",
         "planned_access_persons", "planned_accesses", "external_workers",
-        "users", "work_categories", "companies", "departments", "sites",
+        "app_settings", "users", "work_categories", "companies", "departments", "sites",
         "audit_logs", "d1_migrations", "__drizzle_migrations",
       ];
       runWrangler([
