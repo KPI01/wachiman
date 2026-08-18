@@ -5,6 +5,7 @@ import type { PlannedAccessStatus } from "../../../db/enums";
 import PlannedAccessStatusActions from "~/components/models/planned-access/planned-access-status-actions";
 import { Badge } from "~/components/ui/badge";
 import type { PlannedAccessListItem } from "../database/planned-access.server";
+import type { Site } from "../../../db/schema";
 import { formatTimestamp } from "../utils";
 
 const plannedAccessColHelper = createColumnHelper<PlannedAccessListItem>();
@@ -54,9 +55,11 @@ function getPersonsDetails(plannedAccess: PlannedAccessListItem) {
 export const plannedAccessColumns = ({
   actionPath,
   allowedActions,
+  sites,
 }: {
   actionPath?: string;
   allowedActions?: AllowedAction[];
+  sites?: Array<Pick<Site, "id" | "name">>;
 } = {}) => [
     plannedAccessColHelper.accessor("expectedStartDatetime", {
       header: "Inicio previsto",
@@ -134,6 +137,8 @@ export const plannedAccessColumns = ({
           status={row.original.status ?? "PENDING_APPROVAL"}
           actionPath={actionPath}
           allowedActions={allowedActions}
+          plannedAccess={row.original}
+          sites={sites}
         />
       ),
     }),

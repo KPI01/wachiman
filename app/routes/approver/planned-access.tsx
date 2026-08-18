@@ -61,7 +61,10 @@ export default function ApproverPlannedAccess({
   loaderData,
 }: Route.ComponentProps) {
   const columns = useMemo(
-    () => plannedAccessColumns({ actionPath: "/approver/planned-access" }),
+    () => plannedAccessColumns({
+      actionPath: "/approver/planned-access",
+      allowedActions: ["APPROVE", "REJECT", "CANCEL"],
+    }),
     [],
   );
   return (

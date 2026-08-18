@@ -80,10 +80,10 @@ INSERT INTO worker_documents (id, document_type, record_type, status, file_name,
 ('doc-6', 'IDENTIFICATION', 'IDENTITY_CREDENTIAL', 'VALIDATED', 'DNI_Pedro.pdf', 'workers/worker-5/doc-6-DNI_Pedro.pdf', 235000, 'application/pdf', ${Date.parse("2028-05-20T00:00:00.000Z")}, 'LAW', NULL, 'worker-5', '${nowISO}', '${nowISO}');
 
 -- ───── PLANNED ACCESSES ─────────────────────────────
-INSERT INTO planned_accesses (id, expected_start_datetime, expected_end_datetime, status, company_snapshot, visit_reason, approved_by_id, requested_by_id, site_id, created_at, updated_at) VALUES
-('pa-1', '${isoDate(tomorrowMidnight, "08:00:00.000")}', '${isoDate(tomorrowMidnight, "18:00:00.000")}', 'APPROVED', 'Construcciones Murcianas SL', 'Reparacion de instalacion electrica en nave 3', 'user-1', 'user-4', 'site-1', '${yesterdayMidnight.toISOString()}', '${nowISO}'),
-('pa-2', '${isoDate(tomorrowMidnight, "09:00:00.000")}', NULL, 'PENDING_APPROVAL', 'Grupo Electrica Levante SA', 'Mantenimiento climatizacion oficinas', 'user-1', 'user-4', 'site-2', '${twoDaysAgoMidnight.toISOString()}', '${twoDaysAgoMidnight.toISOString()}'),
-('pa-3', '${isoDate(lastWeekMidnight, "08:00:00.000")}', '${isoDate(lastWeekMidnight, "15:00:00.000")}', 'USED', 'Transportes Martinez SL', 'Carga de mercancia en almacen', 'user-1', 'user-4', 'site-1', '${lastWeekMidnight.toISOString()}', '${lastWeekMidnight.toISOString()}');
+INSERT INTO planned_accesses (id, expected_start_datetime, expected_end_datetime, status, company_snapshot, visit_reason, approved_by_id, requested_by_id, department_id, site_id, created_at, updated_at) VALUES
+('pa-1', '${isoDate(tomorrowMidnight, "08:00:00.000")}', '${isoDate(tomorrowMidnight, "18:00:00.000")}', 'APPROVED', 'Construcciones Murcianas SL', 'Reparacion de instalacion electrica en nave 3', 'user-1', 'user-4', 'dept-4', 'site-1', '${yesterdayMidnight.toISOString()}', '${nowISO}'),
+('pa-2', '${isoDate(tomorrowMidnight, "09:00:00.000")}', NULL, 'PENDING_APPROVAL', 'Grupo Electrica Levante SA', 'Mantenimiento climatizacion oficinas', 'user-1', 'user-4', 'dept-4', 'site-2', '${twoDaysAgoMidnight.toISOString()}', '${twoDaysAgoMidnight.toISOString()}'),
+('pa-3', '${isoDate(lastWeekMidnight, "08:00:00.000")}', '${isoDate(lastWeekMidnight, "15:00:00.000")}', 'USED', 'Transportes Martinez SL', 'Carga de mercancia en almacen', 'user-1', 'user-4', 'dept-4', 'site-1', '${lastWeekMidnight.toISOString()}', '${lastWeekMidnight.toISOString()}');
 
 -- ───── PLANNED ACCESS PERSONS ────────────────────────
 INSERT INTO planned_access_persons (id, first_name_snapshot, middle_name_snapshot, last_name_snapshot, second_last_name_snapshot, phone_number, legal_id_snapshot, planned_access_id, external_worker_id, created_at, updated_at) VALUES

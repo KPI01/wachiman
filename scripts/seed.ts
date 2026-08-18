@@ -145,9 +145,9 @@ async function main() {
   ]).onConflictDoNothing();
 
   await db.insert(plannedAccesses).values([
-    { id: "pa-1", expectedStartDatetime: at(tomorrowMidnight, 8), expectedEndDatetime: at(tomorrowMidnight, 18), status: "APPROVED", companySnapshot: "Construcciones Murcianas SL", visitReason: "Reparacion de instalacion electrica en nave 3", approvedById: "user-1", requestedById: "user-4", siteId: "site-1" },
-    { id: "pa-2", expectedStartDatetime: at(tomorrowMidnight, 9), status: "PENDING_APPROVAL", companySnapshot: "Grupo Electrica Levante SA", visitReason: "Mantenimiento climatizacion oficinas", approvedById: "user-1", requestedById: "user-4", siteId: "site-2" },
-    { id: "pa-3", expectedStartDatetime: at(lastWeek, 8), expectedEndDatetime: at(lastWeek, 15), status: "USED", companySnapshot: "Transportes Martinez SL", visitReason: "Carga de mercancia en almacen", approvedById: "user-1", requestedById: "user-4", siteId: "site-1" },
+    { id: "pa-1", expectedStartDatetime: at(tomorrowMidnight, 8), expectedEndDatetime: at(tomorrowMidnight, 18), status: "APPROVED", companySnapshot: "Construcciones Murcianas SL", visitReason: "Reparacion de instalacion electrica en nave 3", approvedById: "user-1", requestedById: "user-4", departmentId: "dept-4", siteId: "site-1" },
+    { id: "pa-2", expectedStartDatetime: at(tomorrowMidnight, 9), status: "PENDING_APPROVAL", companySnapshot: "Grupo Electrica Levante SA", visitReason: "Mantenimiento climatizacion oficinas", approvedById: "user-1", requestedById: "user-4", departmentId: "dept-4", siteId: "site-2" },
+    { id: "pa-3", expectedStartDatetime: at(lastWeek, 8), expectedEndDatetime: at(lastWeek, 15), status: "USED", companySnapshot: "Transportes Martinez SL", visitReason: "Carga de mercancia en almacen", approvedById: "user-1", requestedById: "user-4", departmentId: "dept-4", siteId: "site-1" },
   ]).onConflictDoNothing();
 
   await db.insert(plannedAccessPersons).values([

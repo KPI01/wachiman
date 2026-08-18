@@ -6,6 +6,7 @@ import {
   createPlannedAccess,
   getManyPlannedAccesses,
   getPlannedAccessFormInput,
+  updatePlannedAccess,
   updatePlannedAccessStatus,
 } from "~/lib/services/planned-access.server";
 import { getManySites } from "~/lib/services/sites.server";
@@ -38,6 +39,11 @@ export async function action({ request }: Route.ActionArgs) {
   const rawFormData = await request.formData();
 
   if (method === "POST") {
+    if (rawFormData.get("intent") === "edit") {
+      return updatePlannedAccess(Object.fromEntries(rawFormData), {
+        authorUsername: user.username,
+      });
+    }
     if (rawFormData.get("intent") === "decision") {
       return updatePlannedAccessStatus(Object.fromEntries(rawFormData), {
         authorUsername: user.username,
@@ -64,8 +70,8 @@ export default function SecurityPlannedAccess({
   loaderData,
 }: Route.ComponentProps) {
   const columns = useMemo(
-    () => plannedAccessColumns({ actionPath: "/security/planned-access" }),
-    [],
+    () => plannedAccessColumns({ actionPath: "/security/planned-access", sites: loaderData.sites ?? [] }),
+    [loaderData.sites],
   );
   return (
     <div className="grid space-y-6">

@@ -280,6 +280,9 @@ export const plannedAccesses = sqliteTable("planned_accesses", {
   requestedById: text("requested_by_id")
     .notNull()
     .references(() => users.id),
+  departmentId: text("department_id")
+    .notNull()
+    .references(() => departments.id),
   siteId: text("site_id")
     .notNull()
     .references(() => sites.id),
@@ -335,6 +338,7 @@ export const sitesRelations = relations(sites, ({ many }) => ({
 
 export const departmentsRelations = relations(departments, ({ many }) => ({
   users: many(users),
+  plannedAccesses: many(plannedAccesses),
 }));
 
 export const usersRelations = relations(users, ({ one, many }) => ({
@@ -449,6 +453,10 @@ export const plannedAccessesRelations = relations(
     site: one(sites, {
       fields: [plannedAccesses.siteId],
       references: [sites.id],
+    }),
+    department: one(departments, {
+      fields: [plannedAccesses.departmentId],
+      references: [departments.id],
     }),
     requestedBy: one(users, {
       fields: [plannedAccesses.requestedById],

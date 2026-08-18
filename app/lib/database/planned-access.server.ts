@@ -5,7 +5,6 @@ import {
   accessLogs,
   plannedAccessPersons,
   plannedAccesses,
-  users,
 } from "../../../db/schema";
 import type { PlannedAccessStatus } from "../../../db/enums";
 
@@ -32,6 +31,7 @@ export type CreatePlannedAccessInput = {
   companySnapshot: string;
   visitReason: string;
   requestedById: string;
+  departmentId: string;
   approvedById?: string;
   siteId: string;
   persons: Array<{
@@ -55,6 +55,26 @@ export type UpdatePlannedAccessStatusInput = {
   decisionById: string;
   decisionAt?: Date;
   personWorkCategories?: Array<{ personId: string; workCategoryId: string | null; externalWorkerId?: string }>;
+};
+
+export type UpdatePendingPlannedAccessInput = {
+  id: string;
+  expectedUpdatedAt: Date;
+  expectedStartDatetime: Date;
+  expectedEndDatetime: Date | null;
+  companySnapshot: string;
+  visitReason: string;
+  siteId: string;
+  persons: Array<{
+    id?: string;
+    firstNameSnapshot: string;
+    middleNameSnapshot?: string;
+    lastNameSnapshot: string;
+    secondLastNameSnapshot?: string;
+    phoneNumber?: string;
+    legalIdSnapshot: string;
+    externalWorkerId?: string;
+  }>;
 };
 
 const ACTIVE_STATUSES: PlannedAccessStatus[] = [
@@ -81,6 +101,7 @@ export class PlannedAccessEntity {
         companySnapshot: data.companySnapshot,
         visitReason: data.visitReason,
         requestedById: data.requestedById,
+        departmentId: data.departmentId,
         approvedById: data.approvedById ?? null,
         siteId: data.siteId,
         status: "PENDING_APPROVAL",
@@ -123,6 +144,9 @@ export class PlannedAccessEntity {
     if (input?.requestedById) {
       conditions.push(eq(plannedAccesses.requestedById, input.requestedById));
     }
+    if (input?.departmentId) {
+      conditions.push(eq(plannedAccesses.departmentId, input.departmentId));
+    }
     if (input?.expectedDate) {
       const startOfDay = new Date(input.expectedDate);
       startOfDay.setHours(0, 0, 0, 0);
@@ -159,16 +183,6 @@ export class PlannedAccessEntity {
       },
       orderBy: (pa, { desc: d }) => [d(pa.createdAt)],
     });
-
-    // Enfoque B: filter by departmentId in a second step
-    if (input?.departmentId) {
-      const userIds = await db
-        .select({ id: plannedAccesses.requestedById })
-        .from(plannedAccesses)
-        .where(inArray(plannedAccesses.id, rows.map((r) => r.id)));
-      // Fallback: re-fetch with join
-      return rows;
-    }
 
     return rows;
   }
@@ -212,6 +226,7 @@ export class PlannedAccessEntity {
       const conditions = [eq(plannedAccesses.status, status)];
       if (input.siteId) conditions.push(eq(plannedAccesses.siteId, input.siteId));
       if (input.requestedById) conditions.push(eq(plannedAccesses.requestedById, input.requestedById));
+      if (input.departmentId) conditions.push(eq(plannedAccesses.departmentId, input.departmentId));
 
       const result = await db
         .select({ count: count() })
@@ -219,29 +234,6 @@ export class PlannedAccessEntity {
         .where(and(...conditions))
         .get();
       results[status] = result?.count ?? 0;
-    }
-
-    // Enfoque B: filter by departmentId separately
-    if (input.departmentId) {
-      const departmentUsers = await db
-        .select({ id: users.id })
-        .from(users)
-        .where(eq(users.departmentId, input.departmentId))
-        .all();
-      const userIds = departmentUsers.map((u) => u.id);
-
-      for (const status of input.statuses) {
-        const conditions = [eq(plannedAccesses.status, status)];
-        conditions.push(inArray(plannedAccesses.requestedById, userIds));
-        if (input.siteId) conditions.push(eq(plannedAccesses.siteId, input.siteId));
-
-        const result = await db
-          .select({ count: count() })
-          .from(plannedAccesses)
-          .where(and(...conditions))
-          .get();
-        results[status] = result?.count ?? 0;
-      }
     }
 
     return results;
@@ -274,6 +266,192 @@ export class PlannedAccessEntity {
       .where(eq(plannedAccesses.id, id))
       .returning();
     return pa;
+  }
+
+  public static async updatePending(
+    data: UpdatePendingPlannedAccessInput,
+  ): Promise<
+    | { kind: "updated"; id: string }
+    | { kind: "conflict" }
+    | { kind: "linked-person"; personId: string }
+  > {
+    const updateValues = {
+      expectedStartDatetime: data.expectedStartDatetime,
+      expectedEndDatetime: data.expectedEndDatetime,
+      companySnapshot: data.companySnapshot,
+      visitReason: data.visitReason,
+      siteId: data.siteId,
+      updatedAt: new Date(),
+    };
+
+    const submittedIds = new Set(
+      data.persons.flatMap((person) => person.id ? [person.id] : []),
+    );
+    const getPersonValues = (person: UpdatePendingPlannedAccessInput["persons"][number]) => ({
+      firstNameSnapshot: person.firstNameSnapshot,
+      middleNameSnapshot: person.middleNameSnapshot ?? null,
+      lastNameSnapshot: person.lastNameSnapshot,
+      secondLastNameSnapshot: person.secondLastNameSnapshot ?? null,
+      phoneNumber: person.phoneNumber ?? null,
+      legalIdSnapshot: person.legalIdSnapshot,
+      externalWorkerId: person.externalWorkerId ?? null,
+      updatedAt: new Date(),
+    });
+
+    const updateLocal = (tx: typeof db) => {
+      const current = tx
+        .select({ id: plannedAccesses.id, status: plannedAccesses.status })
+        .from(plannedAccesses)
+        .where(and(
+          eq(plannedAccesses.id, data.id),
+          eq(plannedAccesses.status, "PENDING_APPROVAL"),
+          eq(plannedAccesses.updatedAt, data.expectedUpdatedAt),
+        ))
+        .get();
+
+      if (!current) return { kind: "conflict" as const };
+
+      const existingPersons = tx
+        .select({ id: plannedAccessPersons.id })
+        .from(plannedAccessPersons)
+        .where(eq(plannedAccessPersons.plannedAccessId, data.id))
+        .all();
+
+      for (const person of existingPersons) {
+        if (submittedIds.has(person.id)) continue;
+        const linkedAccess = tx
+          .select({ count: count() })
+          .from(accessLogs)
+          .where(eq(accessLogs.plannedAccessPersonId, person.id))
+          .get();
+        if ((linkedAccess?.count ?? 0) > 0) {
+          return { kind: "linked-person" as const, personId: person.id };
+        }
+      }
+
+      tx.update(plannedAccesses)
+        .set(updateValues)
+        .where(and(
+          eq(plannedAccesses.id, data.id),
+          eq(plannedAccesses.status, "PENDING_APPROVAL"),
+          eq(plannedAccesses.updatedAt, data.expectedUpdatedAt),
+        ))
+        .run();
+
+      for (const person of data.persons) {
+        const values = getPersonValues(person);
+
+        if (person.id) {
+          tx.update(plannedAccessPersons)
+            .set(values)
+            .where(and(
+              eq(plannedAccessPersons.id, person.id),
+              eq(plannedAccessPersons.plannedAccessId, data.id),
+            ))
+            .run();
+        } else {
+          tx.insert(plannedAccessPersons).values({
+            ...values,
+            plannedAccessId: data.id,
+          }).run();
+        }
+      }
+
+      if (existingPersons.length > 0) {
+        const removedIds = existingPersons
+          .map((person) => person.id)
+          .filter((id) => !submittedIds.has(id));
+        if (removedIds.length > 0) {
+          tx.delete(plannedAccessPersons)
+            .where(and(
+              eq(plannedAccessPersons.plannedAccessId, data.id),
+              inArray(plannedAccessPersons.id, removedIds),
+            ))
+            .run();
+        }
+      }
+
+      return { kind: "updated" as const, id: data.id };
+    };
+
+    if (isLocalDb()) {
+      return db.transaction((tx) => updateLocal(tx as unknown as typeof db));
+    }
+
+    const d1 = db as unknown as DrizzleD1Database<typeof import("../../../db/schema")>;
+    return d1.transaction(async (tx) => {
+      const current = await tx
+        .select({ id: plannedAccesses.id, status: plannedAccesses.status })
+        .from(plannedAccesses)
+        .where(and(
+          eq(plannedAccesses.id, data.id),
+          eq(plannedAccesses.status, "PENDING_APPROVAL"),
+          eq(plannedAccesses.updatedAt, data.expectedUpdatedAt),
+        ))
+        .get();
+
+      if (!current) return { kind: "conflict" as const };
+
+      const existingPersons = await tx
+        .select({ id: plannedAccessPersons.id })
+        .from(plannedAccessPersons)
+        .where(eq(plannedAccessPersons.plannedAccessId, data.id))
+        .all();
+
+      for (const person of existingPersons) {
+        if (submittedIds.has(person.id)) continue;
+        const linkedAccess = await tx
+          .select({ count: count() })
+          .from(accessLogs)
+          .where(eq(accessLogs.plannedAccessPersonId, person.id))
+          .get();
+        if ((linkedAccess?.count ?? 0) > 0) {
+          return { kind: "linked-person" as const, personId: person.id };
+        }
+      }
+
+      await tx.update(plannedAccesses)
+        .set(updateValues)
+        .where(and(
+          eq(plannedAccesses.id, data.id),
+          eq(plannedAccesses.status, "PENDING_APPROVAL"),
+          eq(plannedAccesses.updatedAt, data.expectedUpdatedAt),
+        ))
+        .run();
+
+      for (const person of data.persons) {
+        const values = getPersonValues(person);
+
+        if (person.id) {
+          await tx.update(plannedAccessPersons)
+            .set(values)
+            .where(and(
+              eq(plannedAccessPersons.id, person.id),
+              eq(plannedAccessPersons.plannedAccessId, data.id),
+            ))
+            .run();
+        } else {
+          await tx.insert(plannedAccessPersons).values({
+            ...values,
+            plannedAccessId: data.id,
+          }).run();
+        }
+      }
+
+      const removedIds = existingPersons
+        .map((person) => person.id)
+        .filter((id) => !submittedIds.has(id));
+      if (removedIds.length > 0) {
+        await tx.delete(plannedAccessPersons)
+          .where(and(
+            eq(plannedAccessPersons.plannedAccessId, data.id),
+            inArray(plannedAccessPersons.id, removedIds),
+          ))
+          .run();
+      }
+
+      return { kind: "updated" as const, id: data.id };
+    });
   }
 
   public static async linkPersonWorker(

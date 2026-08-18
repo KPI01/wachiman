@@ -8,6 +8,7 @@ import {
   createPlannedAccess,
   getManyPlannedAccesses,
   getPlannedAccessFormInput,
+  updatePlannedAccess,
   updatePlannedAccessStatus,
 } from "~/lib/services/planned-access.server";
 import type { Route } from "./+types/planned-access";
@@ -25,7 +26,7 @@ type EnrichedPlannedAccess = PlannedAccessListItem & {
   };
 };
 
-const REQUESTER_ALLOWED_ACTIONS: AllowedAction[] = ["CANCEL"];
+const REQUESTER_ALLOWED_ACTIONS: AllowedAction[] = ["EDIT", "CANCEL"];
 
 const PLANNED_ACCESS_GLOBAL_FILTER_COLUMNS = [
   "companySnapshot",
@@ -101,6 +102,13 @@ export async function action({ request }: Route.ActionArgs) {
   const rawFormData = await request.formData();
 
   if (method === "POST") {
+    if (rawFormData.get("intent") === "edit") {
+      return updatePlannedAccess(Object.fromEntries(rawFormData), {
+        authorUsername: user.username,
+        lockedSiteId: site.id,
+        requestedById: user.id,
+      });
+    }
     if (rawFormData.has("status")) {
       const result = await updatePlannedAccessStatus(Object.fromEntries(rawFormData), {
         authorUsername: user.username,
@@ -136,6 +144,7 @@ export default function RequesterPlannedAccess({
     const baseColumns = plannedAccessColumns({
       actionPath: "/requester/planned-access",
       allowedActions: REQUESTER_ALLOWED_ACTIONS,
+      sites: [loaderData.site],
     });
 
     const entryColumn = entryColHelper.display({
@@ -155,12 +164,15 @@ export default function RequesterPlannedAccess({
     }
 
     return baseColumns;
-  }, []);
+  }, [loaderData.site]);
 
   const enrichedAccesses = useMemo(() => {
     return (loaderData.plannedAccesses ?? []).map((pa) => ({
       ...pa,
-      _entryStatus: getEntryStatusForRequest(pa.status, pa.plannedAccessPersons),
+       _entryStatus: getEntryStatusForRequest(
+         pa.status ?? "PENDING_APPROVAL",
+         pa.plannedAccessPersons,
+       ),
     }));
   }, [loaderData.plannedAccesses]);
 

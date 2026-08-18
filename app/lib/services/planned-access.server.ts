@@ -17,6 +17,7 @@ import { isPlannedAccessEnterableAt } from "../planned-access-time";
 import {
   createAccessLogFromPlannedAccessSchema,
   createPlannedAccessSchema,
+  updatePlannedAccessSchema,
   updatePlannedAccessStatusSchema,
 } from "../schemas/planned-access";
 
@@ -199,6 +200,7 @@ export async function createPlannedAccess(
     ...parsed.data,
     siteId,
     requestedById: author.id,
+    departmentId: author.departmentId,
   });
 
   if (plannedAccess) {
@@ -219,6 +221,158 @@ export async function createPlannedAccess(
       },
     });
   }
+
+  return { success: true };
+}
+
+export async function updatePlannedAccess(
+  input: Record<string, unknown>,
+  options: PlannedAccessAuthorOptions,
+) {
+  const parsed = await updatePlannedAccessSchema.safeParseAsync(input);
+  if (!parsed.success) {
+    return { success: false, errors: z.treeifyError(parsed.error) };
+  }
+
+  const author = await UserEntity.getByUsername(options.authorUsername);
+  if (!author) return { success: false, errors: "unauthorized" };
+
+  const plannedAccess = await PlannedAccessEntity.findById(parsed.data.id);
+  if (!plannedAccess) {
+    return { success: false, errors: "La solicitud planificada no existe." };
+  }
+
+  if (plannedAccess.status !== "PENDING_APPROVAL") {
+    return {
+      success: false,
+      errors: "Solo se pueden editar solicitudes pendientes de aprobación.",
+    };
+  }
+
+  if (options.lockedSiteId && plannedAccess.siteId !== options.lockedSiteId) {
+    return { success: false, errors: "No tienes permisos para esta solicitud." };
+  }
+
+  const isPrivileged = author.role === "ADMIN" || author.role === "SECURITY_MANAGER";
+  if (!isPrivileged && plannedAccess.requestedById !== author.id) {
+    return { success: false, errors: "Solo puedes editar tus propias solicitudes." };
+  }
+  if (!isPrivileged && plannedAccess.departmentId !== author.departmentId) {
+    return { success: false, errors: "No puedes editar solicitudes de otro departamento." };
+  }
+
+  const siteId = options.lockedSiteId ?? plannedAccess.siteId;
+  if (parsed.data.siteId !== siteId) {
+    return { success: false, errors: "No puedes cambiar el centro de esta solicitud." };
+  }
+
+  const existingPersonIds = new Set(
+    plannedAccess.plannedAccessPersons.map((person) => person.id),
+  );
+  const unknownPerson = parsed.data.persons.find(
+    (person) => person.id && !existingPersonIds.has(person.id),
+  );
+  if (unknownPerson) {
+    return {
+      success: false,
+      errors: "Una de las personas no pertenece a esta solicitud.",
+    };
+  }
+
+  const newLegalIds = parsed.data.persons.map((person) => person.legalIdSnapshot);
+  const overlappingSameSite = await PlannedAccessEntity.findOverlappingPlannedAccess(
+    siteId,
+    parsed.data.expectedStartDatetime,
+    parsed.data.expectedEndDatetime ?? null,
+    parsed.data.id,
+  );
+
+  for (const existing of overlappingSameSite) {
+    const sharedLegalId = newLegalIds.find((id) =>
+      existing.plannedAccessPersons.some((person) => person.legalIdSnapshot === id),
+    );
+    if (sharedLegalId) {
+      return {
+        success: false,
+        errors: `Ya existe una solicitud planificada para "${existing.companySnapshot}" con las mismas personas en el rango ${formatPlannedDate(existing.expectedStartDatetime)} - ${existing.expectedEndDatetime ? formatPlannedDate(existing.expectedEndDatetime) : "sin fecha de fin definida"}.`,
+      };
+    }
+  }
+
+  const personErrors: string[] = [];
+  for (const legalId of newLegalIds) {
+    const overlappingForPerson = await PlannedAccessEntity.findOverlappingForPerson(
+      legalId,
+      parsed.data.expectedStartDatetime,
+      parsed.data.expectedEndDatetime ?? null,
+      parsed.data.id,
+    );
+    for (const existing of overlappingForPerson) {
+      personErrors.push(
+        `La persona con DNI ${legalId} ya está registrada en otra solicitud planificada para "${existing.companySnapshot}" (${formatPlannedDate(existing.expectedStartDatetime)} - ${existing.expectedEndDatetime ? formatPlannedDate(existing.expectedEndDatetime) : "sin fecha de fin definida"}).`,
+      );
+    }
+  }
+  if (personErrors.length > 0) return { success: false, errors: personErrors.join(" ") };
+
+  const result = await PlannedAccessEntity.updatePending({
+    ...parsed.data,
+    expectedEndDatetime: parsed.data.expectedEndDatetime ?? null,
+  });
+  if (result.kind === "conflict") {
+    return { success: false, errors: "La solicitud cambió o dejó de estar pendiente. Recarga la página e inténtalo de nuevo." };
+  }
+  if (result.kind === "linked-person") {
+    return { success: false, errors: "No puedes eliminar una persona que ya tiene un ingreso registrado." };
+  }
+
+  const updated = await PlannedAccessEntity.findById(result.id);
+  if (!updated) return { success: false, errors: "La solicitud no pudo actualizarse." };
+
+  await AuditLogEntity.create({
+    entityType: "PlannedAccess",
+    entityId: updated.id,
+    action: "PLANNED_ACCESS_UPDATED",
+    changedBy: author.id,
+    summary: "Solicitud de acceso planificado actualizada",
+    metadata: {
+      previousUpdatedAt: plannedAccess.updatedAt,
+      before: {
+        expectedStartDatetime: plannedAccess.expectedStartDatetime,
+        expectedEndDatetime: plannedAccess.expectedEndDatetime,
+        companySnapshot: plannedAccess.companySnapshot,
+        visitReason: plannedAccess.visitReason,
+        siteId: plannedAccess.siteId,
+        persons: plannedAccess.plannedAccessPersons.map((person) => ({
+          id: person.id,
+          firstNameSnapshot: person.firstNameSnapshot,
+          middleNameSnapshot: person.middleNameSnapshot,
+          lastNameSnapshot: person.lastNameSnapshot,
+          secondLastNameSnapshot: person.secondLastNameSnapshot,
+          phoneNumber: person.phoneNumber,
+          legalIdSnapshot: person.legalIdSnapshot,
+          externalWorkerId: person.externalWorkerId,
+        })),
+      },
+      after: {
+        expectedStartDatetime: updated.expectedStartDatetime,
+        expectedEndDatetime: updated.expectedEndDatetime,
+        companySnapshot: updated.companySnapshot,
+        visitReason: updated.visitReason,
+        siteId: updated.siteId,
+        persons: updated.plannedAccessPersons.map((person) => ({
+          id: person.id,
+          firstNameSnapshot: person.firstNameSnapshot,
+          middleNameSnapshot: person.middleNameSnapshot,
+          lastNameSnapshot: person.lastNameSnapshot,
+          secondLastNameSnapshot: person.secondLastNameSnapshot,
+          phoneNumber: person.phoneNumber,
+          legalIdSnapshot: person.legalIdSnapshot,
+          externalWorkerId: person.externalWorkerId,
+        })),
+      },
+    },
+  });
 
   return { success: true };
 }
