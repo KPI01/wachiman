@@ -10,3 +10,9 @@
 - [x] Permitir editar las solicitudes
 - [x] Cuando un usuario ya esté registrado, si ya tiene documentación, debe permitir visualizarla
 - [x] Los metadatos del audit_log deberían poder visualizarse
+- [x] En el sidebar, en todos los roles, tiene que tener el nombre de la aplicación. El nombre de usuario y rol debe aparecer abajo
+  - [x] Cambiar el boton de cierre de sesión por un desplegable con opciones
+- [x] Mejorar los tamaños de los botones de las tablas, hacerlos del mismo tamaño y que sean mejor adaptados a una tabla (con iconos en lugar de texto, el texto tiene que ser un tooltip)
+- [x] En la edición de un AccessLog, para buscar personas ya registradas, el campo de buscar tiene que ser una lupa al lado del DNI/NIE que luego tenga el combobox de busqueda y selección
+- [x] Mejorar (hacer más intuitivos y agradables a la vista, preservando el estilo de la app) los filtros en la pagina de 'access-logs'
+- [x] Eliminar aviso al final de la edición de un AccessLog (el cartel que dice 'esta información quedara atribuida a tu usuario', o algo así)
