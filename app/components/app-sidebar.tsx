@@ -1,6 +1,5 @@
-import { ChevronDown, LogOutIcon, type LucideIcon } from "lucide-react";
-import { Form, useLocation } from "react-router";
-import { Button } from "~/components/ui/button";
+import { ChevronDown, type LucideIcon } from "lucide-react";
+import { useLocation } from "react-router";
 import {
   Sidebar,
   SidebarContent,
@@ -22,6 +21,8 @@ import {
 } from "./ui/collapsible";
 import { Separator } from "./ui/separator";
 import { useAppConfig } from "~/lib/app-config";
+import type { SessionUser } from "~/lib/session.server";
+import UserMenu from "~/components/user-menu";
 
 type SidebarLink = {
   label: string;
@@ -37,8 +38,8 @@ type SidebarGroupLinks = {
 export type SidebarLinkItem = SidebarLink | SidebarGroupLinks;
 
 interface AppSidebarProps extends ComponentProps<typeof Sidebar> {
-  title?: string;
   items: Array<SidebarLinkItem>;
+  user: SessionUser;
 }
 
 function hasChildren(item: SidebarLinkItem): item is SidebarGroupLinks {
@@ -70,8 +71,8 @@ function SidebarNavLink({ item }: { item: SidebarLink }) {
 }
 
 export default function AppSidebar({
-  title,
   items,
+  user,
   ...props
 }: AppSidebarProps) {
   const { appName } = useAppConfig();
@@ -79,7 +80,7 @@ export default function AppSidebar({
   return (
     <Sidebar collapsible="offcanvas" {...props}>
       <SidebarHeader className="m-2">
-        <span className="font-bold text-4xl md:text-2xl">{title ?? appName}</span>
+        <span className="text-2xl font-bold">{appName}</span>
       </SidebarHeader>
       <Separator />
       <SidebarContent className="px-2">
@@ -129,16 +130,11 @@ export default function AppSidebar({
       </SidebarContent>
       <Separator />
       <SidebarFooter className="w-full items-center">
-        <Form method="post" action="/auth/logout" className="w-full">
-          <Button
-            type="submit"
-            variant="ghost"
-            className="w-full text-base gap-2"
-          >
-            <LogOutIcon className="size-4" />
-            Cerrar sesión
-          </Button>
-        </Form>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <UserMenu user={user} variant="sidebar" />
+          </SidebarMenuItem>
+        </SidebarMenu>
       </SidebarFooter>
     </Sidebar>
   );
