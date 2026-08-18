@@ -21,9 +21,9 @@ function MetadataValue({ value }: { value: unknown }) {
 
   if (Array.isArray(value)) {
     return (
-      <div className="flex flex-col gap-2 border-l pl-3">
+      <div className="flex min-w-0 flex-col gap-2 border-l pl-2 sm:pl-3">
         {value.map((item, index) => (
-          <div key={index} className="flex flex-col gap-1">
+          <div key={index} className="flex min-w-0 flex-col gap-1">
             <span className="text-xs text-muted-foreground">[{index}]</span>
             <MetadataValue value={item} />
           </div>
@@ -34,18 +34,25 @@ function MetadataValue({ value }: { value: unknown }) {
 
   if (typeof value === "object") {
     return (
-      <div className="flex flex-col gap-2 border-l pl-3">
+      <div className="flex min-w-0 flex-col gap-2 border-l pl-2 sm:pl-3">
         {Object.entries(value as Record<string, unknown>).map(([key, item]) => (
-          <div key={key} className="grid gap-1 sm:grid-cols-[minmax(8rem,auto)_1fr] sm:gap-3">
-            <span className="font-medium text-muted-foreground">{key}</span>
-            <MetadataValue value={item} />
+          <div
+            key={key}
+            className="grid min-w-0 grid-cols-1 gap-1 sm:grid-cols-[minmax(7rem,9rem)_minmax(0,1fr)] sm:gap-3"
+          >
+            <span className="min-w-0 break-words font-medium text-muted-foreground">
+              {key}
+            </span>
+            <div className="min-w-0">
+              <MetadataValue value={item} />
+            </div>
           </div>
         ))}
       </div>
     );
   }
 
-  return <span className="break-words">{String(value)}</span>;
+  return <span className="min-w-0 break-words">{String(value)}</span>;
 }
 
 export default function AuditMetadataViewer({
@@ -74,29 +81,29 @@ export default function AuditMetadataViewer({
           variant="ghost"
         />
       </SheetTrigger>
-      <SheetContent className="w-full overflow-y-auto sm:max-w-2xl">
-        <SheetHeader>
+      <SheetContent className="min-w-0 overflow-hidden data-[side=right]:w-full data-[side=right]:sm:max-w-2xl">
+        <SheetHeader className="shrink-0 pr-12">
           <SheetTitle>Metadatos de auditoría</SheetTitle>
-          <SheetDescription>
+          <SheetDescription className="break-words">
             {log.entityType} · {log.action} · {formatTimestamp({ date: log.createdAt, template: "dd/MM/yyyy HH:mm:ss" })}
           </SheetDescription>
         </SheetHeader>
-        <div className="flex flex-col gap-4 px-4 pb-4">
-          <div className="flex justify-end">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-4 overflow-y-auto px-4 pb-4">
+          <div className="flex shrink-0 justify-end">
             <Button variant="outline" size="sm" type="button" onClick={copyMetadata}>
               <ClipboardIcon data-icon="inline-start" /> Copiar JSON
             </Button>
           </div>
           {log.metadata ? (
-            <div className="flex flex-col gap-3 rounded-md border p-3 text-sm">
+            <div className="flex min-w-0 flex-col gap-3 overflow-hidden rounded-md border p-3 text-sm">
               <MetadataValue value={log.metadata} />
             </div>
           ) : (
             <p className="text-sm text-muted-foreground">Este registro no tiene metadatos.</p>
           )}
-          <details className="rounded-md border p-3">
+          <details className="min-w-0 rounded-md border p-3">
             <summary className="cursor-pointer text-sm font-medium">Ver JSON sin formato</summary>
-            <pre className="mt-3 max-h-96 overflow-auto whitespace-pre-wrap break-words text-xs text-muted-foreground">{json}</pre>
+            <pre className="mt-3 max-h-96 max-w-full overflow-auto whitespace-pre text-xs text-muted-foreground">{json}</pre>
           </details>
         </div>
       </SheetContent>
