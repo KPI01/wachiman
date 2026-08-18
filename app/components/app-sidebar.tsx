@@ -1,5 +1,5 @@
-import { ChevronDown, LogOutIcon } from "lucide-react";
-import { Form } from "react-router";
+import { ChevronDown, LogOutIcon, type LucideIcon } from "lucide-react";
+import { Form, useLocation } from "react-router";
 import { Button } from "~/components/ui/button";
 import {
   Sidebar,
@@ -26,6 +26,7 @@ import { useAppConfig } from "~/lib/app-config";
 type SidebarLink = {
   label: string;
   href: string;
+  icon?: LucideIcon;
 };
 
 type SidebarGroupLinks = {
@@ -42,6 +43,30 @@ interface AppSidebarProps extends ComponentProps<typeof Sidebar> {
 
 function hasChildren(item: SidebarLinkItem): item is SidebarGroupLinks {
   return "children" in item;
+}
+
+function SidebarNavLink({ item }: { item: SidebarLink }) {
+  const Icon = item.icon;
+  const location = useLocation();
+  const itemPath = item.href.split("?")[0];
+  const isActive =
+    itemPath === "/admin" ||
+    itemPath === "/security" ||
+    itemPath === "/approver" ||
+    itemPath === "/requester" ||
+    itemPath === "/operator" ||
+    itemPath === "/monitor"
+      ? location.pathname === itemPath
+      : location.pathname === itemPath || location.pathname.startsWith(`${itemPath}/`);
+
+  return (
+    <SidebarMenuButton asChild isActive={isActive}>
+      <NavLink to={item.href}>
+        {Icon ? <Icon data-icon="inline-start" /> : null}
+        <span>{item.label}</span>
+      </NavLink>
+    </SidebarMenuButton>
+  );
 }
 
 export default function AppSidebar({
@@ -80,14 +105,7 @@ export default function AppSidebar({
                         <SidebarMenu>
                           {item.children.map((child) => (
                             <SidebarMenuItem key={child.href} className="my-1">
-                              <SidebarMenuButton asChild>
-                                <NavLink
-                                  to={child.href}
-                                  className="text-xl md:text-base"
-                                >
-                                  {child.label}
-                                </NavLink>
-                              </SidebarMenuButton>
+                              <SidebarNavLink item={child} />
                             </SidebarMenuItem>
                           ))}
                         </SidebarMenu>
@@ -100,9 +118,7 @@ export default function AppSidebar({
                   <SidebarGroupContent>
                     <SidebarMenu>
                       <SidebarMenuItem>
-                        <SidebarMenuButton asChild>
-                          <NavLink to={item.href}>{item.label}</NavLink>
-                        </SidebarMenuButton>
+                        <SidebarNavLink item={item} />
                       </SidebarMenuItem>
                     </SidebarMenu>
                   </SidebarGroupContent>
