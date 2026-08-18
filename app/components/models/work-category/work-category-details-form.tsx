@@ -11,7 +11,6 @@ import { Input } from "~/components/ui/input";
 import { Checkbox } from "~/components/ui/checkbox";
 import { getFieldErrors } from "~/lib/utils/zod-errors";
 import { Field, FieldDescription, FieldLegend, FieldSet } from "~/components/ui/field";
-import TableActionButton from "~/components/table-action-button";
 
 type WorkCategoryDetailsProps = {
   workCategory: WorkCategory;
@@ -31,14 +30,11 @@ export default function WorkCategoryDetailsForm({
     <AlertDialogContainer
       open={open}
       onOpenChange={setOpen}
-      buttonLabel={
-        <TableActionButton
-          label="Editar categoría laboral"
-          icon={InfoIcon}
-          variant="secondary"
-        />
-      }
-      triggerAsChild
+      buttonLabel={<InfoIcon aria-hidden="true" />}
+      buttonVariant="secondary"
+      buttonSize="icon-sm"
+      buttonAriaLabel="Editar categoría laboral"
+      buttonTooltip="Editar categoría laboral"
       title="Ficha de Categoria Laboral"
       footer={
         <>

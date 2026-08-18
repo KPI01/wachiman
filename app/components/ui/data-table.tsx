@@ -419,6 +419,10 @@ function getColumnIds<TData>(column: ColumnDef<TData, any>): string[] {
     return column.columns.flatMap((nestedColumn) => getColumnIds(nestedColumn));
   }
 
+  if ("id" in column && typeof column.id === "string") {
+    return [column.id];
+  }
+
   if ("accessorKey" in column && typeof column.accessorKey === "string") {
     return [column.accessorKey];
   }

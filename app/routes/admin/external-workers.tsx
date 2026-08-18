@@ -4,6 +4,7 @@ import { Separator } from "~/components/ui/separator";
 import DataTable from "~/components/ui/data-table";
 import { getExternalWorkerColumns } from "~/lib/columns/external-worker";
 import CreateExternalWorkerForm from "~/components/models/external-worker/create-external-worker-form";
+import { useMemo } from "react";
 import {
   createExternalWorker,
   deleteExternalWorker,
@@ -57,6 +58,16 @@ export default function ExternalWorkersIndex({
   loaderData,
   actionData,
 }: Route.ComponentProps) {
+  const columns = useMemo(
+    () =>
+      getExternalWorkerColumns(
+        loaderData.companies,
+        loaderData.workCategories,
+        ".",
+      ),
+    [loaderData.companies, loaderData.workCategories],
+  );
+
   return (
     <div className="flex flex-col gap-y-4">
       <div className="flex">
@@ -65,15 +76,19 @@ export default function ExternalWorkersIndex({
           errors={actionData?.errors}
           companies={loaderData.companies}
           workCategories={loaderData.workCategories}
+          actionPath="."
         />
       </div>
       <DataTable
-        columns={getExternalWorkerColumns(
-          loaderData.companies,
-          loaderData.workCategories,
-        )}
+        columns={columns}
         data={loaderData.workers ?? []}
-        globalFilterColumns={["firstName", "lastName", "legalId", "company.name", "workCategory.name"]}
+        globalFilterColumns={[
+          "firstName",
+          "lastName",
+          "legalId",
+          "companyName",
+          "workCategoryName",
+        ]}
       />
     </div>
   );

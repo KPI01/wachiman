@@ -10,7 +10,12 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "../ui/alert-dialog";
-import { Button, buttonVariants } from "../ui/button";
+import { Button } from "../ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "../ui/tooltip";
 
 interface AlertDialogContainerProps extends PropsWithChildren {
   open?: boolean;
@@ -19,6 +24,8 @@ interface AlertDialogContainerProps extends PropsWithChildren {
   buttonVariant?: ComponentProps<typeof Button>["variant"];
   buttonSize?: ComponentProps<typeof Button>["size"];
   buttonClassName?: string;
+  buttonAriaLabel?: string;
+  buttonTooltip?: string;
   triggerAsChild?: boolean;
   title?: ReactNode;
   description?: ReactNode;
@@ -35,6 +42,8 @@ export default function AlertDialogContainer({
   buttonVariant = "default",
   buttonSize = "default",
   buttonClassName,
+  buttonAriaLabel,
+  buttonTooltip,
   triggerAsChild = false,
   contentClassName,
   children,
@@ -42,22 +51,39 @@ export default function AlertDialogContainer({
   description,
   footer,
 }: AlertDialogContainerProps) {
+  const triggerButton = triggerAsChild ? (
+    buttonLabel
+  ) : (
+    <Button
+      type="button"
+      aria-label={buttonAriaLabel}
+      variant={buttonVariant}
+      size={buttonSize}
+      className={buttonClassName}
+    >
+      {buttonLabel}
+    </Button>
+  );
+  const trigger = (
+    <AlertDialogTrigger
+      asChild
+      aria-label={triggerAsChild ? buttonAriaLabel : undefined}
+      className={triggerAsChild ? buttonClassName : undefined}
+    >
+      {triggerButton}
+    </AlertDialogTrigger>
+  );
+
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogTrigger
-        asChild={triggerAsChild}
-        className={
-          triggerAsChild
-            ? buttonClassName
-            : buttonVariants({
-                variant: buttonVariant,
-                size: buttonSize,
-                className: buttonClassName,
-              })
-        }
-      >
-        {buttonLabel}
-      </AlertDialogTrigger>
+      {buttonTooltip ? (
+        <Tooltip>
+          <TooltipTrigger asChild>{trigger}</TooltipTrigger>
+          <TooltipContent side="top">{buttonTooltip}</TooltipContent>
+        </Tooltip>
+      ) : (
+        trigger
+      )}
       <AlertDialogContent className={contentClassName}>
         {(title || description) && (
           <AlertDialogHeader>

@@ -1,5 +1,11 @@
 import { AlertTriangleIcon, PlusIcon, TrashIcon } from "lucide-react";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type ComponentProps,
+  type ReactNode,
+} from "react";
 import { useFetcher } from "react-router";
 import { toast } from "sonner";
 import AlertDialogContainer, {
@@ -60,6 +66,10 @@ export type PlannedAccessFormProps = {
   submitLabel: string;
   successMessage: string;
   resetOnSuccess?: boolean;
+  buttonVariant?: ComponentProps<typeof Button>["variant"];
+  buttonSize?: ComponentProps<typeof Button>["size"];
+  buttonAriaLabel?: string;
+  buttonTooltip?: string;
   triggerAsChild?: boolean;
 };
 
@@ -181,6 +191,10 @@ export default function PlannedAccessForm({
   submitLabel,
   successMessage,
   resetOnSuccess = false,
+  buttonVariant,
+  buttonSize,
+  buttonAriaLabel,
+  buttonTooltip,
   triggerAsChild = false,
 }: PlannedAccessFormProps) {
   const fetcher = useFetcher<FetcherData>();
@@ -373,6 +387,10 @@ export default function PlannedAccessForm({
         }
       }}
       buttonLabel={buttonLabel}
+      buttonVariant={buttonVariant}
+      buttonSize={buttonSize}
+      buttonAriaLabel={buttonAriaLabel}
+      buttonTooltip={buttonTooltip}
       triggerAsChild={triggerAsChild}
       contentClassName="flex max-h-[90vh] w-[94vw] max-w-4xl flex-col overflow-hidden"
       title={title}

@@ -27,7 +27,6 @@ import type { DocumentRecordType } from "../../../../db/enums";
 import { formatTimestamp } from "~/lib/utils";
 import type { WorkerDocumentListItem } from "~/lib/database/worker-document.server";
 import { getActionErrorMessage } from "~/lib/utils/action-errors";
-import TableActionButton from "~/components/table-action-button";
 
 type UpdateWorkerDocumentBtnProps = {
   document: WorkerDocumentListItem;
@@ -60,14 +59,11 @@ export default function UpdateWorkerDocumentBtn({
     <AlertDialogContainer
       open={open}
       onOpenChange={setOpen}
-      buttonLabel={
-        <TableActionButton
-          label="Editar documento"
-          icon={PencilIcon}
-          variant="ghost"
-        />
-      }
-      triggerAsChild
+      buttonLabel={<PencilIcon aria-hidden="true" />}
+      buttonVariant="ghost"
+      buttonSize="icon-sm"
+      buttonAriaLabel="Editar documento"
+      buttonTooltip="Editar documento"
       title="Editar Documento"
       description={`${DOCUMENT_TYPE_LABELS[document.documentType]} - ${document.fileName}. Solo puede editarse mientras esté pendiente de revisión.`}
       footer={

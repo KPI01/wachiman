@@ -7,7 +7,6 @@ import AlertDialogContainer, {
   AlertDialogCancel,
 } from "~/components/containers/alert-dialog-container";
 import { getActionErrorMessage } from "~/lib/utils/action-errors";
-import TableActionButton from "~/components/table-action-button";
 
 type DeleteWorkerDocumentBtnProps = {
   documentId: string;
@@ -35,14 +34,11 @@ export default function DeleteWorkerDocumentBtn({
     <AlertDialogContainer
       open={open}
       onOpenChange={setOpen}
-      buttonLabel={
-        <TableActionButton
-          label="Archivar documento"
-          icon={ArchiveIcon}
-          variant="ghost"
-        />
-      }
-      triggerAsChild
+      buttonLabel={<ArchiveIcon aria-hidden="true" />}
+      buttonVariant="ghost"
+      buttonSize="icon-sm"
+      buttonAriaLabel="Archivar documento"
+      buttonTooltip="Archivar documento"
       title="Archivar documento"
       description="El documento dejará de estar vigente, pero se conservará como documento histórico."
       footer={

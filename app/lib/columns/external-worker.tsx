@@ -12,6 +12,7 @@ const externalWorkerColHelper = createColumnHelper<ExternalWorkerRow>();
 export function getExternalWorkerColumns(
   companies: Company[],
   workCategories: WorkCategory[],
+  actionPath: string,
 ) {
   return [
     externalWorkerColHelper.accessor("firstName", {
@@ -24,10 +25,12 @@ export function getExternalWorkerColumns(
       header: "DNI/NIE",
     }),
     externalWorkerColHelper.accessor("company.name", {
+      id: "companyName",
       header: "Empresa",
       cell: ({ getValue }) => getValue() || "-",
     }),
     externalWorkerColHelper.accessor("workCategory.name", {
+      id: "workCategoryName",
       header: "Categoria",
       cell: ({ getValue }) => getValue() || "-",
     }),
@@ -49,8 +52,12 @@ export function getExternalWorkerColumns(
             worker={row.original}
             companies={companies}
             workCategories={workCategories}
+            actionPath={actionPath}
           />
-          <DeleteExternalWorkerBtn workerId={row.original.id} />
+          <DeleteExternalWorkerBtn
+            workerId={row.original.id}
+            actionPath={actionPath}
+          />
         </div>
       ),
     }),

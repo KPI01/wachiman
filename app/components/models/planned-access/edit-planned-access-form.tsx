@@ -3,7 +3,6 @@ import type { PlannedAccessListItem } from "~/lib/database/planned-access.server
 import PlannedAccessForm, {
   type PlannedAccessFormValues,
 } from "./planned-access-form";
-import TableActionButton from "~/components/table-action-button";
 
 function getInitialValues(
   plannedAccess: PlannedAccessListItem,
@@ -48,14 +47,11 @@ export default function EditPlannedAccessForm({
         expectedUpdatedAt: plannedAccess.updatedAt.toISOString(),
       }}
       formId={`edit-planned-access-${plannedAccess.id}`}
-      buttonLabel={
-        <TableActionButton
-          label="Editar solicitud de acceso"
-          icon={PencilIcon}
-          variant="ghost"
-        />
-      }
-      triggerAsChild
+      buttonLabel={<PencilIcon aria-hidden="true" />}
+      buttonVariant="ghost"
+      buttonSize="icon-sm"
+      buttonAriaLabel="Editar solicitud de acceso"
+      buttonTooltip="Editar solicitud de acceso"
       title={
         <span className="text-2xl font-semibold">
           Editar Solicitud de Acceso

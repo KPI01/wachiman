@@ -17,7 +17,6 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { getFieldErrors } from "~/lib/utils/zod-errors";
-import TableActionButton from "~/components/table-action-button";
 
 type ExternalWorkerDetailsProps = {
   worker: ExternalWorkerListItem;
@@ -41,15 +40,13 @@ export default function ExternalWorkerDetailsForm({
     <AlertDialogContainer
       open={open}
       onOpenChange={setOpen}
-      buttonLabel={
-        <TableActionButton
-          label="Editar trabajador externo"
-          icon={InfoIcon}
-          variant="secondary"
-        />
-      }
-      triggerAsChild
+      buttonLabel={<InfoIcon aria-hidden="true" />}
+      buttonVariant="secondary"
+      buttonSize="icon-sm"
+      buttonAriaLabel="Editar trabajador externo"
+      buttonTooltip="Editar trabajador externo"
       title="Ficha de Trabajador Externo"
+      description="Edita los datos del trabajador externo."
       footer={
         <>
           <AlertDialogCancel variant="destructive">Cancelar</AlertDialogCancel>

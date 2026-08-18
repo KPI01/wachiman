@@ -12,6 +12,7 @@ import {
 
 import type { Route } from "./+types/root";
 import { Toaster } from "~/components/ui/sonner";
+import { TooltipProvider } from "~/components/ui/tooltip";
 import { initLocalDb, isDbInitialized } from "../db/server";
 import { AppConfigContext, DEFAULT_APP_CONFIG } from "~/lib/app-config";
 import type { AppConfig } from "~/lib/app-config";
@@ -46,9 +47,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Links />
       </head>
       <body className="min-h-dvh w-full max-w-dvw grid grid-cols-1 grid-rows-1">
-        <AppConfigContext.Provider value={appConfig}>
-          {children}
-        </AppConfigContext.Provider>
+        <TooltipProvider>
+          <AppConfigContext.Provider value={appConfig}>
+            {children}
+          </AppConfigContext.Provider>
+        </TooltipProvider>
         <Toaster />
         <ScrollRestoration />
         <Scripts />

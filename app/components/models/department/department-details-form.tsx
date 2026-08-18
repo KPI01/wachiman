@@ -9,7 +9,6 @@ import AlertDialogContainer, {
 import { Input } from "~/components/ui/input";
 import FieldWrapper from "~/components/ui/wrappers/field-wrapper";
 import { getFieldErrors } from "~/lib/utils/zod-errors";
-import TableActionButton from "~/components/table-action-button";
 
 type DepartmentDetailsProps = {
   department: Department;
@@ -26,14 +25,11 @@ export default function DepartmentDetailsForm({ department }: DepartmentDetailsP
     <AlertDialogContainer
       open={open}
       onOpenChange={setOpen}
-      buttonLabel={
-        <TableActionButton
-          label="Editar departamento"
-          icon={InfoIcon}
-          variant="secondary"
-        />
-      }
-      triggerAsChild
+      buttonLabel={<InfoIcon aria-hidden="true" />}
+      buttonVariant="secondary"
+      buttonSize="icon-sm"
+      buttonAriaLabel="Editar departamento"
+      buttonTooltip="Editar departamento"
       title="Ficha de Departamento"
       footer={
         <>

@@ -5,7 +5,6 @@ import { Button } from "~/components/ui/button";
 import {
   Tooltip,
   TooltipContent,
-  TooltipProvider,
   TooltipTrigger,
 } from "~/components/ui/tooltip";
 
@@ -66,11 +65,9 @@ export default function TableActionButton({
   );
 
   return (
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>{button}</TooltipTrigger>
-        <TooltipContent side="top">{label}</TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
+    <Tooltip>
+      <TooltipTrigger asChild>{button}</TooltipTrigger>
+      <TooltipContent side="top">{label}</TooltipContent>
+    </Tooltip>
   );
 }

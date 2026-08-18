@@ -4,7 +4,6 @@ import AlertDialogContainer, {
   AlertDialogAction,
   AlertDialogCancel,
 } from "~/components/containers/alert-dialog-container";
-import TableActionButton from "~/components/table-action-button";
 import { Checkbox } from "~/components/ui/checkbox";
 import { Input } from "~/components/ui/input";
 import {
@@ -38,14 +37,11 @@ export default function UserDetails({
 
   return (
     <AlertDialogContainer
-      buttonLabel={
-        <TableActionButton
-          label="Editar usuario"
-          icon={InfoIcon}
-          variant="secondary"
-        />
-      }
-      triggerAsChild
+      buttonLabel={<InfoIcon aria-hidden="true" />}
+      buttonVariant="secondary"
+      buttonSize="icon-sm"
+      buttonAriaLabel="Editar usuario"
+      buttonTooltip="Editar usuario"
       title="Ficha de Usuario"
       footer={
         <>
