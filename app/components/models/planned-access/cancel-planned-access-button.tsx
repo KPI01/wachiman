@@ -1,4 +1,4 @@
-import { LoaderCircleIcon } from "lucide-react";
+import { BanIcon, LoaderCircleIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useFetcher } from "react-router";
 import { toast } from "sonner";
@@ -13,6 +13,7 @@ import {
 import { Textarea } from "~/components/ui/textarea";
 import FieldWrapper from "~/components/ui/wrappers/field-wrapper";
 import { getActionErrorMessage } from "~/lib/utils/action-errors";
+import TableActionButton from "~/components/table-action-button";
 
 type Props = {
   actionPath: string;
@@ -25,14 +26,11 @@ export default function CancelPlannedAccessButton(props: Props) {
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button
-          type="button"
-          size="sm"
+        <TableActionButton
+          label="Cancelar solicitud"
+          icon={BanIcon}
           variant="outline"
-          aria-label="Cancelar solicitud"
-        >
-          Cancelar
-        </Button>
+        />
       </PopoverTrigger>
       <PopoverContent align="end">
         <CancelPlannedAccessForm

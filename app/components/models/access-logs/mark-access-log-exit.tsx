@@ -7,13 +7,17 @@ import AlertDialogContainer, {
 import { Button } from "~/components/ui/button";
 import AccessLogSignature from "./access-log-signature";
 import { getActionErrorMessage } from "~/lib/utils/action-errors";
+import TableActionButton from "~/components/table-action-button";
+import { LogOutIcon } from "lucide-react";
 
 type MarkAccessLogExitProps = {
   accessLogId: string;
+  compact?: boolean;
 };
 
 export default function MarkAccessLogExit({
   accessLogId,
+  compact = false,
 }: MarkAccessLogExitProps) {
   const fetcher = useFetcher<{ errors?: unknown }>();
   const [open, setOpen] = useState(false);
@@ -49,9 +53,17 @@ export default function MarkAccessLogExit({
       }}
       triggerAsChild
       buttonLabel={
-        <Button type="button" size="sm" variant="outline">
-          Marcar salida
-        </Button>
+        compact ? (
+          <TableActionButton
+            label="Marcar salida"
+            icon={LogOutIcon}
+            variant="outline"
+          />
+        ) : (
+          <Button type="button" size="sm" variant="outline">
+            Marcar salida
+          </Button>
+        )
       }
       title="Confirmar salida"
       description="Solicita al visitante su firma para registrar la salida."

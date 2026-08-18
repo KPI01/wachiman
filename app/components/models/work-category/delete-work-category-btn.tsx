@@ -1,6 +1,6 @@
 import { TrashIcon } from "lucide-react";
 import { Form } from "react-router";
-import { Button } from "~/components/ui/button";
+import TableActionButton from "~/components/table-action-button";
 
 export default function DeleteWorkCategoryBtn({
   workCategoryId,
@@ -12,9 +12,12 @@ export default function DeleteWorkCategoryBtn({
   return (
     <Form method="delete" action={actionPath}>
       <input name="id" value={workCategoryId} type="hidden" />
-      <Button type="submit" variant="destructive">
-        <TrashIcon />
-      </Button>
+      <TableActionButton
+        type="submit"
+        variant="destructive"
+        label="Eliminar categoría laboral"
+        icon={TrashIcon}
+      />
     </Form>
   );
 }

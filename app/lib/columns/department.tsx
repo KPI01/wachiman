@@ -20,8 +20,9 @@ export const departmentColumns = [
   }),
   departmentColHelper.display({
     id: "actions",
+    header: "Acciones",
     cell: ({ row }) => (
-      <div className="flex gap-3 items-center justify-end">
+      <div className="flex items-center justify-end gap-1">
         <DepartmentDetailsForm department={row.original} />
         <DeleteDepartmentBtn departmentId={row.original.id} />
       </div>

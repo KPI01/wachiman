@@ -12,6 +12,7 @@ import FieldWrapper from "~/components/ui/wrappers/field-wrapper";
 import type { WorkerDocumentListItem } from "~/lib/database/worker-document.server";
 import { DOCUMENT_TYPE_LABELS } from "~/lib/models/worker-document";
 import { getActionErrorMessage } from "~/lib/utils/action-errors";
+import TableActionButton from "~/components/table-action-button";
 
 type ReviewWorkerDocumentBtnProps = {
   document: WorkerDocumentListItem;
@@ -41,9 +42,14 @@ export default function ReviewWorkerDocumentBtn({
     <AlertDialogContainer
       open={open}
       onOpenChange={setOpen}
-      buttonLabel={<ShieldCheckIcon />}
-      buttonVariant="ghost"
-      buttonSize="icon"
+      buttonLabel={
+        <TableActionButton
+          label="Revisar documento"
+          icon={ShieldCheckIcon}
+          variant="ghost"
+        />
+      }
+      triggerAsChild
       title="Revisar documento"
       description={`Decide sobre ${DOCUMENT_TYPE_LABELS[document.documentType]}: ${document.fileName}. La decisión y el documento quedarán registrados.`}
       footer={

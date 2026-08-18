@@ -1,6 +1,6 @@
 import { TrashIcon } from "lucide-react";
 import { Form } from "react-router";
-import { Button } from "~/components/ui/button";
+import TableActionButton from "~/components/table-action-button";
 
 export default function DeleteExternalWorkerBtn({
   workerId,
@@ -12,9 +12,12 @@ export default function DeleteExternalWorkerBtn({
   return (
     <Form method="delete" action={actionPath}>
       <input name="id" value={workerId} type="hidden" />
-      <Button type="submit" variant="destructive">
-        <TrashIcon />
-      </Button>
+      <TableActionButton
+        type="submit"
+        variant="destructive"
+        label="Eliminar trabajador externo"
+        icon={TrashIcon}
+      />
     </Form>
   );
 }

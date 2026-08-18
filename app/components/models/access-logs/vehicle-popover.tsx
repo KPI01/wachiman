@@ -1,4 +1,3 @@
-import { Button, buttonVariants } from "~/components/ui/button";
 import {
   Popover,
   PopoverContent,
@@ -6,9 +5,10 @@ import {
   PopoverTrigger,
 } from "~/components/ui/popover";
 import type { AccessLogVehicle } from "../../../../db/schema";
-import { InfoIcon } from "lucide-react";
+import { CarFrontIcon } from "lucide-react";
 import FieldWrapper from "~/components/ui/wrappers/field-wrapper";
 import { Input } from "~/components/ui/input";
+import TableActionButton from "~/components/table-action-button";
 
 interface VehiclePopoverProps {
   vehicleLog: AccessLogVehicle;
@@ -18,10 +18,11 @@ export default function VehiclePopover({ vehicleLog }: VehiclePopoverProps) {
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <Button variant="outline">
-          <InfoIcon />
-          {vehicleLog.plateSnapshot}
-        </Button>
+        <TableActionButton
+          label={`Ver vehículo ${vehicleLog.plateSnapshot}`}
+          icon={CarFrontIcon}
+          variant="outline"
+        />
       </PopoverTrigger>
       <PopoverContent side="top" align="center">
         <PopoverTitle>Datos sobre el vehículo</PopoverTitle>

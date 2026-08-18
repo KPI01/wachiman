@@ -1,14 +1,17 @@
 import { TrashIcon } from "lucide-react";
 import { Form } from "react-router";
-import { Button } from "~/components/ui/button";
+import TableActionButton from "~/components/table-action-button";
 
 export default function TrashUserBtn({ userId }: { userId: string }) {
   return (
     <Form method="delete" action={`/admin/users?id=${userId}`}>
       <input name="id" value={userId} type="hidden" />
-      <Button type="submit" variant="destructive" aria-label="Eliminar usuario">
-        <TrashIcon />
-      </Button>
+      <TableActionButton
+        type="submit"
+        variant="destructive"
+        label="Eliminar usuario"
+        icon={TrashIcon}
+      />
     </Form>
   );
 }

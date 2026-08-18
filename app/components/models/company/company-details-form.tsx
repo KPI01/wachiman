@@ -9,6 +9,7 @@ import { useFetcher } from "react-router";
 import FieldWrapper from "~/components/ui/wrappers/field-wrapper";
 import { Input } from "~/components/ui/input";
 import { getFieldErrors } from "~/lib/utils/zod-errors";
+import TableActionButton from "~/components/table-action-button";
 
 type CompanyDetailsProps = {
   company: Company;
@@ -28,8 +29,14 @@ export default function CompanyDetailsForm({
     <AlertDialogContainer
       open={open}
       onOpenChange={setOpen}
-      buttonLabel={<InfoIcon />}
-      buttonVariant="secondary"
+      buttonLabel={
+        <TableActionButton
+          label="Editar empresa"
+          icon={InfoIcon}
+          variant="secondary"
+        />
+      }
+      triggerAsChild
       title="Ficha de Empresa"
       footer={
         <>

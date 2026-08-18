@@ -32,8 +32,9 @@ export const companyColumns = [
   }),
   companyColHelper.display({
     id: "actions",
+    header: "Acciones",
     cell: ({ row }) => (
-      <div className="flex gap-3 items-center justify-end">
+      <div className="flex items-center justify-end gap-1">
         <CompanyDetailsForm company={row.original} />
         <DeleteCompanyBtn companyId={row.original.id} />
       </div>

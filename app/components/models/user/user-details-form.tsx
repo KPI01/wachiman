@@ -4,7 +4,7 @@ import AlertDialogContainer, {
   AlertDialogAction,
   AlertDialogCancel,
 } from "~/components/containers/alert-dialog-container";
-import { Button } from "~/components/ui/button";
+import TableActionButton from "~/components/table-action-button";
 import { Checkbox } from "~/components/ui/checkbox";
 import { Input } from "~/components/ui/input";
 import {
@@ -39,9 +39,11 @@ export default function UserDetails({
   return (
     <AlertDialogContainer
       buttonLabel={
-        <Button type="button" variant="secondary" aria-label="Ver detalles del usuario">
-          <InfoIcon />
-        </Button>
+        <TableActionButton
+          label="Editar usuario"
+          icon={InfoIcon}
+          variant="secondary"
+        />
       }
       triggerAsChild
       title="Ficha de Usuario"

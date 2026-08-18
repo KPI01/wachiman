@@ -123,7 +123,7 @@ const actionsColumn = accessLogColHelper.display({
 
     return (
       <div className="flex justify-end">
-        <MarkAccessLogExit accessLogId={row.original.id} />
+        <MarkAccessLogExit accessLogId={row.original.id} compact />
       </div>
     );
   },
@@ -136,7 +136,7 @@ const editableActionsColumn = accessLogColHelper.display({
     <div className="flex justify-end gap-1">
       <EditAccessLog accessLog={row.original} />
       {!row.original.exitTimestamp ? (
-        <MarkAccessLogExit accessLogId={row.original.id} />
+        <MarkAccessLogExit accessLogId={row.original.id} compact />
       ) : null}
     </div>
   ),

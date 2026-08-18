@@ -1,11 +1,11 @@
 import type { PlannedAccessStatus } from "../../../../db/enums";
-import { Link } from "react-router";
-import { Button } from "~/components/ui/button";
 import CancelPlannedAccessButton from "./cancel-planned-access-button";
 import RejectPlannedAccessButton from "./reject-planned-access-button";
 import EditPlannedAccessButton from "./edit-planned-access-button";
 import type { Site } from "../../../../db/schema";
 import type { PlannedAccessListItem } from "~/lib/database/planned-access.server";
+import TableActionButton from "~/components/table-action-button";
+import { CheckIcon } from "lucide-react";
 
 export type AllowedAction = "EDIT" | "APPROVE" | "REJECT" | "CANCEL";
 
@@ -31,7 +31,7 @@ export default function PlannedAccessStatusActions({
   }
 
   return (
-    <div className="flex justify-end gap-2">
+    <div className="flex justify-end gap-1">
       {status === "PENDING_APPROVAL" &&
       allowedActions.includes("EDIT") &&
       plannedAccess ? (
@@ -42,9 +42,11 @@ export default function PlannedAccessStatusActions({
         />
       ) : null}
       {status === "PENDING_APPROVAL" && allowedActions.includes("APPROVE") ? (
-        <Button asChild size="sm">
-          <Link to={`${actionPath}/${plannedAccessId}/approve`}>Aprobar</Link>
-        </Button>
+        <TableActionButton
+          label="Aprobar solicitud"
+          icon={CheckIcon}
+          to={`${actionPath}/${plannedAccessId}/approve`}
+        />
       ) : null}
       {status === "PENDING_APPROVAL" && allowedActions.includes("REJECT") ? (
         <RejectPlannedAccessButton actionPath={actionPath} plannedAccessId={plannedAccessId} />

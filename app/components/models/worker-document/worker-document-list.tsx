@@ -1,6 +1,6 @@
 import type { DocumentStatus } from "../../../../db/enums";
 import { Badge } from "~/components/ui/badge";
-import { Button } from "~/components/ui/button";
+import TableActionButton from "~/components/table-action-button";
 import {
   DOCUMENT_STATUS_LABELS,
   DOCUMENT_TYPE_LABELS,
@@ -101,14 +101,13 @@ export default function WorkerDocumentList({
                 </td>
                 <td className="px-3 py-2">
                   <div className="flex items-center justify-end gap-1">
-                    <Button variant="ghost" size="icon" asChild>
-                      <a
-                        href={`/api/external-workers/${workerId}/documents/${doc.id}/file?download=1`}
-                        download={doc.fileName}
-                      >
-                        <DownloadIcon />
-                      </a>
-                    </Button>
+                    <TableActionButton
+                      label={`Descargar ${doc.fileName}`}
+                      icon={DownloadIcon}
+                      variant="ghost"
+                      href={`/api/external-workers/${workerId}/documents/${doc.id}/file?download=1`}
+                      download={doc.fileName}
+                    />
                     {doc.status === "PENDING_REVIEW" ? (
                       <UpdateWorkerDocumentBtn
                         document={doc}

@@ -24,8 +24,9 @@ export const siteColumns = [
   }),
   siteColHelper.display({
     id: "actions",
+    header: "Acciones",
     cell: ({ row }) => (
-      <div className="flex gap-3 items-center justify-end">
+      <div className="flex items-center justify-end gap-1">
         <SiteDetailsForm site={row.original} />
         <DeleteSiteBtn siteId={row.original.id} />
       </div>

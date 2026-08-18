@@ -9,6 +9,7 @@ import { useFetcher } from "react-router";
 import FieldWrapper from "~/components/ui/wrappers/field-wrapper";
 import { Input } from "~/components/ui/input";
 import { getFieldErrors } from "~/lib/utils/zod-errors";
+import TableActionButton from "~/components/table-action-button";
 
 type SiteDetailsProps = {
   site: Site;
@@ -25,8 +26,14 @@ export default function SiteDetailsForm({ site }: SiteDetailsProps) {
     <AlertDialogContainer
       open={open}
       onOpenChange={setOpen}
-      buttonLabel={<InfoIcon />}
-      buttonVariant="secondary"
+      buttonLabel={
+        <TableActionButton
+          label="Editar centro"
+          icon={InfoIcon}
+          variant="secondary"
+        />
+      }
+      triggerAsChild
       title="Ficha de Centro"
       footer={
         <>

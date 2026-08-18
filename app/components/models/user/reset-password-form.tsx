@@ -1,6 +1,7 @@
 import { RotateCcwKeyIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Form } from "react-router";
+import TableActionButton from "~/components/table-action-button";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import {
@@ -20,14 +21,12 @@ export default function ResetPasswordForm({ userId }: ResetPasswordFormProps) {
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverAnchor asChild>
-        <Button
-          type="button"
+        <TableActionButton
+          label="Restablecer contraseña"
+          icon={RotateCcwKeyIcon}
           variant="secondary"
-          aria-label="Reestablecer clave"
           onClick={() => setOpen((currentOpen) => !currentOpen)}
-        >
-          <RotateCcwKeyIcon />
-        </Button>
+        />
       </PopoverAnchor>
       <PopoverContent side="bottom" className="min-w-fit">
         <Form

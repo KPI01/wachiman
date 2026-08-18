@@ -2,6 +2,7 @@ import { ClipboardIcon, EyeIcon } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "~/components/ui/button";
+import TableActionButton from "~/components/table-action-button";
 import {
   Sheet,
   SheetContent,
@@ -67,9 +68,11 @@ export default function AuditMetadataViewer({
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
-        <Button variant="ghost" size="icon" type="button" aria-label="Ver metadatos">
-          <EyeIcon />
-        </Button>
+        <TableActionButton
+          label="Ver metadatos"
+          icon={EyeIcon}
+          variant="ghost"
+        />
       </SheetTrigger>
       <SheetContent className="w-full overflow-y-auto sm:max-w-2xl">
         <SheetHeader>

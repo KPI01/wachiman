@@ -60,6 +60,7 @@ export type PlannedAccessFormProps = {
   submitLabel: string;
   successMessage: string;
   resetOnSuccess?: boolean;
+  triggerAsChild?: boolean;
 };
 
 type TreeifiedError = {
@@ -180,6 +181,7 @@ export default function PlannedAccessForm({
   submitLabel,
   successMessage,
   resetOnSuccess = false,
+  triggerAsChild = false,
 }: PlannedAccessFormProps) {
   const fetcher = useFetcher<FetcherData>();
   const [open, setOpen] = useState(false);
@@ -371,6 +373,7 @@ export default function PlannedAccessForm({
         }
       }}
       buttonLabel={buttonLabel}
+      triggerAsChild={triggerAsChild}
       contentClassName="flex max-h-[90vh] w-[94vw] max-w-4xl flex-col overflow-hidden"
       title={title}
       description={description}

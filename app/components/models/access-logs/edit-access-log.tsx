@@ -19,6 +19,7 @@ import { formatTimestamp } from "~/lib/utils";
 import { getFieldErrors } from "~/lib/utils/zod-errors";
 import { getActionErrorMessage } from "~/lib/utils/action-errors";
 import WorkerDocumentViewer from "~/components/models/worker-document/worker-document-viewer";
+import TableActionButton from "~/components/table-action-button";
 
 type EditStep = "warning" | "form" | "confirmation";
 
@@ -159,13 +160,13 @@ export default function EditAccessLog({
         if (nextOpen) resetForm();
       }}
       buttonLabel={
-        <>
-          <PencilIcon />
-          <span className="sr-only">Editar registro de acceso</span>
-        </>
+        <TableActionButton
+          label="Editar registro de acceso"
+          icon={PencilIcon}
+          variant="ghost"
+        />
       }
-      buttonVariant="ghost"
-      buttonSize="icon"
+      triggerAsChild
       title={title}
       description={description}
       contentClassName="flex max-h-[90vh] w-[94vw] max-w-4xl flex-col overflow-hidden"

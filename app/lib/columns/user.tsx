@@ -26,8 +26,9 @@ export function getUserColumns(sites: Site[], departments: Department[]) {
     }),
     userColHelper.display({
       id: "actions",
+      header: "Acciones",
       cell: ({ row }) => (
-        <div className="flex gap-3 items-center justify-end">
+        <div className="flex items-center justify-end gap-1">
           <UserDetails
             user={row.original}
             sites={sites}
