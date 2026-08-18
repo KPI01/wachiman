@@ -1,19 +1,17 @@
 import DataTable from "~/components/ui/data-table";
 import type { Route } from "./+types/home";
 import { validateUserRole } from "~/lib/auth.server";
-import { getManyAccessLogs } from "~/lib/services/access-log.server";
+import { getOpenAccessLogs } from "~/lib/services/access-log.server";
 import { getAccessLogColumns } from "~/lib/columns/access-log";
 import { useEffect, useMemo } from "react";
 import { useRevalidator } from "react-router";
 import { useAccessLogNotifications } from "~/hooks/use-access-log-notifications";
+import StaleAccessWarning from "~/components/models/access-logs/stale-access-warning";
 
 export async function loader({ request }: Route.LoaderArgs) {
   await validateUserRole(request, "ACCESS_MONITOR");
 
-  const accessLogs = await getManyAccessLogs({
-    date: new Date(),
-    status: "INSIDE",
-  });
+  const accessLogs = await getOpenAccessLogs();
 
   return { accessLogs };
 }
@@ -36,6 +34,7 @@ export default function MonitorHome({ loaderData }: Route.ComponentProps) {
 
   return (
     <div className="grid space-y-6">
+      <StaleAccessWarning accessLogs={loaderData.accessLogs ?? []} />
       <DataTable
         columns={columns}
         data={loaderData.accessLogs}

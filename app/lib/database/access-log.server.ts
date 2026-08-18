@@ -305,6 +305,20 @@ export class AccessLogEntity {
     return loadAccessLogRelations(rows);
   }
 
+  public static async findOpen(input: { siteId?: string } = {}) {
+    const conditions = [isNull(accessLogs.exitTimestamp)];
+    if (input.siteId) conditions.push(eq(accessLogs.siteId, input.siteId));
+
+    const rows = await db
+      .select()
+      .from(accessLogs)
+      .where(and(...conditions))
+      .orderBy(desc(accessLogs.entryTimestamp))
+      .all();
+
+    return loadAccessLogRelations(rows);
+  }
+
   public static async findOpenByLegalId(legalId: string) {
     const row = await db
       .select()

@@ -21,6 +21,7 @@ import { formatTimestamp } from "~/lib/utils";
 import { useAccessLogNotifications } from "~/hooks/use-access-log-notifications";
 import type { AccessLogListItem } from "~/lib/database/access-log.server";
 import type { WidgetComponentProps } from "../types";
+import StaleAccessWarning from "~/components/models/access-logs/stale-access-warning";
 
 type PeopleInsideData = {
   accessLogs: AccessLogListItem[];
@@ -109,6 +110,7 @@ export function RequesterPeopleInsideWidget({
         </Empty>
       ) : (
         <div className="space-y-3">
+          <StaleAccessWarning accessLogs={data.accessLogs} />
           <p className="text-xs text-muted-foreground">
             {totalInside}{" "}
             {totalInside === 1 ? "persona dentro" : "personas dentro"}

@@ -4,6 +4,8 @@ import { formatTimestamp } from "../utils";
 import type { AccessLogListItem } from "../database/access-log.server";
 import VehiclePopover from "~/components/models/access-logs/vehicle-popover";
 import EditAccessLog from "~/components/models/access-logs/edit-access-log";
+import { isStaleAccessLog } from "~/lib/access-log-status";
+import { Badge } from "~/components/ui/badge";
 
 const accessLogColHelper = createColumnHelper<AccessLogListItem>();
 
@@ -35,8 +37,16 @@ function getVehicleDetails(accessLog: AccessLogListItem): string {
 
 const entryTimestampColumn = accessLogColHelper.accessor("entryTimestamp", {
   header: "Ingreso",
-  cell: ({ getValue }) =>
-    formatTimestamp({ date: getValue(), template: "dd/MM/yyyy HH:mm" }),
+  cell: ({ getValue, row }) => (
+    <div className="flex flex-col gap-1">
+      <span>{formatTimestamp({ date: getValue(), template: "dd/MM/yyyy HH:mm" })}</span>
+      {isStaleAccessLog(row.original) ? (
+        <Badge variant="destructive" className="w-fit text-xs">
+          Sin salida +24 h
+        </Badge>
+      ) : null}
+    </div>
+  ),
 });
 
 const exitTimestampColumn = accessLogColHelper.accessor("exitTimestamp", {

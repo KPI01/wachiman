@@ -4,6 +4,7 @@ import { getAccessLogColumns } from "~/lib/columns/access-log";
 import {
   createAccessLog,
   getManyAccessLogs,
+  getOpenAccessLogs,
 } from "~/lib/services/access-log.server";
 import { getSessionSite } from "~/lib/session.server";
 import type { Route } from "./+types/home";
@@ -27,6 +28,7 @@ import {
 import { formatTimestamp } from "~/lib/utils";
 import PlannedAccessPersonSignatureAction from "~/components/models/planned-access/planned-access-person-signature-action";
 import CardContainer from "~/components/containers/card-container";
+import StaleAccessWarning from "~/components/models/access-logs/stale-access-warning";
 
 export async function loader({ request }: Route.LoaderArgs) {
   await validateUserRole(request, "ACCESS_OPERATOR");
@@ -36,7 +38,7 @@ export async function loader({ request }: Route.LoaderArgs) {
     throw new Response("Unauthorized", { status: 401 });
   }
 
-  const [accessLogs, plannedAccesses] = await Promise.all([
+  const [accessLogs, plannedAccesses, openAccessLogs] = await Promise.all([
     getManyAccessLogs({
       siteId: sessionSite.id,
       timestampField: "entryTimestamp",
@@ -47,11 +49,13 @@ export async function loader({ request }: Route.LoaderArgs) {
       status: ["APPROVED", "PARTIALLY_USED"],
       expectedDate: new Date(),
     }),
+    getOpenAccessLogs({ siteId: sessionSite.id }),
   ]);
 
   return {
     accessLogs,
     plannedAccesses,
+    openAccessLogs,
     site: sessionSite,
   };
 }
@@ -219,6 +223,7 @@ export default function OperatorHome({ loaderData }: Route.ComponentProps) {
 
   return (
     <Tabs defaultValue="access-logs" className="w-full">
+      <StaleAccessWarning accessLogs={loaderData.openAccessLogs ?? []} allowExit />
       <TabsList>
         <TabsTrigger value="access-logs">Accesos</TabsTrigger>
         <TabsTrigger value="planned-access">Planificados de hoy</TabsTrigger>

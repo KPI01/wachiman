@@ -70,6 +70,10 @@ export async function getManyAccessLogs(input?: GetManyAccessLogsInput) {
   });
 }
 
+export async function getOpenAccessLogs(input: { siteId?: string } = {}) {
+  return AccessLogEntity.findOpen(input);
+}
+
 type CreateAccessLogOptions = {
   authorUsername: string;
   lockedSiteId?: string;
