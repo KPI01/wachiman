@@ -9,7 +9,13 @@ export async function loader({
   request: Request;
   params: { workerId: string; docId: string };
 }) {
-  await validateUserRole(request, ["ADMIN", "SECURITY_MANAGER", "ACCESS_APPROVER"]);
+  await validateUserRole(request, [
+    "ADMIN",
+    "SECURITY_MANAGER",
+    "ACCESS_APPROVER",
+    "ACCESS_OPERATOR",
+    "ACCESS_REQUESTER",
+  ]);
   const document = await getDocumentByWorkerId(params.docId, params.workerId);
 
   if (!document) {
@@ -52,11 +58,13 @@ export async function loader({
       },
     });
 
+    const download = new URL(request.url).searchParams.get("download") === "1";
+
     return new Response(body, {
       headers: {
         "Content-Type": document.mimeType || "application/octet-stream",
         "Content-Length": String(fileStat.size),
-        "Content-Disposition": `attachment; filename="${encodeURIComponent(document.fileName)}"`,
+        "Content-Disposition": `${download ? "attachment" : "inline"}; filename="${encodeURIComponent(document.fileName)}"`,
         "Cache-Control": "private, max-age=3600",
         "X-Content-Type-Options": "nosniff",
       },

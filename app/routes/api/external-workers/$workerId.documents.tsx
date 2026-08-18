@@ -11,7 +11,13 @@ export async function loader({
   request: Request;
   params: { workerId: string };
 }) {
-  await validateUserRole(request, ["ADMIN", "SECURITY_MANAGER", "ACCESS_APPROVER"]);
+  await validateUserRole(request, [
+    "ADMIN",
+    "SECURITY_MANAGER",
+    "ACCESS_APPROVER",
+    "ACCESS_OPERATOR",
+    "ACCESS_REQUESTER",
+  ]);
   const documents = await getWorkerDocuments(params.workerId);
   return Response.json(documents);
 }

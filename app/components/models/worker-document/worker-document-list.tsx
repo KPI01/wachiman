@@ -103,7 +103,7 @@ export default function WorkerDocumentList({
                   <div className="flex items-center justify-end gap-1">
                     <Button variant="ghost" size="icon" asChild>
                       <a
-                        href={`/api/external-workers/${workerId}/documents/${doc.id}/file`}
+                        href={`/api/external-workers/${workerId}/documents/${doc.id}/file?download=1`}
                         download={doc.fileName}
                       >
                         <DownloadIcon />

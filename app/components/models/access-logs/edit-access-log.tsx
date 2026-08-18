@@ -18,6 +18,7 @@ import type { ExternalWorkerListItem } from "~/lib/database/external-worker.serv
 import { formatTimestamp } from "~/lib/utils";
 import { getFieldErrors } from "~/lib/utils/zod-errors";
 import { getActionErrorMessage } from "~/lib/utils/action-errors";
+import WorkerDocumentViewer from "~/components/models/worker-document/worker-document-viewer";
 
 type EditStep = "warning" | "form" | "confirmation";
 
@@ -309,6 +310,11 @@ export default function EditAccessLog({
             placeholder="Escribe al menos dos caracteres..."
           />
         </FieldWrapper>
+        {externalWorkerId ? (
+          <div className="md:col-span-2">
+            <WorkerDocumentViewer workerId={externalWorkerId} />
+          </div>
+        ) : null}
         <FieldWrapper
           label="DNI/NIE *"
           htmlFor={`${formId}-legal-id`}

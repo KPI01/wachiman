@@ -28,6 +28,7 @@ import FieldWrapper from "~/components/ui/wrappers/field-wrapper";
 import { getFieldErrors } from "~/lib/utils/zod-errors";
 import type { Site } from "../../../../db/schema";
 import type { ExternalWorkerListItem } from "~/lib/database/external-worker.server";
+import WorkerDocumentViewer from "~/components/models/worker-document/worker-document-viewer";
 import CompanyCombobox from "~/components/models/company/company-combobox";
 import { getActionErrorMessage } from "~/lib/utils/action-errors";
 
@@ -635,6 +636,9 @@ export default function PlannedAccessForm({
                   />
                 </FieldWrapper>
                 <div className="flex justify-end gap-2">
+                  {visitorDraft.externalWorkerId ? (
+                    <WorkerDocumentViewer workerId={visitorDraft.externalWorkerId} />
+                  ) : null}
                   <Button
                     type="button"
                     variant="outline"
@@ -740,6 +744,11 @@ export default function PlannedAccessForm({
                         <TrashIcon />
                       </Button>
                     </div>
+                    {visitor.externalWorkerId ? (
+                      <div className="mt-3">
+                        <WorkerDocumentViewer workerId={visitor.externalWorkerId} />
+                      </div>
+                    ) : null}
                     {visitorErrors ? (
                       <p className="mt-2 text-sm text-destructive">
                         {visitorErrors[0]}
