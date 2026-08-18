@@ -19,7 +19,18 @@ export async function loader({
     "ACCESS_REQUESTER",
   ]);
   const documents = await getWorkerDocuments(params.workerId);
-  return Response.json(documents);
+  return Response.json(
+    documents.map(
+      ({
+        filePath,
+        contentHash,
+        reviewedById,
+        reviewedAt,
+        reviewReason,
+        ...publicDocument
+      }) => publicDocument,
+    ),
+  );
 }
 
 export async function action({
