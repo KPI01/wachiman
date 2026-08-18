@@ -10,6 +10,7 @@ import {
   useReactTable,
   type Column,
   type ColumnDef,
+  type ColumnFiltersState,
   type Header,
   type Row,
   type SortingState,
@@ -55,11 +56,18 @@ import {
   TableRow,
 } from "./table";
 
+export type DataTableColumnHeaderActions<TData> = Partial<
+  Record<
+    string,
+    React.ReactNode | ((column: Column<TData, any>) => React.ReactNode)
+  >
+>;
+
 interface DataTableProps<TData> {
   columns: ColumnDef<TData, any>[];
   data: TData[];
   globalFilterColumns?: readonly string[];
-  columnHeaderActions?: Partial<Record<string, React.ReactNode>>;
+  columnHeaderActions?: DataTableColumnHeaderActions<TData>;
   filterPlaceholder?: string;
   showGlobalFilter?: boolean;
   showColumnVisibility?: boolean;
@@ -85,6 +93,8 @@ export default function DataTable<TData>({
 }: DataTableProps<TData>) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = React.useState("");
+  const [columnFilters, setColumnFilters] =
+    React.useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
   const searchableColumnIds = React.useMemo(
@@ -104,6 +114,7 @@ export default function DataTable<TData>({
       matchesGlobalFilter(row, searchableColumnIds, filterValue),
     onSortingChange: setSorting,
     onGlobalFilterChange: setGlobalFilter,
+    onColumnFiltersChange: setColumnFilters,
     onColumnVisibilityChange: setColumnVisibility,
     initialState: {
       pagination: {
@@ -113,6 +124,7 @@ export default function DataTable<TData>({
     state: {
       sorting,
       globalFilter,
+      columnFilters,
       columnVisibility,
     },
   });
@@ -378,13 +390,19 @@ export function DataTableViewOptions<TData>({
 function renderHeader<TData>(
   header: Header<TData, any>,
   columnLabels?: Partial<Record<string, string>>,
-  action?: React.ReactNode,
+  configuredAction?:
+    | React.ReactNode
+    | ((column: Column<TData, any>) => React.ReactNode),
 ) {
   if (header.isPlaceholder) {
     return null;
   }
 
   const { column } = header;
+  const action =
+    typeof configuredAction === "function"
+      ? configuredAction(column)
+      : configuredAction;
 
   const content =
     typeof column.columnDef.header === "string" && column.getCanSort() ? (

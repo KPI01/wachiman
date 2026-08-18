@@ -3,8 +3,9 @@ import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import type { DateRange } from "react-day-picker";
 import { Button } from "~/components/ui/button";
+import { DatePicker } from "~/components/ui/date-picker";
+import { DateRangePicker } from "~/components/ui/date-range-picker";
 import { Field, FieldGroup, FieldLabel } from "~/components/ui/field";
-import { Input } from "~/components/ui/input";
 import {
   Popover,
   PopoverContent,
@@ -61,15 +62,15 @@ export default function AccessLogFilters({
   const todayValue = formatDate(today);
   const [open, setOpen] = useState(false);
   const [draftMode, setDraftMode] = useState<FilterMode>(mode);
-  const [draftDate, setDraftDate] = useState(
-    formatDate(date ?? referenceDate),
+  const [draftDate, setDraftDate] = useState<Date | undefined>(
+    date ?? referenceDate,
   );
-  const [draftDateFrom, setDraftDateFrom] = useState(
-    formatDate(dateRange?.from ?? referenceDate),
-  );
-  const [draftDateTo, setDraftDateTo] = useState(
-    formatDate(dateRange?.to ?? referenceDate),
-  );
+  const [draftDateRange, setDraftDateRange] = useState<
+    DateRange | undefined
+  >({
+    from: dateRange?.from ?? referenceDate,
+    to: dateRange?.to ?? dateRange?.from ?? referenceDate,
+  });
   const periodIsActive =
     mode === "range" || formatDate(date ?? referenceDate) !== todayValue;
   const statusIsActive = selectedStatus !== "ALL";
@@ -107,23 +108,28 @@ export default function AccessLogFilters({
     if (!nextOpen) return;
 
     setDraftMode(mode);
-    setDraftDate(formatDate(date ?? referenceDate));
-    setDraftDateFrom(formatDate(dateRange?.from ?? referenceDate));
-    setDraftDateTo(formatDate(dateRange?.to ?? referenceDate));
+    setDraftDate(date ?? referenceDate);
+    setDraftDateRange({
+      from: dateRange?.from ?? referenceDate,
+      to: dateRange?.to ?? dateRange?.from ?? referenceDate,
+    });
   }
 
   function applyPeriodFilter() {
     const params = paramsWithoutPeriod();
 
     if (draftMode === "range") {
-      if (!draftDateFrom || !draftDateTo || draftDateFrom > draftDateTo) {
+      const from = draftDateRange?.from;
+      const to = draftDateRange?.to;
+
+      if (!from || !to || from.getTime() > to.getTime()) {
         return;
       }
-      params.set("dateFrom", draftDateFrom);
-      params.set("dateTo", draftDateTo);
+      params.set("dateFrom", formatDate(from));
+      params.set("dateTo", formatDate(to));
     } else {
       if (!draftDate) return;
-      params.set("date", draftDate);
+      params.set("date", formatDate(draftDate));
     }
 
     navigateWith(params);
@@ -202,34 +208,22 @@ export default function AccessLogFilters({
                     {draftMode === "single" ? "Fecha" : "Rango"}
                   </FieldLabel>
                   {draftMode === "single" ? (
-                    <Input
+                    <DatePicker
                       id="access-log-header-filter-date"
-                      type="date"
                       value={draftDate}
-                      onChange={(event) => setDraftDate(event.target.value)}
+                      onChange={setDraftDate}
+                      className="w-full"
+                      placeholder="DD/MM/AAAA"
                     />
                   ) : (
-                    <div className="grid gap-2 sm:grid-cols-2">
-                      <Input
-                        id="access-log-header-filter-date"
-                        aria-label="Fecha inicial"
-                        type="date"
-                        value={draftDateFrom}
-                        max={draftDateTo}
-                        onChange={(event) =>
-                          setDraftDateFrom(event.target.value)
-                        }
-                      />
-                      <Input
-                        aria-label="Fecha final"
-                        type="date"
-                        value={draftDateTo}
-                        min={draftDateFrom}
-                        onChange={(event) =>
-                          setDraftDateTo(event.target.value)
-                        }
-                      />
-                    </div>
+                    <DateRangePicker
+                      name="access-log-header-filter-date"
+                      value={draftDateRange}
+                      onChange={setDraftDateRange}
+                      className="w-full"
+                      placeholder="DD/MM/AAAA - DD/MM/AAAA"
+                      numberOfMonths={1}
+                    />
                   )}
                 </Field>
               </FieldGroup>
@@ -277,9 +271,10 @@ export default function AccessLogFilters({
               disabled={
                 draftMode === "single"
                   ? !draftDate
-                  : !draftDateFrom ||
-                    !draftDateTo ||
-                    draftDateFrom > draftDateTo
+                  : !draftDateRange?.from ||
+                    !draftDateRange.to ||
+                    draftDateRange.from.getTime() >
+                      draftDateRange.to.getTime()
               }
               onClick={applyPeriodFilter}
             >

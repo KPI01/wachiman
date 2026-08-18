@@ -6,6 +6,8 @@ import VehiclePopover from "~/components/models/access-logs/vehicle-popover";
 import EditAccessLog from "~/components/models/access-logs/edit-access-log";
 import { isStaleAccessLog } from "~/lib/access-log-status";
 import { Badge } from "~/components/ui/badge";
+import AccessLogColumnFilter from "~/components/models/access-logs/access-log-column-filter";
+import type { DataTableColumnHeaderActions } from "~/components/ui/data-table";
 
 const accessLogColHelper = createColumnHelper<AccessLogListItem>();
 
@@ -180,7 +182,26 @@ export const ACCESS_LOG_GLOBAL_FILTER_COLUMNS = [
   "legalIdSnapshot",
   "companyNameSnapshot",
   "vehicleDetails",
+  "siteName",
 ] as const;
+
+export const ACCESS_LOG_COLUMN_FILTER_ACTIONS: DataTableColumnHeaderActions<AccessLogListItem> = {
+  fullNameSnapshot: (column) => (
+    <AccessLogColumnFilter column={column} label="Nombre completo" />
+  ),
+  legalIdSnapshot: (column) => (
+    <AccessLogColumnFilter column={column} label="Documento" />
+  ),
+  companyNameSnapshot: (column) => (
+    <AccessLogColumnFilter column={column} label="Empresa" />
+  ),
+  vehicleDetails: (column) => (
+    <AccessLogColumnFilter column={column} label="Vehículo" />
+  ),
+  siteName: (column) => (
+    <AccessLogColumnFilter column={column} label="Centro" />
+  ),
+};
 
 const baseColumns: AccessLogColumnDef[] = [
   entryTimestampColumn,

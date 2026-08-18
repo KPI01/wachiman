@@ -4,6 +4,7 @@ import { useAccessLogNotifications } from "~/hooks/use-access-log-notifications"
 import DataTable from "~/components/ui/data-table";
 import { validateUserRole } from "~/lib/auth.server";
 import {
+  ACCESS_LOG_COLUMN_FILTER_ACTIONS,
   ACCESS_LOG_GLOBAL_FILTER_COLUMNS,
   accessLogColumns,
 } from "~/lib/columns/access-log";
@@ -88,6 +89,7 @@ export default function ApproverAccessLogs({ loaderData }: Route.ComponentProps)
         data={loaderData.accessLogs ?? []}
         globalFilterColumns={ACCESS_LOG_GLOBAL_FILTER_COLUMNS}
         columnHeaderActions={{
+          ...ACCESS_LOG_COLUMN_FILTER_ACTIONS,
           entryTimestamp: (
             <AccessLogFilters
               basePath="/approver/access-logs"
