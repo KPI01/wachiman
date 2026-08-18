@@ -16,3 +16,6 @@
 - [x] En la edición de un AccessLog, para buscar personas ya registradas, el campo de buscar tiene que ser una lupa al lado del DNI/NIE que luego tenga el combobox de busqueda y selección
 - [x] Mejorar (hacer más intuitivos y agradables a la vista, preservando el estilo de la app) los filtros en la pagina de 'access-logs'
 - [x] Eliminar aviso al final de la edición de un AccessLog (el cartel que dice 'esta información quedara atribuida a tu usuario', o algo así)
+- [x] Hay un bug en la tabla de trabajadores externos, no salta el tooltip ni hace nada al hacer click
+- [x] El sheet donde se ven los metadatos de la auditoria, no es responsive. Los datos se ven mal
+- [x] Colocar los filtros dentro de los encabezados de las columnas
