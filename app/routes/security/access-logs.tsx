@@ -1,18 +1,8 @@
-import { useEffect, useState } from "react";
-import { useNavigate, useRevalidator } from "react-router";
+import { useEffect } from "react";
+import { useRevalidator } from "react-router";
 import { useAccessLogNotifications } from "~/hooks/use-access-log-notifications";
 import CreateAccessLog from "~/components/models/access-logs/create-access-log-form";
 import DataTable from "~/components/ui/data-table";
-import { DatePicker } from "~/components/ui/date-picker";
-import { DateRangePicker } from "~/components/ui/date-range-picker";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "~/components/ui/select";
-import { Separator } from "~/components/ui/separator";
 import { validateUserRole } from "~/lib/auth.server";
 import { accessLogColumns } from "~/lib/columns/access-log";
 import {
@@ -20,10 +10,11 @@ import {
   getManyAccessLogs,
 } from "~/lib/services/access-log.server";
 import { getManySites } from "~/lib/services/sites.server";
-import { formatTimestamp, parseLocalDate } from "~/lib/utils";
+import { parseLocalDate } from "~/lib/utils";
 import type { Route } from "./+types/access-logs";
 import type { GetManyAccessLogsInput } from "~/lib/services/access-log.server";
 import { getFormData, getQueryParams } from "~/lib/services/http.server";
+import AccessLogFilters from "~/components/models/access-logs/access-log-filters";
 
 export async function loader({ request }: Route.LoaderArgs) {
   await validateUserRole(request, "SECURITY_MANAGER");
@@ -79,14 +70,9 @@ export async function action({ request }: Route.ActionArgs) {
 }
 
 export default function IndexAccessLogs({ loaderData }: Route.ComponentProps) {
-  const navigation = useNavigate();
   const revalidator = useRevalidator();
 
   useAccessLogNotifications(loaderData.accessLogs ?? []);
-
-  const [filterMode, setFilterMode] = useState<"single" | "range">(
-    loaderData.mode,
-  );
 
   useEffect(() => {
     const intervalId = window.setInterval(() => {
@@ -101,104 +87,10 @@ export default function IndexAccessLogs({ loaderData }: Route.ComponentProps) {
     return () => window.clearInterval(intervalId);
   }, [revalidator]);
 
-  const handleModeChange = (mode: "single" | "range") => {
-    setFilterMode(mode);
-    if (mode === "single") {
-      const today = formatTimestamp({
-        date: new Date(),
-        template: "yyyy-MM-dd",
-      });
-      navigation(`/security/access-logs?date=${today}`);
-    } else {
-      navigation(`/security/access-logs`);
-    }
-  };
-
-  const handleStatusChange = (status: string) => {
-    const statusParam = status === "ALL" ? "" : `&status=${status}`;
-    if (filterMode === "range" && loaderData.dateRange) {
-      const from = formatTimestamp({
-        date: loaderData.dateRange.from,
-        template: "yyyy-MM-dd",
-      });
-      const to = formatTimestamp({
-        date: loaderData.dateRange.to,
-        template: "yyyy-MM-dd",
-      });
-      navigation(
-        `/security/access-logs?dateFrom=${from}&dateTo=${to}${statusParam}`,
-      );
-    } else {
-      const today = formatTimestamp({
-        date: loaderData.date ?? new Date(),
-        template: "yyyy-MM-dd",
-      });
-      navigation(`/security/access-logs?date=${today}${statusParam}`);
-    }
-  };
-
   return (
-    <div>
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-        <div className="grid gap-2">
-          <div className="font-semibold">Filtros:</div>
-          <div className="text-accent-foreground flex flex-col gap-3 sm:flex-row sm:items-end sm:gap-3">
-            <Select
-              value={filterMode}
-              onValueChange={(v) => handleModeChange(v as "single" | "range")}
-            >
-              <SelectTrigger className="w-full sm:w-44">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="single">Fecha específica</SelectItem>
-                <SelectItem value="range">Rango de fechas</SelectItem>
-              </SelectContent>
-            </Select>
-            {filterMode === "single" ? (
-              <DatePicker
-                value={loaderData.date}
-                onChange={(v) =>
-                  navigation(
-                    `/security/access-logs?date=${formatTimestamp({ date: v, template: "yyyy-MM-dd" })}${loaderData.status ? `&status=${loaderData.status}` : ""}`,
-                  )
-                }
-              />
-            ) : (
-              <DateRangePicker
-                value={loaderData.dateRange}
-                onChange={(range) => {
-                  if (range?.from && range.to) {
-                    const from = formatTimestamp({
-                      date: range.from,
-                      template: "yyyy-MM-dd",
-                    });
-                    const to = formatTimestamp({
-                      date: range.to,
-                      template: "yyyy-MM-dd",
-                    });
-                    navigation(
-                      `/security/access-logs?dateFrom=${from}&dateTo=${to}${loaderData.status ? `&status=${loaderData.status}` : ""}`,
-                    );
-                  }
-                }}
-              />
-            )}
-            <Select
-              value={loaderData.status ?? "ALL"}
-              onValueChange={handleStatusChange}
-            >
-              <SelectTrigger className="w-full sm:w-36">
-                <SelectValue placeholder="Estado" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ALL">Todos</SelectItem>
-                <SelectItem value="INSIDE">Dentro</SelectItem>
-                <SelectItem value="OUTSIDE">Fuera</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
+    <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <h2 className="text-3xl font-bold">Registros de acceso</h2>
         <div className="w-full sm:w-auto">
           <CreateAccessLog
             sites={loaderData.sites ?? []}
@@ -206,7 +98,13 @@ export default function IndexAccessLogs({ loaderData }: Route.ComponentProps) {
           />
         </div>
       </div>
-      <Separator className="my-4" />
+      <AccessLogFilters
+        basePath="/security/access-logs"
+        mode={loaderData.mode}
+        date={loaderData.date}
+        dateRange={loaderData.dateRange}
+        status={loaderData.status}
+      />
       <DataTable
         columns={accessLogColumns}
         data={loaderData.accessLogs ?? []}

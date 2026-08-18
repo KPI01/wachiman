@@ -1,4 +1,4 @@
-import { AlertTriangleIcon, PencilIcon } from "lucide-react";
+import { AlertTriangleIcon, PencilIcon, SearchIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useFetcher } from "react-router";
 import { toast } from "sonner";
@@ -11,6 +11,20 @@ import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
 import { Button } from "~/components/ui/button";
 import { DateTimePicker } from "~/components/ui/date-time-picker";
 import { Input } from "~/components/ui/input";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupButton,
+  InputGroupInput,
+} from "~/components/ui/input-group";
+import {
+  Popover,
+  PopoverContent,
+  PopoverDescription,
+  PopoverHeader,
+  PopoverTitle,
+  PopoverTrigger,
+} from "~/components/ui/popover";
 import { Textarea } from "~/components/ui/textarea";
 import FieldWrapper from "~/components/ui/wrappers/field-wrapper";
 import type { AccessLogListItem } from "~/lib/database/access-log.server";
@@ -88,7 +102,9 @@ export default function EditAccessLog({
   const [expectedTimestamps, setExpectedTimestamps] = useState(() =>
     timestampVersion(accessLog),
   );
+  const [workerSearchOpen, setWorkerSearchOpen] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
+  const workerSearchInputRef = useRef<HTMLInputElement>(null);
   const formId = `edit-access-log-${accessLog.id}`;
   const isSubmitting = fetcher.state !== "idle";
   const globalError =
@@ -103,6 +119,7 @@ export default function EditAccessLog({
     );
     setExternalWorkerId(accessLog.externalWorkerId);
     setExpectedTimestamps(timestampVersion(accessLog));
+    setWorkerSearchOpen(false);
   }
 
   function updateIdentity(field: keyof FormValues, value: string) {
@@ -122,6 +139,7 @@ export default function EditAccessLog({
       legalIdSnapshot: worker.legalId,
       companyNameSnapshot: worker.company?.name ?? current.companyNameSnapshot,
     }));
+    setWorkerSearchOpen(false);
   }
 
   useEffect(() => {
@@ -300,37 +318,59 @@ export default function EditAccessLog({
           </div>
         </FieldWrapper>
         <FieldWrapper
-          className="md:col-span-2"
-          label="Buscar persona por nombre o documento"
-          htmlFor={`${formId}-worker-search`}
-        >
-          <ExternalWorkerCombobox
-            id={`${formId}-worker-search`}
-            searchBy="name"
-            onSelect={selectWorker}
-            placeholder="Escribe al menos dos caracteres..."
-          />
-        </FieldWrapper>
-        {externalWorkerId ? (
-          <div className="md:col-span-2">
-            <WorkerDocumentViewer workerId={externalWorkerId} />
-          </div>
-        ) : null}
-        <FieldWrapper
           label="DNI/NIE *"
           htmlFor={`${formId}-legal-id`}
           errors={getFieldErrors(fetcher.data?.errors, "legalIdSnapshot")}
         >
-          <Input
-            id={`${formId}-legal-id`}
-            name="legalIdSnapshot"
-            className="uppercase"
-            value={values.legalIdSnapshot}
-            onChange={(event) =>
-              updateIdentity("legalIdSnapshot", event.currentTarget.value)
-            }
-            required
-          />
+          <InputGroup>
+            <InputGroupInput
+              id={`${formId}-legal-id`}
+              name="legalIdSnapshot"
+              className="uppercase"
+              value={values.legalIdSnapshot}
+              onChange={(event) =>
+                updateIdentity("legalIdSnapshot", event.currentTarget.value)
+              }
+              required
+            />
+            <InputGroupAddon align="inline-end">
+              <Popover
+                open={workerSearchOpen}
+                onOpenChange={setWorkerSearchOpen}
+              >
+                <PopoverTrigger asChild>
+                  <InputGroupButton
+                    size="icon-xs"
+                    aria-label="Buscar persona registrada"
+                  >
+                    <SearchIcon aria-hidden="true" />
+                  </InputGroupButton>
+                </PopoverTrigger>
+                <PopoverContent
+                  align="end"
+                  className="w-80"
+                  onOpenAutoFocus={(event) => {
+                    event.preventDefault();
+                    workerSearchInputRef.current?.focus();
+                  }}
+                >
+                  <PopoverHeader>
+                    <PopoverTitle>Buscar persona registrada</PopoverTitle>
+                    <PopoverDescription>
+                      Introduce un nombre o DNI/NIE para reutilizar sus datos.
+                    </PopoverDescription>
+                  </PopoverHeader>
+                  <ExternalWorkerCombobox
+                    id={`${formId}-worker-search`}
+                    searchBy="legalId"
+                    onSelect={selectWorker}
+                    placeholder="Nombre o DNI/NIE..."
+                    inputRef={workerSearchInputRef}
+                  />
+                </PopoverContent>
+              </Popover>
+            </InputGroupAddon>
+          </InputGroup>
         </FieldWrapper>
         <FieldWrapper
           label="Teléfono"
@@ -346,6 +386,11 @@ export default function EditAccessLog({
             }
           />
         </FieldWrapper>
+        {externalWorkerId ? (
+          <div className="md:col-span-2">
+            <WorkerDocumentViewer workerId={externalWorkerId} />
+          </div>
+        ) : null}
         <FieldWrapper
           label="Nombre *"
           htmlFor={`${formId}-first-name`}
@@ -459,14 +504,6 @@ export default function EditAccessLog({
           <div><span className="font-medium">Teléfono:</span> {values.phoneNumber || "-"}</div>
           <div><span className="font-medium">Empresa:</span> {values.companyNameSnapshot}</div>
           <div className="md:col-span-2"><span className="font-medium">Motivo:</span> {values.visitReason}</div>
-          <Alert variant="destructive" className="md:col-span-2">
-            <AlertTriangleIcon />
-            <AlertTitle>Confirmación final</AlertTitle>
-            <AlertDescription>
-              Al guardar, esta corrección quedará atribuida a tu usuario y se
-              registrarán los valores anteriores y nuevos en la auditoría.
-            </AlertDescription>
-          </Alert>
         </div>
       ) : null}
     </AlertDialogContainer>

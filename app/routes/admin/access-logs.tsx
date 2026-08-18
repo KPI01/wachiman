@@ -10,20 +10,10 @@ import {
 import { getManySites } from "~/lib/services/sites.server";
 import { getFormData, getQueryParams } from "~/lib/services/http.server";
 import type { GetManyAccessLogsInput } from "~/lib/services/access-log.server";
-import { formatTimestamp, parseLocalDate } from "~/lib/utils";
-import { useNavigate, useRevalidator } from "react-router";
-import { useEffect, useState } from "react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "~/components/ui/select";
-import { DatePicker } from "~/components/ui/date-picker";
-import { DateRangePicker } from "~/components/ui/date-range-picker";
-import FieldWrapper from "~/components/ui/wrappers/field-wrapper";
-import { Separator } from "~/components/ui/separator";
+import { parseLocalDate } from "~/lib/utils";
+import { useRevalidator } from "react-router";
+import { useEffect } from "react";
+import AccessLogFilters from "~/components/models/access-logs/access-log-filters";
 
 export async function loader({ request }: Route.LoaderArgs) {
   await validateUserRole(request, "ADMIN");
@@ -80,11 +70,7 @@ export async function action({ request }: Route.ActionArgs) {
 }
 
 export default function IndexAccessLogs({ loaderData }: Route.ComponentProps) {
-  const navigation = useNavigate();
   const revalidator = useRevalidator();
-  const [filterMode, setFilterMode] = useState<"single" | "range">(
-    loaderData.mode,
-  );
 
   useEffect(() => {
     const intervalId = window.setInterval(() => {
@@ -99,117 +85,22 @@ export default function IndexAccessLogs({ loaderData }: Route.ComponentProps) {
     return () => window.clearInterval(intervalId);
   }, [revalidator]);
 
-  const handleModeChange = (mode: "single" | "range") => {
-    setFilterMode(mode);
-    if (mode === "single") {
-      const today = formatTimestamp({
-        date: new Date(),
-        template: "yyyy-MM-dd",
-      });
-      navigation(`/admin/access-logs?date=${today}`);
-    } else {
-      navigation(`/admin/access-logs`);
-    }
-  };
-
-  const handleStatusChange = (status: string) => {
-    const statusParam = status === "ALL" ? "" : `&status=${status}`;
-    if (filterMode === "range" && loaderData.dateRange) {
-      const from = formatTimestamp({
-        date: loaderData.dateRange.from,
-        template: "yyyy-MM-dd",
-      });
-      const to = formatTimestamp({
-        date: loaderData.dateRange.to,
-        template: "yyyy-MM-dd",
-      });
-      navigation(
-        `/admin/access-logs?dateFrom=${from}&dateTo=${to}${statusParam}`,
-      );
-    } else {
-      const today = formatTimestamp({
-        date: loaderData.date ?? new Date(),
-        template: "yyyy-MM-dd",
-      });
-      navigation(`/admin/access-logs?date=${today}${statusParam}`);
-    }
-  };
-
   return (
-    <div className="grid space-y-6">
-      <div className="flex justify-between items-center">
-
+    <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h2 className="text-3xl font-bold">Registros de acceso</h2>
         <CreateAccessLog
           sites={loaderData.sites ?? []}
           actionPath="/admin/access-logs"
         />
       </div>
-      <div className="">
-        <div className="flex gap-8 items-end justify-start">
-          <div className="flex flex-col gap-2">
-            <Select
-              value={filterMode}
-              onValueChange={(v) => handleModeChange(v as "single" | "range")}
-            >
-              <SelectTrigger className="max-w-lg">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="single">Fecha específica</SelectItem>
-                <SelectItem value="range">Rango de fechas</SelectItem>
-              </SelectContent>
-            </Select>
-            {filterMode === "single" ? (
-              <DatePicker
-                className="max-w-48 m-0"
-                value={loaderData.date}
-                onChange={(v) =>
-                  navigation(
-                    `/admin/access-logs?date=${formatTimestamp({ date: v, template: "yyyy-MM-dd" })}${loaderData.status ? `&status=${loaderData.status}` : ""}`,
-                  )
-                }
-              />
-            ) : (
-              <DateRangePicker
-                className="grow max-w-56"
-                value={loaderData.dateRange}
-                onChange={(range) => {
-                  if (range?.from && range.to) {
-                    const from = formatTimestamp({
-                      date: range.from,
-                      template: "yyyy-MM-dd",
-                    });
-                    const to = formatTimestamp({
-                      date: range.to,
-                      template: "yyyy-MM-dd",
-                    });
-                    navigation(
-                      `/admin/access-logs?dateFrom=${from}&dateTo=${to}${loaderData.status ? `&status=${loaderData.status}` : ""}`,
-                    );
-                  }
-                }}
-              />
-            )}
-          </div>
-          <Separator orientation="vertical" />
-          <FieldWrapper label="Estado" htmlFor="status" className="max-w-48">
-            <Select
-              value={loaderData.status ?? "ALL"}
-              onValueChange={handleStatusChange}
-            >
-              <SelectTrigger className="w-fit" id="status">
-                <SelectValue placeholder="Estado" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ALL">Todos</SelectItem>
-                <SelectItem value="INSIDE">Dentro</SelectItem>
-                <SelectItem value="OUTSIDE">Fuera</SelectItem>
-              </SelectContent>
-            </Select>
-          </FieldWrapper>
-        </div>
-      </div>
+      <AccessLogFilters
+        basePath="/admin/access-logs"
+        mode={loaderData.mode}
+        date={loaderData.date}
+        dateRange={loaderData.dateRange}
+        status={loaderData.status}
+      />
       <DataTable
         columns={accessLogColumns}
         data={loaderData.accessLogs ?? []}
