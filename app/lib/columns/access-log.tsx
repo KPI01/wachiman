@@ -175,6 +175,13 @@ export const accessLogColumns: AccessLogColumnDef[] = [
   editableActionsColumn,
 ];
 
+export const ACCESS_LOG_GLOBAL_FILTER_COLUMNS = [
+  "fullNameSnapshot",
+  "legalIdSnapshot",
+  "companyNameSnapshot",
+  "vehicleDetails",
+] as const;
+
 const baseColumns: AccessLogColumnDef[] = [
   entryTimestampColumn,
   exitTimestampColumn,

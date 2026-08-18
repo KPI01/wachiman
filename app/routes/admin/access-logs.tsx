@@ -1,5 +1,8 @@
 import DataTable from "~/components/ui/data-table";
-import { accessLogColumns } from "~/lib/columns/access-log";
+import {
+  ACCESS_LOG_GLOBAL_FILTER_COLUMNS,
+  accessLogColumns,
+} from "~/lib/columns/access-log";
 import CreateAccessLog from "~/components/models/access-logs/create-access-log-form";
 import type { Route } from "./+types/access-logs";
 import { validateUserRole } from "~/lib/auth.server";
@@ -94,22 +97,32 @@ export default function IndexAccessLogs({ loaderData }: Route.ComponentProps) {
           actionPath="/admin/access-logs"
         />
       </div>
-      <AccessLogFilters
-        basePath="/admin/access-logs"
-        mode={loaderData.mode}
-        date={loaderData.date}
-        dateRange={loaderData.dateRange}
-        status={loaderData.status}
-      />
       <DataTable
         columns={accessLogColumns}
         data={loaderData.accessLogs ?? []}
-        globalFilterColumns={[
-          "fullNameSnapshot",
-          "legalIdSnapshot",
-          "companyNameSnapshot",
-          "vehicleDetails",
-        ]}
+        globalFilterColumns={ACCESS_LOG_GLOBAL_FILTER_COLUMNS}
+        columnHeaderActions={{
+          entryTimestamp: (
+            <AccessLogFilters
+              basePath="/admin/access-logs"
+              filter="period"
+              mode={loaderData.mode}
+              date={loaderData.date}
+              dateRange={loaderData.dateRange}
+              status={loaderData.status}
+            />
+          ),
+          exitTimestamp: (
+            <AccessLogFilters
+              basePath="/admin/access-logs"
+              filter="status"
+              mode={loaderData.mode}
+              date={loaderData.date}
+              dateRange={loaderData.dateRange}
+              status={loaderData.status}
+            />
+          ),
+        }}
         empty={{
           title: "No hay accesos registrados",
           description: "Los registros de acceso creados apareceran aqui.",

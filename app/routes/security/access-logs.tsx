@@ -4,7 +4,10 @@ import { useAccessLogNotifications } from "~/hooks/use-access-log-notifications"
 import CreateAccessLog from "~/components/models/access-logs/create-access-log-form";
 import DataTable from "~/components/ui/data-table";
 import { validateUserRole } from "~/lib/auth.server";
-import { accessLogColumns } from "~/lib/columns/access-log";
+import {
+  ACCESS_LOG_GLOBAL_FILTER_COLUMNS,
+  accessLogColumns,
+} from "~/lib/columns/access-log";
 import {
   createAccessLog,
   getManyAccessLogs,
@@ -98,16 +101,32 @@ export default function IndexAccessLogs({ loaderData }: Route.ComponentProps) {
           />
         </div>
       </div>
-      <AccessLogFilters
-        basePath="/security/access-logs"
-        mode={loaderData.mode}
-        date={loaderData.date}
-        dateRange={loaderData.dateRange}
-        status={loaderData.status}
-      />
       <DataTable
         columns={accessLogColumns}
         data={loaderData.accessLogs ?? []}
+        globalFilterColumns={ACCESS_LOG_GLOBAL_FILTER_COLUMNS}
+        columnHeaderActions={{
+          entryTimestamp: (
+            <AccessLogFilters
+              basePath="/security/access-logs"
+              filter="period"
+              mode={loaderData.mode}
+              date={loaderData.date}
+              dateRange={loaderData.dateRange}
+              status={loaderData.status}
+            />
+          ),
+          exitTimestamp: (
+            <AccessLogFilters
+              basePath="/security/access-logs"
+              filter="status"
+              mode={loaderData.mode}
+              date={loaderData.date}
+              dateRange={loaderData.dateRange}
+              status={loaderData.status}
+            />
+          ),
+        }}
         empty={{
           title: "No hay registros de acceso",
         }}

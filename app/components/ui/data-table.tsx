@@ -58,7 +58,8 @@ import {
 interface DataTableProps<TData> {
   columns: ColumnDef<TData, any>[];
   data: TData[];
-  globalFilterColumns?: string[];
+  globalFilterColumns?: readonly string[];
+  columnHeaderActions?: Partial<Record<string, React.ReactNode>>;
   filterPlaceholder?: string;
   showGlobalFilter?: boolean;
   showColumnVisibility?: boolean;
@@ -74,6 +75,7 @@ export default function DataTable<TData>({
   columns,
   data,
   globalFilterColumns,
+  columnHeaderActions,
   filterPlaceholder,
   showGlobalFilter = true,
   showColumnVisibility = true,
@@ -89,6 +91,7 @@ export default function DataTable<TData>({
     () => getSearchableColumnIds(columns, globalFilterColumns),
     [columns, globalFilterColumns],
   );
+  const hasColumnHeaderActions = Object.keys(columnHeaderActions ?? {}).length > 0;
 
   const table = useReactTable({
     data,
@@ -116,7 +119,7 @@ export default function DataTable<TData>({
 
   return (
     <div className="flex flex-col gap-4 max-w-full overflow-hidden">
-      {data.length > 0 ? (
+      {data.length > 0 || hasColumnHeaderActions ? (
         <>
           <div className="flex justify-between gap-4">
             {showGlobalFilter && searchableColumnIds.length ? (
@@ -150,7 +153,11 @@ export default function DataTable<TData>({
                   <TableRow key={headerGroup.id} className="text-base!">
                     {headerGroup.headers.map((header) => (
                       <TableHead key={header.id}>
-                        {renderHeader(header, columnLabels)}
+                        {renderHeader(
+                          header,
+                          columnLabels,
+                          columnHeaderActions?.[header.column.id],
+                        )}
                       </TableHead>
                     ))}
                   </TableRow>
@@ -176,7 +183,19 @@ export default function DataTable<TData>({
                       colSpan={table.getVisibleLeafColumns().length}
                       className="h-24 text-center"
                     >
-                      Sin resultados.
+                      {data.length === 0 ? (
+                        <Empty>
+                          <EmptyHeader>
+                            <EmptyTitle>{empty?.title ?? "No hay datos"}</EmptyTitle>
+                            <EmptyDescription>
+                              {empty?.description ??
+                                "No se han encontrado datos para mostrar"}
+                            </EmptyDescription>
+                          </EmptyHeader>
+                        </Empty>
+                      ) : (
+                        "Sin resultados."
+                      )}
                     </TableCell>
                   </TableRow>
                 )}
@@ -359,6 +378,7 @@ export function DataTableViewOptions<TData>({
 function renderHeader<TData>(
   header: Header<TData, any>,
   columnLabels?: Partial<Record<string, string>>,
+  action?: React.ReactNode,
 ) {
   if (header.isPlaceholder) {
     return null;
@@ -366,8 +386,8 @@ function renderHeader<TData>(
 
   const { column } = header;
 
-  if (typeof column.columnDef.header === "string" && column.getCanSort()) {
-    return (
+  const content =
+    typeof column.columnDef.header === "string" && column.getCanSort() ? (
       <Button
         variant="ghost"
         size="sm"
@@ -377,10 +397,18 @@ function renderHeader<TData>(
         <span>{getColumnLabel(column, columnLabels)}</span>
         <SortIcon direction={column.getIsSorted()} />
       </Button>
+    ) : (
+      flexRender(column.columnDef.header, header.getContext())
     );
-  }
 
-  return flexRender(column.columnDef.header, header.getContext());
+  return action ? (
+    <div className="flex min-w-max items-center gap-1">
+      {content}
+      {action}
+    </div>
+  ) : (
+    content
+  );
 }
 
 function SortIcon({ direction }: { direction: false | "asc" | "desc" }) {
@@ -397,7 +425,7 @@ function SortIcon({ direction }: { direction: false | "asc" | "desc" }) {
 
 function getSearchableColumnIds<TData>(
   columns: ColumnDef<TData, any>[],
-  globalFilterColumns?: string[],
+  globalFilterColumns?: readonly string[],
 ) {
   const availableColumnIds = columns.flatMap((column) => getColumnIds(column));
 

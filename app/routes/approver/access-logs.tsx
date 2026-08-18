@@ -3,7 +3,10 @@ import { useRevalidator } from "react-router";
 import { useAccessLogNotifications } from "~/hooks/use-access-log-notifications";
 import DataTable from "~/components/ui/data-table";
 import { validateUserRole } from "~/lib/auth.server";
-import { accessLogColumns } from "~/lib/columns/access-log";
+import {
+  ACCESS_LOG_GLOBAL_FILTER_COLUMNS,
+  accessLogColumns,
+} from "~/lib/columns/access-log";
 import { getManyAccessLogs } from "~/lib/services/access-log.server";
 import { parseLocalDate } from "~/lib/utils";
 import type { Route } from "./+types/access-logs";
@@ -80,16 +83,32 @@ export default function ApproverAccessLogs({ loaderData }: Route.ComponentProps)
   return (
     <div className="flex flex-col gap-6">
       <h2 className="text-3xl font-bold">Registros de acceso</h2>
-      <AccessLogFilters
-        basePath="/approver/access-logs"
-        mode={loaderData.mode}
-        date={loaderData.date}
-        dateRange={loaderData.dateRange}
-        status={loaderData.status}
-      />
       <DataTable
         columns={accessLogColumns}
         data={loaderData.accessLogs ?? []}
+        globalFilterColumns={ACCESS_LOG_GLOBAL_FILTER_COLUMNS}
+        columnHeaderActions={{
+          entryTimestamp: (
+            <AccessLogFilters
+              basePath="/approver/access-logs"
+              filter="period"
+              mode={loaderData.mode}
+              date={loaderData.date}
+              dateRange={loaderData.dateRange}
+              status={loaderData.status}
+            />
+          ),
+          exitTimestamp: (
+            <AccessLogFilters
+              basePath="/approver/access-logs"
+              filter="status"
+              mode={loaderData.mode}
+              date={loaderData.date}
+              dateRange={loaderData.dateRange}
+              status={loaderData.status}
+            />
+          ),
+        }}
         empty={{
           title: "No hay registros de acceso",
         }}
