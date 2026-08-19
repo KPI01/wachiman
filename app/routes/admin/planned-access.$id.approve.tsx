@@ -4,9 +4,11 @@ import { PlannedAccessEntity } from "~/lib/database/planned-access.server";
 import { WorkCategoryEntity } from "~/lib/database/work-category.server";
 import {
   updatePlannedAccessStatus,
-  uploadPlannedAccessPersonDocument,
+  // Comentado: la documentación ya no se gestiona desde este flujo.
+  // uploadPlannedAccessPersonDocument,
 } from "~/lib/services/planned-access.server";
-import { reviewWorkerDocument } from "~/lib/services/worker-document.server";
+// Comentado: la documentación ya no se revisa en el flujo de aprobación.
+// import { reviewWorkerDocument } from "~/lib/services/worker-document.server";
 import type { Route } from "./+types/planned-access.$id.approve";
 import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
 import { Button } from "~/components/ui/button";
@@ -14,7 +16,8 @@ import { getSessionSite } from "~/lib/session.server";
 import { ExternalWorkerEntity } from "~/lib/database/external-worker.server";
 import PlannedAccessApprovalPersonCard from "~/components/models/planned-access/planned-access-approval-person-card";
 import { ItemGroup } from "~/components/ui/item";
-import { getDocumentByWorkerId } from "~/lib/services/worker-document.server";
+// Comentado: la documentación ya no se gestiona desde este flujo.
+// import { getDocumentByWorkerId } from "~/lib/services/worker-document.server";
 
 export async function loader({ request, params }: Route.LoaderArgs) {
   const user = await validateUserRole(request, [
@@ -50,9 +53,10 @@ export async function loader({ request, params }: Route.LoaderArgs) {
       return { person, worker };
     }),
   );
-  const hasPendingDocuments = people.some(({ worker }) =>
-    worker?.documents?.some((document) => document.status === "PENDING_REVIEW"),
-  );
+// Comentado: la documentación ya no se revisa en el flujo de aprobación.
+  // const hasPendingDocuments = people.some(({ worker }) =>
+  //   worker?.documents?.some((document) => document.status === "PENDING_REVIEW"),
+  // );
   const listPath =
     user.role === "ADMIN"
       ? "/admin/planned-access"
@@ -62,11 +66,12 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 
   const workerPath = listPath.replace("/planned-access", "/external-worker");
   const approvePath = `${listPath}/${params.id}/approve`;
-  return {
+return {
     plannedAccess,
     workCategories,
     people,
-    hasPendingDocuments,
+    // Comentado: la documentación ya no se revisa en el flujo de aprobación.
+    // hasPendingDocuments,
     listPath,
     workerPath,
     approvePath,
@@ -81,66 +86,67 @@ export async function action({ request, params }: Route.ActionArgs) {
   ]);
   const sessionSite =
     user.role === "ACCESS_APPROVER" ? await getSessionSite(request) : null;
-  const formData = await request.formData();
-  if (formData.get("intent") === "review-document") {
-    const plannedAccess = await PlannedAccessEntity.findById(params.id);
-    const documentId = String(formData.get("documentId") ?? "");
-    const personId = String(formData.get("personId") ?? "");
-    const person = plannedAccess?.plannedAccessPersons.find((item) => item.id === personId);
+const formData = await request.formData();
+  // Comentado: la documentación ya no se revisa ni se sube desde este flujo.
+  // if (formData.get("intent") === "review-document") {
+  //   const plannedAccess = await PlannedAccessEntity.findById(params.id);
+  //   const documentId = String(formData.get("documentId") ?? "");
+  //   const personId = String(formData.get("personId") ?? "");
+  //   const person = plannedAccess?.plannedAccessPersons.find((item) => item.id === personId);
 
-    if (!plannedAccess || !person) {
-      return { errors: "La persona o la solicitud no fueron encontradas." };
-    }
-    if (plannedAccess.status !== "PENDING_APPROVAL") {
-      return { errors: "La solicitud ya no está pendiente de aprobación." };
-    }
-    if (sessionSite && plannedAccess.siteId !== sessionSite.id) {
-      return { errors: "No tienes permisos para esta solicitud." };
-    }
+  //   if (!plannedAccess || !person) {
+  //     return { errors: "La persona o la solicitud no fueron encontradas." };
+  //   }
+  //   if (plannedAccess.status !== "PENDING_APPROVAL") {
+  //     return { errors: "La solicitud ya no está pendiente de aprobación." };
+  //   }
+  //   if (sessionSite && plannedAccess.siteId !== sessionSite.id) {
+  //     return { errors: "No tienes permisos para esta solicitud." };
+  //   }
 
-    const worker = await ExternalWorkerEntity.findByLegalId(person.legalIdSnapshot);
-    if (!worker) {
-      return { errors: "No se encontró el trabajador asociado a la persona." };
-    }
+  //   const worker = await ExternalWorkerEntity.findByLegalId(person.legalIdSnapshot);
+  //   if (!worker) {
+  //     return { errors: "No se encontró el trabajador asociado a la persona." };
+  //   }
 
-    const document = await getDocumentByWorkerId(documentId, worker.id);
-    if (!document) {
-      return { errors: "El documento no pertenece al trabajador de esta solicitud." };
-    }
+  //   const document = await getDocumentByWorkerId(documentId, worker.id);
+  //   if (!document) {
+  //     return { errors: "El documento no pertenece al trabajador de esta solicitud." };
+  //   }
 
-    const result = await reviewWorkerDocument(
-      documentId,
-      {
-        decision: String(formData.get("reviewDecision") ?? ""),
-        reviewReason: String(formData.get("reviewReason") ?? ""),
-      },
-      user.id,
-    );
-    return result.success ? { success: true } : { errors: result.errors };
-  }
-  if (formData.get("intent") === "upload-document") {
-    const file = formData.get("file");
-    const personId = String(formData.get("personId") ?? "");
-    const data: Record<string, string> = {};
-    for (const [key, value] of formData.entries()) {
-      if (key !== "file" && typeof value === "string") data[key] = value;
-    }
-    if (!(file instanceof File)) {
-      return { errors: "Selecciona un archivo para cargar." };
-    }
-    const result = await uploadPlannedAccessPersonDocument(
-      params.id,
-      personId,
-      file,
-      data,
-      {
-        authorUsername: user.username,
-        canApprove: true,
-        lockedSiteId: sessionSite?.id,
-      },
-    );
-    return result.success ? { upload: result.document } : { errors: result.errors };
-  }
+  //   const result = await reviewWorkerDocument(
+  //     documentId,
+  //     {
+  //       decision: String(formData.get("reviewDecision") ?? ""),
+  //       reviewReason: String(formData.get("reviewReason") ?? ""),
+  //     },
+  //     user.id,
+  //   );
+  //   return result.success ? { success: true } : { errors: result.errors };
+  // }
+  // if (formData.get("intent") === "upload-document") {
+  //   const file = formData.get("file");
+  //   const personId = String(formData.get("personId") ?? "");
+  //   const data: Record<string, string> = {};
+  //   for (const [key, value] of formData.entries()) {
+  //     if (key !== "file" && typeof value === "string") data[key] = value;
+  //   }
+  //   if (!(file instanceof File)) {
+  //     return { errors: "Selecciona un archivo para cargar." };
+  //   }
+  //   const result = await uploadPlannedAccessPersonDocument(
+  //     params.id,
+  //     personId,
+  //     file,
+  //     data,
+  //     {
+  //       authorUsername: user.username,
+  //       canApprove: true,
+  //       lockedSiteId: sessionSite?.id,
+  //     },
+  //   );
+  //   return result.success ? { upload: result.document } : { errors: result.errors };
+  // }
   const result = await updatePlannedAccessStatus(
     { ...Object.fromEntries(formData), id: params.id, status: "APPROVED" },
     {
@@ -172,15 +178,16 @@ export default function ApprovePlannedAccess({
         <div className="flex justify-between gap-2 basis-full">
           <h2 className="text-3xl font-bold">Aprobar solicitud</h2>
           <div className="flex gap-2">
-            <Button
+<Button
               type="submit"
               form="documentation-form"
-              disabled={loaderData.hasPendingDocuments}
-              title={
-                loaderData.hasPendingDocuments
-                  ? "Revisa los documentos pendientes antes de aprobar"
-                  : undefined
-              }
+              // Comentado: la documentación ya no bloquea la aprobación.
+              // disabled={loaderData.hasPendingDocuments}
+              // title={
+              //   loaderData.hasPendingDocuments
+              //     ? "Revisa los documentos pendientes antes de aprobar"
+              //     : undefined
+              // }
             >
               Confirmar aprobación
             </Button>
@@ -191,9 +198,10 @@ export default function ApprovePlannedAccess({
           </div>
         </div>
         <p className="text-muted-foreground">
-          Selecciona una categoría por persona. La identificación vigente
-          siempre es obligatoria. Los documentos pendientes deben revisarse
-          antes de confirmar.
+          Selecciona una categoría por persona.{" "}
+          {/* Comentado: ya no se exige revisión documental. */}
+          {/* La identificación vigente siempre es obligatoria. */}
+          {/* Los documentos pendientes deben revisarse antes de confirmar. */}
         </p>
       </div>
 
@@ -228,5 +236,5 @@ export default function ApprovePlannedAccess({
 function formatErrors(errors: unknown) {
   return typeof errors === "string"
     ? errors
-    : "Revisa los datos de la solicitud y la documentación requerida.";
+    : "Revisa los datos de la solicitud.";
 }

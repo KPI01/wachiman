@@ -2,10 +2,9 @@ import type { PlannedAccessStatus } from "../../../../db/enums";
 import CancelPlannedAccessButton from "./cancel-planned-access-button";
 import RejectPlannedAccessButton from "./reject-planned-access-button";
 import EditPlannedAccessButton from "./edit-planned-access-button";
+import ApprovePlannedAccessButton from "./approve-planned-access-button";
 import type { Site } from "../../../../db/schema";
 import type { PlannedAccessListItem } from "~/lib/database/planned-access.server";
-import TableActionButton from "~/components/table-action-button";
-import { CheckIcon } from "lucide-react";
 
 export type AllowedAction = "EDIT" | "APPROVE" | "REJECT" | "CANCEL";
 
@@ -42,10 +41,15 @@ export default function PlannedAccessStatusActions({
         />
       ) : null}
       {status === "PENDING_APPROVAL" && allowedActions.includes("APPROVE") ? (
-        <TableActionButton
-          label="Aprobar solicitud"
-          icon={CheckIcon}
-          to={`${actionPath}/${plannedAccessId}/approve`}
+        // Comentado: antes el botón enlazaba a la página de aprobación.
+        // <TableActionButton
+        //   label="Aprobar solicitud"
+        //   icon={CheckIcon}
+        //   to={`${actionPath}/${plannedAccessId}/approve`}
+        // />
+        <ApprovePlannedAccessButton
+          actionPath={actionPath}
+          plannedAccessId={plannedAccessId}
         />
       ) : null}
       {status === "PENDING_APPROVAL" && allowedActions.includes("REJECT") ? (

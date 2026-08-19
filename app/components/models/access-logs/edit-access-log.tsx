@@ -32,7 +32,8 @@ import type { ExternalWorkerListItem } from "~/lib/database/external-worker.serv
 import { formatTimestamp } from "~/lib/utils";
 import { getFieldErrors } from "~/lib/utils/zod-errors";
 import { getActionErrorMessage } from "~/lib/utils/action-errors";
-import WorkerDocumentViewer from "~/components/models/worker-document/worker-document-viewer";
+// Comentado: el flujo de documentación ya no se muestra.
+// import WorkerDocumentViewer from "~/components/models/worker-document/worker-document-viewer";
 
 type EditStep = "warning" | "form" | "confirmation";
 
@@ -238,7 +239,9 @@ export default function EditAccessLog({
           <AlertTriangleIcon />
           <AlertTitle>Modificación de datos históricos</AlertTitle>
           <AlertDescription>
-            Verifica la documentación original antes de continuar. Editar este
+            {/* Comentado: el flujo de documentación ya no se muestra. */}
+            {/* Verifica la documentación original antes de continuar. */}
+            Editar este
             registro no cambia la ficha maestra del trabajador ni una solicitud
             planificada vinculada.
           </AlertDescription>
@@ -382,10 +385,12 @@ export default function EditAccessLog({
             }
           />
         </FieldWrapper>
-        {externalWorkerId ? (
-          <div className="md:col-span-2">
-            <WorkerDocumentViewer workerId={externalWorkerId} />
-          </div>
+{externalWorkerId ? (
+          /* Comentado: el flujo de documentación ya no se muestra. */
+          /* <div className="md:col-span-2"> */
+          /*   <WorkerDocumentViewer workerId={externalWorkerId} /> */
+          /* </div> */
+          null
         ) : null}
         <FieldWrapper
           label="Nombre *"

@@ -38,7 +38,8 @@ export default [
     route("companies", "routes/admin/companies.tsx"),
     route("work-categories", "routes/admin/work-categories.tsx"),
     route("audit-log", "routes/admin/audit-log.tsx"),
-    route("documents", "routes/admin/documents.tsx"),
+    // Comentado: el flujo de documentación ya no se muestra.
+    // route("documents", "routes/admin/documents.tsx"),
   ]),
 
   // Operador de accesos
@@ -62,7 +63,8 @@ export default [
     route("companies", "routes/security/companies.tsx"),
     route("work-categories", "routes/security/work-categories.tsx"),
     route("audit-log", "routes/security/audit-log.tsx"),
-    route("documents", "routes/security/documents.tsx"),
+    // Comentado: el flujo de documentación ya no se muestra.
+    // route("documents", "routes/security/documents.tsx"),
   ]),
 
   // Solicitante de accesos
@@ -81,7 +83,8 @@ export default [
     route("external-worker/:id", "routes/approver/external-worker.$id.tsx"),
     route("companies", "routes/approver/companies.tsx"),
     route("work-categories", "routes/approver/work-categories.tsx"),
-    route("documents", "routes/approver/documents.tsx"),
+    // Comentado: el flujo de documentación ya no se muestra.
+    // route("documents", "routes/approver/documents.tsx"),
   ]),
 
   // API - Dashboard widgets (resource routes)

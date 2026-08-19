@@ -2,7 +2,8 @@ import {
   Building2Icon,
   ClipboardCheckIcon,
   ClipboardListIcon,
-  FileArchiveIcon,
+  // Comentado: el flujo de documentación ya no se muestra.
+  // FileArchiveIcon,
   GaugeIcon,
   HistoryIcon,
   KeyRoundIcon,
@@ -38,7 +39,8 @@ export const ROLE_NAVIGATION: Record<UserRole, SidebarLinkItem[]> = {
       label: "Trabajadores",
       children: [
         item("Trabajadores externos", "/admin/external-workers", UsersIcon),
-        item("Documentación", "/admin/documents", FileArchiveIcon),
+        // Comentado: el flujo de documentación ya no se muestra.
+        // item("Documentación", "/admin/documents", FileArchiveIcon),
       ],
     },
     {
@@ -69,7 +71,8 @@ export const ROLE_NAVIGATION: Record<UserRole, SidebarLinkItem[]> = {
       children: [
         item("Empresas", "/security/companies", Building2Icon),
         item("Categorías", "/security/work-categories", TagsIcon),
-        item("Documentación", "/security/documents", FileArchiveIcon),
+        // Comentado: el flujo de documentación ya no se muestra.
+        // item("Documentación", "/security/documents", FileArchiveIcon),
       ],
     },
     item("Auditoría", "/security/audit-log", HistoryIcon),
@@ -89,7 +92,8 @@ export const ROLE_NAVIGATION: Record<UserRole, SidebarLinkItem[]> = {
       children: [
         item("Empresas", "/approver/companies", Building2Icon),
         item("Categorías", "/approver/work-categories", TagsIcon),
-        item("Documentación", "/approver/documents", FileArchiveIcon),
+        // Comentado: el flujo de documentación ya no se muestra.
+        // item("Documentación", "/approver/documents", FileArchiveIcon),
       ],
     },
   ],

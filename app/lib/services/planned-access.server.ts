@@ -1,8 +1,9 @@
 import z from "zod";
-import type { DocumentType, PlannedAccessStatus } from "../../../db/enums";
+import type { PlannedAccessStatus } from "../../../db/enums";
 import { encryptValue } from "../crypt.server";
-import { DOCUMENT_TYPE_LABELS } from "../models/worker-document";
-import { validateWorkerDocumentsForAccess } from "./worker-document.server";
+// Comentado: la aprobación e ingreso ya no validan documentación.
+// import { DOCUMENT_TYPE_LABELS } from "../models/worker-document";
+// import { validateWorkerDocumentsForAccess } from "./worker-document.server";
 import { ExternalWorkerEntity } from "../database/external-worker.server";
 import { AccessLogEntity } from "../database/access-log.server";
 import { PlannedAccessEntity } from "../database/planned-access.server";
@@ -12,7 +13,8 @@ import { CompanyEntity } from "../database/company.server";
 import { AuditLogEntity } from "../database/audit-log.server";
 import { AppSettingsEntity } from "../database/app-settings.server";
 import { uploadWorkerDocument } from "./worker-document.server";
-import { endOfUtcDay } from "../document-expiry";
+// Comentado: la aprobación e ingreso ya no validan documentación.
+// import { endOfUtcDay } from "../document-expiry";
 import { isPlannedAccessEnterableAt } from "../planned-access-time";
 import {
   createAccessLogFromPlannedAccessSchema,
@@ -60,27 +62,28 @@ export async function getManyPlannedAccesses(input?: {
   return await PlannedAccessEntity.findMany(input);
 }
 
-function getPlannedAccessEnd(expectedStart: Date, expectedEnd?: Date | null) {
-  return expectedEnd ?? endOfUtcDay(expectedStart);
-}
+// Comentado: la aprobación e ingreso ya no validan documentación.
+// function getPlannedAccessEnd(expectedStart: Date, expectedEnd?: Date | null) {
+//   return expectedEnd ?? endOfUtcDay(expectedStart);
+// }
 
-function formatDocumentValidationError(
-  worker: { firstName: string; lastName: string; legalId: string },
-  result: { missingTypes: DocumentType[]; expiredTypes: DocumentType[] },
-) {
-  const errorParts: string[] = [];
-  if (result.missingTypes.length > 0) {
-    errorParts.push(
-      `faltan: ${result.missingTypes.map((type) => DOCUMENT_TYPE_LABELS[type]).join(", ")}`,
-    );
-  }
-  if (result.expiredTypes.length > 0) {
-    errorParts.push(
-      `expirados: ${result.expiredTypes.map((type) => DOCUMENT_TYPE_LABELS[type]).join(", ")}`,
-    );
-  }
-  return `El trabajador ${worker.firstName} ${worker.lastName} (${worker.legalId}) no tiene la documentación requerida vigente (${errorParts.join("; ")}).`;
-}
+// function formatDocumentValidationError(
+//   worker: { firstName: string; lastName: string; legalId: string },
+//   result: { missingTypes: DocumentType[]; expiredTypes: DocumentType[] },
+// ) {
+//   const errorParts: string[] = [];
+//   if (result.missingTypes.length > 0) {
+//     errorParts.push(
+//       `faltan: ${result.missingTypes.map((type) => DOCUMENT_TYPE_LABELS[type]).join(", ")}`,
+//     );
+//   }
+//   if (result.expiredTypes.length > 0) {
+//     errorParts.push(
+//       `expirados: ${result.expiredTypes.map((type) => DOCUMENT_TYPE_LABELS[type]).join(", ")}`,
+//     );
+//   }
+//   return `El trabajador ${worker.firstName} ${worker.lastName} (${worker.legalId}) no tiene la documentación requerida vigente (${errorParts.join("; ")}).`;
+// }
 
 type PlannedAccessAuthorOptions = {
   authorUsername: string;
@@ -545,11 +548,14 @@ export async function updatePlannedAccessStatus(
       }
 
       if (!worker) {
-        if (!categoryId) {
-          validationErrors.push(`La persona ${person.firstNameSnapshot} ${person.lastNameSnapshot} es nueva y necesita una categoría laboral.`);
-          continue;
-        }
+        // Comentado: se exigía una categoría laboral para crear personas nuevas.
+        // if (!categoryId) {
+        //   validationErrors.push(`La persona ${person.firstNameSnapshot} ${person.lastNameSnapshot} es nueva y necesita una categoría laboral.`);
+        //   continue;
+        // }
         const company = await findOrCreateCompany(plannedAccess.companySnapshot);
+        // Nuevo: se resuelve una categoría por defecto cuando no se indicó una.
+        const defaultCategoryId = await WorkCategoryEntity.resolveDefault();
         const createdWorker = await ExternalWorkerEntity.create({
           firstName: person.firstNameSnapshot,
           middleName: person.middleNameSnapshot ?? undefined,
@@ -558,7 +564,7 @@ export async function updatePlannedAccessStatus(
           phoneNumber: person.phoneNumber ?? undefined,
           legalId,
           companyId: company.id,
-          workCategoryId: categoryId,
+          workCategoryId: categoryId ?? defaultCategoryId,
         });
         worker = createdWorker;
       }
@@ -577,30 +583,37 @@ export async function updatePlannedAccessStatus(
 
       const workerId = worker.id;
       personWorkCategories.push({ personId: person.id, workCategoryId: effectiveCategoryId, externalWorkerId: workerId });
-      const requirements = {
-        requiresTraining: Boolean(category.requiresTraining),
-        requiresSpecialPermission: Boolean(category.requiresSpecialPermission),
-      };
-      const docResult = await validateWorkerDocumentsForAccess(
-        workerId,
-        requirements,
-        getPlannedAccessEnd(
-          plannedAccess.expectedStartDatetime,
-          plannedAccess.expectedEndDatetime,
-        ),
-      );
+      // Comentado: la aprobación ya no valida documentación.
+      // const requirements = {
+      //   requiresTraining: Boolean(category.requiresTraining),
+      //   requiresSpecialPermission: Boolean(category.requiresSpecialPermission),
+      // };
+      // const docResult = await validateWorkerDocumentsForAccess(
+      //   workerId,
+      //   requirements,
+      //   getPlannedAccessEnd(
+      //     plannedAccess.expectedStartDatetime,
+      //     plannedAccess.expectedEndDatetime,
+      //   ),
+      // );
 
-      if (!docResult.valid) {
-        validationErrors.push(formatDocumentValidationError(worker, docResult));
-      } else {
-        decisionEvidence.push({
-          personId: person.id,
-          workerId,
-          workCategoryId: effectiveCategoryId,
-          requirements,
-          documents: docResult.evaluatedDocuments,
-        });
-      }
+      // if (!docResult.valid) {
+      //   validationErrors.push(formatDocumentValidationError(worker, docResult));
+      // } else {
+      //   decisionEvidence.push({
+      //     personId: person.id,
+      //     workerId,
+      //     workCategoryId: effectiveCategoryId,
+      //     requirements,
+      //     documents: docResult.evaluatedDocuments,
+      //   });
+      // }
+
+      decisionEvidence.push({
+        personId: person.id,
+        workerId,
+        workCategoryId: effectiveCategoryId,
+      });
     }
 
     if (validationErrors.length > 0) {
@@ -766,25 +779,26 @@ export async function createAccessLogFromPlannedAccess(
     return { success: false, errors: "El trabajador externo vinculado ya no existe." };
   }
 
-  const category = person.workCategory ?? worker.workCategory;
-  if (!category) {
-    return { success: false, errors: "La persona no tiene una categoría laboral válida." };
-  }
+  // Comentado: el ingreso al centro ya no valida documentación.
+  // const category = person.workCategory ?? worker.workCategory;
+  // if (!category) {
+  //   return { success: false, errors: "La persona no tiene una categoría laboral válida." };
+  // }
 
-  const documentResult = await validateWorkerDocumentsForAccess(
-    worker.id,
-    {
-      requiresTraining: Boolean(category.requiresTraining),
-      requiresSpecialPermission: Boolean(category.requiresSpecialPermission),
-    },
-    getPlannedAccessEnd(
-      plannedAccess.expectedStartDatetime,
-      plannedAccess.expectedEndDatetime,
-    ),
-  );
-  if (!documentResult.valid) {
-    return { success: false, errors: formatDocumentValidationError(worker, documentResult) };
-  }
+  // const documentResult = await validateWorkerDocumentsForAccess(
+  //   worker.id,
+  //   {
+  //     requiresTraining: Boolean(category.requiresTraining),
+  //     requiresSpecialPermission: Boolean(category.requiresSpecialPermission),
+  //   },
+  //   getPlannedAccessEnd(
+  //     plannedAccess.expectedStartDatetime,
+  //     plannedAccess.expectedEndDatetime,
+  //   ),
+  // );
+  // if (!documentResult.valid) {
+  //   return { success: false, errors: formatDocumentValidationError(worker, documentResult) };
+  // }
 
   const personHasRegisteredAccess = await PlannedAccessEntity.hasPersonAccessLog(
     person.id,

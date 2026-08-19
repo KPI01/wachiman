@@ -7,7 +7,5 @@ export async function loader({ request }: Route.LoaderArgs) {
 }
 
 export default function OperatorLayout({ loaderData }: Route.ComponentProps) {
-  return (
-    <OperationalShell title="Control de accesos" user={loaderData} />
-  );
+  return <OperationalShell title="Portería" user={loaderData} />;
 }

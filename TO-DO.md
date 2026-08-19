@@ -19,3 +19,11 @@
 - [x] Hay un bug en la tabla de trabajadores externos, no salta el tooltip ni hace nada al hacer click
 - [x] El sheet donde se ven los metadatos de la auditoria, no es responsive. Los datos se ven mal
 - [x] Colocar los filtros dentro de los encabezados de las columnas
+- [ ] Acciones sobre documentación de trabajadores
+- [ ] En registro de acceso agregar: zona autorizada para trabajar, quien autoriza el acceso
+- [ ] Opción que permite el acceso con dispositivos electronicos mediante la solicitud (normativa nueva)
+- [ ] Desplegable en tipo de vehículo al registrar el acceso
+- [ ] Asociar un registro de acceso a una solicitud existente
+  > ¿Por que esto? Porque muchas veces una solicitud tiene una persona aprobada, pero luego por cualquier razón, se presenta otra. Entonces tiene que haber una opción que permita asociar este registro a una persona
+  > O, ¿modificar los datos de la solicitud? Creo que esto no es viable porque cuando esta aprobada la solicitud, se registra en la BD
+- [ ] Registrar en la BD cuando se registra un acceso

@@ -1,6 +1,9 @@
 import { validateUserRole } from "~/lib/auth.server";
 import { getAllDocuments } from "~/lib/services/worker-document.server";
-import type { Route } from "./+types/documents";
+// Comentado: la ruta /documents ya no está registrada, por lo que typegen no
+// genera los tipos de ruta. Se definen tipos locales autocontenidos.
+// import type { Route } from "./+types/documents";
+import type { LoaderFunctionArgs } from "react-router";
 import DataTable from "~/components/ui/data-table";
 import { workerDocumentColumns } from "~/lib/columns/worker-document";
 
@@ -12,13 +15,17 @@ const GLOBAL_FILTER_COLUMNS = [
   "notes",
 ];
 
-export async function loader({ request }: Route.LoaderArgs) {
+type LoaderArgs = LoaderFunctionArgs;
+
+export async function loader({ request }: LoaderArgs) {
   await validateUserRole(request, ["ADMIN", "SECURITY_MANAGER", "ACCESS_APPROVER"]);
   const documents = await getAllDocuments();
   return { documents };
 }
 
-export default function DocumentsPage({ loaderData }: Route.ComponentProps) {
+type ComponentProps = { loaderData: Awaited<ReturnType<typeof loader>> };
+
+export default function DocumentsPage({ loaderData }: ComponentProps) {
   return (
     <div className="flex flex-col gap-y-4">
       <h2 className="text-3xl font-bold">Documentacion</h2>

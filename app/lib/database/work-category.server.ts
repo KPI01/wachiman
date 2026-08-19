@@ -22,6 +22,28 @@ export class WorkCategoryEntity {
     return wc ?? null;
   }
 
+  public static async resolveDefault() {
+    const categories = await this.findMany();
+    const generic = categories.find(
+      (category) => category.name.trim().toUpperCase() === "GENERAL",
+    );
+    if (generic) return generic.id;
+
+    const lenient = categories.find(
+      (category) => !category.requiresTraining && !category.requiresSpecialPermission,
+    );
+    if (lenient) return lenient.id;
+
+    const [first] = categories;
+    if (first) return first.id;
+
+    const created = await this.create({
+      name: "General",
+      description: "Categoría laboral por defecto",
+    });
+    return created.id;
+  }
+
   public static async findMany() {
     return db.select().from(workCategories).all();
   }

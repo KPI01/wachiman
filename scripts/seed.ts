@@ -112,6 +112,7 @@ async function main() {
   ]).onConflictDoNothing();
 
   await db.insert(workCategories).values([
+    { id: "wc-0", name: "General", description: "Categoria laboral por defecto", requiresSpecialPermission: false, requiresTraining: false },
     { id: "wc-1", name: "Electricista", description: "Instalacion y mantenimiento electrico", requiresSpecialPermission: true, requiresTraining: true },
     { id: "wc-2", name: "Albanil", description: "Obra y reformas", requiresSpecialPermission: false, requiresTraining: false },
     { id: "wc-3", name: "Soldador", description: "Trabajos de soldadura", requiresSpecialPermission: true, requiresTraining: true },

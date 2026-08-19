@@ -14,10 +14,11 @@ export const workCategoryColumns = [
     header: "Descripcion",
     cell: ({ getValue }) => getValue() || "-",
   }),
-  workCategoryColHelper.accessor("requiresSpecialPermission", {
-    header: "Req. Permiso Especial",
-    cell: ({ getValue }) => (getValue() ? "Si" : "No"),
-  }),
+  // Comentado: los requisitos documentales ya no se muestran.
+  // workCategoryColHelper.accessor("requiresSpecialPermission", {
+  //   header: "Req. Permiso Especial",
+  //   cell: ({ getValue }) => (getValue() ? "Si" : "No"),
+  // }),
   workCategoryColHelper.accessor("createdAt", {
     header: "Creación",
     cell: ({ getValue }) =>

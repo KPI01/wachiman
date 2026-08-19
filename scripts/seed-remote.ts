@@ -48,6 +48,7 @@ INSERT INTO companies (id, name, slug, cif, address, phone, email, created_at, u
 
 -- ───── WORK CATEGORIES ───────────────────────────────
 INSERT INTO work_categories (id, name, description, requires_special_permission, requires_training, created_at, updated_at) VALUES
+('wc-0', 'General', 'Categoria laboral por defecto', 0, 0, '${nowISO}', '${nowISO}'),
 ('wc-1', 'Electricista', 'Instalacion y mantenimiento electrico', 1, 1, '${nowISO}', '${nowISO}'),
 ('wc-2', 'Albanil', 'Obra y reformas', 0, 0, '${nowISO}', '${nowISO}'),
 ('wc-3', 'Soldador', 'Trabajos de soldadura', 1, 1, '${nowISO}', '${nowISO}'),

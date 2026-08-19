@@ -25,7 +25,8 @@ import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
 import type { ExternalWorkerListItem } from "~/lib/database/external-worker.server";
 import CompanyCombobox from "~/components/models/company/company-combobox";
 import { getActionErrorMessage } from "~/lib/utils/action-errors";
-import WorkerDocumentViewer from "~/components/models/worker-document/worker-document-viewer";
+// Comentado: el flujo de documentación ya no se muestra.
+// import WorkerDocumentViewer from "~/components/models/worker-document/worker-document-viewer";
 
 type FetcherErrors = {
   errors?: {
@@ -345,10 +346,12 @@ export default function CreateAccessLog({
                     value={selectedExternalWorkerId}
                   />
                 ) : null}
-                {selectedExternalWorkerId ? (
-                  <div className="mt-2">
-                    <WorkerDocumentViewer workerId={selectedExternalWorkerId} />
-                  </div>
+{selectedExternalWorkerId ? (
+                  /* Comentado: el flujo de documentación ya no se muestra. */
+                  /* <div className="mt-2"> */
+                  /*   <WorkerDocumentViewer workerId={selectedExternalWorkerId} /> */
+                  /* </div> */
+                  null
                 ) : null}
                 {showSuggestions && suggestions.length > 0 && (
                   <ul className="absolute z-50 mt-1 max-h-48 w-full overflow-auto rounded-md border bg-popover p-1 shadow-md">

@@ -14,8 +14,9 @@ import {
 } from "~/components/ui/table";
 import { Badge } from "~/components/ui/badge";
 import type { PlannedAccessStatus } from "../../../db/enums";
-import WorkerDocumentList from "~/components/models/worker-document/worker-document-list";
-import UploadWorkerDocumentBtn from "~/components/models/worker-document/upload-worker-document-btn";
+// Comentado: el flujo de documentación ya no se muestra.
+// import WorkerDocumentList from "~/components/models/worker-document/worker-document-list";
+// import UploadWorkerDocumentBtn from "~/components/models/worker-document/upload-worker-document-btn";
 
 const PLANNED_ACCESS_STATUS_LABELS: Record<PlannedAccessStatus, string> = {
   PENDING_APPROVAL: "Pendiente",
@@ -40,7 +41,11 @@ export async function loader({ request, params }: Route.LoaderArgs) {
     throw data("Trabajador no encontrado", { status: 404 });
   }
 
-  return { worker, canReviewDocuments: user.role === "SECURITY_MANAGER" };
+return {
+    worker,
+    // Comentado: el flujo de documentación ya no se muestra.
+    // canReviewDocuments: user.role === "SECURITY_MANAGER",
+  };
 }
 
 export default function ExternalWorkerDetail({
@@ -125,19 +130,20 @@ export default function ExternalWorkerDetail({
         </div>
       </div>
 
-      <Separator />
+<Separator />
 
-      <div>
-        <div className="mb-3 flex items-center justify-between">
-          <h3 className="text-xl font-semibold">Documentacion</h3>
-          <UploadWorkerDocumentBtn workerId={worker.id} />
-        </div>
-        <WorkerDocumentList
-          documents={worker.documents}
-          workerId={worker.id}
-          canReviewDocuments={loaderData.canReviewDocuments}
-        />
-      </div>
+      {/* Comentado: el flujo de documentación ya no se muestra. */}
+      {/* <div> */}
+      {/*   <div className="mb-3 flex items-center justify-between"> */}
+      {/*     <h3 className="text-xl font-semibold">Documentacion</h3> */}
+      {/*     <UploadWorkerDocumentBtn workerId={worker.id} /> */}
+      {/*   </div> */}
+      {/*   <WorkerDocumentList */}
+      {/*     documents={worker.documents} */}
+      {/*     workerId={worker.id} */}
+      {/*     canReviewDocuments={loaderData.canReviewDocuments} */}
+      {/*   /> */}
+      {/* </div> */}
 
       <Separator />
 
