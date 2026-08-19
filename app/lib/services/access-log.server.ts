@@ -11,6 +11,8 @@ import {
 } from "../database/access-log.server";
 import { encryptValue } from "../crypt.server";
 import { ExternalWorkerEntity } from "../database/external-worker.server";
+import { CompanyEntity } from "../database/company.server";
+import { WorkCategoryEntity } from "../database/work-category.server";
 import { validateWorkerDocumentsForAccess } from "./worker-document.server";
 import { DOCUMENT_TYPE_LABELS } from "../models/worker-document";
 import type { DocumentType } from "../../../db/enums";
@@ -114,6 +116,28 @@ async function buildCreateAccessLogInput({
   };
 }
 
+async function resolveExternalWorker(data: z.infer<typeof createAccessLogSchema>) {
+  const existingWorker = data.externalWorkerId
+    ? await ExternalWorkerEntity.findById(data.externalWorkerId)
+    : await ExternalWorkerEntity.findByLegalId(data.legalIdSnapshot);
+
+  if (existingWorker) return existingWorker;
+
+  const company = await CompanyEntity.findOrCreateByName(data.companyNameSnapshot);
+  const workCategoryId = await WorkCategoryEntity.resolveDefault();
+
+  return ExternalWorkerEntity.findOrCreateByLegalId({
+    firstName: data.firstNameSnapshot,
+    middleName: data.middleNameSnapshot,
+    lastName: data.lastNameSnapshot,
+    secondLastName: data.secondLastNameSnapshot,
+    phoneNumber: data.phoneNumber,
+    legalId: data.legalIdSnapshot,
+    companyId: company.id,
+    workCategoryId,
+  });
+}
+
 export async function createAccessLog(
   input: Record<string, unknown>,
   options: CreateAccessLogOptions,
@@ -172,8 +196,12 @@ export async function createAccessLog(
     };
   }
 
+  const externalWorker = await resolveExternalWorker(data);
   await AccessLogEntity.create(
-    await buildCreateAccessLogInput({ data, siteId, createdById: createdBy.id }),
+    {
+      ...(await buildCreateAccessLogInput({ data, siteId, createdById: createdBy.id })),
+      externalWorkerId: externalWorker.id,
+    },
   );
 
   return { success: true };

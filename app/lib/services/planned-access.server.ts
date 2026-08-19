@@ -96,34 +96,8 @@ function normalizeLegalId(value: string) {
   return value.trim().toUpperCase();
 }
 
-function normalizeCompanyName(value: string) {
-  return value.trim().replace(/\s+/g, " ");
-}
-
-function companySlug(value: string) {
-  return normalizeCompanyName(value)
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-zA-Z0-9]+/g, "-")
-    .replace(/^-|-$/g, "")
-    .toUpperCase() || "EMPRESA";
-}
-
 async function findOrCreateCompany(name: string) {
-  const normalizedName = normalizeCompanyName(name);
-  const companies = await CompanyEntity.findMany();
-  const existing = companies.find(
-    (company) => normalizeCompanyName(company.name).toUpperCase() === normalizedName.toUpperCase(),
-  );
-  if (existing) return existing;
-
-  let slug = companySlug(normalizedName);
-  let suffix = 1;
-  while (companies.some((company) => company.slug === slug)) {
-    suffix += 1;
-    slug = `${companySlug(normalizedName)}-${suffix}`;
-  }
-  return CompanyEntity.create({ name: normalizedName, slug });
+  return CompanyEntity.findOrCreateByName(name);
 }
 
 export async function createPlannedAccess(

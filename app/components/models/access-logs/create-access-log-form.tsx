@@ -76,7 +76,9 @@ export default function CreateAccessLog({
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   const formRef = useRef<HTMLFormElement>(null);
   const firstNameRef = useRef<HTMLInputElement>(null);
+  const middleNameRef = useRef<HTMLInputElement>(null);
   const lastNameRef = useRef<HTMLInputElement>(null);
+  const secondLastNameRef = useRef<HTMLInputElement>(null);
   const phoneRef = useRef<HTMLInputElement>(null);
   const suggestionContainerRef = useRef<HTMLDivElement>(null);
   const selectedSiteId = lockedSiteId ?? sites[0]?.id;
@@ -88,8 +90,15 @@ export default function CreateAccessLog({
     setLegalIdValue(worker.legalId);
 
     if (firstNameRef.current) firstNameRef.current.value = worker.firstName;
+    if (middleNameRef.current) {
+      middleNameRef.current.value = worker.middleName ?? "";
+    }
     if (lastNameRef.current) lastNameRef.current.value = worker.lastName;
+    if (secondLastNameRef.current) {
+      secondLastNameRef.current.value = worker.secondLastName ?? "";
+    }
     if (phoneRef.current) phoneRef.current.value = worker.phoneNumber ?? "";
+    if (worker.company?.name) setCompanyNameValue(worker.company.name);
     setSuggestions([]);
     setShowSuggestions(false);
   }
@@ -104,19 +113,40 @@ export default function CreateAccessLog({
       return;
     }
 
+    const controller = new AbortController();
     debounceRef.current = setTimeout(async () => {
-      const params = new URLSearchParams({ q: legalIdValue });
-      const response = await fetch(`/api/external-workers/search?${params}`);
-      if (response.ok) {
+      try {
+        const params = new URLSearchParams({ q: legalIdValue });
+        const response = await fetch(`/api/external-workers/search?${params}`, {
+          signal: controller.signal,
+        });
+        if (!response.ok) return;
+
         const data = await response.json() as ExternalWorkerListItem[];
+        const normalizedLegalId = legalIdValue.trim().toUpperCase();
+        const exactMatch = data.find(
+          (worker) => worker.legalId.trim().toUpperCase() === normalizedLegalId,
+        );
+
+        if (exactMatch) {
+          handleExternalWorkerSelect(exactMatch);
+          return;
+        }
+
         setSuggestions(data);
         setSelectedSuggestionIndex(0);
         setShowSuggestions(data.length > 0);
+      } catch (error) {
+        if ((error as Error).name !== "AbortError") {
+          setSuggestions([]);
+          setShowSuggestions(false);
+        }
       }
     }, 300);
 
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
+      controller.abort();
     };
   }, [legalIdValue]);
 
@@ -398,6 +428,17 @@ export default function CreateAccessLog({
               />
             </FieldWrapper>
             <FieldWrapper
+              label="Segundo nombre"
+              htmlFor="middleNameSnapshot"
+              errors={getFieldErrors(fetcher.data?.errors, "middleNameSnapshot")}
+            >
+              <Input
+                ref={middleNameRef}
+                id="middleNameSnapshot"
+                name="middleNameSnapshot"
+              />
+            </FieldWrapper>
+            <FieldWrapper
               label="Apellido(s) *"
               htmlFor="lastNameSnapshot"
               errors={getFieldErrors(fetcher.data?.errors, "lastNameSnapshot")}
@@ -407,6 +448,20 @@ export default function CreateAccessLog({
                 id="lastNameSnapshot"
                 name="lastNameSnapshot"
                 required
+              />
+            </FieldWrapper>
+            <FieldWrapper
+              label="Segundo apellido"
+              htmlFor="secondLastNameSnapshot"
+              errors={getFieldErrors(
+                fetcher.data?.errors,
+                "secondLastNameSnapshot",
+              )}
+            >
+              <Input
+                ref={secondLastNameRef}
+                id="secondLastNameSnapshot"
+                name="secondLastNameSnapshot"
               />
             </FieldWrapper>
             <FieldWrapper

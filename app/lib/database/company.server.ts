@@ -35,6 +35,33 @@ export class CompanyEntity {
     return company ?? null;
   }
 
+  public static async findOrCreateByName(name: string) {
+    const normalizedName = name.trim().replace(/\s+/g, " ");
+    const companies = await this.findMany();
+    const existing = companies.find(
+      (company) =>
+        company.name.trim().replace(/\s+/g, " ").toUpperCase() ===
+        normalizedName.toUpperCase(),
+    );
+    if (existing) return existing;
+
+    const baseSlug =
+      normalizedName
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-zA-Z0-9]+/g, "-")
+        .replace(/^-|-$/g, "")
+        .toUpperCase() || "EMPRESA";
+    let slug = baseSlug;
+    let suffix = 1;
+    while (companies.some((company) => company.slug === slug)) {
+      suffix += 1;
+      slug = `${baseSlug}-${suffix}`;
+    }
+
+    return this.create({ name: normalizedName, slug });
+  }
+
   public static async findMany() {
     return db.select().from(companies).all();
   }

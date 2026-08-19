@@ -117,6 +117,24 @@ export class ExternalWorkerEntity {
     return row ?? null;
   }
 
+  public static async findOrCreateByLegalId(data: CreateExternalWorkerInput) {
+    const legalId = data.legalId.trim().toUpperCase();
+    const existing = await this.findByLegalId(legalId);
+    if (existing) return existing;
+
+    await db
+      .insert(externalWorkers)
+      .values({ ...data, legalId })
+      .onConflictDoNothing({ target: externalWorkers.legalId })
+      .run();
+
+    const worker = await this.findByLegalId(legalId);
+    if (!worker) {
+      throw new Error("No se pudo crear el trabajador externo.");
+    }
+    return worker;
+  }
+
   public static async findByLegalIdExcluding(legalId: string, excludedId: string) {
     const row = await db
       .select()
