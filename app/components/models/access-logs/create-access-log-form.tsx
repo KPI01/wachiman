@@ -24,6 +24,7 @@ import { Textarea } from "~/components/ui/textarea";
 import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
 import type { ExternalWorkerListItem } from "~/lib/database/external-worker.server";
 import CompanyCombobox from "~/components/models/company/company-combobox";
+import AccessLogTextCombobox from "./access-log-text-combobox";
 import { getActionErrorMessage } from "~/lib/utils/action-errors";
 // Comentado: el flujo de documentación ya no se muestra.
 // import WorkerDocumentViewer from "~/components/models/worker-document/worker-document-viewer";
@@ -70,6 +71,8 @@ export default function CreateAccessLog({
   >(null);
   const [legalIdValue, setLegalIdValue] = useState("");
   const [companyNameValue, setCompanyNameValue] = useState("");
+  const [allowedAreaValue, setAllowedAreaValue] = useState("");
+  const [approvedByValue, setApprovedByValue] = useState("");
   const [suggestions, setSuggestions] = useState<ExternalWorkerListItem[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(0);
@@ -122,7 +125,7 @@ export default function CreateAccessLog({
         });
         if (!response.ok) return;
 
-        const data = await response.json() as ExternalWorkerListItem[];
+        const data = (await response.json()) as ExternalWorkerListItem[];
         const normalizedLegalId = legalIdValue.trim().toUpperCase();
         const exactMatch = data.find(
           (worker) => worker.legalId.trim().toUpperCase() === normalizedLegalId,
@@ -169,7 +172,9 @@ export default function CreateAccessLog({
 
     if (event.key === "ArrowDown") {
       event.preventDefault();
-      setSelectedSuggestionIndex((prev) => Math.min(prev + 1, suggestions.length - 1));
+      setSelectedSuggestionIndex((prev) =>
+        Math.min(prev + 1, suggestions.length - 1),
+      );
     } else if (event.key === "ArrowUp") {
       event.preventDefault();
       setSelectedSuggestionIndex((prev) => Math.max(prev - 1, 0));
@@ -202,6 +207,8 @@ export default function CreateAccessLog({
     setSelectedExternalWorkerId(null);
     setLegalIdValue("");
     setCompanyNameValue("");
+    setAllowedAreaValue("");
+    setApprovedByValue("");
     setSuggestions([]);
     setShowSuggestions(false);
   }, [fetcher.data, fetcher.state]);
@@ -222,6 +229,8 @@ export default function CreateAccessLog({
           setSelectedExternalWorkerId(null);
           setLegalIdValue("");
           setCompanyNameValue("");
+          setAllowedAreaValue("");
+          setApprovedByValue("");
           setSuggestions([]);
           setShowSuggestions(false);
         }
@@ -243,7 +252,7 @@ export default function CreateAccessLog({
           </>
         ) : (
           <>
-            Solicita al visitante que revise la informacion y firme para
+            Solicita al visitante que revise la información y firme para
             confirmar el registro.
             {globalError && (
               <Alert variant="destructive">
@@ -376,13 +385,13 @@ export default function CreateAccessLog({
                     value={selectedExternalWorkerId}
                   />
                 ) : null}
-{selectedExternalWorkerId ? (
-                  /* Comentado: el flujo de documentación ya no se muestra. */
-                  /* <div className="mt-2"> */
-                  /*   <WorkerDocumentViewer workerId={selectedExternalWorkerId} /> */
-                  /* </div> */
-                  null
-                ) : null}
+                {selectedExternalWorkerId
+                  ? /* Comentado: el flujo de documentación ya no se muestra. */
+                    /* <div className="mt-2"> */
+                    /*   <WorkerDocumentViewer workerId={selectedExternalWorkerId} /> */
+                    /* </div> */
+                    null
+                  : null}
                 {showSuggestions && suggestions.length > 0 && (
                   <ul className="absolute z-50 mt-1 max-h-48 w-full overflow-auto rounded-md border bg-popover p-1 shadow-md">
                     {suggestions.map((worker, index) => (
@@ -485,6 +494,40 @@ export default function CreateAccessLog({
                 required
                 value={companyNameValue}
                 onValueChange={setCompanyNameValue}
+              />
+            </FieldWrapper>
+            <FieldWrapper
+              label="Área autorizada *"
+              htmlFor="allowedAreaSnapshot"
+              errors={getFieldErrors(
+                fetcher.data?.errors,
+                "allowedAreaSnapshot",
+              )}
+            >
+              <AccessLogTextCombobox
+                id="allowedAreaSnapshot"
+                name="allowedAreaSnapshot"
+                required
+                value={allowedAreaValue}
+                onValueChange={setAllowedAreaValue}
+                searchPath="/api/access-logs/allowed-areas/search"
+              />
+            </FieldWrapper>
+            <FieldWrapper
+              label="Aprobado por *"
+              htmlFor="approvedBySnapshot"
+              errors={getFieldErrors(
+                fetcher.data?.errors,
+                "approvedBySnapshot",
+              )}
+            >
+              <AccessLogTextCombobox
+                id="approvedBySnapshot"
+                name="approvedBySnapshot"
+                required
+                value={approvedByValue}
+                onValueChange={setApprovedByValue}
+                searchPath="/api/access-logs/approved-by/search"
               />
             </FieldWrapper>
 

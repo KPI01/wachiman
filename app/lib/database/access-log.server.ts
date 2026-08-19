@@ -1,4 +1,4 @@
-import { and, count, desc, eq, gte, inArray, isNotNull, isNull, lte, ne, or, sql, type SQL } from "drizzle-orm";
+import { and, count, desc, eq, gte, inArray, isNotNull, isNull, like, lte, ne, or, sql, type SQL } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 import { db, isLocalDb } from "../../../db/server";
 import {
@@ -45,6 +45,8 @@ export type CreateAccessLogInput = {
   secondLastNameSnapshot?: string;
   phoneNumber?: string;
   legalIdSnapshot: string;
+  allowedAreaSnapshot: string;
+  approvedBySnapshot: string;
   withVehicle: boolean;
   visitReason: string;
   siteId: string;
@@ -79,6 +81,8 @@ export type UpdateAccessLogInput = {
   secondLastNameSnapshot: string | null;
   phoneNumber: string | null;
   legalIdSnapshot: string;
+  allowedAreaSnapshot: string;
+  approvedBySnapshot: string;
   visitReason: string;
   externalWorkerId: string | null;
 };
@@ -168,6 +172,8 @@ export class AccessLogEntity {
         secondLastNameSnapshot: data.secondLastNameSnapshot,
         phoneNumber: data.phoneNumber,
         legalIdSnapshot: data.legalIdSnapshot,
+        allowedAreaSnapshot: data.allowedAreaSnapshot,
+        approvedBySnapshot: data.approvedBySnapshot,
         withVehicle: data.withVehicle,
         visitReason: data.visitReason,
         siteId: data.siteId,
@@ -396,6 +402,24 @@ export class AccessLogEntity {
 
     if (!row) return null;
     return (await loadAccessLogRelations([row]))[0] ?? null;
+  }
+
+  public static async searchDistinctAllowedAreas(query: string) {
+    return db
+      .selectDistinct({ name: accessLogs.allowedAreaSnapshot })
+      .from(accessLogs)
+      .where(like(accessLogs.allowedAreaSnapshot, `%${query}%`))
+      .limit(8)
+      .all();
+  }
+
+  public static async searchDistinctApprovedBy(query: string) {
+    return db
+      .selectDistinct({ name: accessLogs.approvedBySnapshot })
+      .from(accessLogs)
+      .where(like(accessLogs.approvedBySnapshot, `%${query}%`))
+      .limit(8)
+      .all();
   }
 
   public static async hasVehicle(vehicleId: string) {

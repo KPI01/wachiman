@@ -811,6 +811,12 @@ export async function createAccessLogFromPlannedAccess(
     secondLastNameSnapshot: person.secondLastNameSnapshot ?? undefined,
     phoneNumber: person.phoneNumber ?? undefined,
     legalIdSnapshot: person.legalIdSnapshot,
+    allowedAreaSnapshot:
+      person.workCategory?.name ??
+      worker.workCategory?.name ??
+      "No especificado",
+    approvedBySnapshot:
+      plannedAccess.approvedBy?.fullName ?? author.fullName,
     externalWorkerId: person.externalWorkerId ?? undefined,
     withVehicle: false,
     visitReason: plannedAccess.visitReason,

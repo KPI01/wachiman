@@ -239,6 +239,8 @@ export const accessLogs = sqliteTable("access_logs", {
   secondLastNameSnapshot: text("second_last_name_snapshot"),
   phoneNumber: text("phone_number"),
   legalIdSnapshot: text("legal_id_snapshot").notNull(),
+  allowedAreaSnapshot: text("allowed_area_snapshot").notNull().default("No especificado"),
+  approvedBySnapshot: text("approved_by_snapshot").notNull().default("No especificado"),
   withVehicle: integer("with_vehicle", { mode: "boolean" }).default(false),
   visitReason: text("visit_reason").notNull(),
   siteId: text("site_id")

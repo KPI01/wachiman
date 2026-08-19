@@ -75,6 +75,14 @@ const companyNameColumn = accessLogColHelper.accessor("companyNameSnapshot", {
   header: "Empresa",
 });
 
+const allowedAreaColumn = accessLogColHelper.accessor("allowedAreaSnapshot", {
+  header: "Área autorizada",
+});
+
+const approvedByColumn = accessLogColHelper.accessor("approvedBySnapshot", {
+  header: "Aprobado por",
+});
+
 const vehicleDetailsColumn = accessLogColHelper.accessor(getVehicleDetails, {
   id: "vehicleDetails",
   header: "Vehiculo",
@@ -150,6 +158,8 @@ type AccessLogColumnDef =
   | typeof fullNameColumn
   | typeof legalIdColumn
   | typeof companyNameColumn
+  | typeof allowedAreaColumn
+  | typeof approvedByColumn
   | typeof vehicleDetailsColumn
   | typeof visitReasonColumn
   | typeof siteNameColumn
@@ -170,6 +180,8 @@ export const accessLogColumns: AccessLogColumnDef[] = [
   fullNameColumn,
   legalIdColumn,
   companyNameColumn,
+  allowedAreaColumn,
+  approvedByColumn,
   vehicleDetailsColumn,
   visitReasonColumn,
   siteNameColumn,
@@ -181,6 +193,8 @@ export const ACCESS_LOG_GLOBAL_FILTER_COLUMNS = [
   "fullNameSnapshot",
   "legalIdSnapshot",
   "companyNameSnapshot",
+  "allowedAreaSnapshot",
+  "approvedBySnapshot",
   "vehicleDetails",
   "siteName",
 ] as const;
@@ -194,6 +208,12 @@ export const ACCESS_LOG_COLUMN_FILTER_ACTIONS: DataTableColumnHeaderActions<Acce
   ),
   companyNameSnapshot: (column) => (
     <AccessLogColumnFilter column={column} label="Empresa" />
+  ),
+  allowedAreaSnapshot: (column) => (
+    <AccessLogColumnFilter column={column} label="Área autorizada" />
+  ),
+  approvedBySnapshot: (column) => (
+    <AccessLogColumnFilter column={column} label="Aprobado por" />
   ),
   vehicleDetails: (column) => (
     <AccessLogColumnFilter column={column} label="Vehículo" />
@@ -209,6 +229,8 @@ const baseColumns: AccessLogColumnDef[] = [
   fullNameColumn,
   legalIdColumn,
   companyNameColumn,
+  allowedAreaColumn,
+  approvedByColumn,
 ];
 
 const optionalColumns: Record<OptionalColumnsOptions, AccessLogColumnDef> = {

@@ -37,6 +37,8 @@ export const createAccessLogSchema = z
     secondLastNameSnapshot: optionalString,
     phoneNumber: optionalString,
     legalIdSnapshot: requiredString.transform((s) => s.toUpperCase()),
+    allowedAreaSnapshot: requiredString,
+    approvedBySnapshot: requiredString,
     visitReason: requiredString,
     siteId: requiredString,
     externalWorkerId: optionalString,
@@ -98,6 +100,8 @@ export const updateAccessLogSchema = z
     secondLastNameSnapshot: optionalString,
     phoneNumber: optionalString,
     legalIdSnapshot: requiredString.transform((value) => value.toUpperCase()),
+    allowedAreaSnapshot: requiredString,
+    approvedBySnapshot: requiredString,
     visitReason: requiredString,
     externalWorkerId: optionalString,
   })

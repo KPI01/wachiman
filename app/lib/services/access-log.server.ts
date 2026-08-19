@@ -261,6 +261,8 @@ const editableSnapshot = (accessLog: {
   secondLastNameSnapshot: string | null;
   phoneNumber: string | null;
   legalIdSnapshot: string;
+  allowedAreaSnapshot: string;
+  approvedBySnapshot: string;
   visitReason: string;
   externalWorkerId: string | null;
 }) => ({
@@ -273,6 +275,8 @@ const editableSnapshot = (accessLog: {
   secondLastNameSnapshot: accessLog.secondLastNameSnapshot,
   phoneNumber: accessLog.phoneNumber,
   legalIdSnapshot: accessLog.legalIdSnapshot,
+  allowedAreaSnapshot: accessLog.allowedAreaSnapshot,
+  approvedBySnapshot: accessLog.approvedBySnapshot,
   visitReason: accessLog.visitReason,
   externalWorkerId: accessLog.externalWorkerId,
 });

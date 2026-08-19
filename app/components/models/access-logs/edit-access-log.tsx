@@ -7,6 +7,7 @@ import AlertDialogContainer, {
 } from "~/components/containers/alert-dialog-container";
 import CompanyCombobox from "~/components/models/company/company-combobox";
 import ExternalWorkerCombobox from "~/components/models/external-worker/external-worker-combobox";
+import AccessLogTextCombobox from "./access-log-text-combobox";
 import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
 import { Button } from "~/components/ui/button";
 import { DateTimePicker } from "~/components/ui/date-time-picker";
@@ -50,6 +51,8 @@ type FormValues = {
   secondLastNameSnapshot: string;
   phoneNumber: string;
   legalIdSnapshot: string;
+  allowedAreaSnapshot: string;
+  approvedBySnapshot: string;
   visitReason: string;
 };
 
@@ -71,6 +74,8 @@ function initialValues(accessLog: AccessLogListItem): FormValues {
     secondLastNameSnapshot: accessLog.secondLastNameSnapshot ?? "",
     phoneNumber: accessLog.phoneNumber ?? "",
     legalIdSnapshot: accessLog.legalIdSnapshot,
+    allowedAreaSnapshot: accessLog.allowedAreaSnapshot,
+    approvedBySnapshot: accessLog.approvedBySnapshot,
     visitReason: accessLog.visitReason,
   };
 }
@@ -469,6 +474,44 @@ export default function EditAccessLog({
           />
         </FieldWrapper>
         <FieldWrapper
+          label="Área autorizada *"
+          htmlFor={`${formId}-area`}
+          errors={getFieldErrors(fetcher.data?.errors, "allowedAreaSnapshot")}
+        >
+          <AccessLogTextCombobox
+            id={`${formId}-area`}
+            name="allowedAreaSnapshot"
+            value={values.allowedAreaSnapshot}
+            onValueChange={(value) =>
+              setValues((current) => ({
+                ...current,
+                allowedAreaSnapshot: value,
+              }))
+            }
+            searchPath="/api/access-logs/allowed-areas/search"
+            required
+          />
+        </FieldWrapper>
+        <FieldWrapper
+          label="Aprobado por *"
+          htmlFor={`${formId}-approved-by`}
+          errors={getFieldErrors(fetcher.data?.errors, "approvedBySnapshot")}
+        >
+          <AccessLogTextCombobox
+            id={`${formId}-approved-by`}
+            name="approvedBySnapshot"
+            value={values.approvedBySnapshot}
+            onValueChange={(value) =>
+              setValues((current) => ({
+                ...current,
+                approvedBySnapshot: value,
+              }))
+            }
+            searchPath="/api/access-logs/approved-by/search"
+            required
+          />
+        </FieldWrapper>
+        <FieldWrapper
           className="md:col-span-2"
           label="Motivo de la visita *"
           htmlFor={`${formId}-reason`}
@@ -504,6 +547,8 @@ export default function EditAccessLog({
           <div><span className="font-medium">Persona:</span> {[values.firstNameSnapshot, values.middleNameSnapshot, values.lastNameSnapshot, values.secondLastNameSnapshot].filter(Boolean).join(" ")}</div>
           <div><span className="font-medium">Teléfono:</span> {values.phoneNumber || "-"}</div>
           <div><span className="font-medium">Empresa:</span> {values.companyNameSnapshot}</div>
+          <div><span className="font-medium">Área autorizada:</span> {values.allowedAreaSnapshot}</div>
+          <div><span className="font-medium">Aprobado por:</span> {values.approvedBySnapshot}</div>
           <div className="md:col-span-2"><span className="font-medium">Motivo:</span> {values.visitReason}</div>
         </div>
       ) : null}
