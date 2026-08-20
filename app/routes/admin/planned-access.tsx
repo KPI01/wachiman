@@ -11,7 +11,6 @@ import {
 } from "~/lib/services/planned-access.server";
 import { getManySites } from "~/lib/services/sites.server";
 import type { Route } from "./+types/planned-access";
-import { redirect } from "react-router";
 import { useMemo } from "react";
 
 const PLANNED_ACCESS_GLOBAL_FILTER_COLUMNS = [
@@ -53,14 +52,6 @@ export async function action({ request }: Route.ActionArgs) {
     return await createPlannedAccess(getPlannedAccessFormInput(rawFormData), {
       authorUsername: user.username,
     });
-  }
-
-  if (method === "PUT" || method === "PATCH") {
-    const result = await updatePlannedAccessStatus(Object.fromEntries(rawFormData), {
-      authorUsername: user.username,
-      canApprove: true,
-    });
-    return result.success ? redirect("/admin/planned-access") : result;
   }
 
   return null;

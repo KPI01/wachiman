@@ -40,7 +40,12 @@ export async function validateUserRole(
   const allowedRoles = Array.isArray(role) ? role : [role];
 
   if (!user.role || !allowedRoles.includes(user.role)) {
-    throw redirect("/unauthorized");
+    const url = new URL(request.url);
+    const params = new URLSearchParams({
+      from: url.pathname,
+      required: allowedRoles.join(", "),
+    });
+    throw redirect(`/unauthorized?${params.toString()}`);
   }
 
   return user;
@@ -63,6 +68,15 @@ export async function login(request: Request) {
 
   if (!user) {
     return { errors: getFieldError("password", INVALID_CREDENTIALS) };
+  }
+
+  if (!user.role) {
+    return {
+      errors: getFieldError(
+        "username",
+        "Tu cuenta no tiene un rol asignado. Contacta con un administrador.",
+      ),
+    };
   }
 
   const passwordIsValid = await validateHashedText(user.password, data.password);

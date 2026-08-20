@@ -1,4 +1,3 @@
-import { redirect } from "react-router";
 import { USER_ROLES } from "../../db/enums";
 import type { Route } from "./+types/access-log";
 import { getSessionSite } from "~/lib/session.server";
@@ -11,18 +10,6 @@ import {
 export async function loader({ request }: Route.LoaderArgs) {
   await isAuthenticated(request);
   return null;
-}
-
-function getReturnPath(request: Request, fallbackPath: string) {
-  const referer = request.headers.get("Referer");
-
-  if (!referer) {
-    return fallbackPath;
-  }
-
-  const { pathname, search } = new URL(referer);
-
-  return `${pathname}${search}`;
 }
 
 export async function action({ params, request }: Route.ActionArgs) {
@@ -94,14 +81,7 @@ export async function action({ params, request }: Route.ActionArgs) {
     return Response.json(result, { status: 400 });
   }
 
-  return redirect(
-    getReturnPath(
-      request,
-      sessionUser.role === USER_ROLES.ACCESS_OPERATOR
-        ? "/operator"
-        : `/${sessionUser.role === USER_ROLES.ACCESS_APPROVER ? "approver" : sessionUser.role === USER_ROLES.SECURITY_MANAGER ? "security" : "admin"}/access-logs`,
-    ),
-  );
+  return Response.json(result);
 }
 
 export default function AccessLogActionRoute() {

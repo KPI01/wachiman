@@ -207,22 +207,26 @@ export async function createPlannedAccess(
   });
 
   if (plannedAccess) {
-    await AuditLogEntity.create({
-      entityType: "PlannedAccess",
-      entityId: plannedAccess.id,
-      action: "PLANNED_ACCESS_CREATED",
-      changedBy: author.id,
-      summary: "Solicitud de acceso planificado creada",
-      metadata: {
-        siteId,
-        expectedStartDatetime: plannedAccess.expectedStartDatetime,
-        expectedEndDatetime: plannedAccess.expectedEndDatetime,
-        persons: plannedAccess.plannedAccessPersons.map((person) => ({
-          id: person.id,
-          externalWorkerId: person.externalWorkerId,
-        })),
-      },
-    });
+    try {
+      await AuditLogEntity.create({
+        entityType: "PlannedAccess",
+        entityId: plannedAccess.id,
+        action: "PLANNED_ACCESS_CREATED",
+        changedBy: author.id,
+        summary: "Solicitud de acceso planificado creada",
+        metadata: {
+          siteId,
+          expectedStartDatetime: plannedAccess.expectedStartDatetime,
+          expectedEndDatetime: plannedAccess.expectedEndDatetime,
+          persons: plannedAccess.plannedAccessPersons.map((person) => ({
+            id: person.id,
+            externalWorkerId: person.externalWorkerId,
+          })),
+        },
+      });
+    } catch (error) {
+      console.error("No se pudo registrar la auditoría de PlannedAccess", error);
+    }
   }
 
   return { success: true };

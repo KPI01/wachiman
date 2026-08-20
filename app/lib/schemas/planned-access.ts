@@ -1,5 +1,6 @@
 import z from "zod";
 import { SiteEntity } from "../database/site.server";
+import { ExternalWorkerEntity } from "../database/external-worker.server";
 import { optionalString, requiredString } from "./generic";
 import { SITE_DOESNT_EXISTS } from "./messages";
 import { signaturePayloadFromStringSchema } from "./access-log";
@@ -40,6 +41,21 @@ export const createPlannedAccessSchema = z
     error: SITE_DOESNT_EXISTS,
     path: ["siteId"],
   })
+  .refine(
+    async (data) =>
+      (
+        await Promise.all(
+          data.persons
+            .map((person) => person.externalWorkerId)
+            .filter((id): id is string => Boolean(id))
+            .map((id) => ExternalWorkerEntity.findById(id)),
+        )
+      ).every(Boolean),
+    {
+      error: "Uno de los trabajadores externos seleccionados ya no existe.",
+      path: ["persons"],
+    },
+  )
   .superRefine((data, context) => {
     if (
       data.expectedEndDatetime &&
