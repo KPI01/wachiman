@@ -7,7 +7,6 @@ import {
 } from "~/lib/services/planned-access.server";
 import type { Route } from "./+types/planned-access";
 import { getSessionSite } from "~/lib/session.server";
-import { redirect } from "react-router";
 import { useMemo } from "react";
 
 const PLANNED_ACCESS_GLOBAL_FILTER_COLUMNS = [
@@ -38,23 +37,16 @@ export async function action({ request }: Route.ActionArgs) {
   const method = request.method.toUpperCase();
   const rawFormData = await request.formData();
 
-  if (method === "POST" && rawFormData.get("intent") !== "decision") {
+  if (method !== "POST" || rawFormData.get("intent") !== "decision") {
     return null;
   }
 
-  if (method === "POST" || method === "PUT" || method === "PATCH") {
-    const result = await updatePlannedAccessStatus(Object.fromEntries(rawFormData), {
-      authorUsername: user.username,
-      canApprove: true,
-      lockedSiteId: (await getSessionSite(request))?.id,
-    });
-    if (method === "POST" && rawFormData.get("intent") === "decision") {
-      return result;
-    }
-    return result.success ? redirect("/approver/planned-access") : result;
-  }
-
-  return null;
+  const result = await updatePlannedAccessStatus(Object.fromEntries(rawFormData), {
+    authorUsername: user.username,
+    canApprove: true,
+    lockedSiteId: (await getSessionSite(request))?.id,
+  });
+  return result;
 }
 
 export default function ApproverPlannedAccess({

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useFetcher } from "react-router";
+import { useFetcher, useRevalidator } from "react-router";
 import { toast } from "sonner";
 import AlertDialogContainer, {
   AlertDialogCancel,
@@ -19,6 +19,7 @@ export default function MarkAccessLogExit({
   compact = false,
 }: MarkAccessLogExitProps) {
   const fetcher = useFetcher<{ errors?: unknown }>();
+  const revalidator = useRevalidator();
   const [open, setOpen] = useState(false);
   const [hasSignature, setHasSignature] = useState(false);
   const [exitSignaturePayload, setExitSignaturePayload] = useState("");
@@ -37,7 +38,8 @@ export default function MarkAccessLogExit({
     setOpen(false);
     setHasSignature(false);
     setExitSignaturePayload("");
-  }, [fetcher.data, fetcher.state]);
+    revalidator.revalidate();
+  }, [fetcher.data, fetcher.state, revalidator]);
 
   return (
     <AlertDialogContainer

@@ -122,22 +122,12 @@ export async function action({ request }: Route.ActionArgs) {
         lockedSiteId: site.id,
         requestedById: user.id,
       });
-      return result.success ? redirect("/requester/planned-access") : result;
+      return result;
     }
     return await createPlannedAccess(getPlannedAccessFormInput(rawFormData), {
       authorUsername: user.username,
       lockedSiteId: site.id,
     });
-  }
-
-  if (method === "PUT" || method === "PATCH") {
-    const result = await updatePlannedAccessStatus(Object.fromEntries(rawFormData), {
-      authorUsername: user.username,
-      canApprove: false,
-      lockedSiteId: site.id,
-      requestedById: user.id,
-    });
-    return result.success ? redirect("/requester/planned-access") : result;
   }
 
   return null;

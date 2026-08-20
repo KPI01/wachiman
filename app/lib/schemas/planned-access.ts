@@ -2,8 +2,13 @@ import z from "zod";
 import { SiteEntity } from "../database/site.server";
 import { AllowedAreaEntity } from "../database/allowed-area.server";
 import { WorkCategoryEntity } from "../database/work-category.server";
+import { ExternalWorkerEntity } from "../database/external-worker.server";
 import { optionalString, requiredString } from "./generic";
-import { ALLOWED_AREA_DOESNT_EXISTS, SITE_DOESNT_EXISTS, WORK_CATEGORY_DOESNT_EXISTS } from "./messages";
+import {
+  ALLOWED_AREA_DOESNT_EXISTS,
+  SITE_DOESNT_EXISTS,
+  WORK_CATEGORY_DOESNT_EXISTS,
+} from "./messages";
 import { signaturePayloadFromStringSchema } from "./access-log";
 
 const optionalDate = z.preprocess((value) => {
@@ -60,6 +65,21 @@ export const createPlannedAccessSchema = z
     error: `${WORK_CATEGORY_DOESNT_EXISTS} ${ALLOWED_AREA_DOESNT_EXISTS}`,
     path: ["persons"],
   })
+  .refine(
+    async (data) =>
+      (
+        await Promise.all(
+          data.persons
+            .map((person) => person.externalWorkerId)
+            .filter((id): id is string => Boolean(id))
+            .map((id) => ExternalWorkerEntity.findById(id)),
+        )
+      ).every(Boolean),
+    {
+      error: "Uno de los trabajadores externos seleccionados ya no existe.",
+      path: ["persons"],
+    },
+  )
   .superRefine((data, context) => {
     if (
       data.expectedEndDatetime &&
