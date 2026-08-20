@@ -13,6 +13,8 @@ import { getManySites } from "~/lib/services/sites.server";
 import type { Route } from "./+types/planned-access";
 import { redirect } from "react-router";
 import { useMemo } from "react";
+import { getManyWorkCategories } from "~/lib/services/work-category.server";
+import { getManyAllowedAreas } from "~/lib/services/allowed-area.server";
 
 const PLANNED_ACCESS_GLOBAL_FILTER_COLUMNS = [
   "companySnapshot",
@@ -25,12 +27,14 @@ const PLANNED_ACCESS_GLOBAL_FILTER_COLUMNS = [
 export async function loader({ request }: Route.LoaderArgs) {
   await validateUserRole(request, "ADMIN");
 
-  const [plannedAccesses, sites] = await Promise.all([
+  const [plannedAccesses, sites, workCategories, allowedAreas] = await Promise.all([
     getManyPlannedAccesses(),
     getManySites(),
+    getManyWorkCategories(),
+    getManyAllowedAreas(),
   ]);
 
-  return { plannedAccesses, sites };
+  return { plannedAccesses, sites, workCategories, allowedAreas };
 }
 
 export async function action({ request }: Route.ActionArgs) {
@@ -70,8 +74,8 @@ export default function PlannedAccessIndex({
   loaderData,
 }: Route.ComponentProps) {
   const columns = useMemo(
-    () => plannedAccessColumns({ actionPath: "/admin/planned-access", sites: loaderData.sites ?? [] }),
-    [loaderData.sites],
+     () => plannedAccessColumns({ actionPath: "/admin/planned-access", sites: loaderData.sites ?? [], workCategories: loaderData.workCategories ?? [], allowedAreas: loaderData.allowedAreas ?? [] }),
+     [loaderData.sites, loaderData.workCategories, loaderData.allowedAreas],
   );
 
   return (
@@ -79,7 +83,11 @@ export default function PlannedAccessIndex({
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h2 className="text-2xl sm:text-3xl font-bold">Solicitudes de acceso</h2>
 
-        <CreatePlannedAccessForm sites={loaderData.sites ?? []} />
+         <CreatePlannedAccessForm
+           sites={loaderData.sites ?? []}
+           workCategories={loaderData.workCategories ?? []}
+           allowedAreas={loaderData.allowedAreas ?? []}
+         />
       </div>
       <DataTable
         columns={columns}

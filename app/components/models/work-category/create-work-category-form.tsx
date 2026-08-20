@@ -26,11 +26,11 @@ export default function CreateWorkCategoryForm({
       buttonLabel={
         <>
           <PlusIcon />
-          <span className="text-base">Categoria</span>
+          <span className="text-base">Tipo de trabajo</span>
         </>
       }
-      title="Alta de Categoria Laboral"
-      description="Ingresa los datos de la categoria laboral."
+      title="Alta de tipo de trabajo"
+      description="Ingresa los datos del tipo de trabajo."
       footer={
         <>
           <AlertDialogCancel variant="destructive">Cancelar</AlertDialogCancel>

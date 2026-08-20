@@ -91,6 +91,16 @@ export const workCategories = sqliteTable("work_categories", {
   updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull().default(timestampDefault),
 });
 
+// ───── Allowed Areas ──────────────────────────────────
+
+export const allowedAreas = sqliteTable("allowed_areas", {
+  id: text("id").primaryKey().$default(makeId),
+  name: text("name").notNull().unique(),
+  slug: text("slug").notNull().unique(),
+  createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull().default(timestampDefault),
+  updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull().default(timestampDefault),
+});
+
 // ───── External Workers ──────────────────────────────
 
 export const externalWorkers = sqliteTable("external_workers", {
@@ -240,6 +250,7 @@ export const accessLogs = sqliteTable("access_logs", {
   phoneNumber: text("phone_number"),
   legalIdSnapshot: text("legal_id_snapshot").notNull(),
   allowedAreaSnapshot: text("allowed_area_snapshot").notNull().default("No especificado"),
+  allowedAreaId: text("allowed_area_id").references(() => allowedAreas.id),
   approvedBySnapshot: text("approved_by_snapshot").notNull().default("No especificado"),
   withVehicle: integer("with_vehicle", { mode: "boolean" }).default(false),
   visitReason: text("visit_reason").notNull(),
@@ -303,6 +314,7 @@ export const plannedAccessPersons = sqliteTable("planned_access_persons", {
   phoneNumber: text("phone_number"),
   legalIdSnapshot: text("legal_id_snapshot").notNull(),
   workCategoryId: text("work_category_id").references(() => workCategories.id),
+  allowedAreaId: text("allowed_area_id").references(() => allowedAreas.id),
   plannedAccessId: text("planned_access_id")
     .notNull()
     .references(() => plannedAccesses.id),
@@ -320,6 +332,7 @@ export type Department = typeof departments.$inferSelect;
 export type User = typeof users.$inferSelect;
 export type Company = typeof companies.$inferSelect;
 export type WorkCategory = typeof workCategories.$inferSelect;
+export type AllowedArea = typeof allowedAreas.$inferSelect;
 export type ExternalWorker = typeof externalWorkers.$inferSelect;
 export type WorkerDocument = typeof workerDocuments.$inferSelect;
 export type DocumentReview = typeof documentReviews.$inferSelect;
@@ -378,6 +391,11 @@ export const companiesRelations = relations(companies, ({ many }) => ({
 export const workCategoriesRelations = relations(workCategories, ({ many }) => ({
   externalWorkers: many(externalWorkers),
   plannedAccessPersons: many(plannedAccessPersons),
+}));
+
+export const allowedAreasRelations = relations(allowedAreas, ({ many }) => ({
+  plannedAccessPersons: many(plannedAccessPersons),
+  accessLogs: many(accessLogs),
 }));
 
 export const externalWorkersRelations = relations(
@@ -443,6 +461,10 @@ export const accessLogsRelations = relations(accessLogs, ({ one }) => ({
     fields: [accessLogs.plannedAccessPersonId],
     references: [plannedAccessPersons.id],
   }),
+  allowedArea: one(allowedAreas, {
+    fields: [accessLogs.allowedAreaId],
+    references: [allowedAreas.id],
+  }),
   externalWorker: one(externalWorkers, {
     fields: [accessLogs.externalWorkerId],
     references: [externalWorkers.id],
@@ -494,6 +516,10 @@ export const plannedAccessPersonsRelations = relations(
     workCategory: one(workCategories, {
       fields: [plannedAccessPersons.workCategoryId],
       references: [workCategories.id],
+    }),
+    allowedArea: one(allowedAreas, {
+      fields: [plannedAccessPersons.allowedAreaId],
+      references: [allowedAreas.id],
     }),
     accessLogs: many(accessLogs),
   }),

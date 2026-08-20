@@ -17,7 +17,7 @@ import { Checkbox } from "~/components/ui/checkbox";
 import { useFetcher } from "react-router";
 import { toast } from "sonner";
 import { useEffect, useRef, useState } from "react";
-import type { Site } from "../../../../db/schema";
+import type { AllowedArea, Site } from "../../../../db/schema";
 import AccessLogSignature from "./access-log-signature";
 import { getFieldErrors } from "~/lib/utils/zod-errors";
 import { Textarea } from "~/components/ui/textarea";
@@ -25,6 +25,7 @@ import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
 import type { ExternalWorkerListItem } from "~/lib/database/external-worker.server";
 import CompanyCombobox from "~/components/models/company/company-combobox";
 import AccessLogTextCombobox from "./access-log-text-combobox";
+import AllowedAreaCombobox from "./allowed-area-combobox";
 import { getActionErrorMessage } from "~/lib/utils/action-errors";
 // Comentado: el flujo de documentación ya no se muestra.
 // import WorkerDocumentViewer from "~/components/models/worker-document/worker-document-viewer";
@@ -39,6 +40,7 @@ type AccessLogSiteOption = Pick<Site, "id" | "name">;
 
 type CreateAccessLogProps = {
   sites: AccessLogSiteOption[];
+  allowedAreas: Array<Pick<AllowedArea, "id" | "name">>;
   actionPath: string;
   lockedSiteId?: string;
   buttonLabel?: string;
@@ -71,7 +73,7 @@ export default function CreateAccessLog({
   >(null);
   const [legalIdValue, setLegalIdValue] = useState("");
   const [companyNameValue, setCompanyNameValue] = useState("");
-  const [allowedAreaValue, setAllowedAreaValue] = useState("");
+  const [allowedAreaId, setAllowedAreaId] = useState("");
   const [approvedByValue, setApprovedByValue] = useState("");
   const [suggestions, setSuggestions] = useState<ExternalWorkerListItem[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -207,7 +209,7 @@ export default function CreateAccessLog({
     setSelectedExternalWorkerId(null);
     setLegalIdValue("");
     setCompanyNameValue("");
-    setAllowedAreaValue("");
+    setAllowedAreaId("");
     setApprovedByValue("");
     setSuggestions([]);
     setShowSuggestions(false);
@@ -229,7 +231,7 @@ export default function CreateAccessLog({
           setSelectedExternalWorkerId(null);
           setLegalIdValue("");
           setCompanyNameValue("");
-          setAllowedAreaValue("");
+          setAllowedAreaId("");
           setApprovedByValue("");
           setSuggestions([]);
           setShowSuggestions(false);
@@ -331,7 +333,7 @@ export default function CreateAccessLog({
                   {...(lockedSiteId
                     ? { value: selectedSiteId }
                     : { defaultValue: selectedSiteId })}
-                  disabled={Boolean(lockedSiteId)}
+                  disabled={Boolean(lockedSiteId) || !sites.length}
                 >
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Centro para el acceso..." />
@@ -439,7 +441,10 @@ export default function CreateAccessLog({
             <FieldWrapper
               label="Segundo nombre"
               htmlFor="middleNameSnapshot"
-              errors={getFieldErrors(fetcher.data?.errors, "middleNameSnapshot")}
+              errors={getFieldErrors(
+                fetcher.data?.errors,
+                "middleNameSnapshot",
+              )}
             >
               <Input
                 ref={middleNameRef}
@@ -498,19 +503,14 @@ export default function CreateAccessLog({
             </FieldWrapper>
             <FieldWrapper
               label="Área autorizada *"
-              htmlFor="allowedAreaSnapshot"
-              errors={getFieldErrors(
-                fetcher.data?.errors,
-                "allowedAreaSnapshot",
-              )}
+              htmlFor="allowedAreaId-search"
+              errors={getFieldErrors(fetcher.data?.errors, "allowedAreaId")}
             >
-              <AccessLogTextCombobox
-                id="allowedAreaSnapshot"
-                name="allowedAreaSnapshot"
+              <AllowedAreaCombobox
+                name="allowedAreaId"
+                value={allowedAreaId}
+                onValueChange={setAllowedAreaId}
                 required
-                value={allowedAreaValue}
-                onValueChange={setAllowedAreaValue}
-                searchPath="/api/access-logs/allowed-areas/search"
               />
             </FieldWrapper>
             <FieldWrapper

@@ -88,7 +88,7 @@ export default function UserDetails({
           htmlFor="siteId"
           errors={getFieldErrors(patchErrors, "siteId")}
         >
-          <Select name="siteId" defaultValue={user.siteId}>
+          <Select name="siteId" defaultValue={user.siteId} disabled={!sites.length}>
             <SelectTrigger className="w-full">
               <SelectValue placeholder="Centro para el usuario..." />
             </SelectTrigger>
@@ -106,7 +106,7 @@ export default function UserDetails({
           htmlFor="departmentId"
           errors={getFieldErrors(patchErrors, "departmentId")}
         >
-          <Select name="departmentId" defaultValue={user.departmentId}>
+          <Select name="departmentId" defaultValue={user.departmentId} disabled={!departments.length}>
             <SelectTrigger className="w-full">
               <SelectValue placeholder="Departamento para el usuario..." />
             </SelectTrigger>

@@ -2,7 +2,7 @@ import DataTable from "~/components/ui/data-table";
 import {
   ACCESS_LOG_COLUMN_FILTER_ACTIONS,
   ACCESS_LOG_GLOBAL_FILTER_COLUMNS,
-  accessLogColumns,
+  createAccessLogColumns,
 } from "~/lib/columns/access-log";
 import CreateAccessLog from "~/components/models/access-logs/create-access-log-form";
 import type { Route } from "./+types/access-logs";
@@ -18,6 +18,7 @@ import { parseLocalDate } from "~/lib/utils";
 import { useRevalidator } from "react-router";
 import { useEffect } from "react";
 import AccessLogFilters from "~/components/models/access-logs/access-log-filters";
+import { getManyAllowedAreas } from "~/lib/services/allowed-area.server";
 
 export async function loader({ request }: Route.LoaderArgs) {
   await validateUserRole(request, "ADMIN");
@@ -48,9 +49,10 @@ export async function loader({ request }: Route.LoaderArgs) {
     input.status = query.status;
   }
 
-  const [accessLogs, sites] = await Promise.all([
+  const [accessLogs, sites, allowedAreas] = await Promise.all([
     getManyAccessLogs(input),
     getManySites(),
+    getManyAllowedAreas(),
   ]);
 
   return {
@@ -61,6 +63,7 @@ export async function loader({ request }: Route.LoaderArgs) {
     status: query.status,
     accessLogs,
     sites,
+    allowedAreas,
   };
 }
 
@@ -93,13 +96,14 @@ export default function IndexAccessLogs({ loaderData }: Route.ComponentProps) {
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h2 className="text-3xl font-bold">Registros de acceso</h2>
-        <CreateAccessLog
-          sites={loaderData.sites ?? []}
-          actionPath="/admin/access-logs"
+         <CreateAccessLog
+           sites={loaderData.sites ?? []}
+           allowedAreas={loaderData.allowedAreas ?? []}
+           actionPath="/admin/access-logs"
         />
       </div>
       <DataTable
-        columns={accessLogColumns}
+        columns={createAccessLogColumns(loaderData.allowedAreas ?? [])}
         data={loaderData.accessLogs ?? []}
         globalFilterColumns={ACCESS_LOG_GLOBAL_FILTER_COLUMNS}
         columnHeaderActions={{

@@ -31,7 +31,7 @@ export function getExternalWorkerColumns(
     }),
     externalWorkerColHelper.accessor("workCategory.name", {
       id: "workCategoryName",
-      header: "Categoria",
+      header: "Tipo de trabajo",
       cell: ({ getValue }) => getValue() || "-",
     }),
     externalWorkerColHelper.accessor("phoneNumber", {

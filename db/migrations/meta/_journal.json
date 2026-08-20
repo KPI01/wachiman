@@ -57,6 +57,13 @@
       "when": 1787148012262,
       "tag": "0007_brown_baron_strucker",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1787152211393,
+      "tag": "0008_wonderful_valkyrie",
+      "breakpoints": true
     }
   ]
 }

@@ -14,6 +14,13 @@ export type PlannedAccessListItem = typeof plannedAccesses.$inferSelect & {
   approvedBy?: { id: string; fullName: string; username: string } | null;
   plannedAccessPersons: Array<typeof plannedAccessPersons.$inferSelect & {
     accessLogs: Array<{ id: string }>;
+    workCategory?: {
+      id: string;
+      name: string;
+      requiresTraining: boolean | null;
+      requiresSpecialPermission: boolean | null;
+    } | null;
+    allowedArea?: { id: string; name: string } | null;
   }>;
 };
 
@@ -43,6 +50,7 @@ export type CreatePlannedAccessInput = {
     legalIdSnapshot: string;
     externalWorkerId?: string;
     workCategoryId?: string;
+    allowedAreaId?: string;
   }>;
 };
 
@@ -55,6 +63,7 @@ export type UpdatePlannedAccessStatusInput = {
   decisionById: string;
   decisionAt?: Date;
   personWorkCategories?: Array<{ personId: string; workCategoryId: string | null; externalWorkerId?: string }>;
+  personAllowedAreas?: Array<{ personId: string; allowedAreaId: string | null }>;
 };
 
 export type UpdatePendingPlannedAccessInput = {
@@ -74,6 +83,8 @@ export type UpdatePendingPlannedAccessInput = {
     phoneNumber?: string;
     legalIdSnapshot: string;
     externalWorkerId?: string;
+    workCategoryId?: string;
+    allowedAreaId?: string;
   }>;
 };
 
@@ -118,6 +129,7 @@ export class PlannedAccessEntity {
           phoneNumber: p.phoneNumber,
           legalIdSnapshot: p.legalIdSnapshot,
           workCategoryId: p.workCategoryId,
+          allowedAreaId: p.allowedAreaId,
           externalWorkerId: p.externalWorkerId,
           plannedAccessId: pa.id,
         })),
@@ -178,6 +190,7 @@ export class PlannedAccessEntity {
                 requiresSpecialPermission: true,
               },
             },
+            allowedArea: { columns: { id: true, name: true } },
           },
         },
       },
@@ -205,6 +218,7 @@ export class PlannedAccessEntity {
                 requiresSpecialPermission: true,
               },
             },
+            allowedArea: { columns: { id: true, name: true } },
           },
         },
       },
@@ -294,6 +308,8 @@ export class PlannedAccessEntity {
       secondLastNameSnapshot: person.secondLastNameSnapshot ?? null,
       phoneNumber: person.phoneNumber ?? null,
       legalIdSnapshot: person.legalIdSnapshot,
+      workCategoryId: person.workCategoryId ?? null,
+      allowedAreaId: person.allowedAreaId ?? null,
       externalWorkerId: person.externalWorkerId ?? null,
       updatedAt: new Date(),
     });
@@ -472,10 +488,19 @@ export class PlannedAccessEntity {
   }
 
   public static async approve(
-    data: UpdatePlannedAccessStatusInput & { personWorkCategories: Array<{ personId: string; workCategoryId: string | null; externalWorkerId: string }> },
+    data: UpdatePlannedAccessStatusInput & {
+      personWorkCategories: Array<{ personId: string; workCategoryId: string | null; externalWorkerId: string }>;
+      personAllowedAreas: Array<{ personId: string; allowedAreaId: string }>;
+    },
   ) {
     const personIds = [...new Set(data.personWorkCategories.map((person) => person.personId))];
-    if (personIds.length !== data.personWorkCategories.length) return undefined;
+    const areaPersonIds = [...new Set(data.personAllowedAreas.map((person) => person.personId))];
+    if (
+      personIds.length !== data.personWorkCategories.length ||
+      areaPersonIds.length !== data.personAllowedAreas.length ||
+      personIds.length !== areaPersonIds.length ||
+      !personIds.every((personId) => areaPersonIds.includes(personId))
+    ) return undefined;
 
     if (personIds.length > 0) {
       const linkedPersons = await db
@@ -509,11 +534,13 @@ export class PlannedAccessEntity {
           .get();
         if (!pa) return undefined;
 
+        const areasByPerson = new Map(data.personAllowedAreas.map((person) => [person.personId, person.allowedAreaId]));
         for (const person of data.personWorkCategories) {
           tx
             .update(plannedAccessPersons)
             .set({
               workCategoryId: person.workCategoryId,
+              allowedAreaId: areasByPerson.get(person.personId),
               externalWorkerId: person.externalWorkerId,
               updatedAt: new Date(),
             })
@@ -538,11 +565,13 @@ export class PlannedAccessEntity {
         .get();
       if (!pa) return undefined;
 
+      const areasByPerson = new Map(data.personAllowedAreas.map((person) => [person.personId, person.allowedAreaId]));
       for (const person of data.personWorkCategories) {
         await tx
           .update(plannedAccessPersons)
           .set({
             workCategoryId: person.workCategoryId,
+            allowedAreaId: areasByPerson.get(person.personId),
             externalWorkerId: person.externalWorkerId,
             updatedAt: new Date(),
           })

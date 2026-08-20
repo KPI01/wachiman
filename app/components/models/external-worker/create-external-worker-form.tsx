@@ -102,7 +102,7 @@ export default function CreateExternalWorkerForm({
           htmlFor="companyId"
           errors={getFieldErrors(errors, "companyId")}
         >
-          <Select name="companyId" required>
+          <Select name="companyId" required disabled={!companies.length}>
             <SelectTrigger className="w-full">
               <SelectValue placeholder="Seleccionar empresa..." />
             </SelectTrigger>
@@ -116,13 +116,13 @@ export default function CreateExternalWorkerForm({
           </Select>
         </FieldWrapper>
         <FieldWrapper
-          label="Categoria laboral *"
+          label="Tipo de trabajo *"
           htmlFor="workCategoryId"
           errors={getFieldErrors(errors, "workCategoryId")}
         >
-          <Select name="workCategoryId" required>
+          <Select name="workCategoryId" required disabled={!workCategories.length}>
             <SelectTrigger className="w-full">
-              <SelectValue placeholder="Seleccionar categoria..." />
+              <SelectValue placeholder="Seleccionar tipo de trabajo..." />
             </SelectTrigger>
             <SelectContent position="popper">
               {workCategories.map((wc) => (

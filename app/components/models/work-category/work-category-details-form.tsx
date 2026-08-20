@@ -34,9 +34,9 @@ export default function WorkCategoryDetailsForm({
       buttonLabel={<InfoIcon aria-hidden="true" />}
       buttonVariant="secondary"
       buttonSize="icon-sm"
-      buttonAriaLabel="Editar categoría laboral"
-      buttonTooltip="Editar categoría laboral"
-      title="Ficha de Categoria Laboral"
+      buttonAriaLabel="Editar tipo de trabajo"
+      buttonTooltip="Editar tipo de trabajo"
+      title="Ficha de tipo de trabajo"
       footer={
         <>
           <AlertDialogCancel variant="destructive">Cancelar</AlertDialogCancel>

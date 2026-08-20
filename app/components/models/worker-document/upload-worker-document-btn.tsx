@@ -202,6 +202,7 @@ export default function UploadWorkerDocumentBtn({
                     <Select
                       name="recordType"
                       value={recordType}
+                      disabled={!recordTypeOptions.length}
                       onValueChange={changeRecordType}
                       required
                     >

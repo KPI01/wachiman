@@ -7,7 +7,7 @@ import { validateUserRole } from "~/lib/auth.server";
 import {
   ACCESS_LOG_COLUMN_FILTER_ACTIONS,
   ACCESS_LOG_GLOBAL_FILTER_COLUMNS,
-  accessLogColumns,
+  createAccessLogColumns,
 } from "~/lib/columns/access-log";
 import {
   createAccessLog,
@@ -19,6 +19,7 @@ import type { Route } from "./+types/access-logs";
 import type { GetManyAccessLogsInput } from "~/lib/services/access-log.server";
 import { getFormData, getQueryParams } from "~/lib/services/http.server";
 import AccessLogFilters from "~/components/models/access-logs/access-log-filters";
+import { getManyAllowedAreas } from "~/lib/services/allowed-area.server";
 
 export async function loader({ request }: Route.LoaderArgs) {
   await validateUserRole(request, "SECURITY_MANAGER");
@@ -49,9 +50,10 @@ export async function loader({ request }: Route.LoaderArgs) {
     input.status = query.status;
   }
 
-  const [accessLogs, sites] = await Promise.all([
+  const [accessLogs, sites, allowedAreas] = await Promise.all([
     getManyAccessLogs(input),
     getManySites(),
+    getManyAllowedAreas(),
   ]);
 
   return {
@@ -62,6 +64,7 @@ export async function loader({ request }: Route.LoaderArgs) {
     status: query.status,
     accessLogs,
     sites,
+    allowedAreas,
   };
 }
 
@@ -98,12 +101,13 @@ export default function IndexAccessLogs({ loaderData }: Route.ComponentProps) {
         <div className="w-full sm:w-auto">
           <CreateAccessLog
             sites={loaderData.sites ?? []}
+            allowedAreas={loaderData.allowedAreas ?? []}
             actionPath="/security/access-logs"
           />
         </div>
       </div>
       <DataTable
-        columns={accessLogColumns}
+        columns={createAccessLogColumns(loaderData.allowedAreas ?? [])}
         data={loaderData.accessLogs ?? []}
         globalFilterColumns={ACCESS_LOG_GLOBAL_FILTER_COLUMNS}
         columnHeaderActions={{

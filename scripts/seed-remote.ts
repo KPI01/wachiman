@@ -48,12 +48,19 @@ INSERT INTO companies (id, name, slug, cif, address, phone, email, created_at, u
 
 -- ───── WORK CATEGORIES ───────────────────────────────
 INSERT INTO work_categories (id, name, description, requires_special_permission, requires_training, created_at, updated_at) VALUES
-('wc-0', 'General', 'Categoria laboral por defecto', 0, 0, '${nowISO}', '${nowISO}'),
+('wc-0', 'General', 'Tipo de trabajo por defecto', 0, 0, '${nowISO}', '${nowISO}'),
 ('wc-1', 'Electricista', 'Instalacion y mantenimiento electrico', 1, 1, '${nowISO}', '${nowISO}'),
 ('wc-2', 'Albanil', 'Obra y reformas', 0, 0, '${nowISO}', '${nowISO}'),
 ('wc-3', 'Soldador', 'Trabajos de soldadura', 1, 1, '${nowISO}', '${nowISO}'),
 ('wc-4', 'Transportista', 'Carga y descarga de mercancias', 0, 0, '${nowISO}', '${nowISO}'),
 ('wc-5', 'Tecnico de climatizacion', 'Mantenimiento de climatizacion', 1, 1, '${nowISO}', '${nowISO}');
+
+-- ───── ALLOWED AREAS ──────────────────────────────────
+INSERT INTO allowed_areas (id, name, slug, created_at, updated_at) VALUES
+('area-plant', 'Planta de producción', 'PLANTA-PRODUCCION', '${nowISO}', '${nowISO}'),
+('area-warehouse', 'Almacén', 'ALMACEN', '${nowISO}', '${nowISO}'),
+('area-office', 'Oficinas', 'OFICINAS', '${nowISO}', '${nowISO}'),
+('area-loading', 'Zona de carga', 'ZONA-CARGA', '${nowISO}', '${nowISO}');
 
 -- ───── USERS ─────────────────────────────────────────
 INSERT INTO users (id, full_name, username, password, role, is_active, is_trashed, site_id, department_id, created_at, updated_at) VALUES
@@ -87,28 +94,28 @@ INSERT INTO planned_accesses (id, expected_start_datetime, expected_end_datetime
 ('pa-3', '${isoDate(lastWeekMidnight, "08:00:00.000")}', '${isoDate(lastWeekMidnight, "15:00:00.000")}', 'USED', 'Transportes Martinez SL', 'Carga de mercancia en almacen', 'user-1', 'user-4', 'dept-4', 'site-1', '${lastWeekMidnight.toISOString()}', '${lastWeekMidnight.toISOString()}');
 
 -- ───── PLANNED ACCESS PERSONS ────────────────────────
-INSERT INTO planned_access_persons (id, first_name_snapshot, middle_name_snapshot, last_name_snapshot, second_last_name_snapshot, phone_number, legal_id_snapshot, planned_access_id, external_worker_id, created_at, updated_at) VALUES
-('pap-1', 'Antonio', 'Jose', 'Lopez', 'Garcia', '600111222', '12345678A', 'pa-1', 'worker-1', '${nowISO}', '${nowISO}'),
-('pap-2', 'Maria', NULL, 'Rodriguez', 'Perez', '600222333', '87654321B', 'pa-1', 'worker-2', '${nowISO}', '${nowISO}'),
-('pap-3', 'Francisco', 'Javier', 'Martinez', 'Lopez', '600333444', '11223344C', 'pa-2', 'worker-3', '${nowISO}', '${nowISO}'),
-('pap-4', 'Laura', NULL, 'Sanchez', 'Garcia', '600444555', '44332211D', 'pa-2', 'worker-4', '${nowISO}', '${nowISO}'),
-('pap-5', 'Pedro', NULL, 'Fernandez', 'Martinez', '600555666', '55667788E', 'pa-3', 'worker-5', '${nowISO}', '${nowISO}'),
-('pap-6', 'Sofia', 'Maria', 'Gonzalez', 'Ramos', '600666777', '99887766F', 'pa-3', 'worker-6', '${nowISO}', '${nowISO}');
+INSERT INTO planned_access_persons (id, first_name_snapshot, middle_name_snapshot, last_name_snapshot, second_last_name_snapshot, phone_number, legal_id_snapshot, work_category_id, allowed_area_id, planned_access_id, external_worker_id, created_at, updated_at) VALUES
+('pap-1', 'Antonio', 'Jose', 'Lopez', 'Garcia', '600111222', '12345678A', 'wc-1', 'area-plant', 'pa-1', 'worker-1', '${nowISO}', '${nowISO}'),
+('pap-2', 'Maria', NULL, 'Rodriguez', 'Perez', '600222333', '87654321B', 'wc-2', 'area-warehouse', 'pa-1', 'worker-2', '${nowISO}', '${nowISO}'),
+('pap-3', 'Francisco', 'Javier', 'Martinez', 'Lopez', '600333444', '11223344C', 'wc-3', 'area-office', 'pa-2', 'worker-3', '${nowISO}', '${nowISO}'),
+('pap-4', 'Laura', NULL, 'Sanchez', 'Garcia', '600444555', '44332211D', 'wc-5', 'area-office', 'pa-2', 'worker-4', '${nowISO}', '${nowISO}'),
+('pap-5', 'Pedro', NULL, 'Fernandez', 'Martinez', '600555666', '55667788E', 'wc-4', 'area-loading', 'pa-3', 'worker-5', '${nowISO}', '${nowISO}'),
+('pap-6', 'Sofia', 'Maria', 'Gonzalez', 'Ramos', '600666777', '99887766F', 'wc-1', 'area-plant', 'pa-3', 'worker-6', '${nowISO}', '${nowISO}');
 
 -- ───── ACCESS LOG VEHICLES ─────────────────────────
 INSERT INTO access_log_vehicles (id, type_snapshot, brand_snapshot, model_snapshot, plate_snapshot) VALUES
 ('vehicle-1', 'Camion', 'Iveco', 'Eurocargo', '1234ABC');
 
 -- ───── ACCESS LOGS ──────────────────────────────────
-INSERT INTO access_logs (id, entry_timestamp, entry_signature_envelope, exit_timestamp, exit_signature_envelope, company_name_snapshot, first_name_snapshot, middle_name_snapshot, last_name_snapshot, second_last_name_snapshot, phone_number, legal_id_snapshot, with_vehicle, visit_reason, site_id, created_by_id, vehicle_access_log_id, external_worker_id, planned_access_id, planned_access_person_id) VALUES
-('log-1', '${isoDate(yesterdayMidnight, "07:30:00.000")}', '{"v":1,"alg":"aes-256-gcm","iv":"test","tag":"test","ct":"test"}', '${isoDate(yesterdayMidnight, "16:00:00.000")}', '{"v":1,"alg":"aes-256-gcm","iv":"test","tag":"test","ct":"test"}', 'Construcciones Murcianas SL', 'Antonio', 'Jose', 'Lopez', 'Garcia', '600111222', '12345678A', 0, 'Trabajos electricos', 'site-1', 'user-2', NULL, 'worker-1', 'pa-3', 'pap-5'),
-('log-2', '${isoDate(yesterdayMidnight, "08:00:00.000")}', '{"v":1,"alg":"aes-256-gcm","iv":"test","tag":"test","ct":"test"}', '${isoDate(yesterdayMidnight, "17:30:00.000")}', '{"v":1,"alg":"aes-256-gcm","iv":"test","tag":"test","ct":"test"}', 'Transportes Martinez SL', 'Pedro', NULL, 'Fernandez', 'Martinez', '600555666', '55667788E', 1, 'Transporte de materiales', 'site-1', 'user-2', 'vehicle-1', 'worker-5', 'pa-3', 'pap-6');
+INSERT INTO access_logs (id, entry_timestamp, entry_signature_envelope, exit_timestamp, exit_signature_envelope, company_name_snapshot, first_name_snapshot, middle_name_snapshot, last_name_snapshot, second_last_name_snapshot, phone_number, legal_id_snapshot, allowed_area_snapshot, allowed_area_id, approved_by_snapshot, with_vehicle, visit_reason, site_id, created_by_id, vehicle_access_log_id, external_worker_id, planned_access_id, planned_access_person_id) VALUES
+('log-1', '${isoDate(yesterdayMidnight, "07:30:00.000")}', '{"v":1,"alg":"aes-256-gcm","iv":"test","tag":"test","ct":"test"}', '${isoDate(yesterdayMidnight, "16:00:00.000")}', '{"v":1,"alg":"aes-256-gcm","iv":"test","tag":"test","ct":"test"}', 'Construcciones Murcianas SL', 'Antonio', 'Jose', 'Lopez', 'Garcia', '600111222', '12345678A', 'Zona de carga', 'area-loading', 'Administrador', 0, 'Trabajos electricos', 'site-1', 'user-2', NULL, 'worker-1', 'pa-3', 'pap-5'),
+('log-2', '${isoDate(yesterdayMidnight, "08:00:00.000")}', '{"v":1,"alg":"aes-256-gcm","iv":"test","tag":"test","ct":"test"}', '${isoDate(yesterdayMidnight, "17:30:00.000")}', '{"v":1,"alg":"aes-256-gcm","iv":"test","tag":"test","ct":"test"}', 'Transportes Martinez SL', 'Pedro', NULL, 'Fernandez', 'Martinez', '600555666', '55667788E', 'Planta de producción', 'area-plant', 'Administrador', 1, 'Transporte de materiales', 'site-1', 'user-2', 'vehicle-1', 'worker-5', 'pa-3', 'pap-6');
 
-INSERT INTO access_logs (id, entry_timestamp, entry_signature_envelope, company_name_snapshot, first_name_snapshot, middle_name_snapshot, last_name_snapshot, second_last_name_snapshot, legal_id_snapshot, with_vehicle, visit_reason, site_id, created_by_id) VALUES
-('log-3', '${isoDate(now, "07:00:00.000")}', '{"v":1,"alg":"aes-256-gcm","iv":"test","tag":"test","ct":"test"}', 'Grupo Electrica Levante SA', 'Francisco', 'Javier', 'Martinez', 'Lopez', '11223344C', 0, 'Trabajos de soldadura', 'site-1', 'user-2');
+INSERT INTO access_logs (id, entry_timestamp, entry_signature_envelope, company_name_snapshot, first_name_snapshot, middle_name_snapshot, last_name_snapshot, second_last_name_snapshot, legal_id_snapshot, allowed_area_snapshot, allowed_area_id, approved_by_snapshot, with_vehicle, visit_reason, site_id, created_by_id) VALUES
+('log-3', '${isoDate(now, "07:00:00.000")}', '{"v":1,"alg":"aes-256-gcm","iv":"test","tag":"test","ct":"test"}', 'Grupo Electrica Levante SA', 'Francisco', 'Javier', 'Martinez', 'Lopez', '11223344C', 'Oficinas', 'area-office', 'Carlos Segura', 0, 'Trabajos de soldadura', 'site-1', 'user-2');
 
-INSERT INTO access_logs (id, entry_timestamp, entry_signature_envelope, company_name_snapshot, first_name_snapshot, middle_name_snapshot, last_name_snapshot, second_last_name_snapshot, legal_id_snapshot, with_vehicle, visit_reason, site_id, created_by_id, planned_access_id, planned_access_person_id) VALUES
-('log-4', '${isoDate(now, "08:15:00.000")}', '{"v":1,"alg":"aes-256-gcm","iv":"test","tag":"test","ct":"test"}', 'Construcciones Murcianas SL', 'Maria', NULL, 'Rodriguez', 'Perez', '87654321B', 0, 'Visita programada', 'site-1', 'user-2', 'pa-1', 'pap-2');
+INSERT INTO access_logs (id, entry_timestamp, entry_signature_envelope, company_name_snapshot, first_name_snapshot, middle_name_snapshot, last_name_snapshot, second_last_name_snapshot, legal_id_snapshot, allowed_area_snapshot, allowed_area_id, approved_by_snapshot, with_vehicle, visit_reason, site_id, created_by_id, planned_access_id, planned_access_person_id) VALUES
+('log-4', '${isoDate(now, "08:15:00.000")}', '{"v":1,"alg":"aes-256-gcm","iv":"test","tag":"test","ct":"test"}', 'Construcciones Murcianas SL', 'Maria', NULL, 'Rodriguez', 'Perez', '87654321B', 'Almacén', 'area-warehouse', 'Administrador', 0, 'Visita programada', 'site-1', 'user-2', 'pa-1', 'pap-2');
 `;
 
   process.stdout.write(

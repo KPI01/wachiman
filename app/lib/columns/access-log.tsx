@@ -2,6 +2,7 @@ import { createColumnHelper } from "@tanstack/react-table";
 import MarkAccessLogExit from "~/components/models/access-logs/mark-access-log-exit";
 import { formatTimestamp } from "../utils";
 import type { AccessLogListItem } from "../database/access-log.server";
+import type { AllowedArea } from "../../../db/schema";
 import VehiclePopover from "~/components/models/access-logs/vehicle-popover";
 import EditAccessLog from "~/components/models/access-logs/edit-access-log";
 import { isStaleAccessLog } from "~/lib/access-log-status";
@@ -139,18 +140,20 @@ const actionsColumn = accessLogColHelper.display({
   },
 });
 
-const editableActionsColumn = accessLogColHelper.display({
-  id: "actions",
-  header: "Acciones",
-  cell: ({ row }) => (
-    <div className="flex justify-end gap-1">
-      <EditAccessLog accessLog={row.original} />
-      {!row.original.exitTimestamp ? (
-        <MarkAccessLogExit accessLogId={row.original.id} compact />
-      ) : null}
-    </div>
-  ),
-});
+function createEditableActionsColumn(allowedAreas: AllowedArea[]) {
+  return accessLogColHelper.display({
+    id: "actions",
+    header: "Acciones",
+    cell: ({ row }) => (
+      <div className="flex justify-end gap-1">
+        <EditAccessLog accessLog={row.original} allowedAreas={allowedAreas} />
+        {!row.original.exitTimestamp ? (
+          <MarkAccessLogExit accessLogId={row.original.id} compact />
+        ) : null}
+      </div>
+    ),
+  });
+}
 
 type AccessLogColumnDef =
   | typeof entryTimestampColumn
@@ -165,8 +168,7 @@ type AccessLogColumnDef =
   | typeof siteNameColumn
   | typeof createdByNameColumn
   | typeof createdByColumn
-  | typeof actionsColumn
-  | typeof editableActionsColumn;
+  | typeof actionsColumn;
 
 export type OptionalColumnsOptions =
   | "visitReason"
@@ -174,20 +176,24 @@ export type OptionalColumnsOptions =
   | "createdBy"
   | "actions";
 
-export const accessLogColumns: AccessLogColumnDef[] = [
-  entryTimestampColumn,
-  exitTimestampColumn,
-  fullNameColumn,
-  legalIdColumn,
-  companyNameColumn,
-  allowedAreaColumn,
-  approvedByColumn,
-  vehicleDetailsColumn,
-  visitReasonColumn,
-  siteNameColumn,
-  createdByNameColumn,
-  editableActionsColumn,
-];
+export function createAccessLogColumns(allowedAreas: AllowedArea[] = []): AccessLogColumnDef[] {
+  return [
+    entryTimestampColumn,
+    exitTimestampColumn,
+    fullNameColumn,
+    legalIdColumn,
+    companyNameColumn,
+    allowedAreaColumn,
+    approvedByColumn,
+    vehicleDetailsColumn,
+    visitReasonColumn,
+    siteNameColumn,
+    createdByNameColumn,
+    createEditableActionsColumn(allowedAreas),
+  ];
+}
+
+export const accessLogColumns: AccessLogColumnDef[] = createAccessLogColumns();
 
 export const ACCESS_LOG_GLOBAL_FILTER_COLUMNS = [
   "fullNameSnapshot",
@@ -242,6 +248,7 @@ const optionalColumns: Record<OptionalColumnsOptions, AccessLogColumnDef> = {
 
 export function getAccessLogColumns(
   columns: OptionalColumnsOptions | readonly OptionalColumnsOptions[] = [],
+  allowedAreas: AllowedArea[] = [],
 ): AccessLogColumnDef[] {
   const selectedColumns: readonly OptionalColumnsOptions[] = Array.isArray(
     columns,
@@ -251,6 +258,8 @@ export function getAccessLogColumns(
 
   return [
     ...baseColumns,
-    ...selectedColumns.map((column) => optionalColumns[column]),
+    ...selectedColumns.map((column) =>
+      column === "actions" ? createEditableActionsColumn(allowedAreas) : optionalColumns[column],
+    ),
   ];
 }

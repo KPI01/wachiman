@@ -1,4 +1,5 @@
 import { PencilIcon } from "lucide-react";
+import type { AllowedArea, WorkCategory } from "../../../../db/schema";
 import type { PlannedAccessListItem } from "~/lib/database/planned-access.server";
 import PlannedAccessForm, {
   type PlannedAccessFormValues,
@@ -22,6 +23,8 @@ function getInitialValues(
       secondLastNameSnapshot: person.secondLastNameSnapshot ?? "",
       phoneNumber: person.phoneNumber ?? "",
       externalWorkerId: person.externalWorkerId ?? "",
+      workCategoryId: person.workCategoryId ?? "",
+      allowedAreaId: person.allowedAreaId ?? "",
     })),
   };
 }
@@ -29,15 +32,21 @@ function getInitialValues(
 export default function EditPlannedAccessForm({
   plannedAccess,
   sites,
+  workCategories,
+  allowedAreas,
   actionPath,
 }: {
   plannedAccess: PlannedAccessListItem;
   sites: Array<{ id: string; name: string }>;
+  workCategories: Array<Pick<WorkCategory, "id" | "name">>;
+  allowedAreas: Array<Pick<AllowedArea, "id" | "name">>;
   actionPath: string;
 }) {
   return (
     <PlannedAccessForm
       sites={sites}
+      workCategories={workCategories}
+      allowedAreas={allowedAreas}
       actionPath={actionPath}
       lockedSiteId={plannedAccess.siteId}
       initialValues={getInitialValues(plannedAccess)}

@@ -2,20 +2,20 @@ import { TrashIcon } from "lucide-react";
 import { Form } from "react-router";
 import TableActionButton from "~/components/table-action-button";
 
-export default function DeleteWorkCategoryBtn({
-  workCategoryId,
-  actionPath = "/admin/work-categories",
+export default function DeleteAllowedAreaBtn({
+  allowedAreaId,
+  actionPath = "/admin/allowed-areas",
 }: {
-  workCategoryId: string;
+  allowedAreaId: string;
   actionPath?: string;
 }) {
   return (
     <Form method="delete" action={actionPath}>
-      <input name="id" value={workCategoryId} type="hidden" />
+      <input name="id" value={allowedAreaId} type="hidden" />
       <TableActionButton
         type="submit"
         variant="destructive"
-        label="Eliminar tipo de trabajo"
+        label="Eliminar área autorizada"
         icon={TrashIcon}
       />
     </Form>

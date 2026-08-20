@@ -5,6 +5,7 @@ import {
   accessLogs,
   accessLogVehicles,
   auditLogs,
+  allowedAreas,
   plannedAccessPersons,
   plannedAccesses,
   sites,
@@ -46,6 +47,7 @@ export type CreateAccessLogInput = {
   phoneNumber?: string;
   legalIdSnapshot: string;
   allowedAreaSnapshot: string;
+  allowedAreaId?: string;
   approvedBySnapshot: string;
   withVehicle: boolean;
   visitReason: string;
@@ -82,6 +84,7 @@ export type UpdateAccessLogInput = {
   phoneNumber: string | null;
   legalIdSnapshot: string;
   allowedAreaSnapshot: string;
+  allowedAreaId?: string | null;
   approvedBySnapshot: string;
   visitReason: string;
   externalWorkerId: string | null;
@@ -173,6 +176,7 @@ export class AccessLogEntity {
         phoneNumber: data.phoneNumber,
         legalIdSnapshot: data.legalIdSnapshot,
         allowedAreaSnapshot: data.allowedAreaSnapshot,
+        allowedAreaId: data.allowedAreaId,
         approvedBySnapshot: data.approvedBySnapshot,
         withVehicle: data.withVehicle,
         visitReason: data.visitReason,
@@ -406,9 +410,9 @@ export class AccessLogEntity {
 
   public static async searchDistinctAllowedAreas(query: string) {
     return db
-      .selectDistinct({ name: accessLogs.allowedAreaSnapshot })
-      .from(accessLogs)
-      .where(like(accessLogs.allowedAreaSnapshot, `%${query}%`))
+      .selectDistinct({ id: allowedAreas.id, name: allowedAreas.name })
+      .from(allowedAreas)
+      .where(like(allowedAreas.name, `%${query}%`))
       .limit(8)
       .all();
   }

@@ -79,7 +79,7 @@ export default function CreateUserForm({
           htmlFor="siteId"
           errors={getFieldErrors(errors, "siteId")}
         >
-          <Select name="siteId" defaultValue={sites[0]?.id}>
+          <Select name="siteId" defaultValue={sites[0]?.id} disabled={!sites.length}>
             <SelectTrigger className="w-full">
               <SelectValue placeholder="Centro para el usuario..." />
             </SelectTrigger>
@@ -97,7 +97,7 @@ export default function CreateUserForm({
           htmlFor="departmentId"
           errors={getFieldErrors(errors, "departmentId")}
         >
-          <Select name="departmentId" defaultValue={departments[0]?.id}>
+          <Select name="departmentId" defaultValue={departments[0]?.id} disabled={!departments.length}>
             <SelectTrigger className="w-full">
               <SelectValue placeholder="Departamento para el usuario..." />
             </SelectTrigger>

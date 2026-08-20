@@ -14,6 +14,7 @@ import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
 import { Button } from "~/components/ui/button";
 import { getSessionSite } from "~/lib/session.server";
 import { ExternalWorkerEntity } from "~/lib/database/external-worker.server";
+import { getManyAllowedAreas } from "~/lib/services/allowed-area.server";
 import PlannedAccessApprovalPersonCard from "~/components/models/planned-access/planned-access-approval-person-card";
 import { ItemGroup } from "~/components/ui/item";
 // Comentado: la documentación ya no se gestiona desde este flujo.
@@ -27,9 +28,10 @@ export async function loader({ request, params }: Route.LoaderArgs) {
   ]);
   const sessionSite =
     user.role === "ACCESS_APPROVER" ? await getSessionSite(request) : null;
-  const [plannedAccess, workCategories] = await Promise.all([
+  const [plannedAccess, workCategories, allowedAreas] = await Promise.all([
     PlannedAccessEntity.findById(params.id),
     WorkCategoryEntity.findMany(),
+    getManyAllowedAreas(),
   ]);
 
   if (!plannedAccess) throw data("Solicitud no encontrada", { status: 404 });
@@ -69,6 +71,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 return {
     plannedAccess,
     workCategories,
+    allowedAreas,
     people,
     // Comentado: la documentación ya no se revisa en el flujo de aprobación.
     // hasPendingDocuments,
@@ -198,7 +201,7 @@ export default function ApprovePlannedAccess({
           </div>
         </div>
         <p className="text-muted-foreground">
-          Selecciona una categoría por persona.{" "}
+          Selecciona un tipo de trabajo por persona.{" "}
           {/* Comentado: ya no se exige revisión documental. */}
           {/* La identificación vigente siempre es obligatoria. */}
           {/* Los documentos pendientes deben revisarse antes de confirmar. */}
@@ -219,6 +222,7 @@ export default function ApprovePlannedAccess({
               person={person}
               worker={worker}
               workCategories={loaderData.workCategories}
+              allowedAreas={loaderData.allowedAreas}
               validThrough={
                 loaderData.plannedAccess.expectedEndDatetime ??
                 loaderData.plannedAccess.expectedStartDatetime

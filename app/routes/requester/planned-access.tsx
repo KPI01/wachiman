@@ -18,6 +18,8 @@ import type { PlannedAccessStatus } from "../../../db/enums";
 import type { AllowedAction } from "~/components/models/planned-access/planned-access-status-actions";
 import type { PlannedAccessListItem } from "~/lib/database/planned-access.server";
 import { redirect } from "react-router";
+import { getManyWorkCategories } from "~/lib/services/work-category.server";
+import { getManyAllowedAreas } from "~/lib/services/allowed-area.server";
 
 type EnrichedPlannedAccess = PlannedAccessListItem & {
   _entryStatus: {
@@ -82,12 +84,16 @@ export async function loader({ request }: Route.LoaderArgs) {
     throw new Response("Unauthorized", { status: 401 });
   }
 
-  const plannedAccesses = await getManyPlannedAccesses({
-    departmentId: department.id,
-    siteId: site.id,
-  });
+  const [plannedAccesses, workCategories, allowedAreas] = await Promise.all([
+    getManyPlannedAccesses({
+      departmentId: department.id,
+      siteId: site.id,
+    }),
+    getManyWorkCategories(),
+    getManyAllowedAreas(),
+  ]);
 
-  return { plannedAccesses, site };
+  return { plannedAccesses, site, workCategories, allowedAreas };
 }
 
 export async function action({ request }: Route.ActionArgs) {
@@ -145,6 +151,8 @@ export default function RequesterPlannedAccess({
       actionPath: "/requester/planned-access",
       allowedActions: REQUESTER_ALLOWED_ACTIONS,
       sites: [loaderData.site],
+      workCategories: loaderData.workCategories ?? [],
+      allowedAreas: loaderData.allowedAreas ?? [],
     });
 
     const entryColumn = entryColHelper.display({
@@ -183,6 +191,8 @@ export default function RequesterPlannedAccess({
           sites={[loaderData.site]}
           actionPath="/requester/planned-access"
           lockedSiteId={loaderData.site.id}
+          workCategories={loaderData.workCategories ?? []}
+          allowedAreas={loaderData.allowedAreas ?? []}
         />
       </div>
       <DataTable

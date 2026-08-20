@@ -54,7 +54,7 @@ export default function WorkCategoriesIndex({
   return (
     <div className="flex flex-col gap-y-4">
       <div className="flex">
-        <h2 className="text-3xl font-bold">Categorias Laborales</h2>
+        <h2 className="text-3xl font-bold">Tipos de trabajo</h2>
         <CreateWorkCategoryForm errors={actionData?.errors} />
       </div>
       <DataTable

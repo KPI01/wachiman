@@ -13,6 +13,7 @@ import { encryptValue } from "../crypt.server";
 import { ExternalWorkerEntity } from "../database/external-worker.server";
 import { CompanyEntity } from "../database/company.server";
 import { WorkCategoryEntity } from "../database/work-category.server";
+import { AllowedAreaEntity } from "../database/allowed-area.server";
 import { validateWorkerDocumentsForAccess } from "./worker-document.server";
 import { DOCUMENT_TYPE_LABELS } from "../models/worker-document";
 import type { DocumentType } from "../../../db/enums";
@@ -85,11 +86,13 @@ type CreateAccessLogInputType = {
   data: z.infer<typeof createAccessLogSchema>;
   siteId: string;
   createdById: string;
+  allowedAreaName: string;
 };
 async function buildCreateAccessLogInput({
   data,
   createdById,
   siteId,
+  allowedAreaName,
 }: CreateAccessLogInputType) {
   const {
     vehiclePlateSnapshot,
@@ -97,11 +100,14 @@ async function buildCreateAccessLogInput({
     vehicleModelSnapshot,
     vehicleTypeSnapshot,
     entrySignaturePayload,
+    allowedAreaId,
     ...accessLogData
   } = data;
 
   return {
     ...accessLogData,
+    allowedAreaId,
+    allowedAreaSnapshot: allowedAreaName,
     siteId,
     createdById,
     entrySignatureEnvelope: await encryptValue(JSON.stringify(entrySignaturePayload)),
@@ -156,6 +162,10 @@ export async function createAccessLog(
   }
 
   const siteId = options.lockedSiteId ?? data.siteId;
+  const allowedArea = await AllowedAreaEntity.findById(data.allowedAreaId);
+  if (!allowedArea) {
+    return { success: false, errors: "El área autorizada seleccionada no existe." };
+  }
 
   if (data.externalWorkerId) {
     const worker = await ExternalWorkerEntity.findById(data.externalWorkerId);
@@ -167,7 +177,7 @@ export async function createAccessLog(
     }
 
     if (!worker.workCategory) {
-      return { success: false, errors: "El trabajador externo no tiene una categoría laboral válida." };
+      return { success: false, errors: "El trabajador externo no tiene un tipo de trabajo válido." };
     }
 
     const documentResult = await validateWorkerDocumentsForAccess(
@@ -199,7 +209,12 @@ export async function createAccessLog(
   const externalWorker = await resolveExternalWorker(data);
   await AccessLogEntity.create(
     {
-      ...(await buildCreateAccessLogInput({ data, siteId, createdById: createdBy.id })),
+      ...(await buildCreateAccessLogInput({
+        data,
+        siteId,
+        createdById: createdBy.id,
+        allowedAreaName: allowedArea.name,
+      })),
       externalWorkerId: externalWorker.id,
     },
   );
@@ -262,6 +277,7 @@ const editableSnapshot = (accessLog: {
   phoneNumber: string | null;
   legalIdSnapshot: string;
   allowedAreaSnapshot: string;
+  allowedAreaId: string | null;
   approvedBySnapshot: string;
   visitReason: string;
   externalWorkerId: string | null;
@@ -276,6 +292,7 @@ const editableSnapshot = (accessLog: {
   phoneNumber: accessLog.phoneNumber,
   legalIdSnapshot: accessLog.legalIdSnapshot,
   allowedAreaSnapshot: accessLog.allowedAreaSnapshot,
+  allowedAreaId: accessLog.allowedAreaId,
   approvedBySnapshot: accessLog.approvedBySnapshot,
   visitReason: accessLog.visitReason,
   externalWorkerId: accessLog.externalWorkerId,
@@ -306,6 +323,10 @@ export async function updateAccessLog(
     expectedExitTimestamp,
     ...data
   } = parsed.data;
+  const allowedArea = await AllowedAreaEntity.findById(data.allowedAreaId);
+  if (!allowedArea) {
+    return { success: false as const, errors: "El área autorizada seleccionada no existe." };
+  }
   if (
     current.entryTimestamp.getTime() !== expectedEntryTimestamp.getTime() ||
     (current.exitTimestamp?.getTime() ?? null) !==
@@ -352,6 +373,8 @@ export async function updateAccessLog(
   const exitWasAdded = current.exitTimestamp === null && data.exitTimestamp !== null;
   const updateData = {
     ...data,
+    allowedAreaSnapshot: allowedArea.name,
+    allowedAreaId: allowedArea.id,
     middleNameSnapshot: data.middleNameSnapshot ?? null,
     secondLastNameSnapshot: data.secondLastNameSnapshot ?? null,
     phoneNumber: data.phoneNumber ?? null,

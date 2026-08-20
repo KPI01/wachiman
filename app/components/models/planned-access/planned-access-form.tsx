@@ -32,11 +32,12 @@ import {
 import { Textarea } from "~/components/ui/textarea";
 import FieldWrapper from "~/components/ui/wrappers/field-wrapper";
 import { getFieldErrors } from "~/lib/utils/zod-errors";
-import type { Site } from "../../../../db/schema";
+import type { AllowedArea, Site, WorkCategory } from "../../../../db/schema";
 import type { ExternalWorkerListItem } from "~/lib/database/external-worker.server";
 // Comentado: el flujo de documentación ya no se muestra.
 // import WorkerDocumentViewer from "~/components/models/worker-document/worker-document-viewer";
 import CompanyCombobox from "~/components/models/company/company-combobox";
+import AllowedAreaCombobox from "~/components/models/access-logs/allowed-area-combobox";
 import { getActionErrorMessage } from "~/lib/utils/action-errors";
 
 type PlannedAccessSiteOption = Pick<Site, "id" | "name">;
@@ -56,6 +57,8 @@ export type PlannedAccessFormValues = {
 
 export type PlannedAccessFormProps = {
   sites: PlannedAccessSiteOption[];
+  workCategories: Array<Pick<WorkCategory, "id" | "name">>;
+  allowedAreas: Array<Pick<AllowedArea, "id" | "name">>;
   actionPath?: string;
   lockedSiteId?: string;
   initialValues?: PlannedAccessFormValues;
@@ -97,6 +100,8 @@ type VisitorDraft = {
   secondLastNameSnapshot: string;
   phoneNumber: string;
   externalWorkerId: string;
+  workCategoryId: string;
+  allowedAreaId: string;
 };
 
 type PlannedAccessVisitor = PlannedAccessFormVisitor;
@@ -112,6 +117,8 @@ function getEmptyVisitorDraft(): VisitorDraft {
     secondLastNameSnapshot: "",
     phoneNumber: "",
     externalWorkerId: "",
+    workCategoryId: "",
+    allowedAreaId: "",
   };
 }
 
@@ -134,9 +141,12 @@ function getPersonErrors(errorTree: unknown, personIndex: number) {
     "firstNameSnapshot",
     "lastNameSnapshot",
     "phoneNumber",
+    "workCategoryId",
+    "allowedAreaId",
   ];
   const errors = fields.flatMap(
-    (fieldName) => getPersonFieldErrors(errorTree, personIndex, fieldName) ?? [],
+    (fieldName) =>
+      getPersonFieldErrors(errorTree, personIndex, fieldName) ?? [],
   );
 
   return errors.length > 0 ? [...new Set(errors)] : undefined;
@@ -158,6 +168,8 @@ function normalizeVisitorDraft(visitor: VisitorDraft): VisitorDraft {
     secondLastNameSnapshot: visitor.secondLastNameSnapshot.trim(),
     phoneNumber: visitor.phoneNumber.trim(),
     externalWorkerId: visitor.externalWorkerId.trim(),
+    workCategoryId: visitor.workCategoryId.trim(),
+    allowedAreaId: visitor.allowedAreaId.trim(),
   };
 }
 
@@ -176,11 +188,21 @@ function validateVisitorDraft(visitor: VisitorDraft): VisitorDraftErrors {
     errors.lastNameSnapshot = "Los apellidos son obligatorios.";
   }
 
+  if (!visitor.workCategoryId.trim()) {
+    errors.workCategoryId = "El tipo de trabajo es obligatorio.";
+  }
+
+  if (!visitor.allowedAreaId.trim()) {
+    errors.allowedAreaId = "El área autorizada es obligatoria.";
+  }
+
   return errors;
 }
 
 export default function PlannedAccessForm({
   sites,
+  workCategories,
+  allowedAreas,
   actionPath = "/admin/planned-access",
   lockedSiteId,
   initialValues,
@@ -201,8 +223,8 @@ export default function PlannedAccessForm({
   const fetcher = useFetcher<FetcherData>();
   const [open, setOpen] = useState(false);
   const [datePickerResetKey, setDatePickerResetKey] = useState(0);
-  const [visitors, setVisitors] = useState<PlannedAccessVisitor[]>(() =>
-    initialValues?.visitors ?? [],
+  const [visitors, setVisitors] = useState<PlannedAccessVisitor[]>(
+    () => initialValues?.visitors ?? [],
   );
   const [nextVisitorId, setNextVisitorId] = useState(1);
   const [visitorDraft, setVisitorDraft] = useState(getEmptyVisitorDraft);
@@ -236,9 +258,7 @@ export default function PlannedAccessForm({
       return;
     }
 
-    toast.success(
-      successMessage,
-    );
+    toast.success(successMessage);
 
     setOpen(false);
     if (!resetOnSuccess) {
@@ -297,6 +317,7 @@ export default function PlannedAccessForm({
     handleVisitorDraftChange("phoneNumber", worker.phoneNumber ?? "");
     handleVisitorDraftChange("legalIdSnapshot", worker.legalId);
     handleVisitorDraftChange("externalWorkerId", worker.id);
+    handleVisitorDraftChange("workCategoryId", worker.workCategoryId);
     setLegalIdSuggestions([]);
     setShowLegalIdSuggestions(false);
   }
@@ -336,9 +357,7 @@ export default function PlannedAccessForm({
 
   function resetVisitorState() {
     setDatePickerResetKey((currentKey) => currentKey + 1);
-    setVisitors(
-      initialValues?.visitors ?? [],
-    );
+    setVisitors(initialValues?.visitors ?? []);
     setNextVisitorId(1);
     setVisitorDraft(getEmptyVisitorDraft());
     setVisitorDraftErrors({});
@@ -402,7 +421,9 @@ export default function PlannedAccessForm({
           <Button
             type="submit"
             form={formId}
-            disabled={fetcher.state !== "idle" || !sites.length || !visitors.length}
+            disabled={
+              fetcher.state !== "idle" || !sites.length || !visitors.length
+            }
           >
             {fetcher.state === "submitting" ? "Guardando..." : submitLabel}
           </Button>
@@ -450,7 +471,11 @@ export default function PlannedAccessForm({
           {lockedSiteId ? (
             <input type="hidden" name="siteId" value={lockedSiteId} />
           ) : null}
-          <Select name="siteId" defaultValue={selectedSiteId} disabled={!sites.length || !!lockedSiteId}>
+          <Select
+            name="siteId"
+            defaultValue={selectedSiteId}
+            disabled={!sites.length || !!lockedSiteId}
+          >
             <SelectTrigger className="w-full">
               <SelectValue placeholder="Centro para la solicitud..." />
             </SelectTrigger>
@@ -484,13 +509,13 @@ export default function PlannedAccessForm({
           errors={getFieldErrors(fetcher.data?.errors, "expectedStartDatetime")}
           className="md:col-span-2"
         >
-            <DateTimePicker
-              key={`expected-start-${datePickerResetKey}`}
+          <DateTimePicker
+            key={`expected-start-${datePickerResetKey}`}
             id="expectedStartDatetime"
             name="expectedStartDatetime"
-              className="m-0 w-full"
-              defaultValue={initialValues?.expectedStartDatetime ?? null}
-              required
+            className="m-0 w-full"
+            defaultValue={initialValues?.expectedStartDatetime ?? null}
+            required
           />
         </FieldWrapper>
         <FieldWrapper
@@ -503,7 +528,7 @@ export default function PlannedAccessForm({
             key={`expected-end-${datePickerResetKey}`}
             id="expectedEndDatetime"
             name="expectedEndDatetime"
-              className="m-0 w-full"
+            className="m-0 w-full"
             defaultValue={initialValues?.expectedEndDatetime ?? null}
           />
         </FieldWrapper>
@@ -525,7 +550,10 @@ export default function PlannedAccessForm({
           <Separator />
           <div className="flex items-center justify-between gap-3">
             <h3 className="text-2xl font-semibold">Visitantes</h3>
-            <Popover open={visitorPopoverOpen} onOpenChange={setVisitorPopoverOpen}>
+            <Popover
+              open={visitorPopoverOpen}
+              onOpenChange={setVisitorPopoverOpen}
+            >
               <PopoverTrigger asChild>
                 <Button
                   type="button"
@@ -591,7 +619,7 @@ export default function PlannedAccessForm({
                                 {worker.legalId}
                               </span>
                               <span className="ml-2 text-xs text-muted-foreground">
-                          {worker.company?.name}
+                                {worker.company?.name}
                               </span>
                             </li>
                           ))}
@@ -657,12 +685,78 @@ export default function PlannedAccessForm({
                     }
                   />
                 </FieldWrapper>
-<div className="flex justify-end gap-2">
-                  {visitorDraft.externalWorkerId ? (
-                    /* Comentado: el flujo de documentación ya no se muestra. */
-                    /* <WorkerDocumentViewer workerId={visitorDraft.externalWorkerId} /> */
-                    null
+                <FieldWrapper
+                  label="Tipo de trabajo *"
+                  htmlFor="visitor-work-category"
+                  errors={
+                    visitorDraftErrors.workCategoryId
+                      ? [visitorDraftErrors.workCategoryId]
+                      : undefined
+                  }
+                >
+                  <Select
+                    value={visitorDraft.workCategoryId}
+                    disabled={!workCategories.length}
+                    onValueChange={(value) =>
+                      handleVisitorDraftChange("workCategoryId", value)
+                    }
+                  >
+                    <SelectTrigger
+                      id="visitor-work-category"
+                      className="w-full"
+                    >
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent position="popper">
+                      <SelectGroup>
+                        {workCategories.map((category) => (
+                          <SelectItem key={category.id} value={category.id}>
+                            {category.name}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
+                  {!workCategories.length ? (
+                    <p className="text-sm text-muted-foreground">
+                      No hay tipos de trabajo configurados.
+                    </p>
                   ) : null}
+                </FieldWrapper>
+                <FieldWrapper
+                  label="Área autorizada *"
+                  htmlFor="visitor-allowed-area-search"
+                  errors={
+                    visitorDraftErrors.allowedAreaId
+                      ? [visitorDraftErrors.allowedAreaId]
+                      : undefined
+                  }
+                >
+                  <AllowedAreaCombobox
+                    id="visitor-allowed-area"
+                    name=""
+                    value={visitorDraft.allowedAreaId}
+                    selectedName={
+                      allowedAreas.find(
+                        (area) => area.id === visitorDraft.allowedAreaId,
+                      )?.name
+                    }
+                    onValueChange={(value) =>
+                      handleVisitorDraftChange("allowedAreaId", value)
+                    }
+                  />
+                  {!allowedAreas.length ? (
+                    <p className="text-sm text-muted-foreground">
+                      No hay áreas autorizadas configuradas.
+                    </p>
+                  ) : null}
+                </FieldWrapper>
+                <div className="flex justify-end gap-2">
+                  {visitorDraft.externalWorkerId
+                    ? /* Comentado: el flujo de documentación ya no se muestra. */
+                      /* <WorkerDocumentViewer workerId={visitorDraft.externalWorkerId} /> */
+                      null
+                    : null}
                   <Button
                     type="button"
                     variant="outline"
@@ -742,6 +836,16 @@ export default function PlannedAccessForm({
                         value={visitor.externalWorkerId}
                       />
                     ) : null}
+                    <input
+                      type="hidden"
+                      name={`persons[${visitorIndex}].workCategoryId`}
+                      value={visitor.workCategoryId}
+                    />
+                    <input
+                      type="hidden"
+                      name={`persons[${visitorIndex}].allowedAreaId`}
+                      value={visitor.allowedAreaId}
+                    />
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
                         <p className="truncate text-sm font-semibold">
@@ -750,6 +854,16 @@ export default function PlannedAccessForm({
                         <p className="truncate text-sm text-muted-foreground">
                           DNI: {visitor.legalIdSnapshot} | Telefono:{" "}
                           {visitor.phoneNumber || "-"}
+                        </p>
+                        <p className="truncate text-sm text-muted-foreground">
+                          Tipo de trabajo:{" "}
+                          {workCategories.find(
+                            (item) => item.id === visitor.workCategoryId,
+                          )?.name ?? "-"}{" "}
+                          | Área:{" "}
+                          {allowedAreas.find(
+                            (item) => item.id === visitor.allowedAreaId,
+                          )?.name ?? "-"}
                         </p>
                       </div>
                       <Button
@@ -760,7 +874,8 @@ export default function PlannedAccessForm({
                         onClick={() => {
                           setVisitors((currentVisitors) =>
                             currentVisitors.filter(
-                              (currentVisitor) => currentVisitor.id !== visitor.id,
+                              (currentVisitor) =>
+                                currentVisitor.id !== visitor.id,
                             ),
                           );
                         }}
@@ -768,13 +883,13 @@ export default function PlannedAccessForm({
                         <TrashIcon />
                       </Button>
                     </div>
-{visitor.externalWorkerId ? (
-                      /* Comentado: el flujo de documentación ya no se muestra. */
-                      /* <div className="mt-3"> */
-                      /*   <WorkerDocumentViewer workerId={visitor.externalWorkerId} /> */
-                      /* </div> */
-                      null
-                    ) : null}
+                    {visitor.externalWorkerId
+                      ? /* Comentado: el flujo de documentación ya no se muestra. */
+                        /* <div className="mt-3"> */
+                        /*   <WorkerDocumentViewer workerId={visitor.externalWorkerId} /> */
+                        /* </div> */
+                        null
+                      : null}
                     {visitorErrors ? (
                       <p className="mt-2 text-sm text-destructive">
                         {visitorErrors[0]}

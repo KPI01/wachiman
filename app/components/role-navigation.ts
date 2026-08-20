@@ -32,7 +32,8 @@ export const ROLE_NAVIGATION: Record<UserRole, SidebarLinkItem[]> = {
         item("Centros", "/admin/sites", Building2Icon),
         item("Departamentos", "/admin/departments", TagsIcon),
         item("Empresas", "/admin/companies", Building2Icon),
-        item("Categorías laborales", "/admin/work-categories", TagsIcon),
+        item("Tipos de trabajo", "/admin/work-categories", TagsIcon),
+        item("Áreas autorizadas", "/admin/allowed-areas", TagsIcon),
       ],
     },
     {
@@ -70,7 +71,8 @@ export const ROLE_NAVIGATION: Record<UserRole, SidebarLinkItem[]> = {
       label: "Catálogos",
       children: [
         item("Empresas", "/security/companies", Building2Icon),
-        item("Categorías", "/security/work-categories", TagsIcon),
+        item("Tipos de trabajo", "/security/work-categories", TagsIcon),
+        item("Áreas autorizadas", "/security/allowed-areas", TagsIcon),
         // Comentado: el flujo de documentación ya no se muestra.
         // item("Documentación", "/security/documents", FileArchiveIcon),
       ],
@@ -91,7 +93,8 @@ export const ROLE_NAVIGATION: Record<UserRole, SidebarLinkItem[]> = {
       label: "Catálogos",
       children: [
         item("Empresas", "/approver/companies", Building2Icon),
-        item("Categorías", "/approver/work-categories", TagsIcon),
+        item("Tipos de trabajo", "/approver/work-categories", TagsIcon),
+        item("Áreas autorizadas", "/approver/allowed-areas", TagsIcon),
         // Comentado: el flujo de documentación ya no se muestra.
         // item("Documentación", "/approver/documents", FileArchiveIcon),
       ],

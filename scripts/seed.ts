@@ -5,6 +5,7 @@ import { createLocalDb } from "../db/client";
 import {
   accessLogs,
   accessLogVehicles,
+  allowedAreas,
   companies,
   departments,
   externalWorkers,
@@ -84,6 +85,12 @@ async function main() {
     },
   });
 
+  await db.insert(allowedAreas).values({
+    id: "area-office-basic",
+    name: "Oficina",
+    slug: "OFICINA",
+  }).onConflictDoNothing();
+
   if (mode === "base") {
     console.log(`Seed básico completado. Usuario administrador: ${adminUsername}`);
     return;
@@ -112,12 +119,19 @@ async function main() {
   ]).onConflictDoNothing();
 
   await db.insert(workCategories).values([
-    { id: "wc-0", name: "General", description: "Categoria laboral por defecto", requiresSpecialPermission: false, requiresTraining: false },
+    { id: "wc-0", name: "General", description: "Tipo de trabajo por defecto", requiresSpecialPermission: false, requiresTraining: false },
     { id: "wc-1", name: "Electricista", description: "Instalacion y mantenimiento electrico", requiresSpecialPermission: true, requiresTraining: true },
     { id: "wc-2", name: "Albanil", description: "Obra y reformas", requiresSpecialPermission: false, requiresTraining: false },
     { id: "wc-3", name: "Soldador", description: "Trabajos de soldadura", requiresSpecialPermission: true, requiresTraining: true },
     { id: "wc-4", name: "Transportista", description: "Carga y descarga de mercancias", requiresSpecialPermission: false, requiresTraining: false },
     { id: "wc-5", name: "Tecnico de climatizacion", description: "Mantenimiento de climatizacion", requiresSpecialPermission: true, requiresTraining: true },
+  ]).onConflictDoNothing();
+
+  await db.insert(allowedAreas).values([
+    { id: "area-plant", name: "Planta de producción", slug: "PLANTA-PRODUCCION" },
+    { id: "area-warehouse", name: "Almacén", slug: "ALMACEN" },
+    { id: "area-office", name: "Oficinas", slug: "OFICINAS" },
+    { id: "area-loading", name: "Zona de carga", slug: "ZONA-CARGA" },
   ]).onConflictDoNothing();
 
   await db.insert(users).values([
@@ -152,12 +166,12 @@ async function main() {
   ]).onConflictDoNothing();
 
   await db.insert(plannedAccessPersons).values([
-    { id: "pap-1", firstNameSnapshot: "Antonio", middleNameSnapshot: "Jose", lastNameSnapshot: "Lopez", secondLastNameSnapshot: "Garcia", phoneNumber: "600111222", legalIdSnapshot: "12345678A", plannedAccessId: "pa-1", externalWorkerId: "worker-1" },
-    { id: "pap-2", firstNameSnapshot: "Maria", lastNameSnapshot: "Rodriguez", secondLastNameSnapshot: "Perez", phoneNumber: "600222333", legalIdSnapshot: "87654321B", plannedAccessId: "pa-1", externalWorkerId: "worker-2" },
-    { id: "pap-3", firstNameSnapshot: "Francisco", middleNameSnapshot: "Javier", lastNameSnapshot: "Martinez", secondLastNameSnapshot: "Lopez", phoneNumber: "600333444", legalIdSnapshot: "11223344C", plannedAccessId: "pa-2", externalWorkerId: "worker-3" },
-    { id: "pap-4", firstNameSnapshot: "Laura", lastNameSnapshot: "Sanchez", secondLastNameSnapshot: "Garcia", phoneNumber: "600444555", legalIdSnapshot: "44332211D", plannedAccessId: "pa-2", externalWorkerId: "worker-4" },
-    { id: "pap-5", firstNameSnapshot: "Pedro", lastNameSnapshot: "Fernandez", secondLastNameSnapshot: "Martinez", phoneNumber: "600555666", legalIdSnapshot: "55667788E", plannedAccessId: "pa-3", externalWorkerId: "worker-5" },
-    { id: "pap-6", firstNameSnapshot: "Sofia", middleNameSnapshot: "Maria", lastNameSnapshot: "Gonzalez", secondLastNameSnapshot: "Ramos", phoneNumber: "600666777", legalIdSnapshot: "99887766F", plannedAccessId: "pa-3", externalWorkerId: "worker-6" },
+    { id: "pap-1", firstNameSnapshot: "Antonio", middleNameSnapshot: "Jose", lastNameSnapshot: "Lopez", secondLastNameSnapshot: "Garcia", phoneNumber: "600111222", legalIdSnapshot: "12345678A", plannedAccessId: "pa-1", workCategoryId: "wc-1", allowedAreaId: "area-plant", externalWorkerId: "worker-1" },
+    { id: "pap-2", firstNameSnapshot: "Maria", lastNameSnapshot: "Rodriguez", secondLastNameSnapshot: "Perez", phoneNumber: "600222333", legalIdSnapshot: "87654321B", plannedAccessId: "pa-1", workCategoryId: "wc-2", allowedAreaId: "area-warehouse", externalWorkerId: "worker-2" },
+    { id: "pap-3", firstNameSnapshot: "Francisco", middleNameSnapshot: "Javier", lastNameSnapshot: "Martinez", secondLastNameSnapshot: "Lopez", phoneNumber: "600333444", legalIdSnapshot: "11223344C", plannedAccessId: "pa-2", workCategoryId: "wc-3", allowedAreaId: "area-office", externalWorkerId: "worker-3" },
+    { id: "pap-4", firstNameSnapshot: "Laura", lastNameSnapshot: "Sanchez", secondLastNameSnapshot: "Garcia", phoneNumber: "600444555", legalIdSnapshot: "44332211D", plannedAccessId: "pa-2", workCategoryId: "wc-5", allowedAreaId: "area-office", externalWorkerId: "worker-4" },
+    { id: "pap-5", firstNameSnapshot: "Pedro", lastNameSnapshot: "Fernandez", secondLastNameSnapshot: "Martinez", phoneNumber: "600555666", legalIdSnapshot: "55667788E", plannedAccessId: "pa-3", workCategoryId: "wc-4", allowedAreaId: "area-loading", externalWorkerId: "worker-5" },
+    { id: "pap-6", firstNameSnapshot: "Sofia", middleNameSnapshot: "Maria", lastNameSnapshot: "Gonzalez", secondLastNameSnapshot: "Ramos", phoneNumber: "600666777", legalIdSnapshot: "99887766F", plannedAccessId: "pa-3", workCategoryId: "wc-1", allowedAreaId: "area-plant", externalWorkerId: "worker-6" },
   ]).onConflictDoNothing();
 
   await db.insert(accessLogVehicles).values([
@@ -193,6 +207,9 @@ async function main() {
       secondLastNameSnapshot: "Garcia",
       phoneNumber: "600111222",
       legalIdSnapshot: "12345678A",
+      allowedAreaSnapshot: "Zona de carga",
+      allowedAreaId: "area-loading",
+      approvedBySnapshot: "Administrador",
       withVehicle: false,
       visitReason: "Trabajos electricos",
       siteId: "site-1",
@@ -213,6 +230,9 @@ async function main() {
       secondLastNameSnapshot: "Martinez",
       phoneNumber: "600555666",
       legalIdSnapshot: "55667788E",
+      allowedAreaSnapshot: "Planta de producción",
+      allowedAreaId: "area-plant",
+      approvedBySnapshot: "Administrador",
       withVehicle: true,
       visitReason: "Transporte de materiales",
       siteId: "site-1",
@@ -232,6 +252,9 @@ async function main() {
       lastNameSnapshot: "Martinez",
       secondLastNameSnapshot: "Lopez",
       legalIdSnapshot: "11223344C",
+      allowedAreaSnapshot: "Oficinas",
+      allowedAreaId: "area-office",
+      approvedBySnapshot: "Carlos Segura",
       withVehicle: false,
       visitReason: "Trabajos de soldadura",
       siteId: "site-1",
@@ -246,6 +269,9 @@ async function main() {
       lastNameSnapshot: "Rodriguez",
       secondLastNameSnapshot: "Perez",
       legalIdSnapshot: "87654321B",
+      allowedAreaSnapshot: "Almacén",
+      allowedAreaId: "area-warehouse",
+      approvedBySnapshot: "Administrador",
       withVehicle: false,
       visitReason: "Visita programada",
       siteId: "site-1",

@@ -39,7 +39,7 @@ export class WorkCategoryEntity {
 
     const created = await this.create({
       name: "General",
-      description: "Categoría laboral por defecto",
+      description: "Tipo de trabajo por defecto",
     });
     return created.id;
   }

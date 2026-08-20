@@ -3,7 +3,7 @@ import { dirname, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
 import { config as loadEnv } from "dotenv";
 import { createLocalDb } from "../db/client";
-import { departments, sites, users } from "../db/schema";
+import { allowedAreas, departments, sites, users } from "../db/schema";
 import { hashText } from "../app/lib/hash.server";
 
 const options = parseOptions(process.argv.slice(2));
@@ -96,6 +96,11 @@ async function seedSqlite() {
     .onConflictDoUpdate({ target: sites.id, set: { name: siteName, slug: siteSlug } });
   await db.insert(departments).values({ id: "dept-3", name: departmentName, slug: departmentSlug })
     .onConflictDoUpdate({ target: departments.id, set: { name: departmentName, slug: departmentSlug } });
+  await db.insert(allowedAreas).values({
+    id: "area-office-basic",
+    name: "Oficina",
+    slug: "OFICINA",
+  }).onConflictDoNothing();
   await db.insert(users).values({
     id: "user-1",
     fullName: adminFullName,
@@ -134,6 +139,7 @@ async function seedD1() {
   const sql = [
     `INSERT INTO sites (id, name, slug) VALUES ('site-1', ${quote(process.env.SITE_NAME || "Sitio principal")}, ${quote(process.env.SITE_SLUG || "PRINCIPAL")}) ON CONFLICT(id) DO UPDATE SET name=excluded.name, slug=excluded.slug;`,
     `INSERT INTO departments (id, name, slug) VALUES ('dept-3', ${quote(process.env.DEPARTMENT_NAME || "General")}, ${quote(process.env.DEPARTMENT_SLUG || "GENERAL")}) ON CONFLICT(id) DO UPDATE SET name=excluded.name, slug=excluded.slug;`,
+    "INSERT INTO allowed_areas (id, name, slug) VALUES ('area-office-basic', 'Oficina', 'OFICINA') ON CONFLICT(id) DO NOTHING;",
     `INSERT INTO users (id, full_name, username, password, role, is_active, is_trashed, site_id, department_id) VALUES ('user-1', ${quote(process.env.ADMIN_FULL_NAME || "Administrador")}, ${quote(process.env.ADMIN_USERNAME || "admin")}, ${quote(password)}, 'ADMIN', 1, 0, 'site-1', 'dept-3') ON CONFLICT(id) DO UPDATE SET full_name=excluded.full_name, username=excluded.username, password=excluded.password, role='ADMIN';`,
   ].join("\n");
   const tempFile = "/tmp/wachiman-base-seed.sql";
@@ -180,7 +186,7 @@ async function main() {
       const tables = [
         "access_logs", "access_log_vehicles", "worker_documents",
         "planned_access_persons", "planned_accesses", "external_workers",
-        "app_settings", "users", "work_categories", "companies", "departments", "sites",
+        "app_settings", "users", "work_categories", "allowed_areas", "companies", "departments", "sites",
         "audit_logs", "d1_migrations", "__drizzle_migrations",
       ];
       runWrangler([

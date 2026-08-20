@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router";
-import type { WorkCategory } from "../../../../db/schema";
+import type { AllowedArea, WorkCategory } from "../../../../db/schema";
 import type { PlannedAccessListItem } from "~/lib/database/planned-access.server";
 import type { ExternalWorkerDetail } from "~/lib/database/external-worker.server";
 // Comentado: la documentación ya no se muestra en el flujo de aprobación.
@@ -9,6 +9,7 @@ import type { ExternalWorkerDetail } from "~/lib/database/external-worker.server
 // import type { DocumentType } from "../../../../db/enums";
 // import { Badge } from "~/components/ui/badge";
 import FieldWrapper from "~/components/ui/wrappers/field-wrapper";
+import AllowedAreaCombobox from "~/components/models/access-logs/allowed-area-combobox";
 // import UploadWorkerDocumentBtn from "~/components/models/worker-document/upload-worker-document-btn";
 // import ReviewPlannedAccessDocumentBtn from "./review-planned-access-document-btn";
 import {
@@ -33,6 +34,7 @@ export default function PlannedAccessApprovalPersonCard({
   person,
   worker,
   workCategories,
+  allowedAreas,
   validThrough,
   actionPath,
   workerPath,
@@ -41,6 +43,7 @@ export default function PlannedAccessApprovalPersonCard({
   person: Person;
   worker: ExternalWorkerDetail | null;
   workCategories: WorkCategory[];
+  allowedAreas: AllowedArea[];
   validThrough: Date;
   actionPath: string;
   workerPath: string;
@@ -49,6 +52,7 @@ export default function PlannedAccessApprovalPersonCard({
   const [categoryId, setCategoryId] = useState(
     person.workCategoryId ?? worker?.workCategoryId ?? "",
   );
+  const [allowedAreaId, setAllowedAreaId] = useState(person.allowedAreaId ?? "");
   // Comentado: solo se usaba para el bloque de documentación.
   // const category = workCategories.find((item) => item.id === categoryId);
   // Comentado: la documentación ya no se muestra en el flujo de aprobación.
@@ -65,12 +69,17 @@ export default function PlannedAccessApprovalPersonCard({
           Identificación: {person.legalIdSnapshot}
         </ItemDescription>
         <FieldWrapper
-          label="Categoría laboral *"
+          label="Tipo de trabajo *"
           htmlFor={`category-${person.id}`}
         >
-          <Select value={categoryId} onValueChange={setCategoryId} required>
+          <Select
+            value={categoryId}
+            onValueChange={setCategoryId}
+            disabled={!workCategories.length}
+            required
+          >
             <SelectTrigger id={`category-${person.id}`} className="w-full">
-              <SelectValue placeholder="Sin categoría adicional" />
+              <SelectValue placeholder="Sin tipo de trabajo adicional" />
             </SelectTrigger>
             <SelectContent position="popper">
               <SelectGroup>
@@ -92,6 +101,21 @@ export default function PlannedAccessApprovalPersonCard({
             name={`personWorkCategories[${person.id}]`}
             value={categoryId}
             form={formId}
+          />
+        </FieldWrapper>
+        <FieldWrapper
+          label="Área autorizada *"
+          htmlFor={`allowed-area-${person.id}-search`}
+        >
+          <AllowedAreaCombobox
+            id={`allowed-area-${person.id}`}
+            name={`personAllowedAreas[${person.id}]`}
+            value={allowedAreaId}
+            selectedName={allowedAreas.find((area) => area.id === allowedAreaId)?.name}
+            onValueChange={setAllowedAreaId}
+            form={formId}
+            required
+            placeholder="Selecciona un área..."
           />
         </FieldWrapper>
       </ItemContent>

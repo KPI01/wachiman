@@ -13,6 +13,8 @@ import { getManySites } from "~/lib/services/sites.server";
 import type { Route } from "./+types/planned-access";
 import { redirect } from "react-router";
 import { useMemo } from "react";
+import { getManyWorkCategories } from "~/lib/services/work-category.server";
+import { getManyAllowedAreas } from "~/lib/services/allowed-area.server";
 
 const PLANNED_ACCESS_GLOBAL_FILTER_COLUMNS = [
   "companySnapshot",
@@ -25,12 +27,14 @@ const PLANNED_ACCESS_GLOBAL_FILTER_COLUMNS = [
 export async function loader({ request }: Route.LoaderArgs) {
   await validateUserRole(request, "SECURITY_MANAGER");
 
-  const [plannedAccesses, sites] = await Promise.all([
+  const [plannedAccesses, sites, workCategories, allowedAreas] = await Promise.all([
     getManyPlannedAccesses(),
     getManySites(),
+    getManyWorkCategories(),
+    getManyAllowedAreas(),
   ]);
 
-  return { plannedAccesses, sites };
+  return { plannedAccesses, sites, workCategories, allowedAreas };
 }
 
 export async function action({ request }: Route.ActionArgs) {
@@ -70,14 +74,16 @@ export default function SecurityPlannedAccess({
   loaderData,
 }: Route.ComponentProps) {
   const columns = useMemo(
-    () => plannedAccessColumns({ actionPath: "/security/planned-access", sites: loaderData.sites ?? [] }),
-    [loaderData.sites],
+     () => plannedAccessColumns({ actionPath: "/security/planned-access", sites: loaderData.sites ?? [], workCategories: loaderData.workCategories ?? [], allowedAreas: loaderData.allowedAreas ?? [] }),
+     [loaderData.sites, loaderData.workCategories, loaderData.allowedAreas],
   );
   return (
     <div className="grid space-y-6">
       <div className="flex items-center justify-end">
         <CreatePlannedAccessForm
           sites={loaderData.sites ?? []}
+          workCategories={loaderData.workCategories ?? []}
+          allowedAreas={loaderData.allowedAreas ?? []}
           actionPath="/security/planned-access"
         />
       </div>

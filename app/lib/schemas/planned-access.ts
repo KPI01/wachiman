@@ -1,7 +1,9 @@
 import z from "zod";
 import { SiteEntity } from "../database/site.server";
+import { AllowedAreaEntity } from "../database/allowed-area.server";
+import { WorkCategoryEntity } from "../database/work-category.server";
 import { optionalString, requiredString } from "./generic";
-import { SITE_DOESNT_EXISTS } from "./messages";
+import { ALLOWED_AREA_DOESNT_EXISTS, SITE_DOESNT_EXISTS, WORK_CATEGORY_DOESNT_EXISTS } from "./messages";
 import { signaturePayloadFromStringSchema } from "./access-log";
 
 const optionalDate = z.preprocess((value) => {
@@ -23,7 +25,21 @@ const plannedAccessPersonSchema = z.object({
   phoneNumber: optionalString,
   legalIdSnapshot: requiredString.transform((value) => value.toUpperCase()),
   externalWorkerId: optionalString,
+  workCategoryId: requiredString,
+  allowedAreaId: requiredString,
 });
+
+async function validatePersonCatalogs(
+  persons: Array<{ workCategoryId: string; allowedAreaId: string }>,
+) {
+  const results = await Promise.all(
+    persons.flatMap((person) => [
+      WorkCategoryEntity.findById(person.workCategoryId),
+      AllowedAreaEntity.findById(person.allowedAreaId),
+    ]),
+  );
+  return results.every(Boolean);
+}
 
 export const createPlannedAccessSchema = z
   .object({
@@ -39,6 +55,10 @@ export const createPlannedAccessSchema = z
   .refine(async (data) => (await SiteEntity.findById(data.siteId)) !== null, {
     error: SITE_DOESNT_EXISTS,
     path: ["siteId"],
+  })
+  .refine(async (data) => validatePersonCatalogs(data.persons), {
+    error: `${WORK_CATEGORY_DOESNT_EXISTS} ${ALLOWED_AREA_DOESNT_EXISTS}`,
+    path: ["persons"],
   })
   .superRefine((data, context) => {
     if (
@@ -82,6 +102,10 @@ export const updatePlannedAccessSchema = z
     error: SITE_DOESNT_EXISTS,
     path: ["siteId"],
   })
+  .refine(async (data) => validatePersonCatalogs(data.persons), {
+    error: `${WORK_CATEGORY_DOESNT_EXISTS} ${ALLOWED_AREA_DOESNT_EXISTS}`,
+    path: ["persons"],
+  })
   .superRefine((data, context) => {
     if (
       data.expectedEndDatetime &&
@@ -113,6 +137,7 @@ export const updatePlannedAccessStatusSchema = z
     status: z.enum(["APPROVED", "REJECTED", "CANCELED"]),
     decisionReason: optionalString,
     personWorkCategories: z.record(z.string(), z.string().nullable()).optional(),
+    personAllowedAreas: z.record(z.string(), z.string().nullable()).optional(),
   })
   .superRefine((value, context) => {
     if (value.status !== "APPROVED" && !value.decisionReason) {

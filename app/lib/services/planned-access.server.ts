@@ -9,6 +9,7 @@ import { AccessLogEntity } from "../database/access-log.server";
 import { PlannedAccessEntity } from "../database/planned-access.server";
 import { UserEntity } from "../database/user.server";
 import { WorkCategoryEntity } from "../database/work-category.server";
+import { AllowedAreaEntity } from "../database/allowed-area.server";
 import { CompanyEntity } from "../database/company.server";
 import { AuditLogEntity } from "../database/audit-log.server";
 import { AppSettingsEntity } from "../database/app-settings.server";
@@ -194,6 +195,8 @@ export async function createPlannedAccess(
         persons: plannedAccess.plannedAccessPersons.map((person) => ({
           id: person.id,
           externalWorkerId: person.externalWorkerId,
+          workCategoryId: person.workCategoryId,
+          allowedAreaId: person.allowedAreaId,
         })),
       },
     });
@@ -329,6 +332,8 @@ export async function updatePlannedAccess(
           phoneNumber: person.phoneNumber,
           legalIdSnapshot: person.legalIdSnapshot,
           externalWorkerId: person.externalWorkerId,
+          workCategoryId: person.workCategoryId,
+          allowedAreaId: person.allowedAreaId,
         })),
       },
       after: {
@@ -346,6 +351,8 @@ export async function updatePlannedAccess(
           phoneNumber: person.phoneNumber,
           legalIdSnapshot: person.legalIdSnapshot,
           externalWorkerId: person.externalWorkerId,
+          workCategoryId: person.workCategoryId,
+          allowedAreaId: person.allowedAreaId,
         })),
       },
     },
@@ -382,7 +389,7 @@ export async function uploadPlannedAccessPersonDocument(
     : await ExternalWorkerEntity.findByLegalId(normalizeLegalId(person.legalIdSnapshot));
 
   if (!worker) {
-    if (!categoryId) return { success: false as const, errors: "Selecciona una categoría laboral antes de cargar documentación." };
+    if (!categoryId) return { success: false as const, errors: "Selecciona un tipo de trabajo antes de cargar documentación." };
     const company = await findOrCreateCompany(plannedAccess.companySnapshot);
     worker = await ExternalWorkerEntity.create({
       firstName: person.firstNameSnapshot,
@@ -397,7 +404,7 @@ export async function uploadPlannedAccessPersonDocument(
   }
 
   const effectiveCategoryId = categoryId ?? worker.workCategoryId;
-  if (!effectiveCategoryId) return { success: false as const, errors: "Selecciona una categoría laboral antes de cargar documentación." };
+  if (!effectiveCategoryId) return { success: false as const, errors: "Selecciona un tipo de trabajo antes de cargar documentación." };
   const linked = await PlannedAccessEntity.linkPersonWorker(plannedAccessId, personId, worker.id, effectiveCategoryId);
   if (!linked) return { success: false as const, errors: "No se pudo vincular la persona al trabajador." };
 
@@ -421,14 +428,18 @@ export async function updatePlannedAccessStatus(
   options: PlannedAccessAuthorOptions,
 ) {
   const personWorkCategories: Record<string, string | null> = {};
+  const personAllowedAreas: Record<string, string | null> = {};
   for (const [key, value] of Object.entries(input)) {
     const match = /^personWorkCategories\[(.+)]$/.exec(key);
     if (match) personWorkCategories[match[1]] = String(value) || null;
+    const areaMatch = /^personAllowedAreas\[(.+)]$/.exec(key);
+    if (areaMatch) personAllowedAreas[areaMatch[1]] = String(value) || null;
   }
 
   const parsed = await updatePlannedAccessStatusSchema.safeParseAsync({
     ...input,
     personWorkCategories,
+    personAllowedAreas,
   });
 
   if (!parsed.success) {
@@ -500,12 +511,15 @@ export async function updatePlannedAccessStatus(
     }
 
     const selectedCategories = parsed.data.personWorkCategories ?? {};
+    const selectedAreas = parsed.data.personAllowedAreas ?? {};
     const personWorkCategories: Array<{ personId: string; workCategoryId: string; externalWorkerId: string }> = [];
+    const personAllowedAreas: Array<{ personId: string; allowedAreaId: string }> = [];
     const validationErrors: string[] = [];
     const decisionEvidence: Array<Record<string, unknown>> = [];
 
     for (const person of plannedAccess.plannedAccessPersons) {
       const categoryId = selectedCategories[person.id] || null;
+      const allowedAreaId = selectedAreas[person.id] || person.allowedAreaId || null;
       const legalId = normalizeLegalId(person.legalIdSnapshot);
       const matchedWorker = await ExternalWorkerEntity.findByLegalId(legalId);
       let worker = matchedWorker
@@ -522,13 +536,13 @@ export async function updatePlannedAccessStatus(
       }
 
       if (!worker) {
-        // Comentado: se exigía una categoría laboral para crear personas nuevas.
+        // Comentado: se exigía un tipo de trabajo para crear personas nuevas.
         // if (!categoryId) {
-        //   validationErrors.push(`La persona ${person.firstNameSnapshot} ${person.lastNameSnapshot} es nueva y necesita una categoría laboral.`);
+        //   validationErrors.push(`La persona ${person.firstNameSnapshot} ${person.lastNameSnapshot} es nueva y necesita un tipo de trabajo.`);
         //   continue;
         // }
         const company = await findOrCreateCompany(plannedAccess.companySnapshot);
-        // Nuevo: se resuelve una categoría por defecto cuando no se indicó una.
+        // Nuevo: se resuelve un tipo de trabajo por defecto cuando no se indicó uno.
         const defaultCategoryId = await WorkCategoryEntity.resolveDefault();
         const createdWorker = await ExternalWorkerEntity.create({
           firstName: person.firstNameSnapshot,
@@ -551,12 +565,21 @@ export async function updatePlannedAccessStatus(
       const effectiveCategoryId = categoryId ?? worker.workCategoryId;
       const category = await WorkCategoryEntity.findById(effectiveCategoryId);
       if (!category) {
-        validationErrors.push(`La categoría seleccionada para ${worker.firstName} ${worker.lastName} no existe.`);
+        validationErrors.push(`El tipo de trabajo seleccionado para ${worker.firstName} ${worker.lastName} no existe.`);
+        continue;
+      }
+
+      const allowedArea = allowedAreaId
+        ? await AllowedAreaEntity.findById(allowedAreaId)
+        : null;
+      if (!allowedArea) {
+        validationErrors.push(`El área autorizada para ${worker.firstName} ${worker.lastName} no existe o no fue seleccionada.`);
         continue;
       }
 
       const workerId = worker.id;
       personWorkCategories.push({ personId: person.id, workCategoryId: effectiveCategoryId, externalWorkerId: workerId });
+      personAllowedAreas.push({ personId: person.id, allowedAreaId: allowedArea.id });
       // Comentado: la aprobación ya no valida documentación.
       // const requirements = {
       //   requiresTraining: Boolean(category.requiresTraining),
@@ -587,6 +610,7 @@ export async function updatePlannedAccessStatus(
         personId: person.id,
         workerId,
         workCategoryId: effectiveCategoryId,
+        allowedAreaId: allowedArea.id,
       });
     }
 
@@ -602,7 +626,8 @@ export async function updatePlannedAccessStatus(
       decisionReason: parsed.data.decisionReason ?? null,
       decisionById: author.id,
       decisionAt: new Date(),
-      personWorkCategories,
+       personWorkCategories,
+       personAllowedAreas,
     });
 
     if (!approved) {
@@ -748,6 +773,13 @@ export async function createAccessLogFromPlannedAccess(
     };
   }
 
+  if (!person.allowedArea) {
+    return {
+      success: false,
+      errors: "La persona no tiene un área autorizada definida en la solicitud planificada.",
+    };
+  }
+
   const worker = await ExternalWorkerEntity.findById(person.externalWorkerId);
   if (!worker) {
     return { success: false, errors: "El trabajador externo vinculado ya no existe." };
@@ -756,7 +788,7 @@ export async function createAccessLogFromPlannedAccess(
   // Comentado: el ingreso al centro ya no valida documentación.
   // const category = person.workCategory ?? worker.workCategory;
   // if (!category) {
-  //   return { success: false, errors: "La persona no tiene una categoría laboral válida." };
+  //   return { success: false, errors: "La persona no tiene un tipo de trabajo válido." };
   // }
 
   // const documentResult = await validateWorkerDocumentsForAccess(
@@ -811,10 +843,8 @@ export async function createAccessLogFromPlannedAccess(
     secondLastNameSnapshot: person.secondLastNameSnapshot ?? undefined,
     phoneNumber: person.phoneNumber ?? undefined,
     legalIdSnapshot: person.legalIdSnapshot,
-    allowedAreaSnapshot:
-      person.workCategory?.name ??
-      worker.workCategory?.name ??
-      "No especificado",
+    allowedAreaSnapshot: person.allowedArea.name,
+    allowedAreaId: person.allowedArea.id,
     approvedBySnapshot:
       plannedAccess.approvedBy?.fullName ?? author.fullName,
     externalWorkerId: person.externalWorkerId ?? undefined,

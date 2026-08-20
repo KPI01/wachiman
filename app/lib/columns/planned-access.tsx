@@ -5,7 +5,7 @@ import type { PlannedAccessStatus } from "../../../db/enums";
 import PlannedAccessStatusActions from "~/components/models/planned-access/planned-access-status-actions";
 import { Badge } from "~/components/ui/badge";
 import type { PlannedAccessListItem } from "../database/planned-access.server";
-import type { Site } from "../../../db/schema";
+import type { AllowedArea, Site, WorkCategory } from "../../../db/schema";
 import { formatTimestamp } from "../utils";
 
 const plannedAccessColHelper = createColumnHelper<PlannedAccessListItem>();
@@ -48,7 +48,10 @@ function getFullName(
 
 function getPersonsDetails(plannedAccess: PlannedAccessListItem) {
   return plannedAccess.plannedAccessPersons
-    .map((person) => `${getFullName(person)} (${person.legalIdSnapshot})`)
+    .map(
+      (person) =>
+        `${getFullName(person)} (${person.legalIdSnapshot}) · ${person.workCategory?.name ?? "Sin tipo de trabajo"} · ${person.allowedArea?.name ?? "Sin área"}`,
+    )
     .join(", ");
 }
 
@@ -56,10 +59,14 @@ export const plannedAccessColumns = ({
   actionPath,
   allowedActions,
   sites,
+  workCategories,
+  allowedAreas,
 }: {
   actionPath?: string;
   allowedActions?: AllowedAction[];
   sites?: Array<Pick<Site, "id" | "name">>;
+  workCategories?: Array<Pick<WorkCategory, "id" | "name">>;
+  allowedAreas?: Array<Pick<AllowedArea, "id" | "name">>;
 } = {}) => [
     plannedAccessColHelper.accessor("expectedStartDatetime", {
       header: "Inicio previsto",
@@ -139,6 +146,8 @@ export const plannedAccessColumns = ({
           allowedActions={allowedActions}
           plannedAccess={row.original}
           sites={sites}
+          workCategories={workCategories}
+          allowedAreas={allowedAreas}
         />
       ),
     }),

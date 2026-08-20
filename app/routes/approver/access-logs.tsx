@@ -6,7 +6,7 @@ import { validateUserRole } from "~/lib/auth.server";
 import {
   ACCESS_LOG_COLUMN_FILTER_ACTIONS,
   ACCESS_LOG_GLOBAL_FILTER_COLUMNS,
-  accessLogColumns,
+  createAccessLogColumns,
 } from "~/lib/columns/access-log";
 import { getManyAccessLogs } from "~/lib/services/access-log.server";
 import { parseLocalDate } from "~/lib/utils";
@@ -15,6 +15,7 @@ import type { GetManyAccessLogsInput } from "~/lib/services/access-log.server";
 import { getQueryParams } from "~/lib/services/http.server";
 import { getSessionSite } from "~/lib/session.server";
 import AccessLogFilters from "~/components/models/access-logs/access-log-filters";
+import { getManyAllowedAreas } from "~/lib/services/allowed-area.server";
 
 export async function loader({ request }: Route.LoaderArgs) {
   const user = await validateUserRole(request, "ACCESS_APPROVER");
@@ -51,7 +52,10 @@ export async function loader({ request }: Route.LoaderArgs) {
     input.status = query.status;
   }
 
-  const accessLogs = await getManyAccessLogs(input);
+  const [accessLogs, allowedAreas] = await Promise.all([
+    getManyAccessLogs(input),
+    getManyAllowedAreas(),
+  ]);
 
   return {
     mode,
@@ -60,6 +64,7 @@ export async function loader({ request }: Route.LoaderArgs) {
       mode === "range" ? { from: input.from, to: input.to } : undefined,
     status: query.status,
     accessLogs,
+    allowedAreas,
   };
 }
 
@@ -85,7 +90,7 @@ export default function ApproverAccessLogs({ loaderData }: Route.ComponentProps)
     <div className="flex flex-col gap-6">
       <h2 className="text-3xl font-bold">Registros de acceso</h2>
       <DataTable
-        columns={accessLogColumns}
+        columns={createAccessLogColumns(loaderData.allowedAreas ?? [])}
         data={loaderData.accessLogs ?? []}
         globalFilterColumns={ACCESS_LOG_GLOBAL_FILTER_COLUMNS}
         columnHeaderActions={{

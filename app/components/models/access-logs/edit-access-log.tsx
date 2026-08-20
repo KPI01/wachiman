@@ -8,6 +8,7 @@ import AlertDialogContainer, {
 import CompanyCombobox from "~/components/models/company/company-combobox";
 import ExternalWorkerCombobox from "~/components/models/external-worker/external-worker-combobox";
 import AccessLogTextCombobox from "./access-log-text-combobox";
+import AllowedAreaCombobox from "./allowed-area-combobox";
 import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
 import { Button } from "~/components/ui/button";
 import { DateTimePicker } from "~/components/ui/date-time-picker";
@@ -29,6 +30,7 @@ import {
 import { Textarea } from "~/components/ui/textarea";
 import FieldWrapper from "~/components/ui/wrappers/field-wrapper";
 import type { AccessLogListItem } from "~/lib/database/access-log.server";
+import type { AllowedArea } from "../../../../db/schema";
 import type { ExternalWorkerListItem } from "~/lib/database/external-worker.server";
 import { formatTimestamp } from "~/lib/utils";
 import { getFieldErrors } from "~/lib/utils/zod-errors";
@@ -51,7 +53,7 @@ type FormValues = {
   secondLastNameSnapshot: string;
   phoneNumber: string;
   legalIdSnapshot: string;
-  allowedAreaSnapshot: string;
+  allowedAreaId: string;
   approvedBySnapshot: string;
   visitReason: string;
 };
@@ -74,7 +76,7 @@ function initialValues(accessLog: AccessLogListItem): FormValues {
     secondLastNameSnapshot: accessLog.secondLastNameSnapshot ?? "",
     phoneNumber: accessLog.phoneNumber ?? "",
     legalIdSnapshot: accessLog.legalIdSnapshot,
-    allowedAreaSnapshot: accessLog.allowedAreaSnapshot,
+    allowedAreaId: accessLog.allowedAreaId ?? "",
     approvedBySnapshot: accessLog.approvedBySnapshot,
     visitReason: accessLog.visitReason,
   };
@@ -88,8 +90,10 @@ function timestampLabel(value: Date | null) {
 
 export default function EditAccessLog({
   accessLog,
+  allowedAreas,
 }: {
   accessLog: AccessLogListItem;
+  allowedAreas: Array<Pick<AllowedArea, "id" | "name">>;
 }) {
   const fetcher = useFetcher<FetcherData>();
   const [open, setOpen] = useState(false);
@@ -475,21 +479,19 @@ export default function EditAccessLog({
         </FieldWrapper>
         <FieldWrapper
           label="Área autorizada *"
-          htmlFor={`${formId}-area`}
-          errors={getFieldErrors(fetcher.data?.errors, "allowedAreaSnapshot")}
+          htmlFor={`${formId}-area-search`}
+          errors={getFieldErrors(fetcher.data?.errors, "allowedAreaId")}
         >
-          <AccessLogTextCombobox
+          <AllowedAreaCombobox
             id={`${formId}-area`}
-            name="allowedAreaSnapshot"
-            value={values.allowedAreaSnapshot}
+            name="allowedAreaId"
+            value={values.allowedAreaId}
+            selectedName={allowedAreas.find((area) => area.id === values.allowedAreaId)?.name}
             onValueChange={(value) =>
-              setValues((current) => ({
-                ...current,
-                allowedAreaSnapshot: value,
-              }))
+              setValues((current) => ({ ...current, allowedAreaId: value }))
             }
-            searchPath="/api/access-logs/allowed-areas/search"
             required
+            placeholder="Área para el acceso..."
           />
         </FieldWrapper>
         <FieldWrapper
@@ -547,7 +549,7 @@ export default function EditAccessLog({
           <div><span className="font-medium">Persona:</span> {[values.firstNameSnapshot, values.middleNameSnapshot, values.lastNameSnapshot, values.secondLastNameSnapshot].filter(Boolean).join(" ")}</div>
           <div><span className="font-medium">Teléfono:</span> {values.phoneNumber || "-"}</div>
           <div><span className="font-medium">Empresa:</span> {values.companyNameSnapshot}</div>
-          <div><span className="font-medium">Área autorizada:</span> {values.allowedAreaSnapshot}</div>
+          <div><span className="font-medium">Área autorizada:</span> {allowedAreas.find((area) => area.id === values.allowedAreaId)?.name ?? "-"}</div>
           <div><span className="font-medium">Aprobado por:</span> {values.approvedBySnapshot}</div>
           <div className="md:col-span-2"><span className="font-medium">Motivo:</span> {values.visitReason}</div>
         </div>

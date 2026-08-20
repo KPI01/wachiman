@@ -75,7 +75,7 @@ export default function ExternalWorkerDetail({
               <dd className="font-medium">{worker.company.name}</dd>
             </div>
             <div className="flex justify-between">
-              <dt className="text-muted-foreground">Categoria</dt>
+              <dt className="text-muted-foreground">Tipo de trabajo</dt>
               <dd className="font-medium">{worker.workCategory.name}</dd>
             </div>
             <div className="flex justify-between">

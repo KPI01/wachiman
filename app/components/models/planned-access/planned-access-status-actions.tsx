@@ -3,7 +3,7 @@ import CancelPlannedAccessButton from "./cancel-planned-access-button";
 import RejectPlannedAccessButton from "./reject-planned-access-button";
 import EditPlannedAccessButton from "./edit-planned-access-button";
 import ApprovePlannedAccessButton from "./approve-planned-access-button";
-import type { Site } from "../../../../db/schema";
+import type { AllowedArea, Site, WorkCategory } from "../../../../db/schema";
 import type { PlannedAccessListItem } from "~/lib/database/planned-access.server";
 
 export type AllowedAction = "EDIT" | "APPROVE" | "REJECT" | "CANCEL";
@@ -15,6 +15,8 @@ type Props = {
   allowedActions?: AllowedAction[];
   plannedAccess?: PlannedAccessListItem;
   sites?: Array<Pick<Site, "id" | "name">>;
+  workCategories?: Array<Pick<WorkCategory, "id" | "name">>;
+  allowedAreas?: Array<Pick<AllowedArea, "id" | "name">>;
 };
 
 export default function PlannedAccessStatusActions({
@@ -24,6 +26,8 @@ export default function PlannedAccessStatusActions({
   allowedActions = ["EDIT", "APPROVE", "REJECT", "CANCEL"],
   plannedAccess,
   sites = [],
+  workCategories = [],
+  allowedAreas = [],
 }: Props) {
   if (status !== "PENDING_APPROVAL" && status !== "APPROVED") {
     return <span className="sr-only">Sin acciones disponibles</span>;
@@ -37,6 +41,8 @@ export default function PlannedAccessStatusActions({
         <EditPlannedAccessButton
           plannedAccess={plannedAccess}
           sites={sites}
+          workCategories={workCategories}
+          allowedAreas={allowedAreas}
           actionPath={actionPath}
         />
       ) : null}

@@ -29,6 +29,7 @@ import { formatTimestamp } from "~/lib/utils";
 import PlannedAccessPersonSignatureAction from "~/components/models/planned-access/planned-access-person-signature-action";
 import CardContainer from "~/components/containers/card-container";
 import StaleAccessWarning from "~/components/models/access-logs/stale-access-warning";
+import { getManyAllowedAreas } from "~/lib/services/allowed-area.server";
 
 export async function loader({ request }: Route.LoaderArgs) {
   await validateUserRole(request, "ACCESS_OPERATOR");
@@ -38,7 +39,7 @@ export async function loader({ request }: Route.LoaderArgs) {
     throw new Response("Unauthorized", { status: 401 });
   }
 
-  const [accessLogs, plannedAccesses, openAccessLogs] = await Promise.all([
+  const [accessLogs, plannedAccesses, openAccessLogs, allowedAreas] = await Promise.all([
     getManyAccessLogs({
       siteId: sessionSite.id,
       timestampField: "entryTimestamp",
@@ -50,6 +51,7 @@ export async function loader({ request }: Route.LoaderArgs) {
       expectedDate: new Date(),
     }),
     getOpenAccessLogs({ siteId: sessionSite.id }),
+    getManyAllowedAreas(),
   ]);
 
   return {
@@ -57,6 +59,7 @@ export async function loader({ request }: Route.LoaderArgs) {
     plannedAccesses,
     openAccessLogs,
     site: sessionSite,
+    allowedAreas,
   };
 }
 
@@ -193,8 +196,8 @@ function PlannedAccessesToday({
 
 export default function OperatorHome({ loaderData }: Route.ComponentProps) {
   const columns = useMemo(
-    () => getAccessLogColumns(["vehicleDetails", "visitReason", "actions"]),
-    [],
+    () => getAccessLogColumns(["vehicleDetails", "visitReason", "actions"], loaderData.allowedAreas ?? []),
+    [loaderData.allowedAreas],
   );
   const registeredLegalIds = useMemo(
     () =>
@@ -233,6 +236,7 @@ export default function OperatorHome({ loaderData }: Route.ComponentProps) {
         <div className="flex justify-end">
           <CreateAccessLogForm
             sites={[loaderData.site]}
+            allowedAreas={loaderData.allowedAreas ?? []}
             actionPath="/operator?index"
             lockedSiteId={loaderData.site.id}
             buttonLabel="Registrar acceso"

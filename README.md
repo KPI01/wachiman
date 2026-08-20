@@ -267,7 +267,7 @@ El sistema cuenta con seis roles, cada uno con un panel y permisos específicos:
 
 | Rol                  | Funciones                                                                                                                                                                      |
 | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **ADMIN**            | Gestión completa de usuarios, sitios, departamentos, empresas, categorías de trabajo, trabajadores externos, registros de acceso, accesos planificados y bitácora de auditoría |
+| **ADMIN**            | Gestión completa de usuarios, sitios, departamentos, empresas, tipos de trabajo, trabajadores externos, registros de acceso, accesos planificados y bitácora de auditoría |
 | **ACCESS_OPERATOR**  | Registro de entradas y salidas en portería, captura de firma digital y consulta de accesos del día y accesos planificados aprobados                                            |
 | **ACCESS_MONITOR**   | Monitoreo en tiempo real en modo de solo lectura                                                                                                                               |
 | **SECURITY_MANAGER** | Supervisión de registros de acceso, accesos planificados, trabajadores externos y bitácora                                                                                     |
@@ -289,7 +289,7 @@ El sistema cuenta con seis roles, cada uno con un panel y permisos específicos:
 
 ### Trabajadores externos
 
-- Registro de trabajadores externos vinculados a empresas y categorías de trabajo.
+- Registro de trabajadores externos vinculados a empresas y tipos de trabajo.
 - Gestión de documentos PDF, JPEG y PNG en el sistema de archivos.
 - Control del vencimiento de documentos mediante verificación automática.
 
