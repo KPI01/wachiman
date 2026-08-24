@@ -1,6 +1,7 @@
-import { and, count, desc, eq, gte, inArray, isNull, lte, ne, or } from "drizzle-orm";
+import { and, count, desc, eq, gte, inArray, isNotNull, isNull, lte, ne, or } from "drizzle-orm";
 import { db, isLocalDb } from "../../../db/server";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
+import { calculateAccessDurationMs } from "../access-duration";
 import {
   accessLogs,
   plannedAccessPersons,
@@ -13,7 +14,12 @@ export type PlannedAccessListItem = typeof plannedAccesses.$inferSelect & {
   requestedBy?: { id: string; fullName: string; username: string } | null;
   approvedBy?: { id: string; fullName: string; username: string } | null;
   plannedAccessPersons: Array<typeof plannedAccessPersons.$inferSelect & {
-    accessLogs: Array<{ id: string }>;
+    accessLogs: Array<{
+      id: string;
+      entryTimestamp: Date;
+      exitTimestamp: Date | null;
+    }>;
+    presenceDurationMs: number;
     workCategory?: {
       id: string;
       name: string;
@@ -181,7 +187,9 @@ export class PlannedAccessEntity {
         approvedBy: { columns: { id: true, fullName: true, username: true } },
         plannedAccessPersons: {
           with: {
-            accessLogs: { columns: { id: true } },
+            accessLogs: {
+              columns: { id: true, entryTimestamp: true, exitTimestamp: true },
+            },
             workCategory: {
               columns: {
                 id: true,
@@ -197,7 +205,13 @@ export class PlannedAccessEntity {
       orderBy: (pa, { desc: d }) => [d(pa.createdAt)],
     });
 
-    return rows;
+    return rows.map((row) => ({
+      ...row,
+      plannedAccessPersons: row.plannedAccessPersons.map((person) => ({
+        ...person,
+        presenceDurationMs: calculateAccessDurationMs(person.accessLogs),
+      })),
+    }));
   }
 
   public static async findById(id: string) {
@@ -209,7 +223,9 @@ export class PlannedAccessEntity {
         approvedBy: { columns: { id: true, fullName: true, username: true } },
         plannedAccessPersons: {
           with: {
-            accessLogs: { columns: { id: true } },
+            accessLogs: {
+              columns: { id: true, entryTimestamp: true, exitTimestamp: true },
+            },
             workCategory: {
               columns: {
                 id: true,
@@ -223,7 +239,15 @@ export class PlannedAccessEntity {
         },
       },
     });
-    return row ?? null;
+    if (!row) return null;
+
+    return {
+      ...row,
+      plannedAccessPersons: row.plannedAccessPersons.map((person) => ({
+        ...person,
+        presenceDurationMs: calculateAccessDurationMs(person.accessLogs),
+      })),
+    };
   }
 
   public static async countByStatuses(
@@ -586,15 +610,19 @@ export class PlannedAccessEntity {
     });
   }
 
-  public static async countLinkedAccessLogs(
+  public static async countPersonsWithAccessLogs(
     plannedAccessId: string,
   ): Promise<number> {
-    const result = await db
-      .select({ count: count() })
+    const distinctPersons = await db
+      .selectDistinct({ personId: accessLogs.plannedAccessPersonId })
       .from(accessLogs)
-      .where(eq(accessLogs.plannedAccessId, plannedAccessId))
-      .get();
-    return result?.count ?? 0;
+      .where(and(
+        eq(accessLogs.plannedAccessId, plannedAccessId),
+        isNotNull(accessLogs.plannedAccessPersonId),
+      ))
+      .all();
+
+    return distinctPersons.length;
   }
 
   public static async findOverlappingPlannedAccess(
@@ -710,14 +738,4 @@ export class PlannedAccessEntity {
     }));
   }
 
-  public static async hasPersonAccessLog(
-    plannedAccessPersonId: string,
-  ): Promise<boolean> {
-    const result = await db
-      .select({ count: count() })
-      .from(accessLogs)
-      .where(eq(accessLogs.plannedAccessPersonId, plannedAccessPersonId))
-      .get();
-    return (result?.count ?? 0) > 0;
-  }
 }

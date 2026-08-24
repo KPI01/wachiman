@@ -7,6 +7,7 @@ import { Badge } from "~/components/ui/badge";
 import type { PlannedAccessListItem } from "../database/planned-access.server";
 import type { AllowedArea, Site, WorkCategory } from "../../../db/schema";
 import { formatTimestamp } from "../utils";
+import { formatAccessDuration } from "../access-duration";
 
 const plannedAccessColHelper = createColumnHelper<PlannedAccessListItem>();
 
@@ -51,6 +52,15 @@ function getPersonsDetails(plannedAccess: PlannedAccessListItem) {
     .map(
       (person) =>
         `${getFullName(person)} (${person.legalIdSnapshot}) · ${person.workCategory?.name ?? "Sin tipo de trabajo"} · ${person.allowedArea?.name ?? "Sin área"}`,
+    )
+    .join(", ");
+}
+
+function getPersonsPresenceDetails(plannedAccess: PlannedAccessListItem) {
+  return plannedAccess.plannedAccessPersons
+    .map(
+      (person) =>
+        `${getFullName(person)}: ${formatAccessDuration(person.presenceDurationMs)}`,
     )
     .join(", ");
 }
@@ -108,6 +118,13 @@ export const plannedAccessColumns = ({
             {getValue()}
           </span>
         </div>
+      ),
+    }),
+    plannedAccessColHelper.accessor(getPersonsPresenceDetails, {
+      id: "presenceDuration",
+      header: "Permanencia",
+      cell: ({ getValue }) => (
+        <span className="text-sm">{getValue()}</span>
       ),
     }),
     plannedAccessColHelper.accessor("visitReason", {

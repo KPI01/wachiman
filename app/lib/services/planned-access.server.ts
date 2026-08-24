@@ -727,11 +727,12 @@ export async function createAccessLogFromPlannedAccess(
 
   if (
     plannedAccess.status !== "APPROVED" &&
-    plannedAccess.status !== "PARTIALLY_USED"
+    plannedAccess.status !== "PARTIALLY_USED" &&
+    plannedAccess.status !== "USED"
   ) {
     return {
       success: false,
-      errors: "Solo se pueden registrar accesos planificados aprobados o parcialmente usados.",
+      errors: "Solo se pueden registrar accesos planificados aprobados, parcialmente usados o usados.",
     };
   }
 
@@ -810,17 +811,6 @@ export async function createAccessLogFromPlannedAccess(
   //   return { success: false, errors: formatDocumentValidationError(worker, documentResult) };
   // }
 
-  const personHasRegisteredAccess = await PlannedAccessEntity.hasPersonAccessLog(
-    person.id,
-  );
-
-  if (personHasRegisteredAccess) {
-    return {
-      success: false,
-      errors: "Esta persona ya registró su ingreso desde esta solicitud planificada.",
-    };
-  }
-
   const personIsAlreadyInside =
     (await AccessLogEntity.findOpenByLegalIdInSite(
       person.legalIdSnapshot,
@@ -861,7 +851,7 @@ export async function createAccessLogFromPlannedAccess(
   });
 
   const totalPersons = plannedAccess.plannedAccessPersons.length;
-  const usedPersons = await PlannedAccessEntity.countLinkedAccessLogs(
+  const usedPersons = await PlannedAccessEntity.countPersonsWithAccessLogs(
     plannedAccess.id,
   );
 

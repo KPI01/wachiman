@@ -30,6 +30,7 @@ import PlannedAccessPersonSignatureAction from "~/components/models/planned-acce
 import CardContainer from "~/components/containers/card-container";
 import StaleAccessWarning from "~/components/models/access-logs/stale-access-warning";
 import { getManyAllowedAreas } from "~/lib/services/allowed-area.server";
+import { formatAccessDuration } from "~/lib/access-duration";
 
 export async function loader({ request }: Route.LoaderArgs) {
   await validateUserRole(request, "ACCESS_OPERATOR");
@@ -47,7 +48,7 @@ export async function loader({ request }: Route.LoaderArgs) {
     }),
     getManyPlannedAccesses({
       siteId: sessionSite.id,
-      status: ["APPROVED", "PARTIALLY_USED"],
+      status: ["APPROVED", "PARTIALLY_USED", "USED"],
       expectedDate: new Date(),
     }),
     getOpenAccessLogs({ siteId: sessionSite.id }),
@@ -122,10 +123,10 @@ function getPlannedAccessTimeRange(plannedAccess: PlannedAccessListItem) {
 
 function PlannedAccessesToday({
   plannedAccesses,
-  registeredLegalIds,
+  openLegalIds,
 }: {
   plannedAccesses: PlannedAccessListItem[];
-  registeredLegalIds: Set<string>;
+  openLegalIds: Set<string>;
 }) {
   if (plannedAccesses.length === 0) {
     return (
@@ -151,7 +152,7 @@ function PlannedAccessesToday({
           description={`${getPlannedAccessTimeRange(plannedAccess)} | ${plannedAccess.visitReason}`}
         >
           {plannedAccess.plannedAccessPersons.map((person) => {
-            const hasRegisteredAccess = registeredLegalIds.has(
+            const isInside = openLegalIds.has(
               person.legalIdSnapshot.toUpperCase(),
             );
 
@@ -165,12 +166,12 @@ function PlannedAccessesToday({
                     <p className="truncate font-medium">
                       {getPersonFullName(person)}
                     </p>
-                    <Badge
-                      variant={hasRegisteredAccess ? "secondary" : "outline"}
-                    >
-                      {hasRegisteredAccess
-                        ? "Ingreso registrado"
-                        : "Pendiente de firma"}
+                    <Badge variant={isInside ? "secondary" : "outline"}>
+                      {isInside
+                        ? "Dentro"
+                        : person.accessLogs.length > 0
+                          ? "Reingreso disponible"
+                          : "Pendiente de firma"}
                     </Badge>
                   </div>
                   <p className="text-sm text-muted-foreground">
@@ -178,12 +179,14 @@ function PlannedAccessesToday({
                     {person.phoneNumber
                       ? ` · Telefono: ${person.phoneNumber}`
                       : ""}
+                    <br />
+                    Permanencia acumulada: {formatAccessDuration(person.presenceDurationMs)}
                   </p>
                 </div>
                 <PlannedAccessPersonSignatureAction
                   plannedAccessId={plannedAccess.id}
                   person={person}
-                  disabled={hasRegisteredAccess}
+                  disabled={isInside}
                 />
               </div>
             );
@@ -199,14 +202,14 @@ export default function OperatorHome({ loaderData }: Route.ComponentProps) {
     () => getAccessLogColumns(["vehicleDetails", "visitReason", "actions"], loaderData.allowedAreas ?? []),
     [loaderData.allowedAreas],
   );
-  const registeredLegalIds = useMemo(
+  const openLegalIds = useMemo(
     () =>
       new Set(
-        (loaderData.accessLogs ?? []).map((accessLog) =>
+        (loaderData.openAccessLogs ?? []).map((accessLog) =>
           accessLog.legalIdSnapshot.toUpperCase(),
         ),
       ),
-    [loaderData.accessLogs],
+    [loaderData.openAccessLogs],
   );
 
   const revalidator = useRevalidator();
@@ -259,7 +262,7 @@ export default function OperatorHome({ loaderData }: Route.ComponentProps) {
       <TabsContent value="planned-access" className="flex flex-col gap-4">
         <PlannedAccessesToday
           plannedAccesses={loaderData.plannedAccesses ?? []}
-          registeredLegalIds={registeredLegalIds}
+          openLegalIds={openLegalIds}
         />
       </TabsContent>
     </Tabs>
