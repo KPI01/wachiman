@@ -17,14 +17,14 @@ import { Checkbox } from "~/components/ui/checkbox";
 import { useFetcher } from "react-router";
 import { toast } from "sonner";
 import { useEffect, useRef, useState } from "react";
-import type { AllowedArea, Site } from "../../../../db/schema";
+import type { AllowedArea, Company, Site } from "../../../../db/schema";
 import AccessLogSignature from "./access-log-signature";
 import { getFieldErrors } from "~/lib/utils/zod-errors";
 import { Textarea } from "~/components/ui/textarea";
 import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
 import type { ExternalWorkerListItem } from "~/lib/database/external-worker.server";
-import CompanyCombobox from "~/components/models/company/company-combobox";
 import AccessLogTextCombobox from "./access-log-text-combobox";
+import RiskInformationPreview from "./risk-information-preview";
 import AllowedAreaCombobox from "./allowed-area-combobox";
 import { getActionErrorMessage } from "~/lib/utils/action-errors";
 // Comentado: el flujo de documentación ya no se muestra.
@@ -36,7 +36,7 @@ type FetcherErrors = {
   };
 };
 
-type AccessLogSiteOption = Pick<Site, "id" | "name">;
+type AccessLogSiteOption = Pick<Site, "id" | "name" | "address" | "riskInformation" | "riskInformationVersion">;
 
 type CreateAccessLogProps = {
   sites: AccessLogSiteOption[];
@@ -44,6 +44,9 @@ type CreateAccessLogProps = {
   actionPath: string;
   lockedSiteId?: string;
   buttonLabel?: string;
+  holder?: { legalName: string; taxId: string; fiscalAddress: string };
+  companies: Array<Pick<Company, "id" | "name" | "cif" | "address">>;
+  dailyRiskAcknowledgements?: Array<{ legalIdSnapshot: string; companyId: string | null; siteId: string; riskAcknowledgedAt: Date | null }>;
 };
 
 function getDefaultEntryTimestamp() {
@@ -55,11 +58,14 @@ export default function CreateAccessLog({
   actionPath,
   lockedSiteId,
   buttonLabel = "Nuevo acceso",
+  holder,
+  companies,
+  dailyRiskAcknowledgements = [],
 }: CreateAccessLogProps) {
   const fetcher = useFetcher<FetcherErrors & { success?: boolean }>();
   const [open, setOpen] = useState(false);
   const [withVehicle, setWithVehicle] = useState(false);
-  const [step, setStep] = useState<"details" | "signature">("details");
+  const [step, setStep] = useState<"details" | "documentation" | "signature">("details");
   const [hasSignature, setHasSignature] = useState(false);
   const [entrySignaturePayload, setEntrySignaturePayload] = useState("");
   const [pendingFormEntries, setPendingFormEntries] = useState<
@@ -73,6 +79,9 @@ export default function CreateAccessLog({
   >(null);
   const [legalIdValue, setLegalIdValue] = useState("");
   const [companyNameValue, setCompanyNameValue] = useState("");
+  const [companyId, setCompanyId] = useState<string | null>(null);
+  const [riskAcknowledged, setRiskAcknowledged] = useState(false);
+  const [riskDocumentViewed, setRiskDocumentViewed] = useState(false);
   const [allowedAreaId, setAllowedAreaId] = useState("");
   const [approvedByValue, setApprovedByValue] = useState("");
   const [suggestions, setSuggestions] = useState<ExternalWorkerListItem[]>([]);
@@ -86,9 +95,16 @@ export default function CreateAccessLog({
   const secondLastNameRef = useRef<HTMLInputElement>(null);
   const phoneRef = useRef<HTMLInputElement>(null);
   const suggestionContainerRef = useRef<HTMLDivElement>(null);
-  const selectedSiteId = lockedSiteId ?? sites[0]?.id;
+  const [selectedSiteId, setSelectedSiteId] = useState(lockedSiteId ?? sites[0]?.id);
   const globalError =
     typeof fetcher.data?.errors === "string" ? fetcher.data.errors : null;
+  const hasDailyRiskAcknowledgement = dailyRiskAcknowledgements.some(
+    (entry) =>
+      entry.legalIdSnapshot.toUpperCase() === legalIdValue.trim().toUpperCase() &&
+      entry.companyId === companyId &&
+      entry.siteId === selectedSiteId &&
+      entry.riskAcknowledgedAt !== null,
+  );
 
   function handleExternalWorkerSelect(worker: ExternalWorkerListItem) {
     setSelectedExternalWorkerId(worker.id);
@@ -209,6 +225,9 @@ export default function CreateAccessLog({
     setSelectedExternalWorkerId(null);
     setLegalIdValue("");
     setCompanyNameValue("");
+    setCompanyId(null);
+    setRiskAcknowledged(false);
+    setRiskDocumentViewed(false);
     setAllowedAreaId("");
     setApprovedByValue("");
     setSuggestions([]);
@@ -231,6 +250,9 @@ export default function CreateAccessLog({
           setSelectedExternalWorkerId(null);
           setLegalIdValue("");
           setCompanyNameValue("");
+          setCompanyId(null);
+          setRiskAcknowledged(false);
+          setRiskDocumentViewed(false);
           setAllowedAreaId("");
           setApprovedByValue("");
           setSuggestions([]);
@@ -245,14 +267,16 @@ export default function CreateAccessLog({
         </>
       }
       contentClassName="flex max-h-9/10 w-[94vw] max-w-4xl flex-col overflow-hidden"
-      title={step === "details" ? "Nuevo Acceso" : "Confirmacion del visitante"}
+       title={step === "details" ? "Nuevo Acceso" : step === "documentation" ? "Información y validación" : "Confirmación del visitante"}
       description={
-        step === "details" ? (
+         step === "details" ? (
           <>
             Ingresa los datos del acceso para almacenarlos en el sistema. <br />
             Los campos con (*) son obligatorios
           </>
-        ) : (
+         ) : step === "documentation" ? (
+           "Revisa el documento y confirma que has recibido la información indicada antes de continuar."
+         ) : (
           <>
             Solicita al visitante que revise la información y firme para
             confirmar el registro.
@@ -284,11 +308,25 @@ export default function CreateAccessLog({
                   ),
                 );
 
-                setStep("signature");
+                 if (hasDailyRiskAcknowledgement) {
+                   setRiskDocumentViewed(true);
+                   setRiskAcknowledged(true);
+                   setStep("signature");
+                 } else {
+                   setRiskDocumentViewed(true);
+                   setStep("documentation");
+                 }
               }}
             >
               Continuar
             </Button>
+          ) : step === "documentation" ? (
+            <>
+              <Button type="button" variant="outline" onClick={() => setStep("details")}>Volver a los datos</Button>
+              <Button type="button" onClick={() => setStep("signature")} disabled={!riskDocumentViewed || !riskAcknowledged}>
+                Continuar a la firma
+              </Button>
+            </>
           ) : (
             <>
               <Button
@@ -301,7 +339,7 @@ export default function CreateAccessLog({
               <Button
                 type="submit"
                 form="create-access-log"
-                disabled={!hasSignature || fetcher.state !== "idle"}
+                disabled={!hasSignature || !riskAcknowledged || fetcher.state !== "idle"}
               >
                 {fetcher.state === "submitting" ? "Enviando..." : "Enviar"}
               </Button>
@@ -330,9 +368,8 @@ export default function CreateAccessLog({
               >
                 <Select
                   name={lockedSiteId ? undefined : "siteId"}
-                  {...(lockedSiteId
-                    ? { value: selectedSiteId }
-                    : { defaultValue: selectedSiteId })}
+                   value={selectedSiteId ?? ""}
+                   onValueChange={setSelectedSiteId}
                   disabled={Boolean(lockedSiteId) || !sites.length}
                 >
                   <SelectTrigger className="w-full">
@@ -493,13 +530,28 @@ export default function CreateAccessLog({
                 "companyNameSnapshot",
               )}
             >
-              <CompanyCombobox
-                id="companyNameSnapshot"
-                name="companyNameSnapshot"
+              <Select
+                name="companyId"
+                value={companyId ?? ""}
+                onValueChange={(value) => {
+                  const company = companies.find((item) => item.id === value);
+                  setCompanyId(value);
+                  setCompanyNameValue(company?.name ?? "");
+                }}
                 required
-                value={companyNameValue}
-                onValueChange={setCompanyNameValue}
-              />
+              >
+                <SelectTrigger id="companyId" className="w-full">
+                  <SelectValue placeholder="Selecciona una empresa contratista..." />
+                </SelectTrigger>
+                <SelectContent position="popper">
+                  {companies.map((company) => (
+                    <SelectItem key={company.id} value={company.id}>
+                      {company.name} ({company.cif})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <input type="hidden" name="companyNameSnapshot" value={companyNameValue} />
             </FieldWrapper>
             <FieldWrapper
               label="Área autorizada *"
@@ -607,6 +659,35 @@ export default function CreateAccessLog({
               </>
             )}
           </>
+        ) : step === "documentation" ? (
+          <div className="md:col-span-2 min-h-0 overflow-y-auto rounded-lg border">
+            <RiskInformationPreview
+              holderLegalName={holder?.legalName ?? ""}
+              holderTaxId={holder?.taxId ?? ""}
+              holderFiscalAddress={holder?.fiscalAddress ?? ""}
+              siteName={sites.find((site) => site.id === selectedSiteId)?.name ?? ""}
+              siteAddress={sites.find((site) => site.id === selectedSiteId)?.address}
+              riskInformation={sites.find((site) => site.id === selectedSiteId)?.riskInformation ?? ""}
+              companyName={companyNameValue}
+              companyCif={companies.find((company) => company.id === companyId)?.cif ?? ""}
+              companyAddress={companies.find((company) => company.id === companyId)?.address ?? ""}
+              workerName={[
+                pendingFormEntries.find(([name]) => name === "firstNameSnapshot")?.[1],
+                pendingFormEntries.find(([name]) => name === "middleNameSnapshot")?.[1],
+                pendingFormEntries.find(([name]) => name === "lastNameSnapshot")?.[1],
+                pendingFormEntries.find(([name]) => name === "secondLastNameSnapshot")?.[1],
+              ].filter(Boolean).join(" ")}
+              legalId={legalIdValue}
+            />
+            <label className="mx-4 mb-6 flex items-start gap-3 rounded-md border bg-muted/30 p-4 text-sm sm:mx-8">
+              <Checkbox
+                id="riskInformationAcknowledged"
+                checked={riskAcknowledged}
+                onCheckedChange={(checked) => setRiskAcknowledged(checked === true)}
+              />
+              <span>Confirmo que he leído este documento y que he sido informado de los riesgos e instrucciones preventivas indicados.</span>
+            </label>
+          </div>
         ) : (
           <div className="md:col-span-2 space-y-4">
             <input
@@ -614,6 +695,7 @@ export default function CreateAccessLog({
               name="entrySignaturePayload"
               value={entrySignaturePayload}
             />
+            <input type="hidden" name="riskInformationAcknowledged" value={riskAcknowledged ? "true" : "false"} />
             {pendingFormEntries.map(([name, value], index) => (
               <input
                 key={`${name}-${index}`}

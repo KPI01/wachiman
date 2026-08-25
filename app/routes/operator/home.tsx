@@ -30,6 +30,9 @@ import PlannedAccessPersonSignatureAction from "~/components/models/planned-acce
 import CardContainer from "~/components/containers/card-container";
 import StaleAccessWarning from "~/components/models/access-logs/stale-access-warning";
 import { getManyAllowedAreas } from "~/lib/services/allowed-area.server";
+import { getGlobalAppSettings } from "~/lib/services/app-settings.server";
+import { SiteEntity } from "~/lib/database/site.server";
+import { getManyCompanies } from "~/lib/services/company.server";
 
 export async function loader({ request }: Route.LoaderArgs) {
   await validateUserRole(request, "ACCESS_OPERATOR");
@@ -39,7 +42,7 @@ export async function loader({ request }: Route.LoaderArgs) {
     throw new Response("Unauthorized", { status: 401 });
   }
 
-  const [accessLogs, plannedAccesses, openAccessLogs, allowedAreas] = await Promise.all([
+  const [accessLogs, plannedAccesses, openAccessLogs, allowedAreas, settings, site, companies] = await Promise.all([
     getManyAccessLogs({
       siteId: sessionSite.id,
       timestampField: "entryTimestamp",
@@ -52,14 +55,23 @@ export async function loader({ request }: Route.LoaderArgs) {
     }),
     getOpenAccessLogs({ siteId: sessionSite.id }),
     getManyAllowedAreas(),
+    getGlobalAppSettings(),
+    SiteEntity.findById(sessionSite.id),
+    getManyCompanies(),
   ]);
+
+  if (!site) {
+    throw new Response("Unauthorized", { status: 401 });
+  }
 
   return {
     accessLogs,
     plannedAccesses,
     openAccessLogs,
-    site: sessionSite,
+    site,
     allowedAreas,
+    holder: settings ? { legalName: settings.holderLegalName ?? "", taxId: settings.holderTaxId ?? "", fiscalAddress: settings.holderFiscalAddress ?? "" } : undefined,
+    companies,
   };
 }
 
@@ -123,9 +135,15 @@ function getPlannedAccessTimeRange(plannedAccess: PlannedAccessListItem) {
 function PlannedAccessesToday({
   plannedAccesses,
   registeredLegalIds,
+  site,
+  holder,
+  dailyRiskAcknowledgements,
 }: {
   plannedAccesses: PlannedAccessListItem[];
   registeredLegalIds: Set<string>;
+  site: NonNullable<Awaited<ReturnType<typeof SiteEntity.findById>>>;
+  holder?: { legalName: string; taxId: string; fiscalAddress: string };
+  dailyRiskAcknowledgements: Array<{ legalIdSnapshot: string; companyId: string | null; siteId: string; riskAcknowledgedAt: Date | null }>;
 }) {
   if (plannedAccesses.length === 0) {
     return (
@@ -184,6 +202,10 @@ function PlannedAccessesToday({
                   plannedAccessId={plannedAccess.id}
                   person={person}
                   disabled={hasRegisteredAccess}
+                  site={site}
+                  holder={holder}
+                  company={plannedAccess.company ?? undefined}
+                  dailyRiskAcknowledgements={dailyRiskAcknowledgements}
                 />
               </div>
             );
@@ -240,6 +262,9 @@ export default function OperatorHome({ loaderData }: Route.ComponentProps) {
             actionPath="/operator?index"
             lockedSiteId={loaderData.site.id}
             buttonLabel="Registrar acceso"
+            holder={loaderData.holder}
+            companies={loaderData.companies ?? []}
+            dailyRiskAcknowledgements={(loaderData.accessLogs ?? []).map((log) => ({ legalIdSnapshot: log.legalIdSnapshot, companyId: log.companyId, siteId: log.siteId, riskAcknowledgedAt: log.riskAcknowledgedAt }))}
           />
         </div>
 
@@ -260,6 +285,9 @@ export default function OperatorHome({ loaderData }: Route.ComponentProps) {
         <PlannedAccessesToday
           plannedAccesses={loaderData.plannedAccesses ?? []}
           registeredLegalIds={registeredLegalIds}
+          site={loaderData.site}
+          holder={loaderData.holder}
+          dailyRiskAcknowledgements={(loaderData.accessLogs ?? []).map((log) => ({ legalIdSnapshot: log.legalIdSnapshot, companyId: log.companyId, siteId: log.siteId, riskAcknowledgedAt: log.riskAcknowledgedAt }))}
         />
       </TabsContent>
     </Tabs>

@@ -4,6 +4,8 @@ import { Input } from "~/components/ui/input";
 type CompanyOption = {
   id: string;
   name: string;
+  cif?: string;
+  address?: string | null;
 };
 
 type CompanyComboboxProps = {
@@ -11,6 +13,8 @@ type CompanyComboboxProps = {
   name: string;
   value: string;
   onValueChange: (value: string) => void;
+  onCompanyIdChange?: (value: string | null) => void;
+  onCompanyDetailsChange?: (company: CompanyOption | null) => void;
   required?: boolean;
 };
 
@@ -19,6 +23,8 @@ export default function CompanyCombobox({
   name,
   value,
   onValueChange,
+  onCompanyIdChange,
+  onCompanyDetailsChange,
   required,
 }: CompanyComboboxProps) {
   const [suggestions, setSuggestions] = useState<CompanyOption[]>([]);
@@ -88,6 +94,8 @@ export default function CompanyCombobox({
   function selectSuggestion(company: CompanyOption) {
     selectedValueRef.current = company.name;
     onValueChange(company.name);
+    onCompanyIdChange?.(company.id);
+    onCompanyDetailsChange?.(company);
     setSuggestions([]);
     setShowSuggestions(false);
   }
@@ -127,7 +135,11 @@ export default function CompanyCombobox({
         role="combobox"
         aria-expanded={showSuggestions}
         aria-controls={`${id}-suggestions`}
-        onChange={(event) => onValueChange(event.currentTarget.value)}
+        onChange={(event) => {
+          onValueChange(event.currentTarget.value);
+          onCompanyIdChange?.(null);
+          onCompanyDetailsChange?.(null);
+        }}
         onKeyDown={handleKeyDown}
       />
       {showSuggestions && suggestions.length > 0 && (

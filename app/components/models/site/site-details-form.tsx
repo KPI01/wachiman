@@ -55,6 +55,19 @@ export default function SiteDetailsForm({ site }: SiteDetailsProps) {
           <Input id={`name-${site.id}`} name="name" defaultValue={site.name} />
         </FieldWrapper>
         <FieldWrapper
+          label="Información de riesgos e instrucciones preventivas"
+          htmlFor={`riskInformation-${site.id}`}
+          errors={getFieldErrors(patchErrors, "riskInformation")}
+        >
+          <textarea
+            id={`riskInformation-${site.id}`}
+            name="riskInformation"
+            className="min-h-32 w-full rounded-md border bg-background px-3 py-2 text-sm"
+            defaultValue={site.riskInformation ?? ""}
+            required
+          />
+        </FieldWrapper>
+        <FieldWrapper
           label="Slug"
           htmlFor={`slug-${site.id}`}
           errors={getFieldErrors(patchErrors, "slug")}

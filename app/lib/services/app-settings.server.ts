@@ -29,7 +29,10 @@ export async function updateGlobalAppSettings(
   }
 
   if (
-    current.earlyArrivalToleranceMinutes === parsed.data.earlyArrivalToleranceMinutes
+    current.earlyArrivalToleranceMinutes === parsed.data.earlyArrivalToleranceMinutes &&
+    current.holderLegalName === parsed.data.holderLegalName &&
+    current.holderTaxId === parsed.data.holderTaxId &&
+    current.holderFiscalAddress === parsed.data.holderFiscalAddress
   ) {
     return { success: true as const, changed: false as const, settings: current };
   }
@@ -47,15 +50,24 @@ export async function updateGlobalAppSettings(
 
   const updated = await AppSettingsEntity.updateGlobalWithAudit({
     earlyArrivalToleranceMinutes: parsed.data.earlyArrivalToleranceMinutes,
+    holderLegalName: parsed.data.holderLegalName,
+    holderTaxId: parsed.data.holderTaxId,
+    holderFiscalAddress: parsed.data.holderFiscalAddress,
     updatedById: actor.id,
     expectedUpdatedAt: parsed.data.updatedAt ?? current.updatedAt,
     summary: `Anticipación permitida modificada de ${current.earlyArrivalToleranceMinutes} a ${parsed.data.earlyArrivalToleranceMinutes} minutos`,
     metadata: {
       previous: {
         earlyArrivalToleranceMinutes: current.earlyArrivalToleranceMinutes,
+        holderLegalName: current.holderLegalName,
+        holderTaxId: current.holderTaxId,
+        holderFiscalAddress: current.holderFiscalAddress,
       },
       updated: {
         earlyArrivalToleranceMinutes: parsed.data.earlyArrivalToleranceMinutes,
+        holderLegalName: parsed.data.holderLegalName,
+        holderTaxId: parsed.data.holderTaxId,
+        holderFiscalAddress: parsed.data.holderFiscalAddress,
       },
     },
   });

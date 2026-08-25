@@ -15,6 +15,9 @@ type SettingsData = {
   earlyArrivalToleranceMinutes: number;
   updatedAt: string | Date;
   updatedBy?: { fullName: string; username: string } | null;
+  holderLegalName: string | null;
+  holderTaxId: string | null;
+  holderFiscalAddress: string | null;
 };
 
 export default function AppSettingsForm({ settings }: { settings: SettingsData }) {
@@ -43,7 +46,7 @@ export default function AppSettingsForm({ settings }: { settings: SettingsData }
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
           <Field>
-            <FieldLabel htmlFor="earlyArrivalToleranceMinutes">
+          <FieldLabel htmlFor="earlyArrivalToleranceMinutes">
               Anticipación permitida para ingreso
             </FieldLabel>
             <Input
@@ -60,6 +63,18 @@ export default function AppSettingsForm({ settings }: { settings: SettingsData }
             <FieldDescription>
               Usa 0 para desactivar la anticipación. El máximo permitido es de 360 minutos.
             </FieldDescription>
+          </Field>
+          <Field>
+            <FieldLabel htmlFor="holderLegalName">Razón social de la empresa titular</FieldLabel>
+            <Input id="holderLegalName" name="holderLegalName" defaultValue={settings.holderLegalName ?? ""} required />
+          </Field>
+          <Field>
+            <FieldLabel htmlFor="holderTaxId">NIF/CIF de la empresa titular</FieldLabel>
+            <Input id="holderTaxId" name="holderTaxId" defaultValue={settings.holderTaxId ?? ""} required />
+          </Field>
+          <Field>
+            <FieldLabel htmlFor="holderFiscalAddress">Domicilio fiscal</FieldLabel>
+            <Input id="holderFiscalAddress" name="holderFiscalAddress" defaultValue={settings.holderFiscalAddress ?? ""} required />
           </Field>
           <Input
             type="hidden"

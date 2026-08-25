@@ -17,6 +17,9 @@ export const updateAppSettingsSchema = z.object({
       "La anticipación máxima es de 360 minutos.",
     ),
   updatedAt: z.coerce.date().optional(),
+  holderLegalName: z.string().trim().min(1, "La razón social es obligatoria."),
+  holderTaxId: z.string().trim().min(1, "El NIF/CIF es obligatorio."),
+  holderFiscalAddress: z.string().trim().min(1, "El domicilio fiscal es obligatorio."),
 });
 
 export type UpdateAppSettingsInput = z.infer<typeof updateAppSettingsSchema>;

@@ -39,7 +39,10 @@ type AccessLogFindFirstInput = {
 export type CreateAccessLogInput = {
   entryTimestamp: Date;
   entrySignatureEnvelope: Record<string, unknown>;
+  riskAcknowledgedAt?: Date;
+  riskAcknowledgementSnapshot?: Record<string, unknown>;
   companyNameSnapshot: string;
+  companyId?: string;
   firstNameSnapshot: string;
   middleNameSnapshot?: string;
   lastNameSnapshot: string;
@@ -168,7 +171,10 @@ export class AccessLogEntity {
       .values({
         entryTimestamp: data.entryTimestamp,
         entrySignatureEnvelope: data.entrySignatureEnvelope,
+        riskAcknowledgedAt: data.riskAcknowledgedAt,
+        riskAcknowledgementSnapshot: data.riskAcknowledgementSnapshot,
         companyNameSnapshot: data.companyNameSnapshot,
+        companyId: data.companyId,
         firstNameSnapshot: data.firstNameSnapshot,
         middleNameSnapshot: data.middleNameSnapshot,
         lastNameSnapshot: data.lastNameSnapshot,

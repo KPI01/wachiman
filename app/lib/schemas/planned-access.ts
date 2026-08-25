@@ -3,6 +3,7 @@ import { SiteEntity } from "../database/site.server";
 import { AllowedAreaEntity } from "../database/allowed-area.server";
 import { WorkCategoryEntity } from "../database/work-category.server";
 import { ExternalWorkerEntity } from "../database/external-worker.server";
+import { CompanyEntity } from "../database/company.server";
 import { optionalString, requiredString } from "./generic";
 import {
   ALLOWED_AREA_DOESNT_EXISTS,
@@ -51,6 +52,7 @@ export const createPlannedAccessSchema = z
     expectedStartDatetime: z.coerce.date(),
     expectedEndDatetime: optionalDate,
     companySnapshot: requiredString,
+    companyId: requiredString,
     visitReason: requiredString,
     siteId: requiredString,
     persons: z
@@ -60,6 +62,10 @@ export const createPlannedAccessSchema = z
   .refine(async (data) => (await SiteEntity.findById(data.siteId)) !== null, {
     error: SITE_DOESNT_EXISTS,
     path: ["siteId"],
+  })
+  .refine(async (data) => (await CompanyEntity.findById(data.companyId)) !== null, {
+    error: "La empresa contratista seleccionada no existe.",
+    path: ["companyId"],
   })
   .refine(async (data) => validatePersonCatalogs(data.persons), {
     error: `${WORK_CATEGORY_DOESNT_EXISTS} ${ALLOWED_AREA_DOESNT_EXISTS}`,
@@ -112,6 +118,7 @@ export const updatePlannedAccessSchema = z
     expectedStartDatetime: z.coerce.date(),
     expectedEndDatetime: optionalDate,
     companySnapshot: requiredString,
+    companyId: requiredString,
     visitReason: requiredString,
     siteId: requiredString,
     persons: z
@@ -121,6 +128,10 @@ export const updatePlannedAccessSchema = z
   .refine(async (data) => (await SiteEntity.findById(data.siteId)) !== null, {
     error: SITE_DOESNT_EXISTS,
     path: ["siteId"],
+  })
+  .refine(async (data) => (await CompanyEntity.findById(data.companyId)) !== null, {
+    error: "La empresa contratista seleccionada no existe.",
+    path: ["companyId"],
   })
   .refine(async (data) => validatePersonCatalogs(data.persons), {
     error: `${WORK_CATEGORY_DOESNT_EXISTS} ${ALLOWED_AREA_DOESNT_EXISTS}`,
@@ -173,4 +184,8 @@ export const createAccessLogFromPlannedAccessSchema = z.object({
   plannedAccessId: requiredString,
   plannedAccessPersonId: requiredString,
   entrySignaturePayload: signaturePayloadFromStringSchema,
+  riskInformationAcknowledged: z.preprocess(
+    (value) => value === "true" || value === "on",
+    z.literal(true, { error: "Debes confirmar que has sido informado de los riesgos." }),
+  ),
 });

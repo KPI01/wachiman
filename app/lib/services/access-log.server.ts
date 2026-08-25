@@ -14,6 +14,8 @@ import { ExternalWorkerEntity } from "../database/external-worker.server";
 import { CompanyEntity } from "../database/company.server";
 import { WorkCategoryEntity } from "../database/work-category.server";
 import { AllowedAreaEntity } from "../database/allowed-area.server";
+import { SiteEntity } from "../database/site.server";
+import { AppSettingsEntity } from "../database/app-settings.server";
 import { validateWorkerDocumentsForAccess } from "./worker-document.server";
 import { DOCUMENT_TYPE_LABELS } from "../models/worker-document";
 import type { DocumentType } from "../../../db/enums";
@@ -87,12 +89,18 @@ type CreateAccessLogInputType = {
   siteId: string;
   createdById: string;
   allowedAreaName: string;
+  company: NonNullable<Awaited<ReturnType<typeof CompanyEntity.findById>>>;
+  site: NonNullable<Awaited<ReturnType<typeof SiteEntity.findById>>>;
+  holder: NonNullable<Awaited<ReturnType<typeof AppSettingsEntity.getGlobal>>>;
 };
 async function buildCreateAccessLogInput({
   data,
   createdById,
   siteId,
   allowedAreaName,
+  company,
+  site,
+  holder,
 }: CreateAccessLogInputType) {
   const {
     vehiclePlateSnapshot,
@@ -100,6 +108,7 @@ async function buildCreateAccessLogInput({
     vehicleModelSnapshot,
     vehicleTypeSnapshot,
     entrySignaturePayload,
+    riskInformationAcknowledged: _riskInformationAcknowledged,
     allowedAreaId,
     ...accessLogData
   } = data;
@@ -110,6 +119,21 @@ async function buildCreateAccessLogInput({
     allowedAreaSnapshot: allowedAreaName,
     siteId,
     createdById,
+    companyId: company.id,
+    riskAcknowledgedAt: new Date(),
+    riskAcknowledgementSnapshot: {
+      holderLegalName: holder.holderLegalName,
+      holderTaxId: holder.holderTaxId,
+      holderFiscalAddress: holder.holderFiscalAddress,
+      siteName: site.name,
+      siteAddress: site.address,
+      riskInformation: site.riskInformation,
+      riskInformationVersion: site.riskInformationVersion,
+      companyName: company.name,
+      companyCif: company.cif,
+      companyAddress: company.address,
+      acknowledgedAt: new Date().toISOString(),
+    },
     entrySignatureEnvelope: await encryptValue(JSON.stringify(entrySignaturePayload)),
     vehicle: data.withVehicle
       ? {
@@ -167,30 +191,62 @@ export async function createAccessLog(
     return { success: false, errors: "El área autorizada seleccionada no existe." };
   }
 
-  if (data.externalWorkerId) {
-    const worker = await ExternalWorkerEntity.findById(data.externalWorkerId);
-    if (!worker || !matchesWorkerIdentity(worker, data)) {
-      return {
-        success: false,
-        errors: "El trabajador externo no coincide con los datos de la persona registrada.",
-      };
-    }
+  const [site, company, holder] = await Promise.all([
+    SiteEntity.findById(siteId),
+    CompanyEntity.findById(data.companyId),
+    AppSettingsEntity.getGlobal(),
+  ]);
+  if (!site || !site.riskInformation || !holder?.holderLegalName || !holder.holderTaxId || !holder.holderFiscalAddress) {
+    return { success: false, errors: "El centro y la empresa titular deben tener configurada la información de riesgos." };
+  }
+  if (!company || !company.cif || !company.address) {
+    return { success: false, errors: "La empresa contratista debe tener razón social, CIF y dirección configurados." };
+  }
+  if (company.name.trim().toUpperCase() !== data.companyNameSnapshot.trim().toUpperCase()) {
+    return { success: false, errors: "La empresa seleccionada no coincide con sus datos." };
+  }
 
-    if (!worker.workCategory) {
-      return { success: false, errors: "El trabajador externo no tiene un tipo de trabajo válido." };
-    }
+  const externalWorker = await resolveExternalWorker(data);
 
-    const documentResult = await validateWorkerDocumentsForAccess(
-      worker.id,
-      {
-        requiresTraining: Boolean(worker.workCategory.requiresTraining),
-        requiresSpecialPermission: Boolean(worker.workCategory.requiresSpecialPermission),
-      },
-      new Date(),
-    );
-    if (!documentResult.valid) {
-      return { success: false, errors: formatDocumentValidationError(documentResult) };
-    }
+  const workerForAccess = externalWorker as {
+    id: string;
+    firstName: string;
+    middleName: string | null;
+    lastName: string;
+    secondLastName: string | null;
+    phoneNumber: string | null;
+    legalId: string;
+    workCategory?: { requiresTraining?: boolean | null; requiresSpecialPermission?: boolean | null } | null;
+  };
+
+  if (
+    workerForAccess.firstName !== data.firstNameSnapshot ||
+    (workerForAccess.middleName ?? null) !== (data.middleNameSnapshot ?? null) ||
+    workerForAccess.lastName !== data.lastNameSnapshot ||
+    (workerForAccess.secondLastName ?? null) !== (data.secondLastNameSnapshot ?? null) ||
+    (workerForAccess.phoneNumber ?? null) !== (data.phoneNumber ?? null) ||
+    workerForAccess.legalId.toUpperCase() !== data.legalIdSnapshot
+  ) {
+    return {
+      success: false,
+      errors: "El trabajador externo no coincide con los datos de la persona registrada.",
+    };
+  }
+
+  if (!workerForAccess.workCategory) {
+    return { success: false, errors: "El trabajador externo no tiene un tipo de trabajo válido." };
+  }
+
+  const documentResult = await validateWorkerDocumentsForAccess(
+    workerForAccess.id,
+    {
+      requiresTraining: Boolean(workerForAccess.workCategory.requiresTraining),
+      requiresSpecialPermission: Boolean(workerForAccess.workCategory.requiresSpecialPermission),
+    },
+    new Date(),
+  );
+  if (!documentResult.valid) {
+    return { success: false, errors: formatDocumentValidationError(documentResult) };
   }
 
   const personIsAlreadyInside = await isPersonAlreadyInside(
@@ -206,7 +262,6 @@ export async function createAccessLog(
     };
   }
 
-  const externalWorker = await resolveExternalWorker(data);
   await AccessLogEntity.create(
     {
       ...(await buildCreateAccessLogInput({
@@ -214,6 +269,9 @@ export async function createAccessLog(
         siteId,
         createdById: createdBy.id,
         allowedAreaName: allowedArea.name,
+        company,
+        site,
+        holder,
       })),
       externalWorkerId: externalWorker.id,
     },

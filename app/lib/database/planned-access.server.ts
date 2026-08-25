@@ -9,7 +9,8 @@ import {
 import type { PlannedAccessStatus } from "../../../db/enums";
 
 export type PlannedAccessListItem = typeof plannedAccesses.$inferSelect & {
-  site?: { id: string; name: string } | null;
+  site?: { id: string; name: string; address: string | null; riskInformation: string | null } | null;
+  company?: { id: string; name: string; cif: string; address: string | null } | null;
   requestedBy?: { id: string; fullName: string; username: string } | null;
   approvedBy?: { id: string; fullName: string; username: string } | null;
   plannedAccessPersons: Array<typeof plannedAccessPersons.$inferSelect & {
@@ -36,6 +37,7 @@ export type CreatePlannedAccessInput = {
   expectedStartDatetime: Date;
   expectedEndDatetime?: Date;
   companySnapshot: string;
+  companyId: string;
   visitReason: string;
   requestedById: string;
   departmentId: string;
@@ -72,6 +74,7 @@ export type UpdatePendingPlannedAccessInput = {
   expectedStartDatetime: Date;
   expectedEndDatetime: Date | null;
   companySnapshot: string;
+  companyId: string;
   visitReason: string;
   siteId: string;
   persons: Array<{
@@ -110,6 +113,7 @@ export class PlannedAccessEntity {
         expectedStartDatetime: data.expectedStartDatetime,
         expectedEndDatetime: data.expectedEndDatetime ?? null,
         companySnapshot: data.companySnapshot,
+        companyId: data.companyId,
         visitReason: data.visitReason,
         requestedById: data.requestedById,
         departmentId: data.departmentId,
@@ -176,7 +180,8 @@ export class PlannedAccessEntity {
     const rows = await db.query.plannedAccesses.findMany({
       where: conditions.length > 0 ? and(...conditions) : undefined,
       with: {
-        site: { columns: { id: true, name: true } },
+         site: { columns: { id: true, name: true, address: true, riskInformation: true } },
+         company: { columns: { id: true, name: true, cif: true, address: true } },
         requestedBy: { columns: { id: true, fullName: true, username: true } },
         approvedBy: { columns: { id: true, fullName: true, username: true } },
         plannedAccessPersons: {
@@ -204,7 +209,8 @@ export class PlannedAccessEntity {
     const row = await db.query.plannedAccesses.findFirst({
       where: eq(plannedAccesses.id, id),
       with: {
-        site: { columns: { id: true, name: true } },
+         site: { columns: { id: true, name: true, address: true, riskInformation: true } },
+         company: { columns: { id: true, name: true, cif: true, address: true } },
         requestedBy: { columns: { id: true, fullName: true, username: true } },
         approvedBy: { columns: { id: true, fullName: true, username: true } },
         plannedAccessPersons: {
@@ -293,6 +299,7 @@ export class PlannedAccessEntity {
       expectedStartDatetime: data.expectedStartDatetime,
       expectedEndDatetime: data.expectedEndDatetime,
       companySnapshot: data.companySnapshot,
+      companyId: data.companyId,
       visitReason: data.visitReason,
       siteId: data.siteId,
       updatedAt: new Date(),

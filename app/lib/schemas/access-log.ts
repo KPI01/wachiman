@@ -30,7 +30,12 @@ export const createAccessLogSchema = z
   .object({
     entryTimestamp: z.coerce.date(),
     entrySignaturePayload: signaturePayloadFromStringSchema,
+    riskInformationAcknowledged: z.preprocess(
+      (value) => value === "true" || value === "on",
+      z.literal(true, { error: "Debes confirmar que has sido informado de los riesgos." }),
+    ),
     companyNameSnapshot: requiredString,
+    companyId: requiredString,
     firstNameSnapshot: requiredString,
     middleNameSnapshot: optionalString,
     lastNameSnapshot: requiredString,

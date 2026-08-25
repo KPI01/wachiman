@@ -27,6 +27,8 @@ export const sites = sqliteTable("sites", {
   name: text("name").notNull(),
   slug: text("slug").notNull().unique(),
   address: text("address"),
+  riskInformation: text("risk_information"),
+  riskInformationVersion: integer("risk_information_version").notNull().default(0),
   createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull().default(timestampDefault),
   updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull().default(timestampDefault),
 });
@@ -213,6 +215,9 @@ export const appSettings = sqliteTable("app_settings", {
   earlyArrivalToleranceMinutes: integer("early_arrival_tolerance_minutes")
     .notNull()
     .default(60),
+  holderLegalName: text("holder_legal_name"),
+  holderTaxId: text("holder_tax_id"),
+  holderFiscalAddress: text("holder_fiscal_address"),
   updatedById: text("updated_by_id").references(() => users.id),
   updatedAt: integer("updated_at", { mode: "timestamp_ms" })
     .notNull()
@@ -239,10 +244,14 @@ export const accessLogs = sqliteTable("access_logs", {
   })
     .$type<Record<string, unknown>>()
     .notNull(),
+  riskAcknowledgedAt: integer("risk_acknowledged_at", { mode: "timestamp_ms" }),
+  riskAcknowledgementSnapshot: text("risk_acknowledgement_snapshot", { mode: "json" })
+    .$type<Record<string, unknown>>(),
   exitTimestamp: integer("exit_timestamp", { mode: "timestamp_ms" }),
   exitSignatureEnvelope: text("exit_signature_envelope", { mode: "json" })
     .$type<Record<string, unknown>>(),
   companyNameSnapshot: text("company_name_snapshot").notNull(),
+  companyId: text("company_id").references(() => companies.id),
   firstNameSnapshot: text("first_name_snapshot").notNull(),
   middleNameSnapshot: text("middle_name_snapshot"),
   lastNameSnapshot: text("last_name_snapshot").notNull(),
@@ -283,6 +292,7 @@ export const plannedAccesses = sqliteTable("planned_accesses", {
     .$type<PlannedAccessStatus>()
     .default("PENDING_APPROVAL"),
   companySnapshot: text("company_snapshot").notNull(),
+  companyId: text("company_id").references(() => companies.id),
   visitReason: text("visit_reason").notNull(),
   approvedAt: integer("approved_at", { mode: "timestamp_ms" }),
   approvedById: text("approved_by_id")
@@ -477,6 +487,10 @@ export const plannedAccessesRelations = relations(
     site: one(sites, {
       fields: [plannedAccesses.siteId],
       references: [sites.id],
+    }),
+    company: one(companies, {
+      fields: [plannedAccesses.companyId],
+      references: [companies.id],
     }),
     department: one(departments, {
       fields: [plannedAccesses.departmentId],
