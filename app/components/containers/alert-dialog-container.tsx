@@ -69,6 +69,11 @@ export default function AlertDialogContainer({
       asChild
       aria-label={triggerAsChild ? buttonAriaLabel : undefined}
       className={triggerAsChild ? buttonClassName : undefined}
+      onClick={() => {
+        if (open !== undefined) {
+          onOpenChange?.(true);
+        }
+      }}
     >
       {triggerButton}
     </AlertDialogTrigger>
