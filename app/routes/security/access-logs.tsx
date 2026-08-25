@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useRevalidator } from "react-router";
 import { useAccessLogNotifications } from "~/hooks/use-access-log-notifications";
 import CreateAccessLog from "~/components/models/access-logs/create-access-log-form";
@@ -84,21 +84,29 @@ export async function action({ request }: Route.ActionArgs) {
 
 export default function IndexAccessLogs({ loaderData }: Route.ComponentProps) {
   const revalidator = useRevalidator();
+  const revalidatorRef = useRef(revalidator);
+  revalidatorRef.current = revalidator;
+  const columns = useMemo(
+    () => createAccessLogColumns(loaderData.allowedAreas ?? []),
+    [loaderData.allowedAreas],
+  );
 
   useAccessLogNotifications(loaderData.accessLogs ?? []);
 
   useEffect(() => {
     const intervalId = window.setInterval(() => {
+      const currentRevalidator = revalidatorRef.current;
+
       if (
         document.visibilityState === "visible" &&
-        revalidator.state === "idle"
+        currentRevalidator.state === "idle"
       ) {
-        revalidator.revalidate();
+        currentRevalidator.revalidate();
       }
     }, 5000);
 
     return () => window.clearInterval(intervalId);
-  }, [revalidator]);
+  }, []);
 
   return (
     <div className="flex flex-col gap-6">
@@ -116,7 +124,7 @@ export default function IndexAccessLogs({ loaderData }: Route.ComponentProps) {
         </div>
       </div>
       <DataTable
-        columns={createAccessLogColumns(loaderData.allowedAreas ?? [])}
+        columns={columns}
         data={loaderData.accessLogs ?? []}
         globalFilterColumns={ACCESS_LOG_GLOBAL_FILTER_COLUMNS}
         columnHeaderActions={{

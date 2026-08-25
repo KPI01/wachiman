@@ -39,7 +39,7 @@ export default function MarkAccessLogExit({
     setHasSignature(false);
     setExitSignaturePayload("");
     revalidator.revalidate();
-  }, [fetcher.data, fetcher.state, revalidator]);
+  }, [fetcher.data, fetcher.state]);
 
   return (
     <AlertDialogContainer
