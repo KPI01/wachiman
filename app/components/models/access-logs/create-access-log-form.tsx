@@ -26,6 +26,7 @@ import type { ExternalWorkerListItem } from "~/lib/database/external-worker.serv
 import AccessLogTextCombobox from "./access-log-text-combobox";
 import RiskInformationPreview from "./risk-information-preview";
 import AllowedAreaCombobox from "./allowed-area-combobox";
+import CompanyCombobox from "../company/company-combobox";
 import { getActionErrorMessage } from "~/lib/utils/action-errors";
 // Comentado: el flujo de documentación ya no se muestra.
 // import WorkerDocumentViewer from "~/components/models/worker-document/worker-document-viewer";
@@ -55,6 +56,7 @@ function getDefaultEntryTimestamp() {
 
 export default function CreateAccessLog({
   sites,
+  allowedAreas,
   actionPath,
   lockedSiteId,
   buttonLabel = "Nuevo acceso",
@@ -119,7 +121,8 @@ export default function CreateAccessLog({
       secondLastNameRef.current.value = worker.secondLastName ?? "";
     }
     if (phoneRef.current) phoneRef.current.value = worker.phoneNumber ?? "";
-    if (worker.company?.name) setCompanyNameValue(worker.company.name);
+    setCompanyNameValue(worker.company?.name ?? "");
+    setCompanyId(worker.company?.id ?? null);
     setSuggestions([]);
     setShowSuggestions(false);
   }
@@ -530,28 +533,17 @@ export default function CreateAccessLog({
                 "companyNameSnapshot",
               )}
             >
-              <Select
-                name="companyId"
-                value={companyId ?? ""}
-                onValueChange={(value) => {
-                  const company = companies.find((item) => item.id === value);
-                  setCompanyId(value);
-                  setCompanyNameValue(company?.name ?? "");
-                }}
+              <CompanyCombobox
+                id="companyNameSnapshot"
+                name="companyNameSnapshot"
+                options={companies}
                 required
-              >
-                <SelectTrigger id="companyId" className="w-full">
-                  <SelectValue placeholder="Selecciona una empresa contratista..." />
-                </SelectTrigger>
-                <SelectContent position="popper">
-                  {companies.map((company) => (
-                    <SelectItem key={company.id} value={company.id}>
-                      {company.name} ({company.cif})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <input type="hidden" name="companyNameSnapshot" value={companyNameValue} />
+                requireSelection
+                value={companyNameValue}
+                onValueChange={setCompanyNameValue}
+                onCompanyIdChange={setCompanyId}
+              />
+              <input type="hidden" name="companyId" value={companyId ?? ""} />
             </FieldWrapper>
             <FieldWrapper
               label="Área autorizada *"
@@ -560,9 +552,11 @@ export default function CreateAccessLog({
             >
               <AllowedAreaCombobox
                 name="allowedAreaId"
+                options={allowedAreas}
                 value={allowedAreaId}
                 onValueChange={setAllowedAreaId}
                 required
+                requireSelection
               />
             </FieldWrapper>
             <FieldWrapper

@@ -9,22 +9,26 @@ type AllowedAreaOption = {
 type AllowedAreaComboboxProps = {
   id?: string;
   name?: string;
+  options?: AllowedAreaOption[];
   value: string;
   onValueChange: (value: string) => void;
   selectedName?: string;
   form?: string;
   required?: boolean;
+  requireSelection?: boolean;
   placeholder?: string;
 };
 
 export default function AllowedAreaCombobox({
   id = "allowedAreaId",
   name,
+  options,
   value,
   onValueChange,
   selectedName,
   form,
   required,
+  requireSelection = false,
   placeholder,
 }: AllowedAreaComboboxProps) {
   const [query, setQuery] = useState("");
@@ -32,11 +36,25 @@ export default function AllowedAreaCombobox({
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const selectedValueRef = useRef<string | null>(null);
+
+  function getFilteredOptions(nextQuery: string) {
+    const normalizedQuery = nextQuery.trim().toLocaleLowerCase();
+    return (options ?? []).filter((area) =>
+      area.name.toLocaleLowerCase().includes(normalizedQuery),
+    );
+  }
 
   useEffect(() => {
     const searchQuery = query.trim();
     const controller = new AbortController();
+
+    if (options) {
+      setSuggestions(getFilteredOptions(searchQuery));
+      setSelectedSuggestionIndex(0);
+      return () => controller.abort();
+    }
 
     if (selectedValueRef.current === searchQuery) {
       selectedValueRef.current = null;
@@ -96,6 +114,7 @@ export default function AllowedAreaCombobox({
 
   function selectSuggestion(suggestion: AllowedAreaOption) {
     selectedValueRef.current = suggestion.name;
+    inputRef.current?.setCustomValidity("");
     setQuery(suggestion.name);
     onValueChange(suggestion.id);
     setSuggestions([]);
@@ -106,6 +125,11 @@ export default function AllowedAreaCombobox({
     selectedValueRef.current = null;
     setQuery(nextQuery);
     onValueChange("");
+    if (requireSelection) {
+      inputRef.current?.setCustomValidity(
+        nextQuery.trim() ? "Selecciona un área autorizada de la lista." : "",
+      );
+    }
   }
 
   function handleKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {
@@ -133,6 +157,7 @@ export default function AllowedAreaCombobox({
   return (
     <div ref={containerRef} className="relative">
       <Input
+        ref={inputRef}
         id={`${id}-search`}
         value={query}
         required={required && !value}
@@ -141,17 +166,35 @@ export default function AllowedAreaCombobox({
         role="combobox"
         aria-expanded={showSuggestions}
         aria-controls={`${id}-suggestions`}
+        onFocus={() => {
+          if (options) {
+            setSuggestions(getFilteredOptions(query));
+            setShowSuggestions(true);
+          }
+        }}
+        onBlur={() => {
+          if (requireSelection && !selectedValueRef.current) {
+            inputRef.current?.setCustomValidity(
+              query.trim() ? "Selecciona un área autorizada de la lista." : "",
+            );
+          }
+          setShowSuggestions(false);
+        }}
         onChange={(event) => handleQueryChange(event.currentTarget.value)}
         onKeyDown={handleKeyDown}
       />
       {name ? <input type="hidden" name={name} value={value} form={form} /> : null}
-      {showSuggestions && suggestions.length > 0 && (
+      {showSuggestions && (
         <ul
           id={`${id}-suggestions`}
           role="listbox"
           className="absolute z-50 mt-1 max-h-48 w-full overflow-auto rounded-md border bg-popover p-1 shadow-md"
         >
-          {suggestions.map((suggestion, index) => (
+          {suggestions.length === 0 ? (
+            <li className="px-2 py-1.5 text-sm text-muted-foreground">
+              No se encontraron áreas.
+            </li>
+          ) : suggestions.map((suggestion, index) => (
             <li
               key={suggestion.id}
               role="option"
