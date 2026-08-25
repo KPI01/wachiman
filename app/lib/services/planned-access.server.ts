@@ -3,7 +3,6 @@ import type { PlannedAccessStatus } from "../../../db/enums";
 import { encryptValue } from "../crypt.server";
 // Comentado: la aprobación e ingreso ya no validan documentación.
 // import { DOCUMENT_TYPE_LABELS } from "../models/worker-document";
-import { validateWorkerDocumentsForAccess } from "./worker-document.server";
 import { ExternalWorkerEntity } from "../database/external-worker.server";
 import { AccessLogEntity } from "../database/access-log.server";
 import { PlannedAccessEntity } from "../database/planned-access.server";
@@ -794,23 +793,6 @@ export async function createAccessLogFromPlannedAccess(
   if (!category) {
     return { success: false, errors: "La persona no tiene un tipo de trabajo válido." };
   }
-  const documentResult = await validateWorkerDocumentsForAccess(
-    worker.id,
-    {
-      requiresTraining: Boolean(category.requiresTraining),
-      requiresSpecialPermission: Boolean(category.requiresSpecialPermission),
-    },
-    now,
-  );
-  if (!documentResult.valid) {
-    const missing = documentResult.missingTypes.join(", ");
-    const expired = documentResult.expiredTypes.join(", ");
-    return {
-      success: false,
-      errors: `La documentación del trabajador no está vigente.${missing ? ` Faltan: ${missing}.` : ""}${expired ? ` Caducados: ${expired}.` : ""}`,
-    };
-  }
-
   const [site, company, holder] = await Promise.all([
     SiteEntity.findById(options.lockedSiteId),
     plannedAccess.companyId ? CompanyEntity.findById(plannedAccess.companyId) : Promise.resolve(null),

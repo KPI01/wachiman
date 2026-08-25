@@ -16,9 +16,6 @@ import { WorkCategoryEntity } from "../database/work-category.server";
 import { AllowedAreaEntity } from "../database/allowed-area.server";
 import { SiteEntity } from "../database/site.server";
 import { AppSettingsEntity } from "../database/app-settings.server";
-import { validateWorkerDocumentsForAccess } from "./worker-document.server";
-import { DOCUMENT_TYPE_LABELS } from "../models/worker-document";
-import type { DocumentType } from "../../../db/enums";
 
 export type AccessLogStatus = "INSIDE" | "OUTSIDE";
 
@@ -30,18 +27,6 @@ async function isPersonAlreadyInside(legalId: string, siteId: string) {
   return (await AccessLogEntity.findOpenByLegalIdInSite(legalId, siteId)) !== null;
 }
 
-function formatDocumentValidationError(
-  result: { missingTypes: DocumentType[]; expiredTypes: DocumentType[] },
-) {
-  const details: string[] = [];
-  if (result.missingTypes.length > 0) {
-    details.push(`faltan: ${result.missingTypes.map((type) => DOCUMENT_TYPE_LABELS[type]).join(", ")}`);
-  }
-  if (result.expiredTypes.length > 0) {
-    details.push(`expirados: ${result.expiredTypes.map((type) => DOCUMENT_TYPE_LABELS[type]).join(", ")}`);
-  }
-  return `El trabajador no tiene la documentación requerida vigente (${details.join("; ")}).`;
-}
 
 function matchesWorkerIdentity(
   worker: NonNullable<Awaited<ReturnType<typeof ExternalWorkerEntity.findById>>>,
@@ -237,17 +222,6 @@ export async function createAccessLog(
     return { success: false, errors: "El trabajador externo no tiene un tipo de trabajo válido." };
   }
 
-  const documentResult = await validateWorkerDocumentsForAccess(
-    workerForAccess.id,
-    {
-      requiresTraining: Boolean(workerForAccess.workCategory.requiresTraining),
-      requiresSpecialPermission: Boolean(workerForAccess.workCategory.requiresSpecialPermission),
-    },
-    new Date(),
-  );
-  if (!documentResult.valid) {
-    return { success: false, errors: formatDocumentValidationError(documentResult) };
-  }
 
   const personIsAlreadyInside = await isPersonAlreadyInside(
     data.legalIdSnapshot,
