@@ -4,7 +4,6 @@ type RiskInformationPreviewProps = {
   holderFiscalAddress: string;
   siteName: string;
   siteAddress?: string | null;
-  riskInformation: string;
   companyName: string;
   companyCif: string;
   companyAddress: string;
@@ -54,10 +53,6 @@ export default function RiskInformationPreview(
         </p>
       </section>
 
-      <section className="border-t pt-6 text-sm leading-7">
-        <h2 className="mb-2 text-lg font-semibold">Información de riesgos e instrucciones preventivas</h2>
-        <p className="whitespace-pre-wrap">{props.riskInformation}</p>
-      </section>
     </article>
   );
 }

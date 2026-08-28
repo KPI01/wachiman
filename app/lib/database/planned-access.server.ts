@@ -20,8 +20,15 @@ export type PlannedAccessListItem = typeof plannedAccesses.$inferSelect & {
       name: string;
       requiresTraining: boolean | null;
       requiresSpecialPermission: boolean | null;
+      requiresWorkPermit: boolean | null;
+      riskInformation?: string | null;
     } | null;
     allowedArea?: { id: string; name: string } | null;
+    decision?: {
+      accessDecision: "PENDING" | "APPROVED" | "DENIED";
+      workDecision: "NOT_REQUIRED" | "PENDING" | "APPROVED" | "DENIED";
+      decisionReason: string | null;
+    } | null;
   }>;
 };
 
@@ -193,9 +200,12 @@ export class PlannedAccessEntity {
                 name: true,
                 requiresTraining: true,
                 requiresSpecialPermission: true,
+                requiresWorkPermit: true,
+                riskInformation: true,
               },
             },
-            allowedArea: { columns: { id: true, name: true } },
+             allowedArea: { columns: { id: true, name: true } },
+             decision: true,
           },
         },
       },
@@ -222,9 +232,12 @@ export class PlannedAccessEntity {
                 name: true,
                 requiresTraining: true,
                 requiresSpecialPermission: true,
+                requiresWorkPermit: true,
+                riskInformation: true,
               },
             },
-            allowedArea: { columns: { id: true, name: true } },
+             allowedArea: { columns: { id: true, name: true } },
+             decision: true,
           },
         },
       },

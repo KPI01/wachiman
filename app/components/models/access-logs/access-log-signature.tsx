@@ -5,16 +5,18 @@ import { useEffect, useRef, useState } from "react";
 import { Button } from "~/components/ui/button";
 
 type AccessLogSignatureProps = {
+  initialStrokes?: number[][][];
   onSignatureChange?: (hasSignature: boolean) => void;
   onSignaturePayloadChange?: (payload: string) => void;
 };
 
 export default function AccessLogSignature({
+  initialStrokes = [],
   onSignatureChange,
   onSignaturePayloadChange,
 }: AccessLogSignatureProps) {
   const signatureRef = useRef<SignatureRef>(null);
-  const [strokes, setStrokes] = useState<number[][][]>([]);
+  const [strokes, setStrokes] = useState<number[][][]>(initialStrokes);
 
   useEffect(() => {
     const hasSignature = strokes.length > 0;
@@ -45,6 +47,7 @@ export default function AccessLogSignature({
         </div>
         <Signature
           ref={signatureRef}
+          defaultPoints={Object.fromEntries(strokes.map((stroke, index) => [String(index), stroke]))}
           className="h-56 w-full touch-none rounded-lg border bg-white"
           options={{ size: 4, thinning: 0.6, smoothing: 0.5, streamline: 0.5 }}
           style={{ "--w-signature-background": "#ffffff" } as CSSProperties}

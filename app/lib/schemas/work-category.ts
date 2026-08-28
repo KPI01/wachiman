@@ -6,11 +6,16 @@ import { WORK_CATEGORY_DOESNT_EXISTS } from "./messages";
 export const createWorkCategorySchema = z.object({
   name: requiredString,
   description: optionalString,
+  riskInformation: optionalString,
   requiresSpecialPermission: z.preprocess(
     (value) => value === "true" || value === "on",
     z.boolean(),
   ).optional().default(false),
   requiresTraining: z.preprocess(
+    (value) => value === "true" || value === "on",
+    z.boolean(),
+  ).optional().default(false),
+  requiresWorkPermit: z.preprocess(
     (value) => value === "true" || value === "on",
     z.boolean(),
   ).optional().default(false),
@@ -21,11 +26,16 @@ export const updateWorkCategorySchema = z
     id: requiredString,
     name: requiredString,
     description: optionalString,
+    riskInformation: optionalString,
     requiresSpecialPermission: z.preprocess(
       (value) => value === "true" || value === "on",
       z.boolean(),
     ).optional().default(false),
     requiresTraining: z.preprocess(
+      (value) => value === "true" || value === "on",
+      z.boolean(),
+    ).optional().default(false),
+    requiresWorkPermit: z.preprocess(
       (value) => value === "true" || value === "on",
       z.boolean(),
     ).optional().default(false),

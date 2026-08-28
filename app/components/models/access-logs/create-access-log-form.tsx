@@ -25,12 +25,12 @@ import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
 import type { ExternalWorkerListItem } from "~/lib/database/external-worker.server";
 import AccessLogTextCombobox from "./access-log-text-combobox";
 import RiskInformationPreview from "./risk-information-preview";
+import WorkRiskPreview from "./work-risk-preview";
+import WorkPermitPreview, { type WorkPermitPreviewData } from "~/components/models/planned-access/work-permit-preview";
 import AllowedAreaCombobox from "./allowed-area-combobox";
 import CompanyCombobox from "../company/company-combobox";
 import { getActionErrorMessage } from "~/lib/utils/action-errors";
-// Comentado: el flujo de documentación ya no se muestra.
-// import WorkerDocumentViewer from "~/components/models/worker-document/worker-document-viewer";
-
+import { useAppConfig } from "~/lib/app-config";
 type FetcherErrors = {
   errors?: {
     properties?: Record<string, { errors?: string[] }>;
@@ -48,10 +48,55 @@ type CreateAccessLogProps = {
   holder?: { legalName: string; taxId: string; fiscalAddress: string };
   companies: Array<Pick<Company, "id" | "name" | "cif" | "address">>;
   dailyRiskAcknowledgements?: Array<{ legalIdSnapshot: string; companyId: string | null; siteId: string; riskAcknowledgedAt: Date | null }>;
+  workPermits?: Array<{ externalWorkerId: string | null; workPermit: WorkPermitPreviewData }>;
 };
+
+type AccessStep = "details" | "documentation" | "permit" | "signature";
+
+const ACCESS_STEPS: Array<{ id: AccessStep; label: string }> = [
+  { id: "details", label: "Datos" },
+  { id: "documentation", label: "Riesgos" },
+  { id: "permit", label: "Permiso" },
+  { id: "signature", label: "Firma" },
+];
+
+function AccessStepIndicator({ currentStep, steps }: { currentStep: AccessStep; steps: Array<{ id: AccessStep; label: string }> }) {
+  const currentIndex = steps.findIndex(({ id }) => id === currentStep);
+
+  return (
+    <ol className="grid grid-cols-4 gap-2 border-b px-2 pb-4 pt-2" aria-label="Progreso del registro de acceso">
+      {steps.map((step, index) => {
+        const isCurrent = index === currentIndex;
+        const isComplete = index < currentIndex;
+
+        return (
+          <li key={step.id} className="min-w-0">
+            <div className={`flex items-center gap-2 text-xs font-medium ${isCurrent ? "text-primary" : isComplete ? "text-foreground" : "text-muted-foreground"}`}>
+              <span className={`flex size-7 shrink-0 items-center justify-center rounded-full border ${isCurrent ? "border-primary bg-primary text-primary-foreground" : isComplete ? "border-foreground bg-foreground text-background" : "border-muted-foreground/40"}`}>
+                {index + 1}
+              </span>
+              <span className="truncate">{step.label}</span>
+            </div>
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
 
 function getDefaultEntryTimestamp() {
   return new Date();
+}
+
+function getSignatureStrokes(payload: string) {
+  if (!payload) return [];
+
+  try {
+    const parsed = JSON.parse(payload) as { strokes?: unknown };
+    return Array.isArray(parsed.strokes) ? parsed.strokes as number[][][] : [];
+  } catch {
+    return [];
+  }
 }
 
 export default function CreateAccessLog({
@@ -63,13 +108,20 @@ export default function CreateAccessLog({
   holder,
   companies,
   dailyRiskAcknowledgements = [],
+  workPermits = [],
 }: CreateAccessLogProps) {
+  const { workPermitsEnabled } = useAppConfig();
+  const visibleSteps = workPermitsEnabled
+    ? ACCESS_STEPS
+    : ACCESS_STEPS.filter((item) => item.id !== "permit");
   const fetcher = useFetcher<FetcherErrors & { success?: boolean }>();
   const [open, setOpen] = useState(false);
   const [withVehicle, setWithVehicle] = useState(false);
-  const [step, setStep] = useState<"details" | "documentation" | "signature">("details");
+  const [step, setStep] = useState<AccessStep>("details");
   const [hasSignature, setHasSignature] = useState(false);
+  const [hasPermitSignature, setHasPermitSignature] = useState(false);
   const [entrySignaturePayload, setEntrySignaturePayload] = useState("");
+  const [permitSignaturePayload, setPermitSignaturePayload] = useState("");
   const [pendingFormEntries, setPendingFormEntries] = useState<
     [string, string][]
   >([]);
@@ -79,6 +131,9 @@ export default function CreateAccessLog({
   const [selectedExternalWorkerId, setSelectedExternalWorkerId] = useState<
     string | null
   >(null);
+  const [selectedWorkerRequiresWorkPermit, setSelectedWorkerRequiresWorkPermit] = useState(false);
+  const [selectedWorkCategoryName, setSelectedWorkCategoryName] = useState<string | null>(null);
+  const [selectedWorkCategoryRiskInformation, setSelectedWorkCategoryRiskInformation] = useState<string | null>(null);
   const [legalIdValue, setLegalIdValue] = useState("");
   const [companyNameValue, setCompanyNameValue] = useState("");
   const [companyId, setCompanyId] = useState<string | null>(null);
@@ -103,13 +158,35 @@ export default function CreateAccessLog({
   const hasDailyRiskAcknowledgement = dailyRiskAcknowledgements.some(
     (entry) =>
       entry.legalIdSnapshot.toUpperCase() === legalIdValue.trim().toUpperCase() &&
-      entry.companyId === companyId &&
       entry.siteId === selectedSiteId &&
       entry.riskAcknowledgedAt !== null,
   );
+  const selectedWorkPermit = workPermits.find(
+    (item) =>
+      item.externalWorkerId === selectedExternalWorkerId ||
+      item.workPermit.legalIdSnapshot.toUpperCase() === legalIdValue.trim().toUpperCase(),
+  )?.workPermit ?? null;
+  const permitForSignature = selectedWorkPermit && !hasDailyRiskAcknowledgement ? selectedWorkPermit : null;
+  const missingWorkPermit = selectedWorkerRequiresWorkPermit && !selectedWorkPermit && !hasDailyRiskAcknowledgement;
+
+  function getDraftValue(name: string) {
+    return pendingFormEntries.find(([fieldName]) => fieldName === name)?.[1];
+  }
+
+  function saveDetailsDraft() {
+    if (!formRef.current) return;
+    setPendingFormEntries(
+      Array.from(new FormData(formRef.current).entries()).map(
+        ([name, value]) => [name, String(value)],
+      ),
+    );
+  }
 
   function handleExternalWorkerSelect(worker: ExternalWorkerListItem) {
     setSelectedExternalWorkerId(worker.id);
+    setSelectedWorkerRequiresWorkPermit(Boolean(worker.workCategory?.requiresWorkPermit));
+    setSelectedWorkCategoryName(worker.workCategory?.name ?? null);
+    setSelectedWorkCategoryRiskInformation(worker.workCategory?.riskInformation ?? null);
     setLegalIdValue(worker.legalId);
 
     if (firstNameRef.current) firstNameRef.current.value = worker.firstName;
@@ -127,27 +204,52 @@ export default function CreateAccessLog({
     setShowSuggestions(false);
   }
 
+  function clearSelectedExternalWorker() {
+    setSelectedExternalWorkerId(null);
+    setSelectedWorkerRequiresWorkPermit(false);
+    setSelectedWorkCategoryName(null);
+    setSelectedWorkCategoryRiskInformation(null);
+
+    if (firstNameRef.current) firstNameRef.current.value = "";
+    if (middleNameRef.current) middleNameRef.current.value = "";
+    if (lastNameRef.current) lastNameRef.current.value = "";
+    if (secondLastNameRef.current) secondLastNameRef.current.value = "";
+    if (phoneRef.current) phoneRef.current.value = "";
+
+    setCompanyNameValue("");
+    setCompanyId(null);
+  }
+
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
 
-    if (legalIdValue.length < 2) {
+    const query = legalIdValue.trim();
+
+    if (query.length < 2) {
       setSuggestions([]);
       setShowSuggestions(false);
       setSelectedExternalWorkerId(null);
+      setSelectedWorkerRequiresWorkPermit(false);
+      setSelectedWorkCategoryName(null);
+      setSelectedWorkCategoryRiskInformation(null);
       return;
     }
 
     const controller = new AbortController();
     debounceRef.current = setTimeout(async () => {
       try {
-        const params = new URLSearchParams({ q: legalIdValue });
+        const params = new URLSearchParams({ q: query });
         const response = await fetch(`/api/external-workers/search?${params}`, {
           signal: controller.signal,
         });
-        if (!response.ok) return;
+        if (!response.ok) {
+          setSuggestions([]);
+          setShowSuggestions(false);
+          return;
+        }
 
         const data = (await response.json()) as ExternalWorkerListItem[];
-        const normalizedLegalId = legalIdValue.trim().toUpperCase();
+        const normalizedLegalId = query.toUpperCase();
         const exactMatch = data.find(
           (worker) => worker.legalId.trim().toUpperCase() === normalizedLegalId,
         );
@@ -223,9 +325,14 @@ export default function CreateAccessLog({
     setEntryTimestamp(getDefaultEntryTimestamp());
     setStep("details");
     setHasSignature(false);
+    setHasPermitSignature(false);
     setEntrySignaturePayload("");
+    setPermitSignaturePayload("");
     setPendingFormEntries([]);
     setSelectedExternalWorkerId(null);
+    setSelectedWorkerRequiresWorkPermit(false);
+    setSelectedWorkCategoryName(null);
+    setSelectedWorkCategoryRiskInformation(null);
     setLegalIdValue("");
     setCompanyNameValue("");
     setCompanyId(null);
@@ -248,9 +355,14 @@ export default function CreateAccessLog({
           setEntryTimestamp(getDefaultEntryTimestamp());
           setStep("details");
           setHasSignature(false);
+          setHasPermitSignature(false);
           setEntrySignaturePayload("");
+          setPermitSignaturePayload("");
           setPendingFormEntries([]);
           setSelectedExternalWorkerId(null);
+    setSelectedWorkerRequiresWorkPermit(false);
+    setSelectedWorkCategoryName(null);
+    setSelectedWorkCategoryRiskInformation(null);
           setLegalIdValue("");
           setCompanyNameValue("");
           setCompanyId(null);
@@ -270,7 +382,7 @@ export default function CreateAccessLog({
         </>
       }
       contentClassName="flex max-h-9/10 w-[94vw] max-w-4xl flex-col overflow-hidden"
-       title={step === "details" ? "Nuevo Acceso" : step === "documentation" ? "Información y validación" : "Confirmación del visitante"}
+        title={step === "details" ? "Nuevo Acceso" : step === "documentation" ? "Información y validación" : step === "permit" ? "Permiso de trabajo" : "Confirmación del visitante"}
       description={
          step === "details" ? (
           <>
@@ -279,7 +391,9 @@ export default function CreateAccessLog({
           </>
          ) : step === "documentation" ? (
            "Revisa el documento y confirma que has recibido la información indicada antes de continuar."
-         ) : (
+          ) : step === "permit" ? (
+            "Revisa el permiso de trabajo y solicita la firma del trabajador."
+          ) : (
           <>
             Solicita al visitante que revise la información y firme para
             confirmar el registro.
@@ -305,16 +419,12 @@ export default function CreateAccessLog({
                   return;
                 }
 
-                setPendingFormEntries(
-                  Array.from(new FormData(formRef.current).entries()).map(
-                    ([name, value]) => [name, String(value)],
-                  ),
-                );
+                saveDetailsDraft();
 
                  if (hasDailyRiskAcknowledgement) {
                    setRiskDocumentViewed(true);
                    setRiskAcknowledged(true);
-                   setStep("signature");
+                     setStep("documentation");
                  } else {
                    setRiskDocumentViewed(true);
                    setStep("documentation");
@@ -326,23 +436,28 @@ export default function CreateAccessLog({
           ) : step === "documentation" ? (
             <>
               <Button type="button" variant="outline" onClick={() => setStep("details")}>Volver a los datos</Button>
-              <Button type="button" onClick={() => setStep("signature")} disabled={!riskDocumentViewed || !riskAcknowledged}>
-                Continuar a la firma
-              </Button>
+                <Button type="button" onClick={() => setStep(workPermitsEnabled ? "permit" : "signature")} disabled={!riskDocumentViewed || !riskAcknowledged}>
+                 Continuar
+               </Button>
             </>
-          ) : (
+           ) : step === "permit" && workPermitsEnabled ? (
+             <>
+               <Button type="button" variant="outline" onClick={() => setStep(hasDailyRiskAcknowledgement ? "details" : "documentation")}>Volver</Button>
+                <Button type="button" onClick={() => setStep("signature")} disabled={missingWorkPermit || (permitForSignature !== null && !hasPermitSignature)}>Continuar a la firma</Button>
+             </>
+           ) : (
             <>
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => setStep("details")}
+                  onClick={() => setStep(workPermitsEnabled ? "permit" : "documentation")}
               >
                 Volver
               </Button>
               <Button
                 type="submit"
-                form="create-access-log"
-                disabled={!hasSignature || !riskAcknowledged || fetcher.state !== "idle"}
+                 form="create-access-log"
+                  disabled={!hasSignature || (workPermitsEnabled && missingWorkPermit) || !riskAcknowledged || fetcher.state !== "idle"}
               >
                 {fetcher.state === "submitting" ? "Enviando..." : "Enviar"}
               </Button>
@@ -351,6 +466,7 @@ export default function CreateAccessLog({
         </>
       }
     >
+      <AccessStepIndicator currentStep={step} steps={visibleSteps} />
       <fetcher.Form
         ref={formRef}
         id="create-access-log"
@@ -415,10 +531,23 @@ export default function CreateAccessLog({
                   value={legalIdValue}
                   onChange={(event) => {
                     setLegalIdValue(event.currentTarget.value);
-                    setSelectedExternalWorkerId(null);
+                    if (selectedExternalWorkerId) {
+                      clearSelectedExternalWorker();
+                    }
+                    setSuggestions([]);
+                    setShowSuggestions(false);
                   }}
                   onKeyDown={handleSuggestionKeyDown}
                   autoComplete="off"
+                  role="combobox"
+                  aria-autocomplete="list"
+                  aria-expanded={showSuggestions}
+                  aria-controls="legalIdSnapshot-suggestions"
+                  aria-activedescendant={
+                    showSuggestions && suggestions[selectedSuggestionIndex]
+                      ? `legalIdSnapshot-suggestion-${suggestions[selectedSuggestionIndex].id}`
+                      : undefined
+                  }
                 />
                 {selectedExternalWorkerId ? (
                   <input
@@ -435,10 +564,17 @@ export default function CreateAccessLog({
                     null
                   : null}
                 {showSuggestions && suggestions.length > 0 && (
-                  <ul className="absolute z-50 mt-1 max-h-48 w-full overflow-auto rounded-md border bg-popover p-1 shadow-md">
+                  <ul
+                    id="legalIdSnapshot-suggestions"
+                    role="listbox"
+                    className="absolute z-50 mt-1 max-h-48 w-full overflow-auto rounded-md border bg-popover p-1 shadow-md"
+                  >
                     {suggestions.map((worker, index) => (
                       <li
                         key={worker.id}
+                        id={`legalIdSnapshot-suggestion-${worker.id}`}
+                        role="option"
+                        aria-selected={index === selectedSuggestionIndex}
                         className={`cursor-pointer rounded-sm px-2 py-1.5 text-sm ${
                           index === selectedSuggestionIndex
                             ? "bg-accent text-accent-foreground"
@@ -472,10 +608,11 @@ export default function CreateAccessLog({
               errors={getFieldErrors(fetcher.data?.errors, "firstNameSnapshot")}
             >
               <Input
-                ref={firstNameRef}
-                id="firstNameSnapshot"
-                name="firstNameSnapshot"
-                required
+                 ref={firstNameRef}
+                 id="firstNameSnapshot"
+                 name="firstNameSnapshot"
+                 required
+                 defaultValue={getDraftValue("firstNameSnapshot")}
               />
             </FieldWrapper>
             <FieldWrapper
@@ -487,9 +624,10 @@ export default function CreateAccessLog({
               )}
             >
               <Input
-                ref={middleNameRef}
-                id="middleNameSnapshot"
-                name="middleNameSnapshot"
+                 ref={middleNameRef}
+                 id="middleNameSnapshot"
+                 name="middleNameSnapshot"
+                 defaultValue={getDraftValue("middleNameSnapshot")}
               />
             </FieldWrapper>
             <FieldWrapper
@@ -498,10 +636,11 @@ export default function CreateAccessLog({
               errors={getFieldErrors(fetcher.data?.errors, "lastNameSnapshot")}
             >
               <Input
-                ref={lastNameRef}
-                id="lastNameSnapshot"
-                name="lastNameSnapshot"
-                required
+                 ref={lastNameRef}
+                 id="lastNameSnapshot"
+                 name="lastNameSnapshot"
+                 required
+                 defaultValue={getDraftValue("lastNameSnapshot")}
               />
             </FieldWrapper>
             <FieldWrapper
@@ -513,9 +652,10 @@ export default function CreateAccessLog({
               )}
             >
               <Input
-                ref={secondLastNameRef}
-                id="secondLastNameSnapshot"
-                name="secondLastNameSnapshot"
+                 ref={secondLastNameRef}
+                 id="secondLastNameSnapshot"
+                 name="secondLastNameSnapshot"
+                 defaultValue={getDraftValue("secondLastNameSnapshot")}
               />
             </FieldWrapper>
             <FieldWrapper
@@ -523,7 +663,7 @@ export default function CreateAccessLog({
               htmlFor="phoneNumber"
               errors={getFieldErrors(fetcher.data?.errors, "phoneNumber")}
             >
-              <Input ref={phoneRef} id="phoneNumber" name="phoneNumber" />
+                <Input ref={phoneRef} id="phoneNumber" name="phoneNumber" defaultValue={getDraftValue("phoneNumber")} />
             </FieldWrapper>
             <FieldWrapper
               label="Empresa *"
@@ -583,7 +723,7 @@ export default function CreateAccessLog({
                 htmlFor="visitReason"
                 errors={getFieldErrors(fetcher.data?.errors, "visitReason")}
               >
-                <Textarea id="visitReason" name="visitReason" required />
+                <Textarea id="visitReason" name="visitReason" required defaultValue={getDraftValue("visitReason")} />
               </FieldWrapper>
             </div>
             <div className="md:col-span-2 flex items-center gap-3 rounded-md border px-3 py-2">
@@ -608,7 +748,7 @@ export default function CreateAccessLog({
                     "vehicleTypeSnapshot",
                   )}
                 >
-                  <Input id="vehicleTypeSnapshot" name="vehicleTypeSnapshot" />
+                    <Input id="vehicleTypeSnapshot" name="vehicleTypeSnapshot" defaultValue={getDraftValue("vehicleTypeSnapshot")} />
                 </FieldWrapper>
                 <FieldWrapper
                   label="Marca"
@@ -619,8 +759,9 @@ export default function CreateAccessLog({
                   )}
                 >
                   <Input
-                    id="vehicleBrandSnapshot"
-                    name="vehicleBrandSnapshot"
+                   id="vehicleBrandSnapshot"
+                   name="vehicleBrandSnapshot"
+                   defaultValue={getDraftValue("vehicleBrandSnapshot")}
                   />
                 </FieldWrapper>
                 <FieldWrapper
@@ -632,8 +773,9 @@ export default function CreateAccessLog({
                   )}
                 >
                   <Input
-                    id="vehicleModelSnapshot"
-                    name="vehicleModelSnapshot"
+                   id="vehicleModelSnapshot"
+                   name="vehicleModelSnapshot"
+                   defaultValue={getDraftValue("vehicleModelSnapshot")}
                   />
                 </FieldWrapper>
                 <FieldWrapper
@@ -646,8 +788,9 @@ export default function CreateAccessLog({
                 >
                   <Input
                     id="vehiclePlateSnapshot"
-                    name="vehiclePlateSnapshot"
-                    className="uppercase"
+                   name="vehiclePlateSnapshot"
+                   className="uppercase"
+                   defaultValue={getDraftValue("vehiclePlateSnapshot")}
                   />
                 </FieldWrapper>
               </>
@@ -661,7 +804,6 @@ export default function CreateAccessLog({
               holderFiscalAddress={holder?.fiscalAddress ?? ""}
               siteName={sites.find((site) => site.id === selectedSiteId)?.name ?? ""}
               siteAddress={sites.find((site) => site.id === selectedSiteId)?.address}
-              riskInformation={sites.find((site) => site.id === selectedSiteId)?.riskInformation ?? ""}
               companyName={companyNameValue}
               companyCif={companies.find((company) => company.id === companyId)?.cif ?? ""}
               companyAddress={companies.find((company) => company.id === companyId)?.address ?? ""}
@@ -682,6 +824,20 @@ export default function CreateAccessLog({
               <span>Confirmo que he leído este documento y que he sido informado de los riesgos e instrucciones preventivas indicados.</span>
             </label>
           </div>
+        ) : step === "permit" && workPermitsEnabled ? (
+          <div className="md:col-span-2 space-y-4">
+            {selectedWorkCategoryRiskInformation || selectedWorkCategoryName || sites.find((site) => site.id === selectedSiteId)?.riskInformation ? (
+              <>
+                {permitForSignature ? <WorkPermitPreview workPermit={permitForSignature} /> : <WorkRiskPreview siteName={sites.find((site) => site.id === selectedSiteId)?.name ?? "Centro de trabajo"} siteAddress={sites.find((site) => site.id === selectedSiteId)?.address} facilityRiskInformation={sites.find((site) => site.id === selectedSiteId)?.riskInformation} workCategoryName={selectedWorkCategoryName} workCategoryRiskInformation={selectedWorkCategoryRiskInformation} companyName={companyNameValue} workerName={[getDraftValue("firstNameSnapshot"), getDraftValue("middleNameSnapshot"), getDraftValue("lastNameSnapshot"), getDraftValue("secondLastNameSnapshot")].filter(Boolean).join(" ")} legalId={legalIdValue} />}
+                {permitForSignature ? <AccessLogSignature key={`permit-signature-${open}`} initialStrokes={getSignatureStrokes(permitSignaturePayload)} onSignatureChange={setHasPermitSignature} onSignaturePayloadChange={setPermitSignaturePayload} /> : null}
+              </>
+            ) : (
+              <Alert>
+                <AlertTitle>Permiso de trabajo</AlertTitle>
+                <AlertDescription>{missingWorkPermit ? "Este trabajador requiere un permiso aprobado para continuar." : "No se requiere un permiso de trabajo adicional para este acceso."}</AlertDescription>
+              </Alert>
+            )}
+          </div>
         ) : (
           <div className="md:col-span-2 space-y-4">
             <input
@@ -689,6 +845,8 @@ export default function CreateAccessLog({
               name="entrySignaturePayload"
               value={entrySignaturePayload}
             />
+            {workPermitsEnabled && permitForSignature ? <input type="hidden" name="workPermitId" value={permitForSignature.id} /> : null}
+            {workPermitsEnabled ? <input type="hidden" name="workPermitSignaturePayload" value={permitSignaturePayload} /> : null}
             <input type="hidden" name="riskInformationAcknowledged" value={riskAcknowledged ? "true" : "false"} />
             {pendingFormEntries.map(([name, value], index) => (
               <input
@@ -698,8 +856,16 @@ export default function CreateAccessLog({
                 value={value}
               />
             ))}
+            {workPermitsEnabled && missingWorkPermit ? (
+              <Alert variant="destructive">
+                <AlertTriangleIcon />
+                <AlertTitle>Permiso de trabajo pendiente</AlertTitle>
+                <AlertDescription>Este trabajador requiere un permiso de trabajo aprobado para el día del acceso.</AlertDescription>
+              </Alert>
+            ) : null}
             <AccessLogSignature
               key={`entry-signature-${open}`}
+              initialStrokes={getSignatureStrokes(entrySignaturePayload)}
               onSignatureChange={setHasSignature}
               onSignaturePayloadChange={setEntrySignaturePayload}
             />

@@ -17,6 +17,10 @@ import {
   createAccessLogFromPlannedAccess,
   getManyPlannedAccesses,
 } from "~/lib/services/planned-access.server";
+import {
+  signWorkPermit,
+  getApprovedWorkPermitsForSiteOnDate,
+} from "~/lib/services/work-permit.server";
 import type { PlannedAccessListItem } from "~/lib/database/planned-access.server";
 import { Badge } from "~/components/ui/badge";
 import {
@@ -33,6 +37,7 @@ import { getManyAllowedAreas } from "~/lib/services/allowed-area.server";
 import { getGlobalAppSettings } from "~/lib/services/app-settings.server";
 import { SiteEntity } from "~/lib/database/site.server";
 import { getManyCompanies } from "~/lib/services/company.server";
+import { getAppConfig } from "~/lib/app-config.server";
 
 export async function loader({ request }: Route.LoaderArgs) {
   await validateUserRole(request, "ACCESS_OPERATOR");
@@ -42,7 +47,8 @@ export async function loader({ request }: Route.LoaderArgs) {
     throw new Response("Unauthorized", { status: 401 });
   }
 
-  const [accessLogs, plannedAccesses, openAccessLogs, allowedAreas, settings, site, companies] = await Promise.all([
+  const { workPermitsEnabled } = getAppConfig();
+  const [accessLogs, plannedAccesses, openAccessLogs, allowedAreas, settings, site, companies, approvedWorkPermits] = await Promise.all([
     getManyAccessLogs({
       siteId: sessionSite.id,
       timestampField: "entryTimestamp",
@@ -58,6 +64,9 @@ export async function loader({ request }: Route.LoaderArgs) {
     getGlobalAppSettings(),
     SiteEntity.findById(sessionSite.id),
     getManyCompanies(),
+    workPermitsEnabled
+      ? getApprovedWorkPermitsForSiteOnDate(sessionSite.id, new Date())
+      : Promise.resolve([]),
   ]);
 
   if (!site) {
@@ -72,6 +81,12 @@ export async function loader({ request }: Route.LoaderArgs) {
     allowedAreas,
     holder: settings ? { legalName: settings.holderLegalName ?? "", taxId: settings.holderTaxId ?? "", fiscalAddress: settings.holderFiscalAddress ?? "" } : undefined,
     companies,
+    workPermitsEnabled,
+    workPermits: approvedWorkPermits.map((workPermit) => ({
+      personId: workPermit.plannedAccessPersonId,
+      externalWorkerId: workPermit.externalWorkerId,
+      workPermit,
+    })),
   };
 }
 
@@ -83,7 +98,19 @@ export async function action({ request }: Route.ActionArgs) {
     throw new Response("Unauthorized", { status: 401 });
   }
 
+  const { workPermitsEnabled } = getAppConfig();
   const data = await getFormData(request);
+
+  if (workPermitsEnabled && data.workPermitId && data.workPermitSignaturePayload) {
+    const permitResult = await signWorkPermit(
+      {
+        workPermitId: data.workPermitId,
+        signaturePayload: data.workPermitSignaturePayload,
+      },
+      { authorUsername: user.username, lockedSiteId: sessionSite.id },
+    );
+    if (!permitResult.success) return permitResult;
+  }
 
   if (data.intent === "planned-access-signature") {
     return await createAccessLogFromPlannedAccess(data, {
@@ -138,12 +165,20 @@ function PlannedAccessesToday({
   site,
   holder,
   dailyRiskAcknowledgements,
+  workPermits,
+  workPermitsEnabled,
 }: {
   plannedAccesses: PlannedAccessListItem[];
   registeredLegalIds: Set<string>;
   site: NonNullable<Awaited<ReturnType<typeof SiteEntity.findById>>>;
   holder?: { legalName: string; taxId: string; fiscalAddress: string };
   dailyRiskAcknowledgements: Array<{ legalIdSnapshot: string; companyId: string | null; siteId: string; riskAcknowledgedAt: Date | null }>;
+  workPermits: Array<{
+    personId: string;
+    externalWorkerId: string | null;
+    workPermit: Awaited<ReturnType<typeof getApprovedWorkPermitsForSiteOnDate>>[number];
+  }>;
+  workPermitsEnabled: boolean;
 }) {
   if (plannedAccesses.length === 0) {
     return (
@@ -172,6 +207,10 @@ function PlannedAccessesToday({
             const hasRegisteredAccess = registeredLegalIds.has(
               person.legalIdSnapshot.toUpperCase(),
             );
+            const accessDenied = person.decision?.accessDecision === "DENIED";
+            const workDenied = person.decision?.workDecision === "DENIED";
+            const workPermit = workPermits.find((item) => item.personId === person.id)?.workPermit;
+             const missingWorkPermit = Boolean(workPermitsEnabled && person.workCategory?.requiresWorkPermit && !workPermit);
 
             return (
               <div
@@ -184,11 +223,9 @@ function PlannedAccessesToday({
                       {getPersonFullName(person)}
                     </p>
                     <Badge
-                      variant={hasRegisteredAccess ? "secondary" : "outline"}
+                      variant={hasRegisteredAccess || !accessDenied ? "secondary" : "destructive"}
                     >
-                      {hasRegisteredAccess
-                        ? "Ingreso registrado"
-                        : "Pendiente de firma"}
+                      {hasRegisteredAccess ? "Ingreso registrado" : accessDenied ? "Acceso denegado" : missingWorkPermit ? "Permiso de trabajo pendiente" : workDenied ? "Acceso permitido, trabajo no autorizado" : "Pendiente de firma"}
                     </Badge>
                   </div>
                   <p className="text-sm text-muted-foreground">
@@ -197,14 +234,21 @@ function PlannedAccessesToday({
                       ? ` · Telefono: ${person.phoneNumber}`
                       : ""}
                   </p>
+                  {person.decision?.decisionReason ? (
+                    <p className="text-sm text-destructive">
+                      Motivo: {person.decision.decisionReason}
+                    </p>
+                  ) : null}
                 </div>
                 <PlannedAccessPersonSignatureAction
                   plannedAccessId={plannedAccess.id}
                   person={person}
-                  disabled={hasRegisteredAccess}
+                  disabled={hasRegisteredAccess || accessDenied}
                   site={site}
                   holder={holder}
                   company={plannedAccess.company ?? undefined}
+                  workPermit={workPermit}
+                   requiresWorkPermit={Boolean(workPermitsEnabled && person.workCategory?.requiresWorkPermit)}
                   dailyRiskAcknowledgements={dailyRiskAcknowledgements}
                 />
               </div>
@@ -264,6 +308,7 @@ export default function OperatorHome({ loaderData }: Route.ComponentProps) {
             buttonLabel="Registrar acceso"
             holder={loaderData.holder}
             companies={loaderData.companies ?? []}
+            workPermits={loaderData.workPermits ?? []}
             dailyRiskAcknowledgements={(loaderData.accessLogs ?? []).map((log) => ({ legalIdSnapshot: log.legalIdSnapshot, companyId: log.companyId, siteId: log.siteId, riskAcknowledgedAt: log.riskAcknowledgedAt }))}
           />
         </div>
@@ -287,8 +332,10 @@ export default function OperatorHome({ loaderData }: Route.ComponentProps) {
           registeredLegalIds={registeredLegalIds}
           site={loaderData.site}
           holder={loaderData.holder}
-          dailyRiskAcknowledgements={(loaderData.accessLogs ?? []).map((log) => ({ legalIdSnapshot: log.legalIdSnapshot, companyId: log.companyId, siteId: log.siteId, riskAcknowledgedAt: log.riskAcknowledgedAt }))}
-        />
+           dailyRiskAcknowledgements={(loaderData.accessLogs ?? []).map((log) => ({ legalIdSnapshot: log.legalIdSnapshot, companyId: log.companyId, siteId: log.siteId, riskAcknowledgedAt: log.riskAcknowledgedAt }))}
+           workPermits={loaderData.workPermits ?? []}
+           workPermitsEnabled={loaderData.workPermitsEnabled ?? false}
+         />
       </TabsContent>
     </Tabs>
   );

@@ -12,10 +12,11 @@ import {
 import { encryptValue } from "../crypt.server";
 import { ExternalWorkerEntity } from "../database/external-worker.server";
 import { CompanyEntity } from "../database/company.server";
-import { WorkCategoryEntity } from "../database/work-category.server";
 import { AllowedAreaEntity } from "../database/allowed-area.server";
 import { SiteEntity } from "../database/site.server";
 import { AppSettingsEntity } from "../database/app-settings.server";
+import { WorkPermitEntity } from "../database/work-permit.server";
+import { getAppConfig } from "../app-config.server";
 
 export type AccessLogStatus = "INSIDE" | "OUTSIDE";
 
@@ -25,19 +26,6 @@ export type GetManyAccessLogsInput = GetAccessLogsInput & {
 
 async function isPersonAlreadyInside(legalId: string, siteId: string) {
   return (await AccessLogEntity.findOpenByLegalIdInSite(legalId, siteId)) !== null;
-}
-
-
-function matchesWorkerIdentity(
-  worker: NonNullable<Awaited<ReturnType<typeof ExternalWorkerEntity.findById>>>,
-  data: z.infer<typeof createAccessLogSchema>,
-) {
-  return worker.firstName === data.firstNameSnapshot &&
-    (worker.middleName ?? null) === (data.middleNameSnapshot ?? null) &&
-    worker.lastName === data.lastNameSnapshot &&
-    (worker.secondLastName ?? null) === (data.secondLastNameSnapshot ?? null) &&
-    (worker.phoneNumber ?? null) === (data.phoneNumber ?? null) &&
-    worker.legalId.toUpperCase() === data.legalIdSnapshot;
 }
 
 export async function getManyAccessLogs(input?: GetManyAccessLogsInput) {
@@ -77,6 +65,8 @@ type CreateAccessLogInputType = {
   company: NonNullable<Awaited<ReturnType<typeof CompanyEntity.findById>>>;
   site: NonNullable<Awaited<ReturnType<typeof SiteEntity.findById>>>;
   holder: NonNullable<Awaited<ReturnType<typeof AppSettingsEntity.getGlobal>>>;
+  workCategoryName?: string | null;
+  workCategoryRiskInformation?: string | null;
 };
 async function buildCreateAccessLogInput({
   data,
@@ -86,6 +76,8 @@ async function buildCreateAccessLogInput({
   company,
   site,
   holder,
+  workCategoryName,
+  workCategoryRiskInformation,
 }: CreateAccessLogInputType) {
   const {
     vehiclePlateSnapshot,
@@ -93,6 +85,8 @@ async function buildCreateAccessLogInput({
     vehicleModelSnapshot,
     vehicleTypeSnapshot,
     entrySignaturePayload,
+    workPermitId: _workPermitId,
+    workPermitSignaturePayload: _workPermitSignaturePayload,
     riskInformationAcknowledged: _riskInformationAcknowledged,
     allowedAreaId,
     ...accessLogData
@@ -114,6 +108,8 @@ async function buildCreateAccessLogInput({
       siteAddress: site.address,
       riskInformation: site.riskInformation,
       riskInformationVersion: site.riskInformationVersion,
+      workCategoryName: workCategoryName ?? null,
+      workCategoryRiskInformation: workCategoryRiskInformation ?? null,
       companyName: company.name,
       companyCif: company.cif,
       companyAddress: company.address,
@@ -131,26 +127,10 @@ async function buildCreateAccessLogInput({
   };
 }
 
-async function resolveExternalWorker(data: z.infer<typeof createAccessLogSchema>) {
-  const existingWorker = data.externalWorkerId
+async function findExternalWorker(data: z.infer<typeof createAccessLogSchema>) {
+  return data.externalWorkerId
     ? await ExternalWorkerEntity.findById(data.externalWorkerId)
     : await ExternalWorkerEntity.findByLegalId(data.legalIdSnapshot);
-
-  if (existingWorker) return existingWorker;
-
-  const company = await CompanyEntity.findOrCreateByName(data.companyNameSnapshot);
-  const workCategoryId = await WorkCategoryEntity.resolveDefault();
-
-  return ExternalWorkerEntity.findOrCreateByLegalId({
-    firstName: data.firstNameSnapshot,
-    middleName: data.middleNameSnapshot,
-    lastName: data.lastNameSnapshot,
-    secondLastName: data.secondLastNameSnapshot,
-    phoneNumber: data.phoneNumber,
-    legalId: data.legalIdSnapshot,
-    companyId: company.id,
-    workCategoryId,
-  });
 }
 
 export async function createAccessLog(
@@ -164,6 +144,7 @@ export async function createAccessLog(
   }
 
   const data = parsed.data;
+  const { workPermitsEnabled } = getAppConfig();
   const createdBy = await UserEntity.getByUsername(options.authorUsername);
 
   if (!createdBy) {
@@ -191,37 +172,63 @@ export async function createAccessLog(
     return { success: false, errors: "La empresa seleccionada no coincide con sus datos." };
   }
 
-  const externalWorker = await resolveExternalWorker(data);
+  const externalWorker = await findExternalWorker(data);
 
-  const workerForAccess = externalWorker as {
-    id: string;
-    firstName: string;
-    middleName: string | null;
-    lastName: string;
-    secondLastName: string | null;
-    phoneNumber: string | null;
-    legalId: string;
-    workCategory?: { requiresTraining?: boolean | null; requiresSpecialPermission?: boolean | null } | null;
-  };
-
-  if (
-    workerForAccess.firstName !== data.firstNameSnapshot ||
-    (workerForAccess.middleName ?? null) !== (data.middleNameSnapshot ?? null) ||
-    workerForAccess.lastName !== data.lastNameSnapshot ||
-    (workerForAccess.secondLastName ?? null) !== (data.secondLastNameSnapshot ?? null) ||
-    (workerForAccess.phoneNumber ?? null) !== (data.phoneNumber ?? null) ||
-    workerForAccess.legalId.toUpperCase() !== data.legalIdSnapshot
-  ) {
+  if (data.externalWorkerId && !externalWorker) {
     return {
       success: false,
       errors: "El trabajador externo no coincide con los datos de la persona registrada.",
     };
   }
 
-  if (!workerForAccess.workCategory) {
-    return { success: false, errors: "El trabajador externo no tiene un tipo de trabajo válido." };
-  }
+  if (externalWorker) {
+    const workerForAccess = externalWorker as {
+      id: string;
+      firstName: string;
+      middleName: string | null;
+      lastName: string;
+      secondLastName: string | null;
+      phoneNumber: string | null;
+      legalId: string;
+       workCategory?: { name?: string | null; requiresTraining?: boolean | null; requiresSpecialPermission?: boolean | null; requiresWorkPermit?: boolean | null; riskInformation?: string | null } | null;
+    };
 
+    if (
+      workerForAccess.firstName !== data.firstNameSnapshot ||
+      (workerForAccess.middleName ?? null) !== (data.middleNameSnapshot ?? null) ||
+      workerForAccess.lastName !== data.lastNameSnapshot ||
+      (workerForAccess.secondLastName ?? null) !== (data.secondLastNameSnapshot ?? null) ||
+      (workerForAccess.phoneNumber ?? null) !== (data.phoneNumber ?? null) ||
+      workerForAccess.legalId.toUpperCase() !== data.legalIdSnapshot
+    ) {
+      return {
+        success: false,
+        errors: "El trabajador externo no coincide con los datos de la persona registrada.",
+      };
+    }
+
+    if (!workerForAccess.workCategory) {
+      return { success: false, errors: "El trabajador externo no tiene un tipo de trabajo válido." };
+    }
+
+    if (workPermitsEnabled && workerForAccess.workCategory.requiresWorkPermit && !(await AccessLogEntity.hasAccessOnDate(data.legalIdSnapshot, siteId, data.entryTimestamp))) {
+      const workPermit = await WorkPermitEntity.findApprovedForWorkerOnDate(
+        externalWorker.id,
+        siteId,
+        data.entryTimestamp,
+        data.legalIdSnapshot,
+      );
+      if (!workPermit) {
+        return { success: false, errors: "El trabajador requiere un permiso de trabajo aprobado para el día del acceso." };
+      }
+      if (
+        data.workPermitId !== workPermit.id ||
+        !await WorkPermitEntity.hasSignature(workPermit.id, "WORKER")
+      ) {
+        return { success: false, errors: "Debes mostrar y firmar el permiso de trabajo antes de registrar el acceso." };
+      }
+    }
+  }
 
   const personIsAlreadyInside = await isPersonAlreadyInside(
     data.legalIdSnapshot,
@@ -246,8 +253,11 @@ export async function createAccessLog(
         company,
         site,
         holder,
+        workCategoryName: externalWorker?.workCategory?.name,
+        workCategoryRiskInformation: externalWorker?.workCategory?.riskInformation,
       })),
-      externalWorkerId: externalWorker.id,
+      ...(externalWorker ? { externalWorkerId: externalWorker.id } : {}),
+       ...(workPermitsEnabled && data.workPermitId ? { workPermitId: data.workPermitId } : {}),
     },
   );
 

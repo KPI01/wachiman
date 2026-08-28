@@ -6,8 +6,10 @@ export class WorkCategoryEntity {
   public static async create(data: {
     name: string;
     description?: string;
+    riskInformation?: string;
     requiresSpecialPermission?: boolean;
     requiresTraining?: boolean;
+    requiresWorkPermit?: boolean;
   }) {
     const [wc] = await db.insert(workCategories).values(data).returning();
     return wc;
@@ -53,8 +55,10 @@ export class WorkCategoryEntity {
     data: {
       name?: string;
       description?: string;
+      riskInformation?: string;
       requiresSpecialPermission?: boolean;
       requiresTraining?: boolean;
+      requiresWorkPermit?: boolean;
     },
   ) {
     const [wc] = await db

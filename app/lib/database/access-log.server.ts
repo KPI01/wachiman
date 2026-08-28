@@ -65,6 +65,7 @@ export type CreateAccessLogInput = {
   };
   plannedAccessId?: string;
   plannedAccessPersonId?: string;
+  workPermitId?: string;
 };
 
 export type MarkAccessLogExitInput = {
@@ -192,6 +193,7 @@ export class AccessLogEntity {
         vehicleAccessLogId: vehicleId,
         plannedAccessId: data.plannedAccessId,
         plannedAccessPersonId: data.plannedAccessPersonId,
+        workPermitId: data.workPermitId,
       })
       .returning();
 
@@ -379,6 +381,24 @@ export class AccessLogEntity {
 
     if (!row) return null;
     return (await loadAccessLogRelations([row]))[0] ?? null;
+  }
+
+  public static async hasAccessOnDate(legalId: string, siteId: string, date: Date) {
+    const start = new Date(date);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(date);
+    end.setHours(23, 59, 59, 999);
+    return Boolean(await db
+      .select({ id: accessLogs.id })
+      .from(accessLogs)
+      .where(and(
+        eq(accessLogs.legalIdSnapshot, legalId),
+        eq(accessLogs.siteId, siteId),
+        gte(accessLogs.entryTimestamp, start),
+        lte(accessLogs.entryTimestamp, end),
+      ))
+      .limit(1)
+      .get());
   }
 
   public static async findFirst(input: AccessLogFindFirstInput) {

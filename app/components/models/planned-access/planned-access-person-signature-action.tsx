@@ -5,13 +5,33 @@ import { toast } from "sonner";
 import AlertDialogContainer, { AlertDialogCancel } from "~/components/containers/alert-dialog-container";
 import AccessLogSignature from "~/components/models/access-logs/access-log-signature";
 import RiskInformationPreview from "~/components/models/access-logs/risk-information-preview";
+import WorkPermitPreview from "~/components/models/planned-access/work-permit-preview";
+import WorkRiskPreview from "~/components/models/access-logs/work-risk-preview";
 import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
 import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
 import type { PlannedAccessListItem } from "~/lib/database/planned-access.server";
 import { getActionErrorMessage } from "~/lib/utils/action-errors";
+import { useAppConfig } from "~/lib/app-config";
 
 type PlannedAccessPerson = PlannedAccessListItem["plannedAccessPersons"][number];
+type WorkPermit = {
+  id: string;
+  status: string;
+  firstNameSnapshot: string;
+  lastNameSnapshot: string;
+  legalIdSnapshot: string;
+  restrictions: string | null;
+  activity: {
+    companySnapshot: string;
+    taskDescription: string;
+    workAreaSnapshot: string;
+    riskItems: Array<{ title: string; measures: string }>;
+    toolsAndEquipment: string;
+    personalProtectiveEquipment: string;
+    facilityRiskSnapshot: string;
+  };
+};
 
 type Props = {
   plannedAccessId: string;
@@ -20,23 +40,57 @@ type Props = {
   site: { id: string; name: string; address?: string | null; riskInformation?: string | null };
   holder?: { legalName: string; taxId: string; fiscalAddress: string };
   company?: { id: string; name: string; cif: string; address?: string | null };
-  dailyRiskAcknowledgements?: Array<{ legalIdSnapshot: string; companyId: string | null; siteId: string; riskAcknowledgedAt: Date | null }>;
+  workPermit?: WorkPermit | null;
+  requiresWorkPermit?: boolean;
+  dailyRiskAcknowledgements?: Array<{
+    legalIdSnapshot: string;
+    companyId: string | null;
+    siteId: string;
+    riskAcknowledgedAt: Date | null;
+  }>;
 };
 
 function getPersonFullName(person: PlannedAccessPerson) {
-  return [person.firstNameSnapshot, person.middleNameSnapshot, person.lastNameSnapshot, person.secondLastNameSnapshot].filter(Boolean).join(" ");
+  return [person.firstNameSnapshot, person.middleNameSnapshot, person.lastNameSnapshot, person.secondLastNameSnapshot]
+    .filter(Boolean)
+    .join(" ");
 }
 
-export default function PlannedAccessPersonSignatureAction({ plannedAccessId, person, disabled = false, site, holder, company, dailyRiskAcknowledgements = [] }: Props) {
+export default function PlannedAccessPersonSignatureAction({
+  plannedAccessId,
+  person,
+  disabled = false,
+  site,
+  holder,
+  company,
+  workPermit,
+  requiresWorkPermit = false,
+  dailyRiskAcknowledgements = [],
+}: Props) {
+  const { workPermitsEnabled } = useAppConfig();
   const fetcher = useFetcher<{ success?: boolean; errors?: unknown }>();
   const [open, setOpen] = useState(false);
-  const [step, setStep] = useState<"documentation" | "signature">("documentation");
+  const [step, setStep] = useState<"risks" | "permit" | "signature">("risks");
   const [hasSignature, setHasSignature] = useState(false);
   const [entrySignaturePayload, setEntrySignaturePayload] = useState("");
+  const [hasPermitSignature, setHasPermitSignature] = useState(false);
+  const [permitSignaturePayload, setPermitSignaturePayload] = useState("");
   const [riskAcknowledged, setRiskAcknowledged] = useState(false);
   const formId = `planned-access-signature-${plannedAccessId}-${person.id}`;
-  const errorMessage = typeof fetcher.data?.errors === "string" ? fetcher.data.errors : fetcher.data?.errors ? "No se pudo registrar el acceso planificado." : null;
-  const canReuseDailyAcknowledgement = Boolean(company && dailyRiskAcknowledgements.some((entry) => entry.legalIdSnapshot.toUpperCase() === person.legalIdSnapshot.toUpperCase() && entry.companyId === company.id && entry.siteId === site.id && entry.riskAcknowledgedAt !== null));
+  const errorMessage = typeof fetcher.data?.errors === "string"
+    ? fetcher.data.errors
+    : fetcher.data?.errors
+      ? "No se pudo registrar el acceso planificado."
+      : null;
+  const canReuseDailyAcknowledgement = Boolean(
+    company && dailyRiskAcknowledgements.some(
+      (entry) => entry.legalIdSnapshot.toUpperCase() === person.legalIdSnapshot.toUpperCase() &&
+        entry.companyId === company.id && entry.siteId === site.id && entry.riskAcknowledgedAt !== null,
+    ),
+  );
+  const hasWorkPermit = workPermitsEnabled && Boolean(workPermit);
+  const hasWorkRiskInformation = Boolean(site.riskInformation || person.workCategory?.riskInformation);
+  const showsPermitStep = workPermitsEnabled && (hasWorkPermit || hasWorkRiskInformation);
 
   useEffect(() => {
     if (fetcher.state !== "idle" || !fetcher.data) return;
@@ -46,36 +100,54 @@ export default function PlannedAccessPersonSignatureAction({ plannedAccessId, pe
     }
     toast.success("Acceso registrado correctamente");
     setOpen(false);
-    setStep("documentation");
-    setHasSignature(false);
-    setEntrySignaturePayload("");
-    setRiskAcknowledged(false);
+    reset();
   }, [fetcher.data, fetcher.state]);
 
   function reset() {
-    setStep("documentation");
+    setStep("risks");
     setHasSignature(false);
     setEntrySignaturePayload("");
+    setHasPermitSignature(false);
+    setPermitSignaturePayload("");
     setRiskAcknowledged(false);
+  }
+
+  function openFlow(nextOpen: boolean) {
+    setOpen(nextOpen);
+    if (!nextOpen) return;
+    reset();
+    if (canReuseDailyAcknowledgement) {
+      setRiskAcknowledged(true);
+       setStep(showsPermitStep ? "permit" : "signature");
+    }
   }
 
   return (
     <AlertDialogContainer
       open={open}
-      onOpenChange={(nextOpen) => { setOpen(nextOpen); if (nextOpen) { reset(); if (canReuseDailyAcknowledgement) { setStep("signature"); setRiskAcknowledged(true); } } }}
+      onOpenChange={openFlow}
       triggerAsChild
-      buttonLabel={<Button type="button" size="sm" variant="outline" disabled={disabled}><PenLineIcon data-icon="inline-start" />Solicitar firma</Button>}
-      title={step === "documentation" ? "Información y validación" : "Firma para acceso planificado"}
-      description={step === "documentation" ? "Revisa el documento y confirma la información antes de continuar." : `Solicita la firma de ${getPersonFullName(person)} para registrar su ingreso.`}
+      buttonLabel={<Button type="button" size="sm" variant="outline" disabled={disabled || (workPermitsEnabled && requiresWorkPermit && !hasWorkPermit)}><PenLineIcon data-icon="inline-start" />Revisar acceso</Button>}
+      title={step === "risks" ? "Confirmación de riesgos" : step === "permit" ? "Permiso de trabajo" : "Firma para acceso planificado"}
+      description={step === "signature" ? `Solicita la firma de ${getPersonFullName(person)} para registrar su ingreso.` : "Revisa y confirma la información antes de continuar."}
       footer={
         <>
           <AlertDialogCancel variant="destructive">Cancelar</AlertDialogCancel>
-          {step === "documentation" ? (
-            <Button type="button" onClick={() => setStep("signature")} disabled={!riskAcknowledged}>Continuar a la firma</Button>
+          {step === "risks" ? (
+             <Button type="button" onClick={() => setStep(showsPermitStep ? "permit" : "signature")} disabled={!riskAcknowledged}>
+              Continuar
+            </Button>
+           ) : step === "permit" && workPermitsEnabled ? (
+            <>
+              <Button type="button" variant="outline" onClick={() => setStep("risks")}>Volver</Button>
+               <Button type="button" onClick={() => setStep("signature")} disabled={Boolean(workPermit && !hasPermitSignature)}>Continuar a la firma de entrada</Button>
+            </>
           ) : (
             <>
-              <Button type="button" variant="outline" onClick={() => setStep("documentation")}>Volver</Button>
-              <Button type="submit" form={formId} disabled={!hasSignature || !riskAcknowledged || fetcher.state !== "idle"}>{fetcher.state === "submitting" ? "Enviando..." : "Registrar acceso"}</Button>
+               <Button type="button" variant="outline" onClick={() => setStep(showsPermitStep ? "permit" : "risks")}>Volver</Button>
+              <Button type="submit" form={formId} disabled={!hasSignature || fetcher.state !== "idle"}>
+                {fetcher.state === "submitting" ? "Enviando..." : "Registrar acceso"}
+              </Button>
             </>
           )}
         </>
@@ -87,14 +159,23 @@ export default function PlannedAccessPersonSignatureAction({ plannedAccessId, pe
         <input type="hidden" name="plannedAccessPersonId" value={person.id} />
         <input type="hidden" name="entrySignaturePayload" value={entrySignaturePayload} />
         <input type="hidden" name="riskInformationAcknowledged" value={riskAcknowledged ? "true" : "false"} />
+        {workPermitsEnabled && workPermit ? <input type="hidden" name="workPermitId" value={workPermit.id} /> : null}
+        {workPermitsEnabled ? <input type="hidden" name="workPermitSignaturePayload" value={permitSignaturePayload} /> : null}
         {errorMessage ? <Alert variant="destructive"><AlertTriangleIcon /><AlertTitle>Error</AlertTitle><AlertDescription>{errorMessage}</AlertDescription></Alert> : null}
         <div className="rounded-lg border bg-muted/30 p-3 text-sm"><p className="font-medium">{getPersonFullName(person)}</p><p className="text-muted-foreground">DNI/NIE: {person.legalIdSnapshot}</p></div>
-        {step === "documentation" ? (
+        {step === "risks" ? (
           <>
-            {holder && company && site.riskInformation ? <RiskInformationPreview holderLegalName={holder.legalName} holderTaxId={holder.taxId} holderFiscalAddress={holder.fiscalAddress} siteName={site.name} siteAddress={site.address} riskInformation={site.riskInformation} companyName={company.name} companyCif={company.cif} companyAddress={company.address ?? ""} workerName={getPersonFullName(person)} legalId={person.legalIdSnapshot} /> : <Alert variant="destructive"><AlertTriangleIcon /><AlertTitle>Información incompleta</AlertTitle><AlertDescription>No se puede mostrar el documento porque faltan datos legales o de riesgos.</AlertDescription></Alert>}
-            <label className="flex items-start gap-3 rounded-md border bg-muted/30 p-4 text-sm"><Checkbox checked={riskAcknowledged} onCheckedChange={(checked) => setRiskAcknowledged(checked === true)} /><span>Confirmo que he leído este documento y que he sido informado de los riesgos e instrucciones preventivas indicados.</span></label>
+             {holder && company ? <RiskInformationPreview holderLegalName={holder.legalName} holderTaxId={holder.taxId} holderFiscalAddress={holder.fiscalAddress} siteName={site.name} siteAddress={site.address} companyName={company.name} companyCif={company.cif} companyAddress={company.address ?? ""} workerName={getPersonFullName(person)} legalId={person.legalIdSnapshot} /> : <Alert variant="destructive"><AlertTriangleIcon /><AlertTitle>Información incompleta</AlertTitle><AlertDescription>No se puede mostrar el documento porque faltan datos legales o de riesgos.</AlertDescription></Alert>}
+            <label className="flex items-start gap-3 rounded-md border bg-muted/30 p-4 text-sm"><Checkbox checked={riskAcknowledged} onCheckedChange={(checked) => setRiskAcknowledged(checked === true)} /><span>Confirmo que he leído la información general y que he sido informado de los riesgos e instrucciones preventivas indicados.</span></label>
           </>
-        ) : <AccessLogSignature key={`planned-entry-signature-${open}-${person.id}`} onSignatureChange={setHasSignature} onSignaturePayloadChange={setEntrySignaturePayload} />}
+        ) : step === "permit" && workPermitsEnabled ? (
+          <>
+            {workPermit ? <WorkPermitPreview workPermit={workPermit} /> : <WorkRiskPreview siteName={site.name} siteAddress={site.address} facilityRiskInformation={site.riskInformation} workCategoryName={person.workCategory?.name} workCategoryRiskInformation={person.workCategory?.riskInformation} companyName={company?.name} workerName={getPersonFullName(person)} legalId={person.legalIdSnapshot} />}
+            {workPermit ? <AccessLogSignature key={`permit-signature-${open}-${person.id}`} onSignatureChange={setHasPermitSignature} onSignaturePayloadChange={setPermitSignaturePayload} /> : null}
+          </>
+        ) : (
+          <AccessLogSignature key={`entry-signature-${open}-${person.id}`} onSignatureChange={setHasSignature} onSignaturePayloadChange={setEntrySignaturePayload} />
+        )}
       </fetcher.Form>
     </AlertDialogContainer>
   );

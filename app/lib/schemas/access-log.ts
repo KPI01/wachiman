@@ -47,6 +47,8 @@ export const createAccessLogSchema = z
     visitReason: requiredString,
     siteId: requiredString,
     externalWorkerId: optionalString,
+    workPermitId: optionalString,
+    workPermitSignaturePayload: optionalString,
     withVehicle: z.preprocess(
       (value) => value === "true" || value === "on",
       z.boolean(),
