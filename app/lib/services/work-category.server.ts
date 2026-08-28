@@ -1,6 +1,7 @@
 import z from "zod";
 import { WorkCategoryEntity } from "../database/work-category.server";
 import { createWorkCategorySchema, deleteWorkCategorySchema, updateWorkCategorySchema } from "../schemas/work-category";
+import { getAppConfig } from "../app-config.server";
 
 export async function getManyWorkCategories() {
   return WorkCategoryEntity.findMany();
@@ -12,7 +13,12 @@ export async function createWorkCategory(input: Record<string, unknown>) {
     return { success: false, errors: z.treeifyError(parsed.error) };
   }
 
-  await WorkCategoryEntity.create(parsed.data);
+  await WorkCategoryEntity.create({
+    ...parsed.data,
+    requiresWorkPermit: getAppConfig().workPermitsEnabled
+      ? parsed.data.requiresWorkPermit
+      : false,
+  });
   return { success: true };
 }
 
@@ -22,7 +28,11 @@ export async function updateWorkCategory(input: Record<string, unknown>) {
     return { success: false, errors: z.treeifyError(parsed.error) };
   }
 
-  const { id, ...data } = parsed.data;
+  const { id, requiresWorkPermit, ...data } = parsed.data;
+  if (getAppConfig().workPermitsEnabled) {
+    await WorkCategoryEntity.update(id, { ...data, requiresWorkPermit });
+    return { success: true };
+  }
   await WorkCategoryEntity.update(id, data);
   return { success: true };
 }

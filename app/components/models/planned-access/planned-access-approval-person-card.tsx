@@ -28,6 +28,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
+import { Textarea } from "~/components/ui/textarea";
 
 type Person = PlannedAccessListItem["plannedAccessPersons"][number];
 export default function PlannedAccessApprovalPersonCard({
@@ -39,6 +40,8 @@ export default function PlannedAccessApprovalPersonCard({
   actionPath,
   workerPath,
   formId,
+  requiresWorkPermit,
+  workPermitsEnabled,
 }: {
   person: Person;
   worker: ExternalWorkerDetail | null;
@@ -48,11 +51,19 @@ export default function PlannedAccessApprovalPersonCard({
   actionPath: string;
   workerPath: string;
   formId: string;
+  requiresWorkPermit: boolean;
+  workPermitsEnabled: boolean;
 }) {
   const [categoryId, setCategoryId] = useState(
     person.workCategoryId ?? worker?.workCategoryId ?? "",
   );
   const [allowedAreaId, setAllowedAreaId] = useState(person.allowedAreaId ?? "");
+  const [accessDecision, setAccessDecision] = useState("PENDING");
+  const [workDecision, setWorkDecision] = useState(
+    requiresWorkPermit ? "PENDING" : "NOT_REQUIRED",
+  );
+  const [decisionReason, setDecisionReason] = useState("");
+  const [restrictions, setRestrictions] = useState("");
   // Comentado: solo se usaba para el bloque de documentación.
   // const category = workCategories.find((item) => item.id === categoryId);
   // Comentado: la documentación ya no se muestra en el flujo de aprobación.
@@ -103,6 +114,82 @@ export default function PlannedAccessApprovalPersonCard({
             form={formId}
           />
         </FieldWrapper>
+        <div className="grid gap-4 md:grid-cols-2">
+          <FieldWrapper label="Acceso al centro *" htmlFor={`access-decision-${person.id}`}>
+            <Select value={accessDecision} onValueChange={setAccessDecision}>
+              <SelectTrigger id={`access-decision-${person.id}`} className="w-full">
+                <SelectValue placeholder="Decidir acceso..." />
+              </SelectTrigger>
+              <SelectContent position="popper">
+                <SelectGroup>
+                  <SelectItem value="APPROVED">Permitir acceso</SelectItem>
+                  <SelectItem value="DENIED">Denegar acceso</SelectItem>
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+            <input
+              type="hidden"
+              name={`personDecisions[${person.id}].accessDecision`}
+              value={accessDecision}
+              form={formId}
+            />
+          </FieldWrapper>
+          {workPermitsEnabled ? (
+            <FieldWrapper
+              label={requiresWorkPermit ? "Trabajo autorizado *" : "Trabajo autorizado"}
+              htmlFor={`work-decision-${person.id}`}
+            >
+              <Select value={workDecision} onValueChange={setWorkDecision}>
+                <SelectTrigger id={`work-decision-${person.id}`} className="w-full">
+                  <SelectValue placeholder="Decidir trabajo..." />
+                </SelectTrigger>
+                <SelectContent position="popper">
+                  <SelectGroup>
+                    {!requiresWorkPermit ? <SelectItem value="NOT_REQUIRED">No requiere permiso</SelectItem> : null}
+                    <SelectItem value="APPROVED">Autorizar trabajo</SelectItem>
+                    <SelectItem value="DENIED">No autorizar trabajo</SelectItem>
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+              <input
+                type="hidden"
+                name={`personDecisions[${person.id}].workDecision`}
+                value={workDecision}
+                form={formId}
+              />
+            </FieldWrapper>
+          ) : null}
+        </div>
+        <FieldWrapper label="Motivo de la decisión" htmlFor={`decision-reason-${person.id}`}>
+          <Textarea
+            id={`decision-reason-${person.id}`}
+            value={decisionReason}
+            onChange={(event) => setDecisionReason(event.currentTarget.value)}
+            placeholder="Obligatorio si se deniega el acceso o el trabajo"
+          />
+          <input
+            type="hidden"
+            name={`personDecisions[${person.id}].decisionReason`}
+            value={decisionReason}
+            form={formId}
+          />
+        </FieldWrapper>
+        {requiresWorkPermit ? (
+          <FieldWrapper label="Restricciones individuales" htmlFor={`restrictions-${person.id}`}>
+            <Textarea
+              id={`restrictions-${person.id}`}
+              value={restrictions}
+              onChange={(event) => setRestrictions(event.currentTarget.value)}
+              placeholder="Ejemplo: No puede realizar trabajos en altura"
+            />
+            <input
+              type="hidden"
+              name={`personDecisions[${person.id}].restrictions`}
+              value={restrictions}
+              form={formId}
+            />
+          </FieldWrapper>
+        ) : null}
         <FieldWrapper
           label="Área autorizada *"
           htmlFor={`allowed-area-${person.id}-search`}

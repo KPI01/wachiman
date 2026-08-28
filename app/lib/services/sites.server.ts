@@ -34,7 +34,11 @@ export async function updateSite(input: Record<string, unknown>) {
   }
 
   const { id, ...data } = parsed.data;
-  const site = await SiteEntity.update(id, data);
+  const current = await SiteEntity.findById(id);
+  const site = await SiteEntity.update(id, {
+    ...data,
+    riskInformationVersion: (current?.riskInformationVersion ?? 0) + 1,
+  });
 
   if (!site) {
     return { success: false };

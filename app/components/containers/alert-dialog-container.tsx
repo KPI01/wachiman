@@ -69,21 +69,29 @@ export default function AlertDialogContainer({
       asChild
       aria-label={triggerAsChild ? buttonAriaLabel : undefined}
       className={triggerAsChild ? buttonClassName : undefined}
+      onClick={() => {
+        if (open !== undefined) {
+          onOpenChange?.(true);
+        }
+      }}
     >
       {triggerButton}
     </AlertDialogTrigger>
   );
+  const triggerWithTooltip = buttonTooltip ? (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span className="inline-flex">{trigger}</span>
+      </TooltipTrigger>
+      <TooltipContent side="top">{buttonTooltip}</TooltipContent>
+    </Tooltip>
+  ) : (
+    trigger
+  );
 
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
-      {buttonTooltip ? (
-        <Tooltip>
-          <TooltipTrigger asChild>{trigger}</TooltipTrigger>
-          <TooltipContent side="top">{buttonTooltip}</TooltipContent>
-        </Tooltip>
-      ) : (
-        trigger
-      )}
+      {triggerWithTooltip}
       <AlertDialogContent className={contentClassName}>
         {(title || description) && (
           <AlertDialogHeader>

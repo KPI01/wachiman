@@ -68,3 +68,34 @@ export const PLANNED_ACCESS_STATUSES = {
 
 export type PlannedAccessStatus =
   (typeof PLANNED_ACCESS_STATUSES)[keyof typeof PLANNED_ACCESS_STATUSES];
+
+export const WORK_PERMIT_STATUSES = {
+  DRAFT: "DRAFT",
+  PENDING_APPROVAL: "PENDING_APPROVAL",
+  APPROVED: "APPROVED",
+  REJECTED: "REJECTED",
+  REVOKED: "REVOKED",
+  CLOSED: "CLOSED",
+} as const;
+
+export type WorkPermitStatus =
+  (typeof WORK_PERMIT_STATUSES)[keyof typeof WORK_PERMIT_STATUSES];
+
+export const ACCESS_DECISIONS = {
+  PENDING: "PENDING",
+  APPROVED: "APPROVED",
+  DENIED: "DENIED",
+} as const;
+
+export type AccessDecision =
+  (typeof ACCESS_DECISIONS)[keyof typeof ACCESS_DECISIONS];
+
+export const WORK_DECISIONS = {
+  NOT_REQUIRED: "NOT_REQUIRED",
+  PENDING: "PENDING",
+  APPROVED: "APPROVED",
+  DENIED: "DENIED",
+} as const;
+
+export type WorkDecision =
+  (typeof WORK_DECISIONS)[keyof typeof WORK_DECISIONS];

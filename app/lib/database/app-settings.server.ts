@@ -23,12 +23,18 @@ export class AppSettingsEntity {
     expectedUpdatedAt?: Date;
     summary: string;
     metadata: Record<string, unknown>;
+    holderLegalName: string;
+    holderTaxId: string;
+    holderFiscalAddress: string;
   }) {
     const updatedAt = new Date();
     const updateData = {
       earlyArrivalToleranceMinutes: input.earlyArrivalToleranceMinutes,
       updatedById: input.updatedById,
       updatedAt,
+      holderLegalName: input.holderLegalName,
+      holderTaxId: input.holderTaxId,
+      holderFiscalAddress: input.holderFiscalAddress,
     };
     const where = input.expectedUpdatedAt
       ? and(

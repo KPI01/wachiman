@@ -16,9 +16,11 @@ import { getFormData, getQueryParams } from "~/lib/services/http.server";
 import type { GetManyAccessLogsInput } from "~/lib/services/access-log.server";
 import { parseLocalDate } from "~/lib/utils";
 import { useRevalidator } from "react-router";
-import { useEffect } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import AccessLogFilters from "~/components/models/access-logs/access-log-filters";
 import { getManyAllowedAreas } from "~/lib/services/allowed-area.server";
+import { getGlobalAppSettings } from "~/lib/services/app-settings.server";
+import { getManyCompanies } from "~/lib/services/company.server";
 
 export async function loader({ request }: Route.LoaderArgs) {
   await validateUserRole(request, "ADMIN");
@@ -49,10 +51,12 @@ export async function loader({ request }: Route.LoaderArgs) {
     input.status = query.status;
   }
 
-  const [accessLogs, sites, allowedAreas] = await Promise.all([
+  const [accessLogs, sites, allowedAreas, settings, companies] = await Promise.all([
     getManyAccessLogs(input),
     getManySites(),
     getManyAllowedAreas(),
+    getGlobalAppSettings(),
+    getManyCompanies(),
   ]);
 
   return {
@@ -64,6 +68,8 @@ export async function loader({ request }: Route.LoaderArgs) {
     accessLogs,
     sites,
     allowedAreas,
+    holder: settings ? { legalName: settings.holderLegalName ?? "", taxId: settings.holderTaxId ?? "", fiscalAddress: settings.holderFiscalAddress ?? "" } : undefined,
+    companies,
   };
 }
 
@@ -78,19 +84,27 @@ export async function action({ request }: Route.ActionArgs) {
 
 export default function IndexAccessLogs({ loaderData }: Route.ComponentProps) {
   const revalidator = useRevalidator();
+  const revalidatorRef = useRef(revalidator);
+  revalidatorRef.current = revalidator;
+  const columns = useMemo(
+    () => createAccessLogColumns(loaderData.allowedAreas ?? []),
+    [loaderData.allowedAreas],
+  );
 
   useEffect(() => {
     const intervalId = window.setInterval(() => {
+      const currentRevalidator = revalidatorRef.current;
+
       if (
         document.visibilityState === "visible" &&
-        revalidator.state === "idle"
+        currentRevalidator.state === "idle"
       ) {
-        revalidator.revalidate();
+        currentRevalidator.revalidate();
       }
     }, 5000);
 
     return () => window.clearInterval(intervalId);
-  }, [revalidator]);
+  }, []);
 
   return (
     <div className="flex flex-col gap-6">
@@ -100,10 +114,13 @@ export default function IndexAccessLogs({ loaderData }: Route.ComponentProps) {
            sites={loaderData.sites ?? []}
            allowedAreas={loaderData.allowedAreas ?? []}
            actionPath="/admin/access-logs"
+           holder={loaderData.holder}
+           companies={loaderData.companies ?? []}
+           dailyRiskAcknowledgements={(loaderData.accessLogs ?? []).map((log) => ({ legalIdSnapshot: log.legalIdSnapshot, companyId: log.companyId, siteId: log.siteId, riskAcknowledgedAt: log.riskAcknowledgedAt }))}
         />
       </div>
       <DataTable
-        columns={createAccessLogColumns(loaderData.allowedAreas ?? [])}
+        columns={columns}
         data={loaderData.accessLogs ?? []}
         globalFilterColumns={ACCESS_LOG_GLOBAL_FILTER_COLUMNS}
         columnHeaderActions={{

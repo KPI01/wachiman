@@ -3,7 +3,7 @@ import { db } from "../../../db/server";
 import { sites } from "../../../db/schema";
 
 export class SiteEntity {
-  public static async create(data: { name: string; slug: string; address?: string }) {
+  public static async create(data: { name: string; slug: string; address?: string; riskInformation?: string }) {
     const [site] = await db.insert(sites).values(data).returning();
     return site;
   }
@@ -34,7 +34,7 @@ export class SiteEntity {
 
   public static async update(
     id: string,
-    data: { name?: string; slug?: string; address?: string },
+    data: { name?: string; slug?: string; address?: string; riskInformation?: string; riskInformationVersion?: number },
   ) {
     const [site] = await db
       .update(sites)

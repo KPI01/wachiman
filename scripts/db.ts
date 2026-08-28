@@ -3,7 +3,7 @@ import { dirname, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
 import { config as loadEnv } from "dotenv";
 import { createLocalDb } from "../db/client";
-import { allowedAreas, departments, sites, users } from "../db/schema";
+import { allowedAreas, appSettings, companies, departments, sites, users } from "../db/schema";
 import { hashText } from "../app/lib/hash.server";
 
 const options = parseOptions(process.argv.slice(2));
@@ -90,10 +90,17 @@ async function seedSqlite() {
   const adminFullName = process.env.ADMIN_FULL_NAME || "Administrador";
   const adminUsername = process.env.ADMIN_USERNAME || "admin";
   const adminPassword = process.env.ADMIN_PASSWORD || "demo123";
+  const holderLegalName = process.env.HOLDER_LEGAL_NAME || "Empresa titular de demostración S.A.";
+  const holderTaxId = process.env.HOLDER_TAX_ID || "A00000000";
+  const holderFiscalAddress = process.env.HOLDER_FISCAL_ADDRESS || "Calle de demostración, 1";
+  const riskInformation = process.env.SITE_RISK_INFORMATION || "Respeta la señalización, utiliza los equipos de protección indicados y sigue las instrucciones del personal responsable del centro.";
+  const demoCompanyName = process.env.DEMO_COMPANY_NAME || "Contratista de demostración S.L.";
+  const demoCompanyCif = process.env.DEMO_COMPANY_CIF || "B00000000";
+  const demoCompanyAddress = process.env.DEMO_COMPANY_ADDRESS || "Avenida de demostración, 2";
   const password = await hashText(adminPassword);
 
-  await db.insert(sites).values({ id: "site-1", name: siteName, slug: siteSlug })
-    .onConflictDoUpdate({ target: sites.id, set: { name: siteName, slug: siteSlug } });
+  await db.insert(sites).values({ id: "site-1", name: siteName, slug: siteSlug, riskInformation, riskInformationVersion: 1 })
+    .onConflictDoUpdate({ target: sites.id, set: { name: siteName, slug: siteSlug, riskInformation } });
   await db.insert(departments).values({ id: "dept-3", name: departmentName, slug: departmentSlug })
     .onConflictDoUpdate({ target: departments.id, set: { name: departmentName, slug: departmentSlug } });
   await db.insert(allowedAreas).values({
@@ -101,6 +108,25 @@ async function seedSqlite() {
     name: "Oficina",
     slug: "OFICINA",
   }).onConflictDoNothing();
+  await db.insert(companies).values({
+    id: "company-demo",
+    name: demoCompanyName,
+    slug: "CONTRATISTA-DEMO",
+    cif: demoCompanyCif,
+    address: demoCompanyAddress,
+  }).onConflictDoUpdate({
+    target: companies.id,
+    set: { name: demoCompanyName, cif: demoCompanyCif, address: demoCompanyAddress },
+  });
+  await db.insert(appSettings).values({
+    id: "global",
+    holderLegalName,
+    holderTaxId,
+    holderFiscalAddress,
+  }).onConflictDoUpdate({
+    target: appSettings.id,
+    set: { holderLegalName, holderTaxId, holderFiscalAddress },
+  });
   await db.insert(users).values({
     id: "user-1",
     fullName: adminFullName,

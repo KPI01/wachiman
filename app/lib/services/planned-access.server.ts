@@ -3,7 +3,6 @@ import type { PlannedAccessStatus } from "../../../db/enums";
 import { encryptValue } from "../crypt.server";
 // Comentado: la aprobación e ingreso ya no validan documentación.
 // import { DOCUMENT_TYPE_LABELS } from "../models/worker-document";
-// import { validateWorkerDocumentsForAccess } from "./worker-document.server";
 import { ExternalWorkerEntity } from "../database/external-worker.server";
 import { AccessLogEntity } from "../database/access-log.server";
 import { PlannedAccessEntity } from "../database/planned-access.server";
@@ -13,6 +12,9 @@ import { AllowedAreaEntity } from "../database/allowed-area.server";
 import { CompanyEntity } from "../database/company.server";
 import { AuditLogEntity } from "../database/audit-log.server";
 import { AppSettingsEntity } from "../database/app-settings.server";
+import { SiteEntity } from "../database/site.server";
+import { WorkPermitEntity } from "../database/work-permit.server";
+import { getAppConfig } from "../app-config.server";
 import { uploadWorkerDocument } from "./worker-document.server";
 // Comentado: la aprobación e ingreso ya no validan documentación.
 // import { endOfUtcDay } from "../document-expiry";
@@ -790,6 +792,43 @@ export async function createAccessLogFromPlannedAccess(
     return { success: false, errors: "El trabajador externo vinculado ya no existe." };
   }
 
+  const workPermitsEnabled = getAppConfig().workPermitsEnabled;
+  const individualDecision = workPermitsEnabled
+    ? await WorkPermitEntity.findDecision(person.id)
+    : null;
+  if (individualDecision?.accessDecision === "DENIED") {
+    return {
+      success: false,
+      errors: individualDecision.decisionReason
+        ? `El acceso de esta persona fue denegado: ${individualDecision.decisionReason}`
+        : "El acceso de esta persona fue denegado.",
+    };
+  }
+
+  const category = person.workCategory ?? worker.workCategory;
+  if (!category) {
+    return { success: false, errors: "La persona no tiene un tipo de trabajo válido." };
+  }
+  const workPermit = workPermitsEnabled
+    ? await WorkPermitEntity.findByPersonId(person.id)
+    : null;
+  if (workPermitsEnabled && category.requiresWorkPermit) {
+    if (!workPermit || workPermit.status !== "APPROVED") {
+      return { success: false, errors: "El permiso de trabajo de esta persona no está aprobado." };
+    }
+    if (!await WorkPermitEntity.hasSignature(workPermit.id, "WORKER")) {
+      return { success: false, errors: "El trabajador debe firmar el permiso de trabajo antes de entrar." };
+    }
+  }
+  const [site, company, holder] = await Promise.all([
+    SiteEntity.findById(options.lockedSiteId),
+    plannedAccess.companyId ? CompanyEntity.findById(plannedAccess.companyId) : Promise.resolve(null),
+    AppSettingsEntity.getGlobal(),
+  ]);
+  if (!site?.riskInformation || !company || !company.cif || !company.address || !holder?.holderLegalName || !holder.holderTaxId || !holder.holderFiscalAddress) {
+    return { success: false, errors: "El centro y la empresa deben tener configurada la información necesaria para firmar." };
+  }
+
   // Comentado: el ingreso al centro ya no valida documentación.
   // const category = person.workCategory ?? worker.workCategory;
   // if (!category) {
@@ -830,7 +869,24 @@ export async function createAccessLogFromPlannedAccess(
     entrySignatureEnvelope: await encryptValue(
       JSON.stringify(parsed.data.entrySignaturePayload),
     ),
+    riskAcknowledgedAt: now,
+    riskAcknowledgementSnapshot: {
+      holderLegalName: holder.holderLegalName,
+      holderTaxId: holder.holderTaxId,
+      holderFiscalAddress: holder.holderFiscalAddress,
+      siteName: site.name,
+      siteAddress: site.address,
+      riskInformation: site.riskInformation,
+      riskInformationVersion: site.riskInformationVersion,
+      workCategoryName: person.workCategory?.name ?? null,
+      workCategoryRiskInformation: person.workCategory?.riskInformation ?? null,
+      companyName: company.name,
+      companyCif: company.cif,
+      companyAddress: company.address,
+      acknowledgedAt: now.toISOString(),
+    },
     companyNameSnapshot: plannedAccess.companySnapshot,
+    companyId: company.id,
     firstNameSnapshot: person.firstNameSnapshot,
     middleNameSnapshot: person.middleNameSnapshot ?? undefined,
     lastNameSnapshot: person.lastNameSnapshot,
@@ -848,6 +904,7 @@ export async function createAccessLogFromPlannedAccess(
     createdById: author.id,
     plannedAccessId: plannedAccess.id,
     plannedAccessPersonId: person.id,
+    ...(workPermitsEnabled && workPermit ? { workPermitId: workPermit.id } : {}),
   });
 
   const totalPersons = plannedAccess.plannedAccessPersons.length;

@@ -1,5 +1,5 @@
 import { relations, sql } from "drizzle-orm";
-import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, integer, uniqueIndex } from "drizzle-orm/sqlite-core";
 import type {
   DocumentExpiryBasis,
   DocumentRecordType,
@@ -7,6 +7,9 @@ import type {
   DocumentType,
   PlannedAccessStatus,
   UserRole,
+  WorkPermitStatus,
+  AccessDecision,
+  WorkDecision,
 } from "./enums";
 
 // ───── Enums ────────────────────────────────────────
@@ -27,6 +30,8 @@ export const sites = sqliteTable("sites", {
   name: text("name").notNull(),
   slug: text("slug").notNull().unique(),
   address: text("address"),
+  riskInformation: text("risk_information"),
+  riskInformationVersion: integer("risk_information_version").notNull().default(0),
   createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull().default(timestampDefault),
   updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull().default(timestampDefault),
 });
@@ -81,10 +86,14 @@ export const workCategories = sqliteTable("work_categories", {
   id: text("id").primaryKey().$default(makeId),
   name: text("name").notNull(),
   description: text("description"),
+  riskInformation: text("risk_information"),
   requiresSpecialPermission: integer("requires_special_permission", {
     mode: "boolean",
   }).default(false),
   requiresTraining: integer("requires_training", { mode: "boolean" }).default(
+    false,
+  ),
+  requiresWorkPermit: integer("requires_work_permit", { mode: "boolean" }).default(
     false,
   ),
   createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull().default(timestampDefault),
@@ -213,6 +222,9 @@ export const appSettings = sqliteTable("app_settings", {
   earlyArrivalToleranceMinutes: integer("early_arrival_tolerance_minutes")
     .notNull()
     .default(60),
+  holderLegalName: text("holder_legal_name"),
+  holderTaxId: text("holder_tax_id"),
+  holderFiscalAddress: text("holder_fiscal_address"),
   updatedById: text("updated_by_id").references(() => users.id),
   updatedAt: integer("updated_at", { mode: "timestamp_ms" })
     .notNull()
@@ -239,10 +251,14 @@ export const accessLogs = sqliteTable("access_logs", {
   })
     .$type<Record<string, unknown>>()
     .notNull(),
+  riskAcknowledgedAt: integer("risk_acknowledged_at", { mode: "timestamp_ms" }),
+  riskAcknowledgementSnapshot: text("risk_acknowledgement_snapshot", { mode: "json" })
+    .$type<Record<string, unknown>>(),
   exitTimestamp: integer("exit_timestamp", { mode: "timestamp_ms" }),
   exitSignatureEnvelope: text("exit_signature_envelope", { mode: "json" })
     .$type<Record<string, unknown>>(),
   companyNameSnapshot: text("company_name_snapshot").notNull(),
+  companyId: text("company_id").references(() => companies.id),
   firstNameSnapshot: text("first_name_snapshot").notNull(),
   middleNameSnapshot: text("middle_name_snapshot"),
   lastNameSnapshot: text("last_name_snapshot").notNull(),
@@ -271,6 +287,7 @@ export const accessLogs = sqliteTable("access_logs", {
   externalWorkerId: text("external_worker_id").references(
     () => externalWorkers.id,
   ),
+  workPermitId: text("work_permit_id").references(() => workPermits.id),
 });
 
 // ───── Planned Accesses ──────────────────────────────
@@ -283,6 +300,7 @@ export const plannedAccesses = sqliteTable("planned_accesses", {
     .$type<PlannedAccessStatus>()
     .default("PENDING_APPROVAL"),
   companySnapshot: text("company_snapshot").notNull(),
+  companyId: text("company_id").references(() => companies.id),
   visitReason: text("visit_reason").notNull(),
   approvedAt: integer("approved_at", { mode: "timestamp_ms" }),
   approvedById: text("approved_by_id")
@@ -325,6 +343,100 @@ export const plannedAccessPersons = sqliteTable("planned_access_persons", {
   updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull().default(timestampDefault),
 });
 
+// ───── Work Permit Activities ─────────────────────────
+
+export const workPermitActivities = sqliteTable("work_permit_activities", {
+  id: text("id").primaryKey().$default(makeId),
+  plannedAccessId: text("planned_access_id")
+    .notNull()
+    .references(() => plannedAccesses.id),
+  siteId: text("site_id").notNull().references(() => sites.id),
+  companyId: text("company_id").notNull().references(() => companies.id),
+  companySnapshot: text("company_snapshot").notNull(),
+  taskDescription: text("task_description").notNull(),
+  workAreaSnapshot: text("work_area_snapshot").notNull(),
+  expectedStartDatetime: integer("expected_start_datetime", { mode: "timestamp_ms" }).notNull(),
+  expectedEndDatetime: integer("expected_end_datetime", { mode: "timestamp_ms" }),
+  riskItems: text("risk_items", { mode: "json" })
+    .$type<Array<{ title: string; measures: string }>>()
+    .notNull(),
+  toolsAndEquipment: text("tools_and_equipment").notNull(),
+  personalProtectiveEquipment: text("personal_protective_equipment").notNull(),
+  checklist: text("checklist", { mode: "json" })
+    .$type<{
+      toolsAdequate: boolean;
+      procedureKnown: boolean;
+      trainingProvided: boolean;
+      areaOrderly: boolean;
+      ppeAdequate: boolean;
+    }>()
+    .notNull(),
+  incidents: text("incidents"),
+  facilityRiskSnapshot: text("facility_risk_snapshot").notNull(),
+  facilityRiskVersion: integer("facility_risk_version").notNull().default(0),
+  createdById: text("created_by_id").notNull().references(() => users.id),
+  createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull().default(timestampDefault),
+  updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull().default(timestampDefault),
+});
+
+// ───── Work Permits ────────────────────────────────────
+
+export const workPermits = sqliteTable("work_permits", {
+  id: text("id").primaryKey().$default(makeId),
+  activityId: text("activity_id").notNull().references(() => workPermitActivities.id),
+  plannedAccessPersonId: text("planned_access_person_id")
+    .notNull()
+    .references(() => plannedAccessPersons.id),
+  externalWorkerId: text("external_worker_id").references(() => externalWorkers.id),
+  firstNameSnapshot: text("first_name_snapshot").notNull(),
+  lastNameSnapshot: text("last_name_snapshot").notNull(),
+  legalIdSnapshot: text("legal_id_snapshot").notNull(),
+  workCategoryId: text("work_category_id").notNull().references(() => workCategories.id),
+  workCategoryRiskSnapshot: text("work_category_risk_snapshot"),
+  restrictions: text("restrictions"),
+  status: text("status").$type<WorkPermitStatus>().notNull().default("DRAFT"),
+  approvedById: text("approved_by_id").references(() => users.id),
+  approvedAt: integer("approved_at", { mode: "timestamp_ms" }),
+  approvedSnapshot: text("approved_snapshot", { mode: "json" }).$type<Record<string, unknown>>(),
+  createdById: text("created_by_id").notNull().references(() => users.id),
+  createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull().default(timestampDefault),
+  updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull().default(timestampDefault),
+}, (table) => [
+  uniqueIndex("work_permits_activity_person_idx").on(table.activityId, table.plannedAccessPersonId),
+]);
+
+export const plannedAccessPersonDecisions = sqliteTable("planned_access_person_decisions", {
+  id: text("id").primaryKey().$default(makeId),
+  plannedAccessPersonId: text("planned_access_person_id")
+    .notNull()
+    .references(() => plannedAccessPersons.id),
+  workPermitId: text("work_permit_id").references(() => workPermits.id),
+  accessDecision: text("access_decision").$type<AccessDecision>().notNull().default("PENDING"),
+  workDecision: text("work_decision").$type<WorkDecision>().notNull().default("PENDING"),
+  decisionReason: text("decision_reason"),
+  decidedById: text("decided_by_id").references(() => users.id),
+  decidedAt: integer("decided_at", { mode: "timestamp_ms" }),
+  createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull().default(timestampDefault),
+  updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull().default(timestampDefault),
+}, (table) => [
+  uniqueIndex("planned_access_person_decisions_person_idx").on(table.plannedAccessPersonId),
+]);
+
+export const workPermitSignatures = sqliteTable("work_permit_signatures", {
+  id: text("id").primaryKey().$default(makeId),
+  workPermitId: text("work_permit_id").notNull().references(() => workPermits.id),
+  signerType: text("signer_type").notNull(),
+  signerName: text("signer_name").notNull(),
+  signerLegalId: text("signer_legal_id"),
+  signatureEnvelope: text("signature_envelope", { mode: "json" })
+    .$type<Record<string, unknown>>()
+    .notNull(),
+  capturedById: text("captured_by_id").notNull().references(() => users.id),
+  signedAt: integer("signed_at", { mode: "timestamp_ms" }).notNull().default(timestampDefault),
+}, (table) => [
+  uniqueIndex("work_permit_signatures_type_idx").on(table.workPermitId, table.signerType),
+]);
+
 // ───── Convenience Types ─────────────────────────────
 
 export type Site = typeof sites.$inferSelect;
@@ -342,6 +454,10 @@ export type AccessLogVehicle = typeof accessLogVehicles.$inferSelect;
 export type AccessLog = typeof accessLogs.$inferSelect;
 export type PlannedAccess = typeof plannedAccesses.$inferSelect;
 export type PlannedAccessPerson = typeof plannedAccessPersons.$inferSelect;
+export type WorkPermitActivity = typeof workPermitActivities.$inferSelect;
+export type WorkPermit = typeof workPermits.$inferSelect;
+export type PlannedAccessPersonDecision = typeof plannedAccessPersonDecisions.$inferSelect;
+export type WorkPermitSignature = typeof workPermitSignatures.$inferSelect;
 
 // ───── Relations ─────────────────────────────────────
 
@@ -391,6 +507,7 @@ export const companiesRelations = relations(companies, ({ many }) => ({
 export const workCategoriesRelations = relations(workCategories, ({ many }) => ({
   externalWorkers: many(externalWorkers),
   plannedAccessPersons: many(plannedAccessPersons),
+  workPermits: many(workPermits),
 }));
 
 export const allowedAreasRelations = relations(allowedAreas, ({ many }) => ({
@@ -469,6 +586,10 @@ export const accessLogsRelations = relations(accessLogs, ({ one }) => ({
     fields: [accessLogs.externalWorkerId],
     references: [externalWorkers.id],
   }),
+  workPermit: one(workPermits, {
+    fields: [accessLogs.workPermitId],
+    references: [workPermits.id],
+  }),
 }));
 
 export const plannedAccessesRelations = relations(
@@ -477,6 +598,10 @@ export const plannedAccessesRelations = relations(
     site: one(sites, {
       fields: [plannedAccesses.siteId],
       references: [sites.id],
+    }),
+    company: one(companies, {
+      fields: [plannedAccesses.companyId],
+      references: [companies.id],
     }),
     department: one(departments, {
       fields: [plannedAccesses.departmentId],
@@ -499,6 +624,7 @@ export const plannedAccessesRelations = relations(
     }),
     plannedAccessPersons: many(plannedAccessPersons),
     accessLogs: many(accessLogs),
+    workPermitActivities: many(workPermitActivities),
   }),
 );
 
@@ -522,5 +648,76 @@ export const plannedAccessPersonsRelations = relations(
       references: [allowedAreas.id],
     }),
     accessLogs: many(accessLogs),
+    workPermits: many(workPermits),
+    decision: one(plannedAccessPersonDecisions, {
+      fields: [plannedAccessPersons.id],
+      references: [plannedAccessPersonDecisions.plannedAccessPersonId],
+    }),
   }),
 );
+
+export const workPermitActivitiesRelations = relations(
+  workPermitActivities,
+  ({ one, many }) => ({
+    plannedAccess: one(plannedAccesses, {
+      fields: [workPermitActivities.plannedAccessId],
+      references: [plannedAccesses.id],
+    }),
+    site: one(sites, { fields: [workPermitActivities.siteId], references: [sites.id] }),
+    company: one(companies, { fields: [workPermitActivities.companyId], references: [companies.id] }),
+    createdBy: one(users, { fields: [workPermitActivities.createdById], references: [users.id] }),
+    workPermits: many(workPermits),
+  }),
+);
+
+export const workPermitsRelations = relations(workPermits, ({ one, many }) => ({
+  activity: one(workPermitActivities, {
+    fields: [workPermits.activityId],
+    references: [workPermitActivities.id],
+  }),
+  plannedAccessPerson: one(plannedAccessPersons, {
+    fields: [workPermits.plannedAccessPersonId],
+    references: [plannedAccessPersons.id],
+  }),
+  externalWorker: one(externalWorkers, {
+    fields: [workPermits.externalWorkerId],
+    references: [externalWorkers.id],
+  }),
+  workCategory: one(workCategories, {
+    fields: [workPermits.workCategoryId],
+    references: [workCategories.id],
+  }),
+  approvedBy: one(users, { fields: [workPermits.approvedById], references: [users.id] }),
+  createdBy: one(users, { fields: [workPermits.createdById], references: [users.id] }),
+  signatures: many(workPermitSignatures),
+  accessLogs: many(accessLogs),
+}));
+
+export const plannedAccessPersonDecisionsRelations = relations(
+  plannedAccessPersonDecisions,
+  ({ one }) => ({
+    plannedAccessPerson: one(plannedAccessPersons, {
+      fields: [plannedAccessPersonDecisions.plannedAccessPersonId],
+      references: [plannedAccessPersons.id],
+    }),
+    workPermit: one(workPermits, {
+      fields: [plannedAccessPersonDecisions.workPermitId],
+      references: [workPermits.id],
+    }),
+    decidedBy: one(users, {
+      fields: [plannedAccessPersonDecisions.decidedById],
+      references: [users.id],
+    }),
+  }),
+);
+
+export const workPermitSignaturesRelations = relations(workPermitSignatures, ({ one }) => ({
+  workPermit: one(workPermits, {
+    fields: [workPermitSignatures.workPermitId],
+    references: [workPermits.id],
+  }),
+  capturedBy: one(users, {
+    fields: [workPermitSignatures.capturedById],
+    references: [users.id],
+  }),
+}));

@@ -7,6 +7,10 @@ import {
   // Comentado: la documentación ya no se gestiona desde este flujo.
   // uploadPlannedAccessPersonDocument,
 } from "~/lib/services/planned-access.server";
+import {
+  createAndApproveWorkPermitActivity,
+  getPersonDecisionInput,
+} from "~/lib/services/work-permit.server";
 // Comentado: la documentación ya no se revisa en el flujo de aprobación.
 // import { reviewWorkerDocument } from "~/lib/services/worker-document.server";
 import type { Route } from "./+types/planned-access.$id.approve";
@@ -16,7 +20,9 @@ import { getSessionSite } from "~/lib/session.server";
 import { ExternalWorkerEntity } from "~/lib/database/external-worker.server";
 import { getManyAllowedAreas } from "~/lib/services/allowed-area.server";
 import PlannedAccessApprovalPersonCard from "~/components/models/planned-access/planned-access-approval-person-card";
+import WorkPermitApprovalFields from "~/components/models/planned-access/work-permit-approval-fields";
 import { ItemGroup } from "~/components/ui/item";
+import { getAppConfig } from "~/lib/app-config.server";
 // Comentado: la documentación ya no se gestiona desde este flujo.
 // import { getDocumentByWorkerId } from "~/lib/services/worker-document.server";
 
@@ -28,6 +34,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
   ]);
   const sessionSite =
     user.role === "ACCESS_APPROVER" ? await getSessionSite(request) : null;
+  const { workPermitsEnabled } = getAppConfig();
   const [plannedAccess, workCategories, allowedAreas] = await Promise.all([
     PlannedAccessEntity.findById(params.id),
     WorkCategoryEntity.findMany(),
@@ -78,6 +85,10 @@ return {
     listPath,
     workerPath,
     approvePath,
+     requiresWorkPermit: workPermitsEnabled && people.some(({ person }) =>
+       Boolean(person.workCategory?.requiresWorkPermit),
+     ),
+     workPermitsEnabled,
   };
 }
 
@@ -89,7 +100,42 @@ export async function action({ request, params }: Route.ActionArgs) {
   ]);
   const sessionSite =
     user.role === "ACCESS_APPROVER" ? await getSessionSite(request) : null;
-const formData = await request.formData();
+  const formData = await request.formData();
+  const { workPermitsEnabled } = getAppConfig();
+  if (workPermitsEnabled && formData.get("intent") === "approve-with-work-permits") {
+    const rawInput = Object.fromEntries(formData);
+    const result = await createAndApproveWorkPermitActivity(
+      {
+        plannedAccessId: params.id,
+        taskDescription: rawInput.workPermitTaskDescription,
+        workAreaSnapshot: rawInput.workPermitArea,
+        riskItems: JSON.stringify([]),
+        toolsAndEquipment: rawInput.workPermitTools,
+        personalProtectiveEquipment: rawInput.workPermitPpe,
+        incidents: rawInput.workPermitIncidents,
+        toolsAdequate: rawInput.workPermitToolsAdequate,
+        procedureKnown: rawInput.workPermitProcedureKnown,
+        trainingProvided: rawInput.workPermitTrainingProvided,
+        areaOrderly: rawInput.workPermitAreaOrderly,
+        ppeAdequate: rawInput.workPermitPpeAdequate,
+      },
+      getPersonDecisionInput(formData),
+      {
+        authorUsername: user.username,
+        lockedSiteId: sessionSite?.id,
+      },
+    );
+    if (result.success) {
+      return redirect(
+        user.role === "ADMIN"
+          ? "/admin/planned-access"
+          : user.role === "SECURITY_MANAGER"
+            ? "/security/planned-access"
+            : "/approver/planned-access",
+      );
+    }
+    return { errors: result.errors };
+  }
   // Comentado: la documentación ya no se revisa ni se sube desde este flujo.
   // if (formData.get("intent") === "review-document") {
   //   const plannedAccess = await PlannedAccessEntity.findById(params.id);
@@ -200,8 +246,8 @@ export default function ApprovePlannedAccess({
             </Button>
           </div>
         </div>
-        <p className="text-muted-foreground">
-          Selecciona un tipo de trabajo por persona.{" "}
+      <p className="text-muted-foreground">
+           Decide por persona si puede acceder al centro y si puede realizar el trabajo planificado.{" "}
           {/* Comentado: ya no se exige revisión documental. */}
           {/* La identificación vigente siempre es obligatoria. */}
           {/* Los documentos pendientes deben revisarse antes de confirmar. */}
@@ -214,7 +260,11 @@ export default function ApprovePlannedAccess({
           <AlertDescription>{formatErrors(actionData.errors)}</AlertDescription>
         </Alert>
       ) : null}
-      <Form id="documentation-form" method="post" className="hidden" />
+      <Form id="documentation-form" method="post" className="flex flex-col gap-6">
+        <input type="hidden" name="intent" value={loaderData.workPermitsEnabled ? "approve-with-work-permits" : "approve"} />
+        {loaderData.requiresWorkPermit ? (
+          <WorkPermitApprovalFields formId="documentation-form" />
+        ) : null}
       <ItemGroup>
           {loaderData.people.map(({ person, worker }) => (
             <PlannedAccessApprovalPersonCard
@@ -230,9 +280,12 @@ export default function ApprovePlannedAccess({
               actionPath={loaderData.approvePath}
               workerPath={loaderData.workerPath}
               formId="documentation-form"
+               requiresWorkPermit={Boolean(loaderData.workPermitsEnabled && person.workCategory?.requiresWorkPermit)}
+               workPermitsEnabled={loaderData.workPermitsEnabled}
             />
           ))}
       </ItemGroup>
+      </Form>
     </div>
   );
 }

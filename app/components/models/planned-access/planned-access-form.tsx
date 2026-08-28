@@ -49,6 +49,7 @@ export type PlannedAccessFormVisitor = VisitorDraft & {
 export type PlannedAccessFormValues = {
   siteId?: string;
   companySnapshot?: string;
+  companyId?: string;
   visitReason?: string;
   expectedStartDatetime?: Date | null;
   expectedEndDatetime?: Date | null;
@@ -234,6 +235,7 @@ export default function PlannedAccessForm({
   const [companySnapshot, setCompanySnapshot] = useState(
     initialValues?.companySnapshot ?? "",
   );
+  const [companyId, setCompanyId] = useState(initialValues?.companyId ?? "");
   const [localVisitorsError, setLocalVisitorsError] = useState<string | null>(
     null,
   );
@@ -273,6 +275,7 @@ export default function PlannedAccessForm({
     setVisitorPopoverOpen(false);
     setLocalVisitorsError(null);
     setCompanySnapshot("");
+    setCompanyId("");
     setLegalIdSuggestions([]);
     setShowLegalIdSuggestions(false);
   }, [fetcher.data, fetcher.state]);
@@ -364,6 +367,7 @@ export default function PlannedAccessForm({
     setVisitorPopoverOpen(false);
     setLocalVisitorsError(null);
     setCompanySnapshot(initialValues?.companySnapshot ?? "");
+    setCompanyId(initialValues?.companyId ?? "");
     setLegalIdSuggestions([]);
     setShowLegalIdSuggestions(false);
   }
@@ -501,7 +505,9 @@ export default function PlannedAccessForm({
             required
             value={companySnapshot}
             onValueChange={setCompanySnapshot}
+            onCompanyIdChange={(id) => setCompanyId(id ?? "")}
           />
+          <Input type="hidden" name="companyId" value={companyId} />
         </FieldWrapper>
         <FieldWrapper
           label="Inicio previsto *"

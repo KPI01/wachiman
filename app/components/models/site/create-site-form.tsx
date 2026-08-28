@@ -60,6 +60,18 @@ export default function CreateSiteForm({ errors }: CreateSiteProps) {
         >
           <Input id="address" name="address" />
         </FieldWrapper>
+        <FieldWrapper
+          label="Información de riesgos e instrucciones preventivas"
+          htmlFor="riskInformation"
+          errors={getFieldErrors(errors, "riskInformation")}
+        >
+          <textarea
+            id="riskInformation"
+            name="riskInformation"
+            className="min-h-32 w-full rounded-md border bg-background px-3 py-2 text-sm"
+            required
+          />
+        </FieldWrapper>
       </Form>
     </AlertDialogContainer>
   );

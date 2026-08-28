@@ -5,11 +5,11 @@ import AlertDialogContainer, {
   AlertDialogCancel,
 } from "~/components/containers/alert-dialog-container";
 import { Input } from "~/components/ui/input";
-// Comentado: los requisitos documentales ya no se muestran.
-// import { Checkbox } from "~/components/ui/checkbox";
+import { Textarea } from "~/components/ui/textarea";
+import { Checkbox } from "~/components/ui/checkbox";
 import FieldWrapper from "~/components/ui/wrappers/field-wrapper";
 import { getFieldErrors } from "~/lib/utils/zod-errors";
-// import { Field, FieldDescription, FieldLegend, FieldSet } from "~/components/ui/field";
+import { useAppConfig } from "~/lib/app-config";
 
 type CreateWorkCategoryProps = {
   errors?: unknown;
@@ -20,6 +20,8 @@ export default function CreateWorkCategoryForm({
   errors,
   actionPath = "/admin/work-categories",
 }: CreateWorkCategoryProps) {
+  const { workPermitsEnabled } = useAppConfig();
+
   return (
     <AlertDialogContainer
       buttonClassName="w-fit ms-auto"
@@ -60,25 +62,23 @@ export default function CreateWorkCategoryForm({
         >
           <Input id="description" name="description" />
         </FieldWrapper>
-{/* Comentado: los requisitos documentales ya no se muestran. */}
-        {/* <FieldSet> */}
-        {/*   <FieldLegend>Requisitos documentales</FieldLegend> */}
-        {/*   <FieldDescription> */}
-        {/*     Activa los tipos de documento que deben estar validados antes de autorizar el acceso. */}
-        {/*   </FieldDescription> */}
-        {/*   <Field orientation="horizontal"> */}
-        {/*     <Checkbox id="requiresTraining" name="requiresTraining" value="true" /> */}
-        {/*     <label htmlFor="requiresTraining" className="text-sm font-medium"> */}
-        {/*       Exigir documento de formación */}
-        {/*     </label> */}
-        {/*   </Field> */}
-        {/*   <Field orientation="horizontal"> */}
-        {/*     <Checkbox id="requiresSpecialPermission" name="requiresSpecialPermission" value="true" /> */}
-        {/*     <label htmlFor="requiresSpecialPermission" className="text-sm font-medium"> */}
-        {/*       Exigir autorización o permiso especial */}
-        {/*     </label> */}
-        {/*   </Field> */}
-        {/* </FieldSet> */}
+        <FieldWrapper
+          label="Riesgos e instrucciones preventivas"
+          htmlFor="riskInformation"
+          errors={getFieldErrors(errors, "riskInformation")}
+        >
+          <Textarea
+            id="riskInformation"
+            name="riskInformation"
+            placeholder="Describe los riesgos y las medidas preventivas propias de este tipo de trabajo."
+          />
+        </FieldWrapper>
+        {workPermitsEnabled ? (
+          <label className="flex items-center gap-3 text-sm font-medium">
+            <Checkbox id="requiresWorkPermit" name="requiresWorkPermit" value="true" />
+            Exigir permiso de trabajo para este tipo de trabajo
+          </label>
+        ) : null}
       </Form>
     </AlertDialogContainer>
   );

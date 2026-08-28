@@ -8,6 +8,7 @@ export const createSiteSchema = z
     name: requiredString,
     slug: requiredString.transform((str) => str.toUpperCase()),
     address: optionalString,
+    riskInformation: requiredString,
   })
   .refine(
     async (data) => {
@@ -27,6 +28,7 @@ export const updateSiteSchema = z
     name: requiredString,
     slug: requiredString,
     address: optionalString,
+    riskInformation: requiredString,
   })
   .refine(
     async (data) => {

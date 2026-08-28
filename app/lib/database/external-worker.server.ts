@@ -37,7 +37,7 @@ export type ExternalWorkerDetail = typeof externalWorkers.$inferSelect & {
 
 export type ExternalWorkerListItem = typeof externalWorkers.$inferSelect & {
   company?: { id: string; name: string } | null;
-  workCategory?: { id: string; name: string } | null;
+  workCategory?: { id: string; name: string; requiresWorkPermit?: boolean | null; riskInformation?: string | null } | null;
 };
 
 export type CreateExternalWorkerInput = {
@@ -111,7 +111,7 @@ export class ExternalWorkerEntity {
       where: sql`upper(${externalWorkers.legalId}) = ${legalId.trim().toUpperCase()}`,
       with: {
         company: { columns: { id: true, name: true } },
-        workCategory: { columns: { id: true, name: true } },
+         workCategory: { columns: { id: true, name: true, requiresWorkPermit: true, riskInformation: true } },
       },
     });
     return row ?? null;
@@ -154,7 +154,7 @@ export class ExternalWorkerEntity {
       orderBy: (worker, { desc: d }) => [d(worker.createdAt)],
       with: {
         company: { columns: { id: true, name: true } },
-        workCategory: { columns: { id: true, name: true } },
+        workCategory: { columns: { id: true, name: true, requiresWorkPermit: true, riskInformation: true } },
       },
     });
     return rows;
@@ -173,7 +173,7 @@ export class ExternalWorkerEntity {
       ),
       with: {
         company: { columns: { id: true, name: true } },
-        workCategory: { columns: { id: true, name: true } },
+        workCategory: { columns: { id: true, name: true, requiresWorkPermit: true } },
       },
       limit: 5,
       orderBy: (worker, { desc: d }) => [d(worker.createdAt)],

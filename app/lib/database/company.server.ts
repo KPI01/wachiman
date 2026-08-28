@@ -68,7 +68,7 @@ export class CompanyEntity {
 
   public static async searchByName(query: string) {
     return db
-      .select({ id: companies.id, name: companies.name })
+      .select({ id: companies.id, name: companies.name, cif: companies.cif, address: companies.address })
       .from(companies)
       .where(like(companies.name, `%${query}%`))
       .limit(5)

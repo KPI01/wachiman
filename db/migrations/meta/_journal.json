@@ -64,6 +64,34 @@
       "when": 1787152211393,
       "tag": "0008_wonderful_valkyrie",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "6",
+      "when": 1787638065790,
+      "tag": "0009_melted_wolfsbane",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "6",
+      "when": 1787724601330,
+      "tag": "0010_stormy_photon",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "6",
+      "when": 1787725470163,
+      "tag": "0011_powerful_santa_claus",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "6",
+      "when": 1787737158446,
+      "tag": "0012_silky_namora",
+      "breakpoints": true
     }
   ]
 }

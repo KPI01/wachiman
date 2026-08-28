@@ -11,6 +11,7 @@ function getInitialValues(
   return {
     siteId: plannedAccess.siteId,
     companySnapshot: plannedAccess.companySnapshot,
+    companyId: plannedAccess.companyId ?? "",
     visitReason: plannedAccess.visitReason,
     expectedStartDatetime: plannedAccess.expectedStartDatetime,
     expectedEndDatetime: plannedAccess.expectedEndDatetime,
