@@ -18,9 +18,11 @@ export async function action({ request }: Route.ActionArgs) {
 
 export default function AdminSettings({ loaderData }: Route.ComponentProps) {
   return (
-    <div className="flex flex-col gap-4">
-      <div>
-        <h2 className="text-3xl font-bold">Configuración</h2>
+    <div className="flex w-full flex-col gap-6">
+      <div className="max-w-3xl">
+        <h1 className="font-heading text-3xl font-semibold tracking-tight sm:text-4xl">
+          Configuración
+        </h1>
         <p className="text-muted-foreground">
           Parámetros globales de funcionamiento de la aplicación.
         </p>

@@ -4,6 +4,7 @@ import {
   GLOBAL_APP_SETTINGS_ID,
 } from "~/lib/database/app-settings.server";
 import { updateAppSettingsSchema } from "~/lib/schemas/app-settings";
+import { z } from "zod";
 
 export async function getGlobalAppSettings() {
   return AppSettingsEntity.getGlobal();
