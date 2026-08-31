@@ -17,6 +17,7 @@ import {
   workerDocuments,
 } from "../db/schema";
 import { hashText } from "../app/lib/hash.server";
+import { normalizeUsername } from "../app/lib/username";
 
 const now = new Date();
 const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -40,7 +41,7 @@ async function main() {
 
   const mode = process.argv.includes("--mode=demo") ? "demo" : "base";
   const adminFullName = process.env.ADMIN_FULL_NAME || "Administrador";
-  const adminUsername = process.env.ADMIN_USERNAME || "admin";
+  const adminUsername = normalizeUsername(process.env.ADMIN_USERNAME || "admin");
   const adminPassword = process.env.ADMIN_PASSWORD || "demo123";
   const siteName = process.env.SITE_NAME || "Sitio principal";
   const siteSlug = process.env.SITE_SLUG || "PRINCIPAL";

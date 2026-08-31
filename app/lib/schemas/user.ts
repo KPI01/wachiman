@@ -13,11 +13,12 @@ import { and, eq, ne } from "drizzle-orm";
 import { db } from "../../../db/server";
 import { users } from "../../../db/schema";
 import { USER_ROLES, type UserRole } from "../../../db/enums";
+import { normalizeUsername } from "../username";
 
 export const createUserSchema = z
   .object({
     fullName: z.string(STRING_TYPE_REQUIRED_MSG),
-    username: z.string(STRING_TYPE_REQUIRED_MSG),
+    username: z.string(STRING_TYPE_REQUIRED_MSG).transform(normalizeUsername),
     siteId: z.string(STRING_TYPE_REQUIRED_MSG),
     departmentId: z.string(STRING_TYPE_REQUIRED_MSG),
     role: z.enum(USER_ROLES).optional().default("ACCESS_OPERATOR"),
@@ -54,7 +55,7 @@ export const updateUserSchema = z
   .object({
     id: z.string(STRING_TYPE_REQUIRED_MSG),
     fullName: z.string(STRING_TYPE_REQUIRED_MSG),
-    username: z.string(STRING_TYPE_REQUIRED_MSG),
+    username: z.string(STRING_TYPE_REQUIRED_MSG).transform(normalizeUsername),
     siteId: z.string(STRING_TYPE_REQUIRED_MSG),
     departmentId: z.string(STRING_TYPE_REQUIRED_MSG),
     role: z.enum(USER_ROLES).optional().default("ACCESS_OPERATOR"),

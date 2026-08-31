@@ -3,6 +3,7 @@ import { hashText } from "../hash.server";
 import { db } from "../../../db/server";
 import { users } from "../../../db/schema";
 import type { UserRole } from "../../../db/enums";
+import { normalizeUsername } from "../username";
 
 type UserWithRelations = typeof users.$inferSelect & {
   site?: { id: string; name: string };
@@ -34,7 +35,7 @@ export class UserEntity {
       .insert(users)
       .values({
         fullName: data.fullName,
-        username: data.username,
+        username: normalizeUsername(data.username),
         role: data.role ?? "ACCESS_OPERATOR",
         password: hashedPassword,
         siteId: data.siteId,
@@ -56,13 +57,14 @@ export class UserEntity {
     username: string,
     relations: { site?: boolean; department?: boolean } = {},
   ) {
+    const normalizedUsername = normalizeUsername(username);
     const query = db.select().from(users).where(
-      and(eq(users.isActive, true), eq(users.isTrashed, false), eq(users.username, username)),
+      and(eq(users.isActive, true), eq(users.isTrashed, false), eq(users.username, normalizedUsername)),
     );
 
     if (relations.site || relations.department) {
       const rows = await db.query.users.findFirst({
-        where: and(eq(users.isActive, true), eq(users.isTrashed, false), eq(users.username, username)),
+        where: and(eq(users.isActive, true), eq(users.isTrashed, false), eq(users.username, normalizedUsername)),
         with: {
           ...(relations.site ? { site: { columns: { id: true, name: true } } } : {}),
           ...(relations.department ? { department: { columns: { id: true, name: true } } } : {}),
@@ -109,9 +111,12 @@ export class UserEntity {
   }
 
   public static async update(id: string, data: UpdateUserInput) {
+    const values = data.username
+      ? { ...data, username: normalizeUsername(data.username) }
+      : data;
     const [updatedUser] = await db
       .update(users)
-      .set(data)
+      .set(values)
       .where(eq(users.id, id))
       .returning();
     return updatedUser;

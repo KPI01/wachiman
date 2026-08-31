@@ -5,6 +5,7 @@ import { config as loadEnv } from "dotenv";
 import { createLocalDb } from "../db/client";
 import { allowedAreas, appSettings, companies, departments, sites, users } from "../db/schema";
 import { hashText } from "../app/lib/hash.server";
+import { normalizeUsername } from "../app/lib/username";
 
 const options = parseOptions(process.argv.slice(2));
 loadEnvironment(options.envPath);
@@ -88,7 +89,7 @@ async function seedSqlite() {
   const departmentName = process.env.DEPARTMENT_NAME || "General";
   const departmentSlug = process.env.DEPARTMENT_SLUG || "GENERAL";
   const adminFullName = process.env.ADMIN_FULL_NAME || "Administrador";
-  const adminUsername = process.env.ADMIN_USERNAME || "admin";
+   const adminUsername = normalizeUsername(process.env.ADMIN_USERNAME || "admin");
   const adminPassword = process.env.ADMIN_PASSWORD || "demo123";
   const holderLegalName = process.env.HOLDER_LEGAL_NAME || "Empresa titular de demostración S.A.";
   const holderTaxId = process.env.HOLDER_TAX_ID || "A00000000";

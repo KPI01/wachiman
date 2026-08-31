@@ -92,6 +92,13 @@
       "when": 1787737158446,
       "tag": "0012_silky_namora",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "6",
+      "when": 1787737158447,
+      "tag": "0013_normalize_usernames",
+      "breakpoints": true
     }
   ]
 }

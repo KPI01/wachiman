@@ -1,9 +1,10 @@
 import { z } from "zod";
 import { PASSWORDS_MUST_BE_EQUAL } from "./messages";
 import { requiredString } from "./generic";
+import { normalizeUsername } from "../username";
 
 export const loginSchema = z.object({
-  username: requiredString,
+  username: requiredString.transform(normalizeUsername),
   password: requiredString,
 });
 
