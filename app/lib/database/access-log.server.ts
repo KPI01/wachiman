@@ -155,16 +155,27 @@ export class AccessLogEntity {
     let vehicleId: string | undefined;
 
     if (data.withVehicle && data.vehicle) {
-      const [vehicle] = await db
-        .insert(accessLogVehicles)
-        .values({
-          typeSnapshot: data.vehicle.typeSnapshot,
-          brandSnapshot: data.vehicle.brandSnapshot,
-          modelSnapshot: data.vehicle.modelSnapshot,
-          plateSnapshot: data.vehicle.plateSnapshot,
-        })
-        .returning();
-      vehicleId = vehicle.id;
+      const existingVehicle = await db
+        .select({ id: accessLogVehicles.id })
+        .from(accessLogVehicles)
+        .where(eq(accessLogVehicles.plateSnapshot, data.vehicle.plateSnapshot))
+        .limit(1)
+        .get();
+
+      if (existingVehicle) {
+        vehicleId = existingVehicle.id;
+      } else {
+        const [vehicle] = await db
+          .insert(accessLogVehicles)
+          .values({
+            typeSnapshot: data.vehicle.typeSnapshot,
+            brandSnapshot: data.vehicle.brandSnapshot,
+            modelSnapshot: data.vehicle.modelSnapshot,
+            plateSnapshot: data.vehicle.plateSnapshot,
+          })
+          .returning();
+        vehicleId = vehicle.id;
+      }
     }
 
     const [log] = await db
@@ -491,6 +502,29 @@ export class AccessLogEntity {
       .where(and(...conditions))
       .get();
     return result?.count ?? 0;
+  }
+
+  public static async countByEntryDateGroupedBySite(date = new Date()) {
+    const start = new Date(date);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(date);
+    end.setHours(23, 59, 59, 999);
+
+    return db
+      .select({
+        siteId: accessLogs.siteId,
+        siteName: sites.name,
+        count: count(),
+      })
+      .from(accessLogs)
+      .innerJoin(sites, eq(accessLogs.siteId, sites.id))
+      .where(and(
+        gte(accessLogs.entryTimestamp, start),
+        lte(accessLogs.entryTimestamp, end),
+      ))
+      .groupBy(accessLogs.siteId, sites.name)
+      .orderBy(sites.name)
+      .all();
   }
 
   public static async findLatestEntry(

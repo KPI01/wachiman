@@ -6,32 +6,37 @@ import {
   workCategories,
   workerDocuments,
 } from "../../../db/schema";
+import type { PlannedAccessStatus } from "../../../db/enums";
 
 export type ExternalWorkerDetail = typeof externalWorkers.$inferSelect & {
-  company?: typeof companies.$inferSelect;
-  workCategory?: typeof workCategories.$inferSelect;
-  documents?: Array<typeof workerDocuments.$inferSelect>;
-  accessLogs?: Array<{
+  company: typeof companies.$inferSelect;
+  workCategory: typeof workCategories.$inferSelect;
+  documents: Array<typeof workerDocuments.$inferSelect>;
+  accessLogs: Array<{
     id: string;
     entryTimestamp: Date;
     exitTimestamp: Date | null;
-    site: { id: string; name: string } | null;
-    createdBy: { id: string; fullName: string; username: string } | null;
+    companyNameSnapshot: string;
+    site: { id: string; name: string };
+    createdBy: { id: string; fullName: string; username: string };
   }>;
-  plannedAccessPersons?: Array<{
+  plannedAccessPersons: Array<{
     id: string;
     firstNameSnapshot: string;
+    middleNameSnapshot: string | null;
     lastNameSnapshot: string;
+    secondLastNameSnapshot: string | null;
     legalIdSnapshot: string;
     plannedAccess: {
       id: string;
       expectedStartDatetime: Date;
       expectedEndDatetime: Date | null;
-      status: string;
-      site: { id: string; name: string } | null;
-      requestedBy: { id: string; fullName: string } | null;
+      status: PlannedAccessStatus | null;
+      companySnapshot: string;
+      site: { id: string; name: string };
+      requestedBy: { id: string; fullName: string };
       approvedBy: { id: string; fullName: string } | null;
-    } | null;
+    };
   }>;
 };
 
@@ -53,9 +58,9 @@ export type CreateExternalWorkerInput = {
 
 export type UpdateExternalWorkerInput = {
   firstName?: string;
-  middleName?: string;
+  middleName?: string | null;
   lastName?: string;
-  secondLastName?: string;
+  secondLastName?: string | null;
   phoneNumber?: string;
   legalId?: string;
   companyId?: string;
@@ -85,12 +90,25 @@ export class ExternalWorkerEntity {
             site: { columns: { id: true, name: true } },
             createdBy: { columns: { id: true, fullName: true, username: true } },
           },
+          columns: {
+            id: true,
+            entryTimestamp: true,
+            exitTimestamp: true,
+            companyNameSnapshot: true,
+          },
           orderBy: (log, { desc: d }) => [d(log.entryTimestamp)],
           limit: 50,
         },
         plannedAccessPersons: {
           with: {
             plannedAccess: {
+              columns: {
+                id: true,
+                expectedStartDatetime: true,
+                expectedEndDatetime: true,
+                status: true,
+                companySnapshot: true,
+              },
               with: {
                 site: { columns: { id: true, name: true } },
                 requestedBy: { columns: { id: true, fullName: true } },
@@ -103,7 +121,7 @@ export class ExternalWorkerEntity {
         },
       },
     });
-    return row ?? null;
+    return row as ExternalWorkerDetail | null;
   }
 
   public static async findByLegalId(legalId: string) {

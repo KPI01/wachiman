@@ -57,7 +57,11 @@ export async function updateExternalWorker(input: Record<string, unknown>, userI
 
   const { id, ...data } = parsed.data;
   const current = await ExternalWorkerEntity.findById(id);
-  const worker = await ExternalWorkerEntity.update(id, data);
+  const worker = await ExternalWorkerEntity.update(id, {
+    ...data,
+    middleName: null,
+    secondLastName: null,
+  });
 
   await audit(
     userId,

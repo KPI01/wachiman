@@ -15,12 +15,20 @@ export function getExternalWorkerColumns(
   actionPath: string,
 ) {
   return [
-    externalWorkerColHelper.accessor("firstName", {
-      header: "Nombre",
-    }),
-    externalWorkerColHelper.accessor("lastName", {
+    externalWorkerColHelper.accessor(
+      (worker) => [worker.firstName, worker.middleName].filter(Boolean).join(" "),
+      {
+        id: "names",
+        header: "Nombres",
+      },
+    ),
+    externalWorkerColHelper.accessor(
+      (worker) => [worker.lastName, worker.secondLastName].filter(Boolean).join(" "),
+      {
+        id: "surnames",
       header: "Apellidos",
-    }),
+      },
+    ),
     externalWorkerColHelper.accessor("legalId", {
       header: "DNI/NIE",
     }),

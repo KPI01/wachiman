@@ -77,7 +77,11 @@ export default function ExternalWorkerCombobox({
   function handleSelect(worker: ExternalWorkerListItem) {
     onSelect(worker);
     setQuery(
-      searchBy === "legalId" ? worker.legalId : `${worker.firstName} ${worker.lastName}`,
+      searchBy === "legalId"
+        ? worker.legalId
+        : [worker.firstName, worker.middleName, worker.lastName, worker.secondLastName]
+            .filter(Boolean)
+            .join(" "),
     );
     setIsOpen(false);
   }
@@ -142,7 +146,9 @@ export default function ExternalWorkerCombobox({
               onMouseEnter={() => setSelectedIndex(index)}
             >
               <span className="font-medium">
-                {worker.firstName} {worker.lastName}
+                {[worker.firstName, worker.middleName, worker.lastName, worker.secondLastName]
+                  .filter(Boolean)
+                  .join(" ")}
               </span>
               <span className="ml-2 text-muted-foreground">
                 {worker.legalId}

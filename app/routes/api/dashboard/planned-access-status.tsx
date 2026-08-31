@@ -1,5 +1,5 @@
 import type { Route } from "./+types/planned-access-status";
-import { isAuthenticated } from "~/lib/auth.server";
+import { validateUserRole } from "~/lib/auth.server";
 import { PlannedAccessEntity } from "~/lib/database/planned-access.server";
 import { resolveDashboardScope } from "~/lib/services/dashboard.server";
 
@@ -10,7 +10,12 @@ const DASHBOARD_STATUSES = [
 ] as const;
 
 export async function loader({ request }: Route.LoaderArgs) {
-  const sessionUser = await isAuthenticated(request);
+  const sessionUser = await validateUserRole(request, [
+    "ADMIN",
+    "SECURITY_MANAGER",
+    "ACCESS_APPROVER",
+    "ACCESS_MONITOR",
+  ]);
 
   const url = new URL(request.url);
   const resolved = await resolveDashboardScope(

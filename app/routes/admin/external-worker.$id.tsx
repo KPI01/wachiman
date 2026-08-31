@@ -228,7 +228,7 @@ export default function ExternalWorkerDetail({
                     <TableCell>{pap.plannedAccess.site.name}</TableCell>
                     <TableCell>{pap.plannedAccess.companySnapshot}</TableCell>
                     <TableCell>
-                      <Badge>{PLANNED_ACCESS_STATUS_LABELS[pap.plannedAccess.status]}</Badge>
+                      <Badge>{PLANNED_ACCESS_STATUS_LABELS[pap.plannedAccess.status ?? "PENDING_APPROVAL"]}</Badge>
                     </TableCell>
                     <TableCell>
                       {formatTimestamp({

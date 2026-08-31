@@ -64,14 +64,14 @@ export default function ExternalWorkerDetailsForm({
       >
         <Input name="id" defaultValue={worker.id} type="hidden" />
         <FieldWrapper
-          label="Nombre"
+          label="Nombres"
           htmlFor={`firstName-${worker.id}`}
           errors={getFieldErrors(patchErrors, "firstName")}
         >
           <Input
             id={`firstName-${worker.id}`}
             name="firstName"
-            defaultValue={worker.firstName}
+          defaultValue={[worker.firstName, worker.middleName].filter(Boolean).join(" ")}
           />
         </FieldWrapper>
         <FieldWrapper
@@ -82,29 +82,7 @@ export default function ExternalWorkerDetailsForm({
           <Input
             id={`lastName-${worker.id}`}
             name="lastName"
-            defaultValue={worker.lastName}
-          />
-        </FieldWrapper>
-        <FieldWrapper
-          label="Segundo nombre"
-          htmlFor={`middleName-${worker.id}`}
-          errors={getFieldErrors(patchErrors, "middleName")}
-        >
-          <Input
-            id={`middleName-${worker.id}`}
-            name="middleName"
-            defaultValue={worker.middleName ?? ""}
-          />
-        </FieldWrapper>
-        <FieldWrapper
-          label="Segundo apellido"
-          htmlFor={`secondLastName-${worker.id}`}
-          errors={getFieldErrors(patchErrors, "secondLastName")}
-        >
-          <Input
-            id={`secondLastName-${worker.id}`}
-            name="secondLastName"
-            defaultValue={worker.secondLastName ?? ""}
+          defaultValue={[worker.lastName, worker.secondLastName].filter(Boolean).join(" ")}
           />
         </FieldWrapper>
         <FieldWrapper

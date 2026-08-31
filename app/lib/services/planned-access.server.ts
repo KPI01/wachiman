@@ -482,7 +482,9 @@ export async function updatePlannedAccessStatus(
 
   const isOwnRequest = existingPlannedAccess.requestedById === author.id;
   const canApproveOwnRequest =
-    author.role === "ADMIN" || author.role === "SECURITY_MANAGER";
+    author.role === "ADMIN" ||
+    author.role === "SECURITY_MANAGER" ||
+    author.role === "ACCESS_APPROVER";
 
   if (
     isOwnRequest &&

@@ -73,7 +73,7 @@ export function useAccessLogNotifications(accessLogs: AccessLogListItem[]) {
       if (!log) continue;
 
       const fullName = buildFullName(log);
-      const body = `${fullName} · ${log.companyNameSnapshot} · ${log.site.name}`;
+       const body = `${fullName} · ${log.companyNameSnapshot} · ${log.site?.name ?? "Centro"}`;
 
       toast.message("Nuevo acceso registrado", {
         description: body,

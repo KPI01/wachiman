@@ -95,12 +95,20 @@ export const plannedAccessColumns = ({
     }),
     plannedAccessColHelper.accessor("status", {
       header: "Estado",
-      cell: ({ getValue }) => {
+      cell: ({ getValue, row }) => {
         const status = getValue() ?? "PENDING_APPROVAL";
+        const reason = row.original.decisionReason;
+        const showReason =
+          (status === "REJECTED" || status === "CANCELED") && Boolean(reason);
 
         return (
-          <Badge variant={PLANNED_ACCESS_STATUS_VARIANTS[status]}>
-            {PLANNED_ACCESS_STATUS_LABELS[status]}
+          <Badge
+            variant={PLANNED_ACCESS_STATUS_VARIANTS[status]}
+            className={showReason ? "max-w-64 whitespace-normal text-left" : undefined}
+            title={showReason ? reason ?? undefined : undefined}
+          >
+            <span>{PLANNED_ACCESS_STATUS_LABELS[status]}</span>
+            {showReason ? <span className="font-normal">: {reason}</span> : null}
           </Badge>
         );
       },

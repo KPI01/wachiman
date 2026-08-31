@@ -185,7 +185,9 @@ export async function createAndApproveWorkPermitActivity(
         activityId: activity.id,
         plannedAccessPersonId: person.id,
         externalWorkerId: person.externalWorkerId ?? null,
-        firstNameSnapshot: person.firstNameSnapshot,
+         firstNameSnapshot: [person.firstNameSnapshot, person.middleNameSnapshot]
+           .filter(Boolean)
+           .join(" "),
         lastNameSnapshot: [person.lastNameSnapshot, person.secondLastNameSnapshot]
           .filter(Boolean)
           .join(" "),

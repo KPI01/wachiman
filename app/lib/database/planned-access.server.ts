@@ -280,7 +280,11 @@ export class PlannedAccessEntity {
     const results: Record<string, number> = {};
 
     for (const status of input.statuses) {
-      const conditions = [eq(plannedAccesses.status, status)];
+      const conditions = [
+        status === "PENDING_APPROVAL"
+          ? or(eq(plannedAccesses.status, status), isNull(plannedAccesses.status))!
+          : eq(plannedAccesses.status, status),
+      ];
       if (input.siteId) conditions.push(eq(plannedAccesses.siteId, input.siteId));
       if (input.requestedById) conditions.push(eq(plannedAccesses.requestedById, input.requestedById));
       if (input.departmentId) conditions.push(eq(plannedAccesses.departmentId, input.departmentId));

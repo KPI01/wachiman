@@ -79,6 +79,10 @@ export async function login(request: Request) {
     };
   }
 
+  if (!user.site || !user.department) {
+    return { errors: getFieldError("username", INVALID_CREDENTIALS) };
+  }
+
   const passwordIsValid = await validateHashedText(user.password, data.password);
 
   if (!passwordIsValid) {

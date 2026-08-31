@@ -36,6 +36,7 @@ type SiteGroup = {
 function groupBySite(accessLogs: AccessLogListItem[]): SiteGroup[] {
   const map = new Map<string, SiteGroup>();
   for (const log of accessLogs) {
+    if (!log.site) continue;
     const existing = map.get(log.site.id);
     if (existing) {
       existing.people.push(log);

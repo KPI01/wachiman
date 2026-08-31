@@ -56,7 +56,7 @@ export default function CreateExternalWorkerForm({
         className="grid gap-4 md:grid-cols-2"
       >
         <FieldWrapper
-          label="Nombre *"
+          label="Nombres *"
           htmlFor="firstName"
           errors={getFieldErrors(errors, "firstName")}
         >
@@ -68,20 +68,6 @@ export default function CreateExternalWorkerForm({
           errors={getFieldErrors(errors, "lastName")}
         >
           <Input id="lastName" name="lastName" required />
-        </FieldWrapper>
-        <FieldWrapper
-          label="Segundo nombre"
-          htmlFor="middleName"
-          errors={getFieldErrors(errors, "middleName")}
-        >
-          <Input id="middleName" name="middleName" />
-        </FieldWrapper>
-        <FieldWrapper
-          label="Segundo apellido"
-          htmlFor="secondLastName"
-          errors={getFieldErrors(errors, "secondLastName")}
-        >
-          <Input id="secondLastName" name="secondLastName" />
         </FieldWrapper>
         <FieldWrapper
           label="DNI/NIE *"

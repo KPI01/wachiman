@@ -1,10 +1,15 @@
 import type { Route } from "./+types/last-access";
-import { isAuthenticated } from "~/lib/auth.server";
+import { validateUserRole } from "~/lib/auth.server";
 import { AccessLogEntity } from "~/lib/database/access-log.server";
 import { resolveDashboardScope } from "~/lib/services/dashboard.server";
 
 export async function loader({ request }: Route.LoaderArgs) {
-  const sessionUser = await isAuthenticated(request);
+  const sessionUser = await validateUserRole(request, [
+    "ADMIN",
+    "SECURITY_MANAGER",
+    "ACCESS_APPROVER",
+    "ACCESS_MONITOR",
+  ]);
 
   const url = new URL(request.url);
   const resolved = await resolveDashboardScope(
@@ -24,7 +29,7 @@ export async function loader({ request }: Route.LoaderArgs) {
     accessLog: {
       id: accessLog.id,
       entryTimestamp: accessLog.entryTimestamp,
-      siteName: accessLog.site.name,
+       siteName: accessLog.site?.name ?? "-",
       personFullName: [
         accessLog.firstNameSnapshot,
         accessLog.lastNameSnapshot,

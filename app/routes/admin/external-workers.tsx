@@ -83,8 +83,8 @@ export default function ExternalWorkersIndex({
         columns={columns}
         data={loaderData.workers ?? []}
         globalFilterColumns={[
-          "firstName",
-          "lastName",
+          "names",
+          "surnames",
           "legalId",
           "companyName",
           "workCategoryName",

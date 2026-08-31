@@ -189,14 +189,18 @@ export default function CreateAccessLog({
     setSelectedWorkCategoryRiskInformation(worker.workCategory?.riskInformation ?? null);
     setLegalIdValue(worker.legalId);
 
-    if (firstNameRef.current) firstNameRef.current.value = worker.firstName;
-    if (middleNameRef.current) {
-      middleNameRef.current.value = worker.middleName ?? "";
+    if (firstNameRef.current) {
+      firstNameRef.current.value = [worker.firstName, worker.middleName]
+        .filter(Boolean)
+        .join(" ");
     }
-    if (lastNameRef.current) lastNameRef.current.value = worker.lastName;
-    if (secondLastNameRef.current) {
-      secondLastNameRef.current.value = worker.secondLastName ?? "";
+    if (middleNameRef.current) middleNameRef.current.value = "";
+    if (lastNameRef.current) {
+      lastNameRef.current.value = [worker.lastName, worker.secondLastName]
+        .filter(Boolean)
+        .join(" ");
     }
+    if (secondLastNameRef.current) secondLastNameRef.current.value = "";
     if (phoneRef.current) phoneRef.current.value = worker.phoneNumber ?? "";
     setCompanyNameValue(worker.company?.name ?? "");
     setCompanyId(worker.company?.id ?? null);
@@ -587,7 +591,9 @@ export default function CreateAccessLog({
                         onMouseEnter={() => setSelectedSuggestionIndex(index)}
                       >
                         <span className="font-medium">
-                          {worker.firstName} {worker.lastName}
+                          {[worker.firstName, worker.middleName, worker.lastName, worker.secondLastName]
+                            .filter(Boolean)
+                            .join(" ")}
                         </span>
                         <span className="ml-2 text-muted-foreground">
                           {worker.legalId}
@@ -603,7 +609,7 @@ export default function CreateAccessLog({
             </FieldWrapper>
             <FieldWrapper
               className="col-start-1"
-              label="Nombre *"
+              label="Nombres *"
               htmlFor="firstNameSnapshot"
               errors={getFieldErrors(fetcher.data?.errors, "firstNameSnapshot")}
             >
@@ -616,22 +622,7 @@ export default function CreateAccessLog({
               />
             </FieldWrapper>
             <FieldWrapper
-              label="Segundo nombre"
-              htmlFor="middleNameSnapshot"
-              errors={getFieldErrors(
-                fetcher.data?.errors,
-                "middleNameSnapshot",
-              )}
-            >
-              <Input
-                 ref={middleNameRef}
-                 id="middleNameSnapshot"
-                 name="middleNameSnapshot"
-                 defaultValue={getDraftValue("middleNameSnapshot")}
-              />
-            </FieldWrapper>
-            <FieldWrapper
-              label="Apellido(s) *"
+              label="Apellidos *"
               htmlFor="lastNameSnapshot"
               errors={getFieldErrors(fetcher.data?.errors, "lastNameSnapshot")}
             >
@@ -641,21 +632,6 @@ export default function CreateAccessLog({
                  name="lastNameSnapshot"
                  required
                  defaultValue={getDraftValue("lastNameSnapshot")}
-              />
-            </FieldWrapper>
-            <FieldWrapper
-              label="Segundo apellido"
-              htmlFor="secondLastNameSnapshot"
-              errors={getFieldErrors(
-                fetcher.data?.errors,
-                "secondLastNameSnapshot",
-              )}
-            >
-              <Input
-                 ref={secondLastNameRef}
-                 id="secondLastNameSnapshot"
-                 name="secondLastNameSnapshot"
-                 defaultValue={getDraftValue("secondLastNameSnapshot")}
               />
             </FieldWrapper>
             <FieldWrapper

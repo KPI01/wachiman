@@ -193,11 +193,16 @@ export async function createAccessLog(
        workCategory?: { name?: string | null; requiresTraining?: boolean | null; requiresSpecialPermission?: boolean | null; requiresWorkPermit?: boolean | null; riskInformation?: string | null } | null;
     };
 
+    const workerNames = [workerForAccess.firstName, workerForAccess.middleName]
+      .filter(Boolean)
+      .join(" ");
+    const workerSurnames = [workerForAccess.lastName, workerForAccess.secondLastName]
+      .filter(Boolean)
+      .join(" ");
+
     if (
-      workerForAccess.firstName !== data.firstNameSnapshot ||
-      (workerForAccess.middleName ?? null) !== (data.middleNameSnapshot ?? null) ||
-      workerForAccess.lastName !== data.lastNameSnapshot ||
-      (workerForAccess.secondLastName ?? null) !== (data.secondLastNameSnapshot ?? null) ||
+      workerNames !== data.firstNameSnapshot ||
+      workerSurnames !== data.lastNameSnapshot ||
       (workerForAccess.phoneNumber ?? null) !== (data.phoneNumber ?? null) ||
       workerForAccess.legalId.toUpperCase() !== data.legalIdSnapshot
     ) {

@@ -18,6 +18,9 @@ import { Input } from "~/components/ui/input";
 import {
   Popover,
   PopoverContent,
+  PopoverDescription,
+  PopoverHeader,
+  PopoverTitle,
   PopoverTrigger,
 } from "~/components/ui/popover";
 import { Separator } from "~/components/ui/separator";
@@ -34,8 +37,7 @@ import FieldWrapper from "~/components/ui/wrappers/field-wrapper";
 import { getFieldErrors } from "~/lib/utils/zod-errors";
 import type { AllowedArea, Site, WorkCategory } from "../../../../db/schema";
 import type { ExternalWorkerListItem } from "~/lib/database/external-worker.server";
-// Comentado: el flujo de documentación ya no se muestra.
-// import WorkerDocumentViewer from "~/components/models/worker-document/worker-document-viewer";
+import WorkerDocumentViewer from "~/components/models/worker-document/worker-document-viewer";
 import CompanyCombobox from "~/components/models/company/company-combobox";
 import AllowedAreaCombobox from "~/components/models/access-logs/allowed-area-combobox";
 import { getActionErrorMessage } from "~/lib/utils/action-errors";
@@ -154,7 +156,12 @@ function getPersonErrors(errorTree: unknown, personIndex: number) {
 }
 
 function getVisitorFullName(visitor: VisitorDraft) {
-  return [visitor.firstNameSnapshot, visitor.lastNameSnapshot]
+  return [
+    visitor.firstNameSnapshot,
+    visitor.middleNameSnapshot,
+    visitor.lastNameSnapshot,
+    visitor.secondLastNameSnapshot,
+  ]
     .map((value) => value.trim())
     .filter(Boolean)
     .join(" ");
@@ -315,8 +322,16 @@ export default function PlannedAccessForm({
   }
 
   function handleWorkerSuggestionSelect(worker: ExternalWorkerListItem) {
-    handleVisitorDraftChange("firstNameSnapshot", worker.firstName);
-    handleVisitorDraftChange("lastNameSnapshot", worker.lastName);
+    handleVisitorDraftChange(
+      "firstNameSnapshot",
+      [worker.firstName, worker.middleName].filter(Boolean).join(" "),
+    );
+    handleVisitorDraftChange(
+      "lastNameSnapshot",
+      [worker.lastName, worker.secondLastName].filter(Boolean).join(" "),
+    );
+    handleVisitorDraftChange("middleNameSnapshot", "");
+    handleVisitorDraftChange("secondLastNameSnapshot", "");
     handleVisitorDraftChange("phoneNumber", worker.phoneNumber ?? "");
     handleVisitorDraftChange("legalIdSnapshot", worker.legalId);
     handleVisitorDraftChange("externalWorkerId", worker.id);
@@ -573,9 +588,15 @@ export default function PlannedAccessForm({
               <PopoverContent
                 side="bottom"
                 align="start"
-                className="w-80 gap-4"
+                className="w-[min(24rem,calc(100vw-2rem))] max-h-[min(70vh,42rem)] overflow-y-auto gap-4"
                 onOpenAutoFocus={(event) => event.preventDefault()}
               >
+                <PopoverHeader>
+                  <PopoverTitle>Agregar visitante</PopoverTitle>
+                  <PopoverDescription>
+                    Busca una persona registrada o introduce sus datos.
+                  </PopoverDescription>
+                </PopoverHeader>
                 <FieldWrapper
                   label="DNI *"
                   htmlFor="visitor-legal-id"
@@ -634,7 +655,7 @@ export default function PlannedAccessForm({
                   </div>
                 </FieldWrapper>
                 <FieldWrapper
-                  label="Nombre *"
+                  label="Nombres *"
                   htmlFor="visitor-first-name"
                   errors={
                     visitorDraftErrors.firstNameSnapshot
@@ -757,12 +778,7 @@ export default function PlannedAccessForm({
                     </p>
                   ) : null}
                 </FieldWrapper>
-                <div className="flex justify-end gap-2">
-                  {visitorDraft.externalWorkerId
-                    ? /* Comentado: el flujo de documentación ya no se muestra. */
-                      /* <WorkerDocumentViewer workerId={visitorDraft.externalWorkerId} /> */
-                      null
-                    : null}
+                <div className="flex flex-wrap justify-end gap-2">
                   <Button
                     type="button"
                     variant="outline"
@@ -889,13 +905,11 @@ export default function PlannedAccessForm({
                         <TrashIcon />
                       </Button>
                     </div>
-                    {visitor.externalWorkerId
-                      ? /* Comentado: el flujo de documentación ya no se muestra. */
-                        /* <div className="mt-3"> */
-                        /*   <WorkerDocumentViewer workerId={visitor.externalWorkerId} /> */
-                        /* </div> */
-                        null
-                      : null}
+                    {visitor.externalWorkerId ? (
+                      <div className="mt-3">
+                        <WorkerDocumentViewer workerId={visitor.externalWorkerId} />
+                      </div>
+                    ) : null}
                     {visitorErrors ? (
                       <p className="mt-2 text-sm text-destructive">
                         {visitorErrors[0]}
