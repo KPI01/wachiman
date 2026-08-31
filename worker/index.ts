@@ -46,6 +46,6 @@ export default {
       env,
       waitUntil: ctx.waitUntil.bind(ctx),
       passThroughOnException: ctx.passThroughOnException.bind(ctx),
-    });
+    } as Parameters<typeof handler>[0]);
   },
 };

@@ -3,7 +3,7 @@ import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import process from "node:process";
 
-const ENCRYPTION_KEY_NAME = "ENCRIPTION_KEY";
+const ENCRYPTION_KEY_NAME = "ENCRYPTION_KEY";
 const KEY_LENGTH = 32;
 
 type CliOptions = {
