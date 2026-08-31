@@ -8,13 +8,17 @@ export type DbClient = ReturnType<typeof createLocalDb> extends Promise<infer T>
 async function importBetterSqlite3() {
   const encoded = "YmV0dGVyLXNxbGl0ZTM="; // base64("better-sqlite3")
   const decoded = atob(encoded);
-  return import(decoded) as Promise<typeof import("better-sqlite3")>;
+  return import(/* @vite-ignore */ decoded) as Promise<
+    typeof import("better-sqlite3")
+  >;
 }
 
 async function importDrizzleBetterSqlite3() {
   const encoded = "ZHJpenpsZS1vcm0vYmV0dGVyLXNxbGl0ZTM="; // base64("drizzle-orm/better-sqlite3")
   const decoded = atob(encoded);
-  return import(decoded) as Promise<typeof import("drizzle-orm/better-sqlite3")>;
+  return import(/* @vite-ignore */ decoded) as Promise<
+    typeof import("drizzle-orm/better-sqlite3")
+  >;
 }
 
 export async function createLocalDb(
