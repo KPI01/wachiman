@@ -6,7 +6,7 @@ type StoredLayout = WidgetLayout[];
 const LAYOUT_VERSION = 1;
 
 function storageKey(key: string) {
-  return `wachiman.dashboard.${key}.layout.v${LAYOUT_VERSION}`;
+  return `control-accesos.dashboard.${key}.layout.v${LAYOUT_VERSION}`;
 }
 
 function clampLayout(

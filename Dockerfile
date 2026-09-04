@@ -1,6 +1,6 @@
 FROM node:24.18.0-alpine AS dependencies
 WORKDIR /app
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
 RUN corepack enable && corepack prepare pnpm@10.12.4 --activate \
   && pnpm install --frozen-lockfile
 

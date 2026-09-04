@@ -1,6 +1,5 @@
-import { and, count, desc, eq, gte, inArray, isNotNull, isNull, like, lte, ne, or, sql, type SQL } from "drizzle-orm";
-import type { DrizzleD1Database } from "drizzle-orm/d1";
-import { db, isLocalDb } from "../../../db/server";
+import { and, count, desc, eq, gte, inArray, isNotNull, isNull, like, lte, ne, or, type SQL } from "drizzle-orm";
+import { db } from "../../../db/server";
 import {
   accessLogs,
   accessLogVehicles,
@@ -249,53 +248,18 @@ export class AccessLogEntity {
     ];
     if (siteId) conditions.push(eq(accessLogs.siteId, siteId));
 
-    if (isLocalDb()) {
-      return db.transaction((tx) => {
-        const log = tx
-          .update(accessLogs)
-          .set(data)
-          .where(and(...conditions))
-          .returning()
-          .get();
-        if (!log) return undefined;
-
-        tx.insert(auditLogs).values(auditData).run();
-        return log;
-      });
-    }
-
-    const d1 = db as unknown as DrizzleD1Database<
-      typeof import("../../../db/schema")
-    >;
-    const updateClaim = `__access_log_update_${crypto.randomUUID()}__`;
-    const claimedRow = and(
-      eq(accessLogs.id, accessLogId),
-      eq(accessLogs.visitReason, updateClaim),
-    );
-    const auditInsert = d1.insert(auditLogs).select(sql`
-      SELECT
-        ${crypto.randomUUID()},
-        ${auditData.entityType},
-        ${auditData.entityId},
-        ${auditData.action},
-        ${auditData.changedBy},
-        ${auditData.summary},
-        ${auditData.metadata ? JSON.stringify(auditData.metadata) : null},
-        ${Date.now()}
-      FROM ${accessLogs}
-      WHERE ${claimedRow}
-    `);
-    const [, , updatedRows] = await d1.batch([
-      d1
+    return db.transaction((tx) => {
+      const log = tx
         .update(accessLogs)
-        .set({ visitReason: updateClaim })
+        .set(data)
         .where(and(...conditions))
-        .returning(),
-      auditInsert,
-      d1.update(accessLogs).set(data).where(claimedRow).returning(),
-    ] as const);
+        .returning()
+        .get();
+      if (!log) return undefined;
 
-    return updatedRows[0];
+      tx.insert(auditLogs).values(auditData).run();
+      return log;
+    });
   }
 
   public static async findMany(

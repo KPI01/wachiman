@@ -22,14 +22,8 @@
 # Sensitive uploaded worker documents
 /uploads/
 
-# Cloudflare
-.wrangler/
 .dev.vars
 
 .hermes/
 
 .vscode/
-
-# Cloudflare
-.wrangler/
-.dev.vars

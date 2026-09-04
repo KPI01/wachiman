@@ -21,7 +21,7 @@ import type {
 
 const ResponsiveGridLayout = WidthProvider(Responsive);
 
-const GRID_CLASS_PREFIX = "wachiman";
+const GRID_CLASS_PREFIX = "control-accesos";
 
 const BREAKPOINTS = {
   lg: 1200,

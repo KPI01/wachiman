@@ -8,9 +8,9 @@ export type AppConfig = {
 };
 
 export const DEFAULT_APP_CONFIG: AppConfig = {
-  appName: "Wachiman App",
-  appLogo: "/app_logo.svg",
-  appFavicon: "/app_logo.svg",
+  appName: "Control Accesos",
+  appLogo: "/branding/copo_fruveco_azul.svg",
+  appFavicon: "/branding/copo_fruveco_azul.svg",
   workPermitsEnabled: false,
 };
 

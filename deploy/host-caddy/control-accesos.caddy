@@ -1,0 +1,11 @@
+https://control-accesos.fruveco.com:443 {
+	bind 192.168.100.172
+	tls internal
+	reverse_proxy 127.0.0.1:3000
+}
+
+https://192.168.100.172:8444 {
+	bind 192.168.100.172
+	tls internal
+	reverse_proxy 127.0.0.1:3000
+}

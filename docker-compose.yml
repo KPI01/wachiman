@@ -2,22 +2,22 @@ services:
   app:
     build:
       context: .
-    image: wachiman-app:latest
-    container_name: wachiman-app
+    image: control-accesos-app:latest
+    container_name: control-accesos-app
     restart: unless-stopped
     env_file:
       - .env.production
     environment:
-      DATABASE_URL: file:/data/wachiman.db
+      DATABASE_URL: file:/data/control-accesos.db
       FILE_STORAGE_MODE: filesystem
       UPLOADS_BASE_PATH: /uploads
-      SESSION_COOKIE_SECURE: "false"
+      SESSION_COOKIE_SECURE: "true"
     ports:
-      - "0.0.0.0:3000:3000"
+      - "127.0.0.1:3000:3000"
     volumes:
       - sqlite_data:/data
       - uploads_data:/uploads
-      - ./branding:/app/public/branding:ro
+      - ./public/branding:/app/public/branding:ro
     command: ["sh", "-c", "pnpm db:migrate && exec pnpm start"]
     healthcheck:
       test: ["CMD", "node", "scripts/healthcheck.mjs"]
@@ -27,6 +27,6 @@ services:
 
 volumes:
   sqlite_data:
-    name: wachiman_sqlite_data
+    name: control_accesos_sqlite_data
   uploads_data:
-    name: wachiman_uploads_data
+    name: control_accesos_uploads_data

@@ -1,6 +1,5 @@
 import { and, count, desc, eq, gte, inArray, isNotNull, isNull, lte, ne, or } from "drizzle-orm";
-import { db, isLocalDb } from "../../../db/server";
-import type { DrizzleD1Database } from "drizzle-orm/d1";
+import { db } from "../../../db/server";
 import { calculateAccessDurationMs } from "../access-duration";
 import {
   accessLogs,
@@ -438,84 +437,7 @@ export class PlannedAccessEntity {
       return { kind: "updated" as const, id: data.id };
     };
 
-    if (isLocalDb()) {
-      return db.transaction((tx) => updateLocal(tx as unknown as typeof db));
-    }
-
-    const d1 = db as unknown as DrizzleD1Database<typeof import("../../../db/schema")>;
-    return d1.transaction(async (tx) => {
-      const current = await tx
-        .select({ id: plannedAccesses.id, status: plannedAccesses.status })
-        .from(plannedAccesses)
-        .where(and(
-          eq(plannedAccesses.id, data.id),
-          eq(plannedAccesses.status, "PENDING_APPROVAL"),
-          eq(plannedAccesses.updatedAt, data.expectedUpdatedAt),
-        ))
-        .get();
-
-      if (!current) return { kind: "conflict" as const };
-
-      const existingPersons = await tx
-        .select({ id: plannedAccessPersons.id })
-        .from(plannedAccessPersons)
-        .where(eq(plannedAccessPersons.plannedAccessId, data.id))
-        .all();
-
-      for (const person of existingPersons) {
-        if (submittedIds.has(person.id)) continue;
-        const linkedAccess = await tx
-          .select({ count: count() })
-          .from(accessLogs)
-          .where(eq(accessLogs.plannedAccessPersonId, person.id))
-          .get();
-        if ((linkedAccess?.count ?? 0) > 0) {
-          return { kind: "linked-person" as const, personId: person.id };
-        }
-      }
-
-      await tx.update(plannedAccesses)
-        .set(updateValues)
-        .where(and(
-          eq(plannedAccesses.id, data.id),
-          eq(plannedAccesses.status, "PENDING_APPROVAL"),
-          eq(plannedAccesses.updatedAt, data.expectedUpdatedAt),
-        ))
-        .run();
-
-      for (const person of data.persons) {
-        const values = getPersonValues(person);
-
-        if (person.id) {
-          await tx.update(plannedAccessPersons)
-            .set(values)
-            .where(and(
-              eq(plannedAccessPersons.id, person.id),
-              eq(plannedAccessPersons.plannedAccessId, data.id),
-            ))
-            .run();
-        } else {
-          await tx.insert(plannedAccessPersons).values({
-            ...values,
-            plannedAccessId: data.id,
-          }).run();
-        }
-      }
-
-      const removedIds = existingPersons
-        .map((person) => person.id)
-        .filter((id) => !submittedIds.has(id));
-      if (removedIds.length > 0) {
-        await tx.delete(plannedAccessPersons)
-          .where(and(
-            eq(plannedAccessPersons.plannedAccessId, data.id),
-            inArray(plannedAccessPersons.id, removedIds),
-          ))
-          .run();
-      }
-
-      return { kind: "updated" as const, id: data.id };
-    });
+    return db.transaction((tx) => updateLocal(tx as unknown as typeof db));
   }
 
   public static async linkPersonWorker(
@@ -572,40 +494,8 @@ export class PlannedAccessEntity {
       updatedAt: new Date(),
     };
 
-    if (isLocalDb()) {
-      return db.transaction((tx) => {
-        const pa = tx
-          .update(plannedAccesses)
-          .set(approvalValues)
-          .where(and(eq(plannedAccesses.id, data.id), eq(plannedAccesses.status, "PENDING_APPROVAL")))
-          .returning()
-          .get();
-        if (!pa) return undefined;
-
-        const areasByPerson = new Map(data.personAllowedAreas.map((person) => [person.personId, person.allowedAreaId]));
-        for (const person of data.personWorkCategories) {
-          tx
-            .update(plannedAccessPersons)
-            .set({
-              workCategoryId: person.workCategoryId,
-              allowedAreaId: areasByPerson.get(person.personId),
-              externalWorkerId: person.externalWorkerId,
-              updatedAt: new Date(),
-            })
-            .where(and(
-              eq(plannedAccessPersons.id, person.personId),
-              eq(plannedAccessPersons.plannedAccessId, data.id),
-            ))
-            .run();
-        }
-
-        return pa;
-      });
-    }
-
-    const d1 = db as unknown as DrizzleD1Database<typeof import("../../../db/schema")>;
-    return d1.transaction(async (tx) => {
-      const pa = await tx
+    return db.transaction((tx) => {
+      const pa = tx
         .update(plannedAccesses)
         .set(approvalValues)
         .where(and(eq(plannedAccesses.id, data.id), eq(plannedAccesses.status, "PENDING_APPROVAL")))
@@ -615,7 +505,7 @@ export class PlannedAccessEntity {
 
       const areasByPerson = new Map(data.personAllowedAreas.map((person) => [person.personId, person.allowedAreaId]));
       for (const person of data.personWorkCategories) {
-        await tx
+        tx
           .update(plannedAccessPersons)
           .set({
             workCategoryId: person.workCategoryId,

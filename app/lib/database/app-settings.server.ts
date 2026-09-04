@@ -1,7 +1,6 @@
 import { and, eq } from "drizzle-orm";
 import { appSettings, auditLogs } from "../../../db/schema";
-import { db, isLocalDb } from "../../../db/server";
-import type { DrizzleD1Database } from "drizzle-orm/d1";
+import { db } from "../../../db/server";
 
 export const GLOBAL_APP_SETTINGS_ID = "global";
 
@@ -43,27 +42,10 @@ export class AppSettingsEntity {
         )
       : eq(appSettings.id, GLOBAL_APP_SETTINGS_ID);
 
-    if (isLocalDb()) {
-      return db.transaction((tx) => {
-        const [updated] = tx.update(appSettings).set(updateData).where(where).returning().all();
-        if (!updated) return null;
-        tx.insert(auditLogs).values({
-          entityType: "AppSettings",
-          entityId: GLOBAL_APP_SETTINGS_ID,
-          action: "APP_SETTINGS_UPDATED",
-          changedBy: input.updatedById,
-          summary: input.summary,
-          metadata: input.metadata,
-        }).run();
-        return updated;
-      });
-    }
-
-    const d1 = db as unknown as DrizzleD1Database<typeof import("../../../db/schema")>;
-    return d1.transaction(async (tx) => {
-      const updated = await tx.update(appSettings).set(updateData).where(where).returning().get();
+    return db.transaction((tx) => {
+      const [updated] = tx.update(appSettings).set(updateData).where(where).returning().all();
       if (!updated) return null;
-      await tx.insert(auditLogs).values({
+      tx.insert(auditLogs).values({
         entityType: "AppSettings",
         entityId: GLOBAL_APP_SETTINGS_ID,
         action: "APP_SETTINGS_UPDATED",

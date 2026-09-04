@@ -42,7 +42,7 @@ export function getUserRedirectPath(role: SessionUser["role"]) {
 }
 
 const SESSION_SECRET = getEnv("SESSION_SECRET", "dev-session-secret")!;
-const SESSION_NAME = "wachiman-session";
+const SESSION_NAME = "control-accesos-session";
 const SESSION_COOKIE_SECURE =
   getEnv("SESSION_COOKIE_SECURE") === undefined
     ? process.env.NODE_ENV === "production"

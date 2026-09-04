@@ -1,5 +1,3 @@
-/// <reference types="@cloudflare/workers-types" />
-
 import {
   isRouteErrorResponse,
   Links,
@@ -25,7 +23,6 @@ export function loader() {
 
 export const middleware: Route.MiddlewareFunction[] = [
   async (_, next) => {
-    // Cloudflare initializes D1 before the request handler; Node initializes SQLite here.
     if (!isDbInitialized()) {
       await initLocalDb();
     }

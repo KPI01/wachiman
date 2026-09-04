@@ -91,6 +91,7 @@ export default [
   ]),
 
   // API - Dashboard widgets (resource routes)
+  route("api/health", "routes/api/health.ts"),
   ...prefix("api/dashboard", [
     route("people-inside", "routes/api/dashboard/people-inside.tsx"),
     route("today-access-count", "routes/api/dashboard/today-access-count.tsx"),

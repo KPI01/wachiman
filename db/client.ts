@@ -1,4 +1,3 @@
-import type { DrizzleD1Database } from "drizzle-orm/d1";
 import * as schema from "./schema";
 
 export type DbClient = ReturnType<typeof createLocalDb> extends Promise<infer T>
@@ -30,13 +29,4 @@ export async function createLocalDb(
   sqlite.pragma("journal_mode = WAL");
   sqlite.pragma("foreign_keys = ON");
   return drizzle(sqlite, { schema });
-}
-
-let _d1Drizzle: DrizzleD1Database<typeof schema> | null = null;
-
-export async function createD1Db(d1: D1Database) {
-  if (_d1Drizzle) return _d1Drizzle;
-  const { drizzle: drizzleD1 } = await import("drizzle-orm/d1");
-  _d1Drizzle = drizzleD1(d1, { schema }) as unknown as DrizzleD1Database<typeof schema>;
-  return _d1Drizzle;
 }
