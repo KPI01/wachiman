@@ -104,7 +104,7 @@ export default function CreateAccessLog({
   allowedAreas,
   actionPath,
   lockedSiteId,
-  buttonLabel = "Nuevo acceso",
+  buttonLabel = "Acceso de persona",
   holder,
   companies,
   dailyRiskAcknowledgements = [],
@@ -116,7 +116,6 @@ export default function CreateAccessLog({
     : ACCESS_STEPS.filter((item) => item.id !== "permit");
   const fetcher = useFetcher<FetcherErrors & { success?: boolean }>();
   const [open, setOpen] = useState(false);
-  const [withVehicle, setWithVehicle] = useState(false);
   const [step, setStep] = useState<AccessStep>("details");
   const [hasSignature, setHasSignature] = useState(false);
   const [hasPermitSignature, setHasPermitSignature] = useState(false);
@@ -325,7 +324,6 @@ export default function CreateAccessLog({
 
     toast.success("Acceso registrado correctamente");
     setOpen(false);
-    setWithVehicle(false);
     setEntryTimestamp(getDefaultEntryTimestamp());
     setStep("details");
     setHasSignature(false);
@@ -355,7 +353,6 @@ export default function CreateAccessLog({
         setOpen(nextOpen);
 
         if (nextOpen) {
-          setWithVehicle(false);
           setEntryTimestamp(getDefaultEntryTimestamp());
           setStep("details");
           setHasSignature(false);
@@ -702,75 +699,6 @@ export default function CreateAccessLog({
                 <Textarea id="visitReason" name="visitReason" required defaultValue={getDraftValue("visitReason")} />
               </FieldWrapper>
             </div>
-            <div className="md:col-span-2 flex items-center gap-3 rounded-md border px-3 py-2">
-              <Checkbox
-                id="withVehicle"
-                name="withVehicle"
-                checked={withVehicle}
-                value="true"
-                onCheckedChange={(checked) => setWithVehicle(checked === true)}
-              />
-              <label htmlFor="withVehicle" className="text-sm font-medium">
-                El acceso fue realizado con vehiculo
-              </label>
-            </div>
-            {withVehicle && (
-              <>
-                <FieldWrapper
-                  label="Tipo de vehiculo *"
-                  htmlFor="vehicleTypeSnapshot"
-                  errors={getFieldErrors(
-                    fetcher.data?.errors,
-                    "vehicleTypeSnapshot",
-                  )}
-                >
-                    <Input id="vehicleTypeSnapshot" name="vehicleTypeSnapshot" defaultValue={getDraftValue("vehicleTypeSnapshot")} />
-                </FieldWrapper>
-                <FieldWrapper
-                  label="Marca"
-                  htmlFor="vehicleBrandSnapshot"
-                  errors={getFieldErrors(
-                    fetcher.data?.errors,
-                    "vehicleBrandSnapshot",
-                  )}
-                >
-                  <Input
-                   id="vehicleBrandSnapshot"
-                   name="vehicleBrandSnapshot"
-                   defaultValue={getDraftValue("vehicleBrandSnapshot")}
-                  />
-                </FieldWrapper>
-                <FieldWrapper
-                  label="Modelo"
-                  htmlFor="vehicleModelSnapshot"
-                  errors={getFieldErrors(
-                    fetcher.data?.errors,
-                    "vehicleModelSnapshot",
-                  )}
-                >
-                  <Input
-                   id="vehicleModelSnapshot"
-                   name="vehicleModelSnapshot"
-                   defaultValue={getDraftValue("vehicleModelSnapshot")}
-                  />
-                </FieldWrapper>
-                <FieldWrapper
-                  label="Matricula *"
-                  htmlFor="vehiclePlateSnapshot"
-                  errors={getFieldErrors(
-                    fetcher.data?.errors,
-                    "vehiclePlateSnapshot",
-                  )}
-                >
-                  <Input
-                    id="vehiclePlateSnapshot"
-                   name="vehiclePlateSnapshot"
-                   className="uppercase"
-                   defaultValue={getDraftValue("vehiclePlateSnapshot")}
-                  />
-                </FieldWrapper>
-              </>
-            )}
           </>
         ) : step === "documentation" ? (
           <div className="md:col-span-2 min-h-0 overflow-y-auto rounded-lg border">

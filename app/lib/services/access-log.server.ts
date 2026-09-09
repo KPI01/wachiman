@@ -3,6 +3,7 @@ import {
   createAccessLogSchema,
   markAccessLogExitSchema,
   updateAccessLogSchema,
+  vehicleAccessPayloadSchema,
 } from "../schemas/access-log";
 import { UserEntity } from "../database/user.server";
 import {
@@ -265,6 +266,83 @@ export async function createAccessLog(
        ...(workPermitsEnabled && data.workPermitId ? { workPermitId: data.workPermitId } : {}),
     },
   );
+
+  return { success: true };
+}
+
+export async function createVehicleAccessLogs(
+  input: Record<string, unknown>,
+  options: CreateAccessLogOptions,
+) {
+  const rawPayload = input.vehicleAccessPayload;
+  if (typeof rawPayload !== "string") {
+    return { success: false, errors: "Los datos del acceso vehicular son obligatorios." };
+  }
+
+  let payload: unknown;
+  try {
+    payload = JSON.parse(rawPayload);
+  } catch {
+    return { success: false, errors: "Los datos del acceso vehicular no son válidos." };
+  }
+
+  const parsed = await vehicleAccessPayloadSchema.safeParseAsync(payload);
+  if (!parsed.success) {
+    return { success: false, errors: z.treeifyError(parsed.error) };
+  }
+
+  const legalIds = new Set<string>();
+  for (const occupant of parsed.data.occupants) {
+    if (legalIds.has(occupant.legalIdSnapshot)) {
+      return { success: false, errors: "No puedes repetir el DNI/NIE de un ocupante." };
+    }
+    legalIds.add(occupant.legalIdSnapshot);
+  }
+
+  const effectiveSiteId = options.lockedSiteId ?? parsed.data.siteId;
+  for (const [index, occupant] of parsed.data.occupants.entries()) {
+    if (await AccessLogEntity.findOpenByLegalIdInSite(occupant.legalIdSnapshot, effectiveSiteId)) {
+      return {
+        success: false,
+        errors: `No se puede registrar al ocupante ${index + 1}: ya se encuentra dentro del centro.`,
+      };
+    }
+  }
+
+  for (const [index, occupant] of parsed.data.occupants.entries()) {
+    const result = await createAccessLog(
+      {
+        entryTimestamp: parsed.data.entryTimestamp.toISOString(),
+        entrySignaturePayload: JSON.stringify(occupant.entrySignaturePayload),
+        riskInformationAcknowledged: "true",
+        companyNameSnapshot: parsed.data.companyNameSnapshot,
+        companyId: parsed.data.companyId,
+        firstNameSnapshot: occupant.firstNameSnapshot,
+        middleNameSnapshot: "",
+        lastNameSnapshot: occupant.lastNameSnapshot,
+        secondLastNameSnapshot: "",
+        phoneNumber: occupant.phoneNumber,
+        legalIdSnapshot: occupant.legalIdSnapshot,
+        allowedAreaId: parsed.data.allowedAreaId,
+        approvedBySnapshot: parsed.data.approvedBySnapshot,
+        visitReason: parsed.data.visitReason,
+        siteId: effectiveSiteId,
+        withVehicle: "true",
+        vehicleTypeSnapshot: parsed.data.vehicle.typeSnapshot,
+        vehicleBrandSnapshot: parsed.data.vehicle.brandSnapshot,
+        vehicleModelSnapshot: parsed.data.vehicle.modelSnapshot,
+        vehiclePlateSnapshot: parsed.data.vehicle.plateSnapshot,
+      },
+      options,
+    );
+
+    if (!result.success) {
+      return {
+        success: false,
+        errors: `No se pudo registrar al ocupante ${index + 1}: ${typeof result.errors === "string" ? result.errors : "revisa sus datos."}`,
+      };
+    }
+  }
 
   return { success: true };
 }

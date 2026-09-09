@@ -84,6 +84,32 @@ export const createAccessLogSchema = z
     }
   });
 
+export const vehicleAccessPayloadSchema = z.object({
+  entryTimestamp: z.coerce.date(),
+  siteId: requiredString,
+  companyNameSnapshot: requiredString,
+  companyId: requiredString,
+  allowedAreaId: requiredString,
+  approvedBySnapshot: requiredString,
+  visitReason: requiredString,
+  vehicle: z.object({
+    typeSnapshot: requiredString,
+    brandSnapshot: optionalString,
+    modelSnapshot: optionalString,
+    plateSnapshot: requiredString.transform((value) => value.toUpperCase()),
+  }),
+  occupants: z.array(z.object({
+    legalIdSnapshot: requiredString.transform((value) => value.toUpperCase()),
+    firstNameSnapshot: requiredString,
+    lastNameSnapshot: requiredString,
+    phoneNumber: optionalString,
+    entrySignaturePayload: signaturePayloadFromStringSchema,
+    riskInformationAcknowledged: z.literal(true, {
+      error: "Cada ocupante debe confirmar que ha sido informado de los riesgos.",
+    }),
+  })).min(1, "Añade al menos un ocupante."),
+});
+
 export const markAccessLogExitSchema = z.object({
   exitSignaturePayload: signaturePayloadFromStringSchema,
 });

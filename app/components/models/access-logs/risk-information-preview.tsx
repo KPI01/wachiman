@@ -4,6 +4,8 @@ type RiskInformationPreviewProps = {
   holderFiscalAddress: string;
   siteName: string;
   siteAddress?: string | null;
+  facilityRiskInformation?: string | null;
+  facilityRiskInformationVersion?: number | null;
   companyName: string;
   companyCif: string;
   companyAddress: string;
@@ -50,6 +52,19 @@ export default function RiskInformationPreview(
         </p>
         <p className="mt-8">
           A la firma del presente documento certifico que he recibido por parte de mi empresa la información y las instrucciones correspondientes para la intervención que he de realizar en las instalaciones de <strong>{props.holderLegalName}</strong>.
+        </p>
+      </section>
+
+      <section className="border-t pt-6">
+        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          Riesgos generales del centro
+          {props.facilityRiskInformationVersion
+            ? ` · versión ${props.facilityRiskInformationVersion}`
+            : ""}
+        </p>
+        <p className="mt-3 whitespace-pre-wrap leading-7">
+          {props.facilityRiskInformation ||
+            "No hay información de riesgos configurada para este centro."}
         </p>
       </section>
 

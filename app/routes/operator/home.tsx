@@ -1,8 +1,10 @@
 import DataTable from "~/components/ui/data-table";
 import CreateAccessLogForm from "~/components/models/access-logs/create-access-log-form";
+import CreateVehicleAccessLogForm from "~/components/models/access-logs/create-vehicle-access-log-form";
 import { getAccessLogColumns } from "~/lib/columns/access-log";
 import {
   createAccessLog,
+  createVehicleAccessLogs,
   getManyAccessLogs,
   getOpenAccessLogs,
 } from "~/lib/services/access-log.server";
@@ -101,6 +103,13 @@ export async function action({ request }: Route.ActionArgs) {
 
   const { workPermitsEnabled } = getAppConfig();
   const data = await getFormData(request);
+
+  if (data.intent === "vehicle-access") {
+    return await createVehicleAccessLogs(data, {
+      authorUsername: user.username,
+      lockedSiteId: sessionSite.id,
+    });
+  }
 
   if (workPermitsEnabled && data.workPermitId && data.workPermitSignaturePayload) {
     const permitResult = await signWorkPermit(
@@ -324,17 +333,25 @@ export default function OperatorHome({ loaderData }: Route.ComponentProps) {
       </TabsList>
 
       <TabsContent value="access-logs" className="flex flex-col gap-6">
-        <div className="flex justify-end">
+        <div className="flex flex-wrap justify-end gap-2">
           <CreateAccessLogForm
             sites={[loaderData.site]}
             allowedAreas={loaderData.allowedAreas ?? []}
             actionPath="/operator?index"
             lockedSiteId={loaderData.site.id}
-            buttonLabel="Registrar acceso"
+            buttonLabel="Acceso de persona"
             holder={loaderData.holder}
             companies={loaderData.companies ?? []}
             workPermits={loaderData.workPermits ?? []}
             dailyRiskAcknowledgements={(loaderData.accessLogs ?? []).map((log) => ({ legalIdSnapshot: log.legalIdSnapshot, companyId: log.companyId, siteId: log.siteId, riskAcknowledgedAt: log.riskAcknowledgedAt }))}
+          />
+          <CreateVehicleAccessLogForm
+            sites={[loaderData.site]}
+            allowedAreas={loaderData.allowedAreas ?? []}
+            actionPath="/operator?index"
+            lockedSiteId={loaderData.site.id}
+            holder={loaderData.holder}
+            companies={loaderData.companies ?? []}
           />
         </div>
 
