@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef } from "react";
 import { useRevalidator } from "react-router";
 import { useAccessLogNotifications } from "~/hooks/use-access-log-notifications";
 import CreateAccessLog from "~/components/models/access-logs/create-access-log-form";
+import CreateVehicleAccessLogForm from "~/components/models/access-logs/create-vehicle-access-log-form";
 import DataTable from "~/components/ui/data-table";
 import { validateUserRole } from "~/lib/auth.server";
 import {
@@ -11,6 +12,7 @@ import {
 } from "~/lib/columns/access-log";
 import {
   createAccessLog,
+  createVehicleAccessLogs,
   getManyAccessLogs,
 } from "~/lib/services/access-log.server";
 import { getManySites } from "~/lib/services/sites.server";
@@ -78,6 +80,10 @@ export async function action({ request }: Route.ActionArgs) {
   const user = await validateUserRole(request, "SECURITY_MANAGER");
   const data = await getFormData(request);
 
+  if (data.intent === "vehicle-access") {
+    return await createVehicleAccessLogs(data, { authorUsername: user.username });
+  }
+
   const result = await createAccessLog(data, { authorUsername: user.username });
   return result;
 }
@@ -112,7 +118,7 @@ export default function IndexAccessLogs({ loaderData }: Route.ComponentProps) {
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h2 className="text-3xl font-bold">Registros de acceso</h2>
-        <div className="w-full sm:w-auto">
+        <div className="flex w-full flex-wrap justify-end gap-2 sm:w-auto">
           <CreateAccessLog
             sites={loaderData.sites ?? []}
             allowedAreas={loaderData.allowedAreas ?? []}
@@ -120,6 +126,13 @@ export default function IndexAccessLogs({ loaderData }: Route.ComponentProps) {
             holder={loaderData.holder}
             companies={loaderData.companies ?? []}
             dailyRiskAcknowledgements={(loaderData.accessLogs ?? []).map((log) => ({ legalIdSnapshot: log.legalIdSnapshot, companyId: log.companyId, siteId: log.siteId, riskAcknowledgedAt: log.riskAcknowledgedAt }))}
+          />
+          <CreateVehicleAccessLogForm
+            sites={loaderData.sites ?? []}
+            allowedAreas={loaderData.allowedAreas ?? []}
+            actionPath="/security/access-logs"
+            holder={loaderData.holder}
+            companies={loaderData.companies ?? []}
           />
         </div>
       </div>

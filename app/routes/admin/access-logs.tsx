@@ -5,10 +5,12 @@ import {
   createAccessLogColumns,
 } from "~/lib/columns/access-log";
 import CreateAccessLog from "~/components/models/access-logs/create-access-log-form";
+import CreateVehicleAccessLogForm from "~/components/models/access-logs/create-vehicle-access-log-form";
 import type { Route } from "./+types/access-logs";
 import { validateUserRole } from "~/lib/auth.server";
 import {
   createAccessLog,
+  createVehicleAccessLogs,
   getManyAccessLogs,
 } from "~/lib/services/access-log.server";
 import { getManySites } from "~/lib/services/sites.server";
@@ -79,6 +81,10 @@ export async function action({ request }: Route.ActionArgs) {
   const user = await validateUserRole(request, "ADMIN");
   const data = await getFormData(request);
 
+  if (data.intent === "vehicle-access") {
+    return await createVehicleAccessLogs(data, { authorUsername: user.username });
+  }
+
   return await createAccessLog(data, { authorUsername: user.username });
 }
 
@@ -110,14 +116,23 @@ export default function IndexAccessLogs({ loaderData }: Route.ComponentProps) {
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h2 className="text-3xl font-bold">Registros de acceso</h2>
-         <CreateAccessLog
-           sites={loaderData.sites ?? []}
-           allowedAreas={loaderData.allowedAreas ?? []}
-           actionPath="/admin/access-logs"
-           holder={loaderData.holder}
-           companies={loaderData.companies ?? []}
-           dailyRiskAcknowledgements={(loaderData.accessLogs ?? []).map((log) => ({ legalIdSnapshot: log.legalIdSnapshot, companyId: log.companyId, siteId: log.siteId, riskAcknowledgedAt: log.riskAcknowledgedAt }))}
-        />
+        <div className="flex flex-wrap justify-end gap-2">
+          <CreateAccessLog
+            sites={loaderData.sites ?? []}
+            allowedAreas={loaderData.allowedAreas ?? []}
+            actionPath="/admin/access-logs"
+            holder={loaderData.holder}
+            companies={loaderData.companies ?? []}
+            dailyRiskAcknowledgements={(loaderData.accessLogs ?? []).map((log) => ({ legalIdSnapshot: log.legalIdSnapshot, companyId: log.companyId, siteId: log.siteId, riskAcknowledgedAt: log.riskAcknowledgedAt }))}
+          />
+          <CreateVehicleAccessLogForm
+            sites={loaderData.sites ?? []}
+            allowedAreas={loaderData.allowedAreas ?? []}
+            actionPath="/admin/access-logs"
+            holder={loaderData.holder}
+            companies={loaderData.companies ?? []}
+          />
+        </div>
       </div>
       <DataTable
         columns={columns}
