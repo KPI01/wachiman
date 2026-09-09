@@ -198,7 +198,10 @@ export default function PlannedAccessApprovalPersonCard({
             id={`allowed-area-${person.id}`}
             name={`personAllowedAreas[${person.id}]`}
             value={allowedAreaId}
-            selectedName={allowedAreas.find((area) => area.id === allowedAreaId)?.name}
+            selectedName={
+              allowedAreas.find((area) => area.id === allowedAreaId)?.name ??
+              person.allowedAreaSnapshot
+            }
             onValueChange={setAllowedAreaId}
             form={formId}
             required

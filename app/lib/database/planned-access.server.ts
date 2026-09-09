@@ -65,6 +65,7 @@ export type CreatePlannedAccessInput = {
     legalIdSnapshot: string;
     externalWorkerId?: string;
     workCategoryId?: string;
+    allowedAreaSnapshot: string;
     allowedAreaId?: string;
   }>;
 };
@@ -78,7 +79,7 @@ export type UpdatePlannedAccessStatusInput = {
   decisionById: string;
   decisionAt?: Date;
   personWorkCategories?: Array<{ personId: string; workCategoryId: string | null; externalWorkerId?: string }>;
-  personAllowedAreas?: Array<{ personId: string; allowedAreaId: string | null }>;
+  personAllowedAreas?: Array<{ personId: string; allowedAreaId: string | null; allowedAreaSnapshot?: string }>;
 };
 
 export type UpdatePendingPlannedAccessInput = {
@@ -100,6 +101,7 @@ export type UpdatePendingPlannedAccessInput = {
     legalIdSnapshot: string;
     externalWorkerId?: string;
     workCategoryId?: string;
+    allowedAreaSnapshot: string;
     allowedAreaId?: string;
   }>;
 };
@@ -146,6 +148,7 @@ export class PlannedAccessEntity {
           phoneNumber: p.phoneNumber,
           legalIdSnapshot: p.legalIdSnapshot,
           workCategoryId: p.workCategoryId,
+          allowedAreaSnapshot: p.allowedAreaSnapshot,
           allowedAreaId: p.allowedAreaId,
           externalWorkerId: p.externalWorkerId,
           plannedAccessId: pa.id,
@@ -357,6 +360,7 @@ export class PlannedAccessEntity {
       phoneNumber: person.phoneNumber ?? null,
       legalIdSnapshot: person.legalIdSnapshot,
       workCategoryId: person.workCategoryId ?? null,
+      allowedAreaSnapshot: person.allowedAreaSnapshot,
       allowedAreaId: person.allowedAreaId ?? null,
       externalWorkerId: person.externalWorkerId ?? null,
       updatedAt: new Date(),
@@ -538,7 +542,7 @@ export class PlannedAccessEntity {
   public static async approve(
     data: UpdatePlannedAccessStatusInput & {
       personWorkCategories: Array<{ personId: string; workCategoryId: string | null; externalWorkerId: string }>;
-      personAllowedAreas: Array<{ personId: string; allowedAreaId: string }>;
+      personAllowedAreas: Array<{ personId: string; allowedAreaId: string; allowedAreaSnapshot?: string }>;
     },
   ) {
     const personIds = [...new Set(data.personWorkCategories.map((person) => person.personId))];
@@ -582,13 +586,15 @@ export class PlannedAccessEntity {
           .get();
         if (!pa) return undefined;
 
-        const areasByPerson = new Map(data.personAllowedAreas.map((person) => [person.personId, person.allowedAreaId]));
+        const areasByPerson = new Map(data.personAllowedAreas.map((person) => [person.personId, person]));
         for (const person of data.personWorkCategories) {
+          const area = areasByPerson.get(person.personId);
           tx
             .update(plannedAccessPersons)
             .set({
               workCategoryId: person.workCategoryId,
-              allowedAreaId: areasByPerson.get(person.personId),
+              allowedAreaId: area?.allowedAreaId,
+              ...(area?.allowedAreaSnapshot ? { allowedAreaSnapshot: area.allowedAreaSnapshot } : {}),
               externalWorkerId: person.externalWorkerId,
               updatedAt: new Date(),
             })
@@ -613,13 +619,15 @@ export class PlannedAccessEntity {
         .get();
       if (!pa) return undefined;
 
-      const areasByPerson = new Map(data.personAllowedAreas.map((person) => [person.personId, person.allowedAreaId]));
+      const areasByPerson = new Map(data.personAllowedAreas.map((person) => [person.personId, person]));
       for (const person of data.personWorkCategories) {
+        const area = areasByPerson.get(person.personId);
         await tx
           .update(plannedAccessPersons)
           .set({
             workCategoryId: person.workCategoryId,
-            allowedAreaId: areasByPerson.get(person.personId),
+            allowedAreaId: area?.allowedAreaId,
+            ...(area?.allowedAreaSnapshot ? { allowedAreaSnapshot: area.allowedAreaSnapshot } : {}),
             externalWorkerId: person.externalWorkerId,
             updatedAt: new Date(),
           })

@@ -12,6 +12,7 @@ type AllowedAreaComboboxProps = {
   options?: AllowedAreaOption[];
   value: string;
   onValueChange: (value: string) => void;
+  onNameChange?: (value: string) => void;
   selectedName?: string;
   form?: string;
   required?: boolean;
@@ -25,6 +26,7 @@ export default function AllowedAreaCombobox({
   options,
   value,
   onValueChange,
+  onNameChange,
   selectedName,
   form,
   required,
@@ -97,8 +99,8 @@ export default function AllowedAreaCombobox({
   }, [query]);
 
   useEffect(() => {
-    if (!value) setQuery("");
-    else if (selectedName) setQuery(selectedName);
+    if (selectedName) setQuery(selectedName);
+    else if (!value) setQuery("");
   }, [selectedName, value]);
 
   useEffect(() => {
@@ -117,6 +119,7 @@ export default function AllowedAreaCombobox({
     inputRef.current?.setCustomValidity("");
     setQuery(suggestion.name);
     onValueChange(suggestion.id);
+    onNameChange?.(suggestion.name);
     setSuggestions([]);
     setShowSuggestions(false);
   }
@@ -125,6 +128,7 @@ export default function AllowedAreaCombobox({
     selectedValueRef.current = null;
     setQuery(nextQuery);
     onValueChange("");
+    onNameChange?.(nextQuery);
     if (requireSelection) {
       inputRef.current?.setCustomValidity(
         nextQuery.trim() ? "Selecciona un área autorizada de la lista." : "",

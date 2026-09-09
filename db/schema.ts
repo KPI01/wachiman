@@ -332,6 +332,7 @@ export const plannedAccessPersons = sqliteTable("planned_access_persons", {
   phoneNumber: text("phone_number"),
   legalIdSnapshot: text("legal_id_snapshot").notNull(),
   workCategoryId: text("work_category_id").references(() => workCategories.id),
+  allowedAreaSnapshot: text("allowed_area_snapshot").notNull().default("No especificada"),
   allowedAreaId: text("allowed_area_id").references(() => allowedAreas.id),
   plannedAccessId: text("planned_access_id")
     .notNull()

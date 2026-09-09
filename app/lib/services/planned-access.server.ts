@@ -521,7 +521,7 @@ export async function updatePlannedAccessStatus(
     const selectedCategories = parsed.data.personWorkCategories ?? {};
     const selectedAreas = parsed.data.personAllowedAreas ?? {};
     const personWorkCategories: Array<{ personId: string; workCategoryId: string; externalWorkerId: string }> = [];
-    const personAllowedAreas: Array<{ personId: string; allowedAreaId: string }> = [];
+    const personAllowedAreas: Array<{ personId: string; allowedAreaId: string; allowedAreaSnapshot: string }> = [];
     const validationErrors: string[] = [];
     const decisionEvidence: Array<Record<string, unknown>> = [];
 
@@ -587,7 +587,11 @@ export async function updatePlannedAccessStatus(
 
       const workerId = worker.id;
       personWorkCategories.push({ personId: person.id, workCategoryId: effectiveCategoryId, externalWorkerId: workerId });
-      personAllowedAreas.push({ personId: person.id, allowedAreaId: allowedArea.id });
+      personAllowedAreas.push({
+        personId: person.id,
+        allowedAreaId: allowedArea.id,
+        allowedAreaSnapshot: allowedArea.name,
+      });
       // Comentado: la aprobación ya no valida documentación.
       // const requirements = {
       //   requiresTraining: Boolean(category.requiresTraining),

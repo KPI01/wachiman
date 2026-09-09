@@ -104,6 +104,7 @@ type VisitorDraft = {
   phoneNumber: string;
   externalWorkerId: string;
   workCategoryId: string;
+  allowedAreaSnapshot: string;
   allowedAreaId: string;
 };
 
@@ -121,6 +122,7 @@ function getEmptyVisitorDraft(): VisitorDraft {
     phoneNumber: "",
     externalWorkerId: "",
     workCategoryId: "",
+    allowedAreaSnapshot: "",
     allowedAreaId: "",
   };
 }
@@ -145,6 +147,7 @@ function getPersonErrors(errorTree: unknown, personIndex: number) {
     "lastNameSnapshot",
     "phoneNumber",
     "workCategoryId",
+    "allowedAreaSnapshot",
     "allowedAreaId",
   ];
   const errors = fields.flatMap(
@@ -177,6 +180,7 @@ function normalizeVisitorDraft(visitor: VisitorDraft): VisitorDraft {
     phoneNumber: visitor.phoneNumber.trim(),
     externalWorkerId: visitor.externalWorkerId.trim(),
     workCategoryId: visitor.workCategoryId.trim(),
+    allowedAreaSnapshot: visitor.allowedAreaSnapshot.trim(),
     allowedAreaId: visitor.allowedAreaId.trim(),
   };
 }
@@ -196,11 +200,7 @@ function validateVisitorDraft(visitor: VisitorDraft): VisitorDraftErrors {
     errors.lastNameSnapshot = "Los apellidos son obligatorios.";
   }
 
-  if (!visitor.workCategoryId.trim()) {
-    errors.workCategoryId = "El tipo de trabajo es obligatorio.";
-  }
-
-  if (!visitor.allowedAreaId.trim()) {
+  if (!visitor.allowedAreaSnapshot.trim()) {
     errors.allowedAreaId = "El área autorizada es obligatoria.";
   }
 
@@ -713,7 +713,35 @@ export default function PlannedAccessForm({
                   />
                 </FieldWrapper>
                 <FieldWrapper
-                  label="Tipo de trabajo *"
+                  label="Área autorizada *"
+                  htmlFor="visitor-allowed-area-search"
+                  errors={
+                    visitorDraftErrors.allowedAreaId
+                      ? [visitorDraftErrors.allowedAreaId]
+                      : undefined
+                  }
+                >
+                  <AllowedAreaCombobox
+                    id="visitor-allowed-area"
+                    name=""
+                    value={visitorDraft.allowedAreaId}
+                    selectedName={
+                      visitorDraft.allowedAreaSnapshot ||
+                      allowedAreas.find(
+                        (area) => area.id === visitorDraft.allowedAreaId,
+                      )?.name
+                    }
+                    onValueChange={(value) =>
+                      handleVisitorDraftChange("allowedAreaId", value)
+                    }
+                    onNameChange={(value) =>
+                      handleVisitorDraftChange("allowedAreaSnapshot", value)
+                    }
+                    placeholder="Escribe o selecciona un área..."
+                  />
+                </FieldWrapper>
+                <FieldWrapper
+                  label="Tipo de trabajo"
                   htmlFor="visitor-work-category"
                   errors={
                     visitorDraftErrors.workCategoryId
@@ -749,34 +777,9 @@ export default function PlannedAccessForm({
                       No hay tipos de trabajo configurados.
                     </p>
                   ) : null}
-                </FieldWrapper>
-                <FieldWrapper
-                  label="Área autorizada *"
-                  htmlFor="visitor-allowed-area-search"
-                  errors={
-                    visitorDraftErrors.allowedAreaId
-                      ? [visitorDraftErrors.allowedAreaId]
-                      : undefined
-                  }
-                >
-                  <AllowedAreaCombobox
-                    id="visitor-allowed-area"
-                    name=""
-                    value={visitorDraft.allowedAreaId}
-                    selectedName={
-                      allowedAreas.find(
-                        (area) => area.id === visitorDraft.allowedAreaId,
-                      )?.name
-                    }
-                    onValueChange={(value) =>
-                      handleVisitorDraftChange("allowedAreaId", value)
-                    }
-                  />
-                  {!allowedAreas.length ? (
-                    <p className="text-sm text-muted-foreground">
-                      No hay áreas autorizadas configuradas.
-                    </p>
-                  ) : null}
+                  <p className="text-sm text-muted-foreground">
+                    Solo aplica si el tipo de trabajo requiere un permiso especial.
+                  </p>
                 </FieldWrapper>
                 <div className="flex flex-wrap justify-end gap-2">
                   <Button
@@ -865,6 +868,11 @@ export default function PlannedAccessForm({
                     />
                     <input
                       type="hidden"
+                      name={`persons[${visitorIndex}].allowedAreaSnapshot`}
+                      value={visitor.allowedAreaSnapshot}
+                    />
+                    <input
+                      type="hidden"
                       name={`persons[${visitorIndex}].allowedAreaId`}
                       value={visitor.allowedAreaId}
                     />
@@ -883,9 +891,7 @@ export default function PlannedAccessForm({
                             (item) => item.id === visitor.workCategoryId,
                           )?.name ?? "-"}{" "}
                           | Área:{" "}
-                          {allowedAreas.find(
-                            (item) => item.id === visitor.allowedAreaId,
-                          )?.name ?? "-"}
+                          {visitor.allowedAreaSnapshot || "-"}
                         </p>
                       </div>
                       <Button

@@ -31,18 +31,19 @@ const plannedAccessPersonSchema = z.object({
   phoneNumber: optionalString,
   legalIdSnapshot: requiredString.transform((value) => value.toUpperCase()),
   externalWorkerId: optionalString,
-  workCategoryId: requiredString,
-  allowedAreaId: requiredString,
+  workCategoryId: optionalString,
+  allowedAreaSnapshot: requiredString,
+  allowedAreaId: optionalString,
 });
 
 async function validatePersonCatalogs(
-  persons: Array<{ workCategoryId: string; allowedAreaId: string }>,
+  persons: Array<{ workCategoryId?: string; allowedAreaId?: string }>,
 ) {
   const results = await Promise.all(
     persons.flatMap((person) => [
-      WorkCategoryEntity.findById(person.workCategoryId),
-      AllowedAreaEntity.findById(person.allowedAreaId),
-    ]),
+      person.workCategoryId ? WorkCategoryEntity.findById(person.workCategoryId) : null,
+      person.allowedAreaId ? AllowedAreaEntity.findById(person.allowedAreaId) : null,
+    ]).filter((result) => result !== null),
   );
   return results.every(Boolean);
 }

@@ -51,7 +51,7 @@ function getPersonsDetails(plannedAccess: PlannedAccessListItem) {
   return plannedAccess.plannedAccessPersons
     .map(
       (person) =>
-        `${getFullName(person)} (${person.legalIdSnapshot}) · ${person.workCategory?.name ?? "Sin tipo de trabajo"} · ${person.allowedArea?.name ?? "Sin área"}`,
+        `${getFullName(person)} (${person.legalIdSnapshot}) · ${person.workCategory?.name ?? "Sin tipo de trabajo"} · ${person.allowedArea?.name ?? person.allowedAreaSnapshot ?? "Sin área"}`,
     )
     .join(", ");
 }

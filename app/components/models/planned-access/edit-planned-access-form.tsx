@@ -25,6 +25,7 @@ function getInitialValues(
       phoneNumber: person.phoneNumber ?? "",
       externalWorkerId: person.externalWorkerId ?? "",
       workCategoryId: person.workCategoryId ?? "",
+      allowedAreaSnapshot: person.allowedAreaSnapshot ?? person.allowedArea?.name ?? "",
       allowedAreaId: person.allowedAreaId ?? "",
     })),
   };
