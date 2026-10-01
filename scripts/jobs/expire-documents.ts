@@ -1,10 +1,10 @@
 import { config as loadEnv } from "dotenv";
-import { initLocalDb } from "../../db/server";
+import { initDb } from "../../db/server";
 
 loadEnv();
 
 async function main() {
-  await initLocalDb();
+  await initDb();
   const { checkExpiredDocuments } = await import("../../app/lib/services/worker-document.server");
   const result = await checkExpiredDocuments();
   console.log(JSON.stringify({ job: "expire-documents", ...result }));

@@ -1,7 +1,7 @@
 import { config as loadEnv } from "dotenv";
 
 loadEnv({ quiet: true });
-import { createLocalDb } from "../db/client";
+import { closeDatabasePool, createPostgresDb } from "../db/client";
 import {
   accessLogs,
   accessLogVehicles,
@@ -37,7 +37,7 @@ function at(date: Date, hours: number, minutes = 0) {
 }
 
 async function main() {
-  const db = await createLocalDb();
+  const db = createPostgresDb();
 
   const mode = process.argv.includes("--mode=demo") ? "demo" : "base";
   const adminFullName = process.env.ADMIN_FULL_NAME || "Administrador";
@@ -54,18 +54,12 @@ async function main() {
     id: "site-1",
     name: siteName,
     slug: siteSlug,
-  }).onConflictDoUpdate({
-    target: sites.id,
-    set: { name: siteName, slug: siteSlug },
-  });
+  }).onConflictDoNothing();
   await db.insert(departments).values({
     id: "dept-3",
     name: departmentName,
     slug: departmentSlug,
-  }).onConflictDoUpdate({
-    target: departments.id,
-    set: { name: departmentName, slug: departmentSlug },
-  });
+  }).onConflictDoNothing();
   await db.insert(users).values({
     id: "user-1",
     fullName: adminFullName,
@@ -74,17 +68,7 @@ async function main() {
     role: "ADMIN",
     siteId: "site-1",
     departmentId: "dept-3",
-  }).onConflictDoUpdate({
-    target: users.id,
-    set: {
-      fullName: adminFullName,
-      username: adminUsername,
-      password: adminPwd,
-      role: "ADMIN",
-      siteId: "site-1",
-      departmentId: "dept-3",
-    },
-  });
+  }).onConflictDoNothing();
 
   await db.insert(allowedAreas).values({
     id: "area-office-basic",
@@ -94,6 +78,7 @@ async function main() {
 
   if (mode === "base") {
     console.log(`Seed básico completado. Usuario administrador: ${adminUsername}`);
+    await closeDatabasePool();
     return;
   }
 
@@ -284,9 +269,11 @@ async function main() {
   await db.insert(accessLogs).values(demoLogs).onConflictDoNothing();
 
   console.log("Seed demo completado. Los usuarios demo usan la contraseña demo123.");
+  await closeDatabasePool();
 }
 
 main().catch((error) => {
   console.error("Error al ejecutar el seed:", error);
-  process.exit(1);
+  void closeDatabasePool();
+  process.exitCode = 1;
 });

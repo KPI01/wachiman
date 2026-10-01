@@ -143,8 +143,7 @@ export class ExternalWorkerEntity {
     await db
       .insert(externalWorkers)
       .values({ ...data, legalId })
-      .onConflictDoNothing({ target: externalWorkers.legalId })
-      .run();
+      .onConflictDoNothing({ target: externalWorkers.legalId });
 
     const worker = await this.findByLegalId(legalId);
     if (!worker) {
@@ -163,7 +162,7 @@ export class ExternalWorkerEntity {
           ne(externalWorkers.id, excludedId),
         ),
       )
-      .get();
+      .then((rows) => rows[0]);
     return row ?? null;
   }
 

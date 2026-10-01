@@ -1,5 +1,4 @@
 import { validateUserRole } from "~/lib/auth.server";
-import { areFileUploadsSupported } from "~/lib/platform.server";
 import { getDocumentByWorkerId, toOsPath } from "~/lib/services/worker-document.server";
 
 export async function loader({
@@ -20,10 +19,6 @@ export async function loader({
 
   if (!document) {
     return new Response("Not found", { status: 404 });
-  }
-
-  if (!areFileUploadsSupported()) {
-    return Response.json({ error: "Descarga de documentos no disponible en este entorno." }, { status: 503 });
   }
 
   const { createReadStream } = await import("fs");

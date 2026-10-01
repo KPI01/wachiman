@@ -27,7 +27,9 @@ export default [
   route("admin", "routes/admin/layout.tsx", [
     index("routes/admin/home.tsx"),
      route("users", "routes/admin/users.tsx"),
-     route("settings", "routes/admin/settings.tsx"),
+    route("settings", "routes/admin/settings.tsx"),
+    route("backups", "routes/admin/backups.tsx"),
+    route("backups/export", "routes/admin/backups.export.ts"),
      route("sites", "routes/admin/sites.tsx"),
     route("departments", "routes/admin/departments.tsx"),
     route("access-logs", "routes/admin/access-logs.tsx"),

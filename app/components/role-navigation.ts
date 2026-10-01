@@ -1,5 +1,6 @@
 import {
   Building2Icon,
+  ArchiveRestoreIcon,
   ClipboardCheckIcon,
   ClipboardListIcon,
   // Comentado: el flujo de documentación ya no se muestra.
@@ -54,7 +55,10 @@ export const ROLE_NAVIGATION: Record<UserRole, SidebarLinkItem[]> = {
     },
     {
       label: "Sistema",
-      children: [item("Configuración", "/admin/settings", Settings2Icon)],
+      children: [
+        item("Configuración", "/admin/settings", Settings2Icon),
+        item("Copias de seguridad", "/admin/backups", ArchiveRestoreIcon),
+      ],
     },
   ],
   SECURITY_MANAGER: [

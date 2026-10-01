@@ -5,11 +5,9 @@ import { defineConfig } from "drizzle-kit";
 
 export default defineConfig({
   schema: "./db/schema.ts",
-  out: "./db/migrations",
-  dialect: "sqlite",
+  out: "./db/migrations-postgres",
+  dialect: "postgresql",
   dbCredentials: {
-    url:
-      process.env.DATABASE_URL?.replace("file:", "") ||
-      "./dev.db",
+    url: process.env.DATABASE_URL || "postgresql://postgres:postgres@127.0.0.1:55432/wachiman",
   },
 });

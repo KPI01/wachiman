@@ -1,2 +1,0 @@
-ALTER TABLE `access_logs` ADD `allowed_area_snapshot` text DEFAULT 'No especificado' NOT NULL;--> statement-breakpoint
-ALTER TABLE `access_logs` ADD `approved_by_snapshot` text DEFAULT 'No especificado' NOT NULL;

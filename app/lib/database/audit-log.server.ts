@@ -34,9 +34,9 @@ export class AuditLogEntity {
     const query = db.select().from(auditLogs).orderBy(desc(auditLogs.createdAt)).limit(500);
 
     if (conditions.length > 0) {
-      return query.where(and(...conditions)).all();
+      return query.where(and(...conditions));
     }
-    return query.all();
+    return query;
   }
 
   public static async findByEntity(entityType: string, entityId: string) {
@@ -44,7 +44,6 @@ export class AuditLogEntity {
       .select()
       .from(auditLogs)
       .where(and(eq(auditLogs.entityType, entityType), eq(auditLogs.entityId, entityId)))
-      .orderBy(desc(auditLogs.createdAt))
-      .all();
+      .orderBy(desc(auditLogs.createdAt));
   }
 }

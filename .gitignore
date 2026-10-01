@@ -22,14 +22,9 @@
 # Sensitive uploaded worker documents
 /uploads/
 
-# Cloudflare
-.wrangler/
-.dev.vars
-
 .hermes/
 
 .vscode/
-
-# Cloudflare
-.wrangler/
-.dev.vars
+/.e2e-data/
+/test-results/
+/playwright-report/

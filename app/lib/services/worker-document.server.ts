@@ -1,5 +1,4 @@
 import z from "zod";
-import { areFileUploadsSupported } from "../platform.server";
 import { WorkerDocumentEntity } from "../database/worker-document.server";
 import { AuditLogEntity } from "../database/audit-log.server";
 import { ExternalWorkerEntity } from "../database/external-worker.server";
@@ -37,10 +36,7 @@ const FILE_EXTENSIONS: Record<string, string[]> = {
 };
 
 function getUploadsBasePath() {
-  const globalPath = (globalThis as Record<string, unknown>)["UPLOADS_BASE_PATH"];
-  const envPath = typeof globalPath === "string" && globalPath.length > 0
-    ? globalPath
-    : typeof process !== "undefined" ? process.env["UPLOADS_BASE_PATH"] : undefined;
+  const envPath = process.env.UPLOADS_BASE_PATH;
   if (!envPath) {
     throw new Error("UPLOADS_BASE_PATH no esta definido en las variables de entorno.");
   }
@@ -121,10 +117,6 @@ export async function uploadWorkerDocument(
   formData: Record<string, string>,
   userId: string,
 ) {
-  if (!areFileUploadsSupported()) {
-    return { success: false as const, errors: "Carga de documentos no disponible en este entorno." };
-  }
-
   const worker = await ExternalWorkerEntity.findById(workerId);
   if (!worker) {
     return { success: false as const, errors: "El trabajador externo no existe." };

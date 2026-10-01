@@ -76,7 +76,7 @@ export const updateUserSchema = z
             ),
           )
           .limit(1)
-          .get();
+          .then((rows) => rows[0]);
         const userNameExists = existingUser !== undefined;
 
         return !userNameExists;

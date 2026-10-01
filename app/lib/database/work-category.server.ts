@@ -20,7 +20,7 @@ export class WorkCategoryEntity {
       .select()
       .from(workCategories)
       .where(eq(workCategories.id, id))
-      .get();
+      .then((rows) => rows[0]);
     return wc ?? null;
   }
 
@@ -47,7 +47,7 @@ export class WorkCategoryEntity {
   }
 
   public static async findMany() {
-    return db.select().from(workCategories).all();
+    return db.select().from(workCategories);
   }
 
   public static async update(

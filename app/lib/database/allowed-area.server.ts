@@ -13,7 +13,7 @@ export class AllowedAreaEntity {
       .select()
       .from(allowedAreas)
       .where(eq(allowedAreas.id, id))
-      .get();
+      .then((rows) => rows[0]);
     return area ?? null;
   }
 
@@ -21,8 +21,7 @@ export class AllowedAreaEntity {
     return db
       .select()
       .from(allowedAreas)
-      .orderBy(allowedAreas.name)
-      .all();
+      .orderBy(allowedAreas.name);
   }
 
   public static async update(id: string, data: { name?: string; slug?: string }) {

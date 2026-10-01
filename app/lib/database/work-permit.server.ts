@@ -85,11 +85,12 @@ export class WorkPermitEntity {
   }
 
   public static async findDecision(plannedAccessPersonId: string) {
-    return db
+    const [decision] = await db
       .select()
       .from(plannedAccessPersonDecisions)
       .where(eq(plannedAccessPersonDecisions.plannedAccessPersonId, plannedAccessPersonId))
-      .get() ?? null;
+      .limit(1);
+    return decision ?? null;
   }
 
   public static async saveDecision(data: {
@@ -165,7 +166,7 @@ export class WorkPermitEntity {
             eq(workPermitSignatures.signerType, signerType),
           ),
         )
-        .get(),
+        .then((rows) => rows[0]),
     );
   }
 }

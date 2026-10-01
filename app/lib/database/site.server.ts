@@ -13,7 +13,7 @@ export class SiteEntity {
       .select()
       .from(sites)
       .where(eq(sites.id, id))
-      .get();
+      .then((rows) => rows[0]);
     return site ?? null;
   }
 
@@ -24,12 +24,12 @@ export class SiteEntity {
       .select()
       .from(sites)
       .where(and(...conditions))
-      .get();
+      .then((rows) => rows[0]);
     return site ?? null;
   }
 
   public static async findMany() {
-    return db.select().from(sites).all();
+    return db.select().from(sites);
   }
 
   public static async update(

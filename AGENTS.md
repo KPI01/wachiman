@@ -1,132 +1,99 @@
 # AGENTS.md
 
-## Project Overview
+## Proyecto
 
-`industrial-wachiman` is a role-based visitor access-control application with a Spanish-language UI.
+`industrial-wachiman` es una aplicación de control de acceso industrial con interfaz en español.
 
-Technology stack:
+- React Router 7 en modo framework, SSR y Vite.
+- React 19, TypeScript, Tailwind CSS 4 y shadcn/ui.
+- PostgreSQL ejecutado en Docker Compose.
+- Drizzle ORM y Drizzle Kit; pnpm 10.
 
-- React Router 7 in framework mode with SSR
-- Vite
-- React 19
-- Prisma 7 with PostgreSQL
-- Tailwind CSS 4
-- pnpm 10
+## Reglas obligatorias
 
-## Mandatory Rules
+### Comunicación y cambios
 
-### User Communication
+- Responde al usuario en español y conserva en español los textos nuevos de la interfaz.
+- No modifiques contenidos dentro de `node_modules/`.
+- Usa pnpm 10; no uses npm ni Yarn.
+- Ejecuta `pnpm typecheck` después de cambiar código. No uses `pnpm lint`: el proyecto no tiene configuración ESLint.
+- No ejecutes por separado la generación de tipos de rutas; `pnpm typecheck` ya ejecuta `react-router typegen`.
 
-- Always respond to the user in Spanish, regardless of the language used in the request.
-- Keep all new UI copy in Spanish to match the existing application.
-- Never modify the contents inside `node_modules/` folder
+### Límites de arquitectura
 
-### Package Management and Validation
+Mantén el flujo `rutas → servicios → entidades de base de datos → Drizzle`.
 
-- Use **pnpm 10** exclusively. Do not use npm or Yarn.
-- Run `pnpm typecheck` after making changes. This is the project's required validation command.
-- Do not rely on `pnpm lint`; it is currently broken because the project has no `eslint.config.js`.
-- After editing `prisma/schema.prisma`, or when working from a fresh clone, run `pnpm orm:generate` before `pnpm typecheck` or `pnpm build`. The generated Prisma client is gitignored.
-- Do not run React Router type generation separately. `pnpm typecheck` already runs `react-router typegen`.
+- Las rutas llaman a servicios y no importan ni consultan Drizzle directamente.
+- Los servicios contienen validaciones y lógica de negocio; usan entidades para acceder a datos.
+- Solo `app/lib/database/*.server.ts` accede directamente a `db` y a las tablas Drizzle.
+- No importes módulos `*.server.ts` desde código cliente.
 
-### Architectural Boundaries
+## Comandos
 
-- Preserve the server-layer flow: routes → services → database entities → Prisma.
-- Routes must call services and must never access Prisma directly.
-- Services must use database entities and must never access Prisma directly.
-- Only files in `app/lib/database/*.server.ts` may access `prisma.*` directly.
-- Never import `*.server.ts` modules into client-side code.
+- `pnpm dev`: servidor de desarrollo con `HOST` y `PORT` de `.env`.
+- `pnpm build`: genera la aplicación de producción en `dist/`.
+- `pnpm start`: sirve `dist/server/index.js` en el puerto 3000.
+- `pnpm typecheck`: genera tipos de React Router y ejecuta TypeScript.
+- `pnpm db:generate`: genera migraciones a partir de `db/schema.ts`.
+- `pnpm db:migrate`: aplica migraciones PostgreSQL.
+- `pnpm db:setup`: aplica migraciones y ejecuta el seed inicial.
+- `pnpm db:seed`: crea datos iniciales faltantes sin reemplazar usuarios existentes.
+- `pnpm db:reset --force`: elimina y recrea el esquema de la base configurada.
+- `pnpm job:expire-documents`: marca documentos vencidos.
+- `pnpm test`: ejecuta Vitest; `pnpm test:e2e` ejecuta Playwright.
+- `pnpm env:set-encryption-key` y `pnpm env:set-session-secret`: generan secretos en `.env` (admiten `-- --env <ruta>`).
 
-## Development Commands
+## Rutas y TypeScript
 
-- `pnpm dev` — starts the development server using `HOST` and `PORT` from `.env`; the default port is 5173.
-- `pnpm typecheck` — runs `react-router typegen && tsc`. Use this to validate changes.
-- `pnpm build` — runs `react-router build` and outputs `build/client` and `build/server`.
-- `pnpm start` — serves the production build on port 3000; run `pnpm build` first.
-- `pnpm orm:generate` — runs `prisma generate` and regenerates `prisma/generated/prisma`.
-- `pnpm db:migrate` / `pnpm db:seed` / `pnpm db:reset` — manage database migrations and seed data.
-- `pnpm env:set-encryption-key` / `pnpm env:set-session-secret` — write secrets to `.env`.
+- Las rutas son declarativas. Se registran en `app/routes.ts`.
+- Los tipos de módulos se importan desde `./+types/<ruta>` y los genera React Router en `.react-router/types/`.
+- El alias `~/*` apunta a `app/*`.
+- `verbatimModuleSyntax` está habilitado; usa `import type` para importar solo tipos.
 
-## Application Architecture
+## Capas de servidor
 
-### Routing and TypeScript
+- `app/lib/database/*.server.ts`: entidades Drizzle con métodos estáticos; es la única capa con acceso directo a `db`.
+- `app/lib/services/*.server.ts`: esquemas Zod, validación y reglas de negocio.
+- `app/lib/schemas/*.ts`: esquemas compartidos y mensajes de validación.
+- `*.server.ts` identifica módulos exclusivos del servidor.
 
-- Routing is declarative, not file-based. Add or edit routes in `app/routes.ts`.
-- Route-module types are imported from `./+types/<name>` and generated in `.react-router/types`, which is gitignored.
-- The `~/*` import alias maps to `app/*`.
-- `tsconfig` enables `verbatimModuleSyntax: true`; use `import type` for type-only imports.
+## Autenticación y seguridad
 
-### Server Layers in `app/lib`
+- `auth.server.ts` expone `isAuthenticated(request)` y `validateUserRole(request, role | role[])`.
+- Cada ruta protegida verifica el rol en su `loader` y también en su `action` cuando modifica datos.
+- Roles y prefijos: `/admin`, `/operator`, `/monitor`, `/security`, `/requester` y `/approver`.
+- La cookie de sesión se llama `wachiman-session` y dura ocho horas.
+- Configura `SESSION_SECRET` en producción. `SESSION_COOKIE_SECURE` se activa por defecto en producción; puede desactivarse al servir HTTP detrás de una red controlada.
+- Las contraseñas usan PBKDF2 y el formato hexadecimal `salt:hash` en `app/lib/hash.server.ts`.
+- `app/lib/crypt.server.ts` cifra valores sensibles con AES-256-GCM y `ENCRYPTION_KEY`, una clave Base64 de 32 bytes.
+- Las copias portables usan además una contraseña independiente. El manifiesto incluye una huella de la clave de cifrado; no exporta secretos de entorno.
 
-The required dependency flow is:
+## PostgreSQL y Drizzle
 
-`routes` → `services/*.server.ts` → `database/*.server.ts` → Prisma
+- `db/schema.ts` es el esquema de tablas y relaciones Drizzle.
+- `db/client.ts` usa `pg` y `drizzle-orm/node-postgres`; `db/server.ts` inicializa la conexión de servidor.
+- `DATABASE_URL` define la conexión PostgreSQL.
+- `drizzle.config.ts` usa el dialecto `postgresql`; las migraciones vigentes están en `db/migrations-postgres/`.
+- No se mantiene integración con Cloudflare, D1, Workers, Wrangler ni SQLite.
 
-- `database/*.server.ts` contains Prisma entity classes with static methods, such as `UserEntity.getByUsername`. This is the only layer that accesses `prisma.*` directly. It also handles password hashing.
-- `services/*.server.ts` contains Zod validation, using schemas from `schemas/*.ts`, and business logic. Services return shapes such as `{ success }` or `{ error }`.
-- `schemas/*.ts` contains Zod schemas. Shared error messages live in `schemas/messages.ts`.
-- The `*.server.ts` suffix identifies server-only modules. Never import them from client-side code.
+## Entorno y Docker Compose
 
-## Authentication and Security
+`.env` y `.env.production` están excluidos de Git. Para desarrollo, copia `.env.local.example` a `.env` y `.env.production.example` a `.env.production` para iniciar el servicio PostgreSQL de Compose.
 
-### Authentication and Sessions
+Variables principales:
 
-- `auth.server.ts` provides:
-  - `isAuthenticated(request)`, which redirects unauthenticated users to `/login`.
-  - `validateUserRole(request, role | role[])`, which redirects unauthorized users to `/unauthorized`.
-- Call `validateUserRole` in the `loader` of every protected route.
-- Role groups map to route prefixes according to the `UserRole` enum: `/admin`, `/operator`, `/monitor`, `/security`, `/requester`, and `/approver`.
-- The session cookie is named `wachiman-session` and has an eight-hour `maxAge`.
-- `SESSION_SECRET` defaults to `dev-session-secret`; always configure it in production.
-- `SESSION_COOKIE_SECURE` defaults to `true` when `NODE_ENV=production`. Set it to `false` when serving a production build over plain HTTP.
-- Password hashing is implemented in `hash.server.ts` using scrypt and the `salt:hex` format.
+- `DATABASE_URL`: host `127.0.0.1:55432` en desarrollo local y `db:5432` dentro de Compose.
+- `POSTGRES_DB`, `POSTGRES_USER` y `POSTGRES_PASSWORD`: credenciales del servicio PostgreSQL.
+- `ADMIN_PASSWORD`: contraseña inicial para el seed en una base nueva.
+- `ENCRYPTION_KEY` y `SESSION_SECRET`: claves de aplicación.
+- `UPLOADS_BASE_PATH`: archivos adjuntos, persistidos en el volumen de Compose.
+- `BRANDING_BASE_PATH`: archivos de marca incluidos en las copias portables.
 
-### Encryption
+Compose ejecuta PostgreSQL 18.4 con volumen persistente, publica la base solo en loopback y espera a que esté saludable antes de migrar y arrancar la aplicación. No borres los volúmenes al detener servicios si necesitas conservar los datos.
 
-- `crypt.server.ts` uses AES-256-GCM.
-- Encrypted database values, such as `AccessLog.entrySignatureEnvelope`, are stored as an `EncryptedValueEnvelope` JSON object with the shape `{ v, alg, iv, tag, ct }`.
-- The environment variable is intentionally misspelled as **`ENCRIPTION_KEY`**. Do not rename or replace it with `ENCRYPTION_KEY` unless the application is migrated accordingly.
-- `ENCRIPTION_KEY` must be a base64-encoded 32-byte key.
-- Generate it with `pnpm env:set-encryption-key`.
+## UI
 
-## Database and Prisma
-
-- Prisma 7 uses the `prisma-client` generator with `output = ./generated/prisma`.
-- Import the Prisma client and enums through their relative generated path from `app`, for example `../../prisma/generated/prisma/client`.
-- Do not import the client or enums from `@prisma/client` in `node_modules`.
-- The project uses `@prisma/adapter-pg` (`PrismaPg`) in both `app/lib/prisma.server.ts`, as a singleton, and `prisma/seed.ts`.
-- The database connection string comes from `DATABASE_URL`.
-- `prisma.config.ts` loads `dotenv/config` and reads `datasource.url` from the environment.
-
-## Environment Configuration
-
-`.env` is gitignored. Create it from `.env.example`.
-
-Runtime variables:
-
-- `DATABASE_URL` — PostgreSQL connection string, for example `postgres://postgres:postgres@127.0.0.1:55432/wachiman`.
-- `ADMIN_PASSWORD` — the only variable strictly required by `pnpm db:seed`.
-- `ENCRIPTION_KEY` — required by `crypt.server.ts`; note the intentional misspelling described above.
-- `SESSION_SECRET` and `SESSION_COOKIE_SECURE` — session settings described in the authentication section.
-
-Optional seed overrides:
-
-- `ADMIN_FULL_NAME`
-- `ADMIN_USERNAME`
-- `SITE_NAME` / `SITE_SLUG`
-- `DEPARTMENT_NAME` / `DEPARTMENT_SLUG`
-
-## Docker
-
-- `docker compose up` runs PostgreSQL 18.4 at `127.0.0.1:55432` and the application at `0.0.0.0:3000`.
-- The application container waits for PostgreSQL, then runs `prisma migrate deploy && db:seed && start`.
-- The application container forces `SESSION_COOKIE_SECURE=false`.
-- Inside the container, the database host is `db:5432`, configured through `APP_DATABASE_URL`.
-
-## UI Conventions
-
-- shadcn/ui primitives live in `app/components/ui`; registry configuration is in `components.json`.
-- Feature components live in `app/components/models`.
-- Use `cn()` from `app/lib/utils.ts` for composing class names.
-- Keep all UI strings in Spanish.
-- Continue using the Spanish `date-fns` locale for date formatting.
+- Los componentes shadcn/ui viven en `app/components/ui`; configuración en `components.json`.
+- Componentes de dominio en `app/components/models`.
+- Usa `cn()` desde `app/lib/utils.ts` para componer clases.
+- Mantén las etiquetas y mensajes nuevos en español y conserva el locale español de `date-fns`.

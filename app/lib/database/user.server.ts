@@ -29,6 +29,15 @@ type UpdateUserInput = {
 };
 
 export class UserEntity {
+  public static async getPasswordHashById(id: string) {
+    const [user] = await db
+      .select({ password: users.password })
+      .from(users)
+      .where(eq(users.id, id))
+      .limit(1);
+    return user?.password ?? null;
+  }
+
   public static async create(data: CreateUserInput) {
     const hashedPassword = await hashText(data.password);
     const [user] = await db
@@ -73,7 +82,7 @@ export class UserEntity {
       return rows ?? null;
     }
 
-    return (await query.get()) ?? null;
+    return (await query.then((rows) => rows[0])) ?? null;
   }
 
   public static async getById(id: string) {
@@ -81,7 +90,7 @@ export class UserEntity {
       .select()
       .from(users)
       .where(and(eq(users.isActive, true), eq(users.isTrashed, false), eq(users.id, id)))
-      .get();
+      .then((rows) => rows[0]);
     return user ?? null;
   }
 
@@ -98,7 +107,7 @@ export class UserEntity {
       eq(users.isActive, isActive),
       eq(users.isTrashed, isTrashed),
     ];
-    // exclude is simplified — the original used Prisma's NOT syntax
+    // La opción exclude mantiene compatibilidad con las consultas actuales.
     if (Object.keys(exclude).length > 0) {
       for (const [key, value] of Object.entries(exclude)) {
         if (key === "id") {
@@ -107,7 +116,7 @@ export class UserEntity {
       }
     }
 
-    return db.select().from(users).where(and(...conditions)).all();
+    return db.select().from(users).where(and(...conditions));
   }
 
   public static async update(id: string, data: UpdateUserInput) {

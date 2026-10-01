@@ -20,7 +20,7 @@ export class CompanyEntity {
       .select()
       .from(companies)
       .where(eq(companies.id, id))
-      .get();
+      .then((rows) => rows[0]);
     return company ?? null;
   }
 
@@ -31,7 +31,7 @@ export class CompanyEntity {
       .select()
       .from(companies)
       .where(and(...conditions))
-      .get();
+      .then((rows) => rows[0]);
     return company ?? null;
   }
 
@@ -63,7 +63,7 @@ export class CompanyEntity {
   }
 
   public static async findMany() {
-    return db.select().from(companies).all();
+    return db.select().from(companies);
   }
 
   public static async searchByName(query: string) {
@@ -71,8 +71,7 @@ export class CompanyEntity {
       .select({ id: companies.id, name: companies.name, cif: companies.cif, address: companies.address })
       .from(companies)
       .where(like(companies.name, `%${query}%`))
-      .limit(5)
-      .all();
+      .limit(5);
   }
 
   public static async update(

@@ -1,1 +1,0 @@
-ALTER TABLE `planned_access_persons` ADD `work_category_id` text REFERENCES work_categories(id);

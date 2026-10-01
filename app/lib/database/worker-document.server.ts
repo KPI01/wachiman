@@ -1,6 +1,5 @@
 import { and, desc, eq, inArray, lte } from "drizzle-orm";
-import type { DrizzleD1Database } from "drizzle-orm/d1";
-import { db, isLocalDb } from "../../../db/server";
+import { db } from "../../../db/server";
 import {
   auditLogs,
   companies,
@@ -29,8 +28,7 @@ export class WorkerDocumentEntity {
       .select()
       .from(workerDocuments)
       .where(eq(workerDocuments.externalWorkerId, workerId))
-      .orderBy(desc(workerDocuments.createdAt))
-      .all();
+      .orderBy(desc(workerDocuments.createdAt));
   }
 
   public static async findById(id: string) {
@@ -38,7 +36,7 @@ export class WorkerDocumentEntity {
       .select()
       .from(workerDocuments)
       .where(eq(workerDocuments.id, id))
-      .get()) ?? null;
+      .then((rows) => rows[0])) ?? null;
   }
 
   public static async findByIdAndWorkerId(id: string, workerId: string) {
@@ -51,7 +49,7 @@ export class WorkerDocumentEntity {
           eq(workerDocuments.externalWorkerId, workerId),
         ),
       )
-      .get()) ?? null;
+      .then((rows) => rows[0])) ?? null;
   }
 
   public static async update(id: string, data: Partial<typeof workerDocuments.$inferInsert>) {
@@ -81,8 +79,7 @@ export class WorkerDocumentEntity {
           eq(workerDocuments.status, "VALIDATED" as DocumentStatus),
             lte(workerDocuments.validUntil, yesterdayEnd),
         ),
-      )
-      .all();
+      );
   }
 
   public static async markManyAsExpired(ids: string[]) {
@@ -128,51 +125,18 @@ export class WorkerDocumentEntity {
       reviewedAt: data.reviewedAt,
     };
 
-    if (isLocalDb()) {
-      return db.transaction((tx) => {
-        const reviewedDocument = tx
-          .update(workerDocuments)
-          .set(documentUpdate)
-          .where(and(
-            eq(workerDocuments.id, documentId),
-            eq(workerDocuments.status, "PENDING_REVIEW"),
-          ))
-          .returning()
-          .get();
-        if (!reviewedDocument) return null;
-
-        const review = tx.insert(documentReviews).values(reviewValues).returning().get();
-        tx.insert(auditLogs).values({
-          entityType: "WorkerDocument",
-          entityId: documentId,
-          action: "DOCUMENT_REVIEWED",
-          changedBy: data.reviewedById,
-          summary: data.summary,
-          metadata: {
-            reviewId: review.id,
-            decision: data.decision,
-            reason: data.reason,
-            evidenceSnapshot: data.evidenceSnapshot,
-          },
-        }).run();
-        return review;
-      });
-    }
-
-    const d1 = db as unknown as DrizzleD1Database<typeof import("../../../db/schema")>;
-    return d1.transaction(async (tx) => {
-      const reviewedDocument = await tx
+    return db.transaction(async (tx) => {
+      const [reviewedDocument] = await tx
         .update(workerDocuments)
         .set(documentUpdate)
         .where(and(
           eq(workerDocuments.id, documentId),
           eq(workerDocuments.status, "PENDING_REVIEW"),
         ))
-        .returning()
-        .get();
+        .returning();
       if (!reviewedDocument) return null;
 
-      const review = await tx.insert(documentReviews).values(reviewValues).returning().get();
+      const [review] = await tx.insert(documentReviews).values(reviewValues).returning();
       await tx.insert(auditLogs).values({
         entityType: "WorkerDocument",
         entityId: documentId,
@@ -185,7 +149,7 @@ export class WorkerDocumentEntity {
           reason: data.reason,
           evidenceSnapshot: data.evidenceSnapshot,
         },
-      }).run();
+      });
       return review;
     });
   }

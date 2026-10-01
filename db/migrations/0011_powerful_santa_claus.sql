@@ -1,3 +1,0 @@
-CREATE UNIQUE INDEX `planned_access_person_decisions_person_idx` ON `planned_access_person_decisions` (`planned_access_person_id`);--> statement-breakpoint
-CREATE UNIQUE INDEX `work_permit_signatures_type_idx` ON `work_permit_signatures` (`work_permit_id`,`signer_type`);--> statement-breakpoint
-CREATE UNIQUE INDEX `work_permits_activity_person_idx` ON `work_permits` (`activity_id`,`planned_access_person_id`);

@@ -1,4 +1,3 @@
-/// <reference types="@cloudflare/workers-types" />
 
 import {
   isRouteErrorResponse,
@@ -13,7 +12,7 @@ import {
 import type { Route } from "./+types/root";
 import { Toaster } from "~/components/ui/sonner";
 import { TooltipProvider } from "~/components/ui/tooltip";
-import { initLocalDb, isDbInitialized } from "../db/server";
+import { initDb, isDbInitialized } from "../db/server";
 import { AppConfigContext, DEFAULT_APP_CONFIG } from "~/lib/app-config";
 import type { AppConfig } from "~/lib/app-config";
 import { getAppConfig } from "~/lib/app-config.server";
@@ -25,9 +24,8 @@ export function loader() {
 
 export const middleware: Route.MiddlewareFunction[] = [
   async (_, next) => {
-    // Cloudflare initializes D1 before the request handler; Node initializes SQLite here.
     if (!isDbInitialized()) {
-      await initLocalDb();
+      await initDb();
     }
     return next();
   }

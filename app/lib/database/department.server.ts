@@ -13,7 +13,7 @@ export class DepartmentEntity {
       .select()
       .from(departments)
       .where(eq(departments.id, id))
-      .get();
+      .then((rows) => rows[0]);
     return department ?? null;
   }
 
@@ -24,12 +24,12 @@ export class DepartmentEntity {
       .select()
       .from(departments)
       .where(and(...conditions))
-      .get();
+      .then((rows) => rows[0]);
     return department ?? null;
   }
 
   public static async findAll() {
-    return db.select().from(departments).all();
+    return db.select().from(departments);
   }
 
   public static async update(id: string, data: { name?: string; slug?: string }) {

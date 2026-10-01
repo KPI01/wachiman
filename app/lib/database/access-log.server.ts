@@ -1,6 +1,5 @@
 import { and, count, desc, eq, gte, inArray, isNotNull, isNull, like, lte, ne, or, sql, type SQL } from "drizzle-orm";
-import type { DrizzleD1Database } from "drizzle-orm/d1";
-import { db, isLocalDb } from "../../../db/server";
+import { db } from "../../../db/server";
 import {
   accessLogs,
   accessLogVehicles,
@@ -126,13 +125,13 @@ async function loadAccessLogRelations(rows: (typeof accessLogs.$inferSelect)[]):
 
   const [siteRows, creatorRows, vehicleRows] = await Promise.all([
     siteIds.length > 0
-      ? db.select().from(sites).where(inArray(sites.id, siteIds)).all()
+      ? db.select().from(sites).where(inArray(sites.id, siteIds))
       : Promise.resolve([] as typeof sites.$inferSelect[]),
     creatorIds.length > 0
-      ? db.select().from(users).where(inArray(users.id, creatorIds)).all()
+      ? db.select().from(users).where(inArray(users.id, creatorIds))
       : Promise.resolve([] as typeof users.$inferSelect[]),
     vehicleIds.length > 0
-      ? db.select().from(accessLogVehicles).where(inArray(accessLogVehicles.id, vehicleIds)).all()
+      ? db.select().from(accessLogVehicles).where(inArray(accessLogVehicles.id, vehicleIds))
       : Promise.resolve([] as typeof accessLogVehicles.$inferSelect[]),
   ]);
 
@@ -160,7 +159,7 @@ export class AccessLogEntity {
         .from(accessLogVehicles)
         .where(eq(accessLogVehicles.plateSnapshot, data.vehicle.plateSnapshot))
         .limit(1)
-        .get();
+        .then((rows) => rows[0]);
 
       if (existingVehicle) {
         vehicleId = existingVehicle.id;
@@ -249,53 +248,17 @@ export class AccessLogEntity {
     ];
     if (siteId) conditions.push(eq(accessLogs.siteId, siteId));
 
-    if (isLocalDb()) {
-      return db.transaction((tx) => {
-        const log = tx
-          .update(accessLogs)
-          .set(data)
-          .where(and(...conditions))
-          .returning()
-          .get();
-        if (!log) return undefined;
-
-        tx.insert(auditLogs).values(auditData).run();
-        return log;
-      });
-    }
-
-    const d1 = db as unknown as DrizzleD1Database<
-      typeof import("../../../db/schema")
-    >;
-    const updateClaim = `__access_log_update_${crypto.randomUUID()}__`;
-    const claimedRow = and(
-      eq(accessLogs.id, accessLogId),
-      eq(accessLogs.visitReason, updateClaim),
-    );
-    const auditInsert = d1.insert(auditLogs).select(sql`
-      SELECT
-        ${crypto.randomUUID()},
-        ${auditData.entityType},
-        ${auditData.entityId},
-        ${auditData.action},
-        ${auditData.changedBy},
-        ${auditData.summary},
-        ${auditData.metadata ? JSON.stringify(auditData.metadata) : null},
-        ${Date.now()}
-      FROM ${accessLogs}
-      WHERE ${claimedRow}
-    `);
-    const [, , updatedRows] = await d1.batch([
-      d1
+    return db.transaction(async (tx) => {
+      const [log] = await tx
         .update(accessLogs)
-        .set({ visitReason: updateClaim })
+        .set(data)
         .where(and(...conditions))
-        .returning(),
-      auditInsert,
-      d1.update(accessLogs).set(data).where(claimedRow).returning(),
-    ] as const);
+        .returning();
+      if (!log) return undefined;
 
-    return updatedRows[0];
+      await tx.insert(auditLogs).values(auditData);
+      return log;
+    });
   }
 
   public static async findMany(
@@ -328,8 +291,7 @@ export class AccessLogEntity {
       .select()
       .from(accessLogs)
       .where(and(...conditions))
-      .orderBy(desc(accessLogs.entryTimestamp))
-      .all();
+      .orderBy(desc(accessLogs.entryTimestamp));
 
     return loadAccessLogRelations(rows);
   }
@@ -342,8 +304,7 @@ export class AccessLogEntity {
       .select()
       .from(accessLogs)
       .where(and(...conditions))
-      .orderBy(desc(accessLogs.entryTimestamp))
-      .all();
+      .orderBy(desc(accessLogs.entryTimestamp));
 
     return loadAccessLogRelations(rows);
   }
@@ -360,7 +321,7 @@ export class AccessLogEntity {
       )
       .orderBy(desc(accessLogs.entryTimestamp))
       .limit(1)
-      .get();
+      .then((rows) => rows[0]);
 
     if (!row) return null;
     return (await loadAccessLogRelations([row]))[0] ?? null;
@@ -388,7 +349,7 @@ export class AccessLogEntity {
       )
       .orderBy(desc(accessLogs.entryTimestamp))
       .limit(1)
-      .get();
+      .then((rows) => rows[0]);
 
     if (!row) return null;
     return (await loadAccessLogRelations([row]))[0] ?? null;
@@ -409,7 +370,7 @@ export class AccessLogEntity {
         lte(accessLogs.entryTimestamp, end),
       ))
       .limit(1)
-      .get());
+      .then((rows) => rows[0]));
   }
 
   public static async findFirst(input: AccessLogFindFirstInput) {
@@ -439,7 +400,7 @@ export class AccessLogEntity {
       .from(accessLogs)
       .where(and(...conditions))
       .limit(1)
-      .get();
+      .then((rows) => rows[0]);
 
     if (!row) return null;
     return (await loadAccessLogRelations([row]))[0] ?? null;
@@ -450,8 +411,7 @@ export class AccessLogEntity {
       .selectDistinct({ id: allowedAreas.id, name: allowedAreas.name })
       .from(allowedAreas)
       .where(like(allowedAreas.name, `%${query}%`))
-      .limit(8)
-      .all();
+      .limit(8);
   }
 
   public static async searchDistinctApprovedBy(query: string) {
@@ -459,8 +419,7 @@ export class AccessLogEntity {
       .selectDistinct({ name: accessLogs.approvedBySnapshot })
       .from(accessLogs)
       .where(like(accessLogs.approvedBySnapshot, `%${query}%`))
-      .limit(8)
-      .all();
+      .limit(8);
   }
 
   public static async hasVehicle(vehicleId: string) {
@@ -469,7 +428,7 @@ export class AccessLogEntity {
       .from(accessLogs)
       .where(eq(accessLogs.vehicleAccessLogId, vehicleId))
       .limit(1)
-      .get();
+      .then((rows) => rows[0]);
     return row !== undefined;
   }
 
@@ -478,7 +437,7 @@ export class AccessLogEntity {
       .select()
       .from(accessLogVehicles)
       .where(eq(accessLogVehicles.id, vehicleId))
-      .get();
+      .then((rows) => rows[0]);
     return vehicle ?? null;
   }
 
@@ -500,7 +459,7 @@ export class AccessLogEntity {
       .select({ count: count() })
       .from(accessLogs)
       .where(and(...conditions))
-      .get();
+      .then((rows) => rows[0]);
     return result?.count ?? 0;
   }
 
@@ -523,8 +482,7 @@ export class AccessLogEntity {
         lte(accessLogs.entryTimestamp, end),
       ))
       .groupBy(accessLogs.siteId, sites.name)
-      .orderBy(sites.name)
-      .all();
+      .orderBy(sites.name);
   }
 
   public static async findLatestEntry(
@@ -539,7 +497,7 @@ export class AccessLogEntity {
       .where(conditions.length > 0 ? and(...conditions) : undefined)
       .orderBy(desc(accessLogs.entryTimestamp))
       .limit(1)
-      .get();
+      .then((rows) => rows[0]);
 
     if (!row) return null;
     return (await loadAccessLogRelations([row]))[0] ?? null;
@@ -554,8 +512,7 @@ export class AccessLogEntity {
     const departmentUsers = await db
       .select({ id: users.id })
       .from(users)
-      .where(eq(users.departmentId, departmentId))
-      .all();
+      .where(eq(users.departmentId, departmentId));
     const userIds = departmentUsers.map((u) => u.id);
     if (userIds.length === 0) return [];
 
@@ -563,8 +520,7 @@ export class AccessLogEntity {
     const deptPlannedAccesses = await db
       .select({ id: plannedAccesses.id })
       .from(plannedAccesses)
-      .where(inArray(plannedAccesses.requestedById, userIds))
-      .all();
+      .where(inArray(plannedAccesses.requestedById, userIds));
     const paIds = deptPlannedAccesses.map((pa) => pa.id);
     if (paIds.length === 0) return [];
 
@@ -572,8 +528,7 @@ export class AccessLogEntity {
     const paPersons = await db
       .select({ id: plannedAccessPersons.id })
       .from(plannedAccessPersons)
-      .where(inArray(plannedAccessPersons.plannedAccessId, paIds))
-      .all();
+      .where(inArray(plannedAccessPersons.plannedAccessId, paIds));
     const papIds = paPersons.map((p) => p.id);
 
     // 4. Query accessLogs with either plannedAccessId OR plannedAccessPersonId matching
@@ -599,8 +554,7 @@ export class AccessLogEntity {
       .select()
       .from(accessLogs)
       .where(and(...conditions))
-      .orderBy(desc(accessLogs.entryTimestamp))
-      .all();
+      .orderBy(desc(accessLogs.entryTimestamp));
 
     return loadAccessLogRelations(rows);
   }

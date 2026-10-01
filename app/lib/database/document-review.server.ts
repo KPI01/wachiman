@@ -13,7 +13,6 @@ export class DocumentReviewEntity {
       .select()
       .from(documentReviews)
       .where(eq(documentReviews.documentId, documentId))
-      .orderBy(desc(documentReviews.reviewedAt))
-      .all();
+      .orderBy(desc(documentReviews.reviewedAt));
   }
 }
