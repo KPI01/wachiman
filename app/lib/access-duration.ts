@@ -7,12 +7,33 @@ export function calculateAccessDurationMs(
   intervals: readonly AccessInterval[],
   now = new Date(),
 ) {
-  return intervals.reduce((total, interval) => {
-    const endTimestamp = interval.exitTimestamp ?? now;
-    const duration = endTimestamp.getTime() - interval.entryTimestamp.getTime();
+  const nowTimestamp = now.getTime();
+  const validIntervals = intervals
+    .map((interval) => ({
+      start: interval.entryTimestamp.getTime(),
+      end: Math.min(interval.exitTimestamp?.getTime() ?? nowTimestamp, nowTimestamp),
+    }))
+    .filter(({ start, end }) => Number.isFinite(start) && Number.isFinite(end) && end > start)
+    .sort((left, right) => left.start - right.start);
 
-    return total + Math.max(0, duration);
-  }, 0);
+  if (validIntervals.length === 0) return 0;
+
+  let total = 0;
+  let rangeStart = validIntervals[0].start;
+  let rangeEnd = validIntervals[0].end;
+
+  for (const interval of validIntervals.slice(1)) {
+    if (interval.start <= rangeEnd) {
+      rangeEnd = Math.max(rangeEnd, interval.end);
+      continue;
+    }
+
+    total += rangeEnd - rangeStart;
+    rangeStart = interval.start;
+    rangeEnd = interval.end;
+  }
+
+  return total + rangeEnd - rangeStart;
 }
 
 export function formatAccessDuration(milliseconds: number) {
