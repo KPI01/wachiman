@@ -75,12 +75,21 @@ export default function AppSidebar({
   user,
   ...props
 }: AppSidebarProps) {
-  const { appName } = useAppConfig();
+  const { appName, appLogo } = useAppConfig();
 
   return (
     <Sidebar collapsible="offcanvas" {...props}>
       <SidebarHeader className="m-2">
-        <span className="text-2xl font-bold">{appName}</span>
+        <div className="flex min-w-0 items-center gap-3">
+          <img
+            src={appLogo}
+            alt={`Logo de ${appName}`}
+            className="size-10 shrink-0 object-contain"
+          />
+          <span className="min-w-0 flex-1 whitespace-normal break-words text-lg font-bold leading-tight">
+            {appName}
+          </span>
+        </div>
       </SidebarHeader>
       <Separator />
       <SidebarContent className="px-2">

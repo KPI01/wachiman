@@ -13,7 +13,18 @@ export async function loader({ request }: Route.LoaderArgs) {
 export async function action({ request }: Route.ActionArgs) {
   const user = await validateUserRole(request, "ADMIN");
   const formData = await request.formData();
-  return updateGlobalAppSettings(Object.fromEntries(formData), user.username);
+  const values = Object.fromEntries(
+    Array.from(formData.entries()).filter(([, value]) => typeof value === "string"),
+  );
+  const logoFile = formData.get("appLogoFile");
+  const faviconFile = formData.get("appFaviconFile");
+
+  return updateGlobalAppSettings(values, user.username, {
+    appLogoFile: logoFile instanceof File ? logoFile : null,
+    appFaviconFile: faviconFile instanceof File ? faviconFile : null,
+    resetAppLogo: formData.get("resetAppLogo") === "true",
+    resetAppFavicon: formData.get("resetAppFavicon") === "true",
+  });
 }
 
 export default function AdminSettings({ loaderData }: Route.ComponentProps) {

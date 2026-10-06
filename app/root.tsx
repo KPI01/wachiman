@@ -19,12 +19,12 @@ import { TooltipProvider } from "~/components/ui/tooltip";
 import { initDb, isDbInitialized } from "../db/server";
 import { AppConfigContext, DEFAULT_APP_CONFIG } from "~/lib/app-config";
 import type { AppConfig } from "~/lib/app-config";
-import { getAppConfig } from "~/lib/app-config.server";
+import { getResolvedAppConfig } from "~/lib/app-config.server";
 import { CircleAlertIcon } from "lucide-react";
 import "./app.css";
 
 export function loader() {
-  return getAppConfig();
+  return getResolvedAppConfig();
 }
 
 export const middleware: Route.MiddlewareFunction[] = [
@@ -45,7 +45,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link rel="icon" type="image/svg+xml" href={appConfig.appFavicon} />
+        <link rel="icon" href={appConfig.appFavicon} />
         <Meta />
         <Links />
       </head>

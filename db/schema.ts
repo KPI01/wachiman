@@ -219,6 +219,10 @@ export const appSettings = pgTable("app_settings", {
   holderLegalName: text("holder_legal_name"),
   holderTaxId: text("holder_tax_id"),
   holderFiscalAddress: text("holder_fiscal_address"),
+  appLogoData: text("app_logo_data"),
+  appLogoMimeType: text("app_logo_mime_type"),
+  appFaviconData: text("app_favicon_data"),
+  appFaviconMimeType: text("app_favicon_mime_type"),
   updatedById: text("updated_by_id").references(() => users.id),
   updatedAt: timestamp("updated_at")
     .notNull()

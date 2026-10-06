@@ -17,7 +17,7 @@ export default function OperationalShell({
   user,
   children,
 }: OperationalShellProps) {
-  const { appName } = useAppConfig();
+  const { appName, appLogo } = useAppConfig();
   const navigation = useNavigation();
   const location = useLocation();
   const isChangingPage =
@@ -30,11 +30,20 @@ export default function OperationalShell({
       <title>{title}</title>
       <header className="border-b bg-card">
         <div className="flex w-full flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between md:px-7 lg:px-10">
-          <div className="min-w-0">
-            <p className="truncate text-xl font-semibold">{appName}</p>
-            <p className="truncate text-xs text-muted-foreground">
-              Centro: {user.site.name}
-            </p>
+          <div className="flex min-w-0 items-center gap-3">
+            <img
+              src={appLogo}
+              alt={`Logo de ${appName}`}
+              className="size-10 shrink-0 object-contain"
+            />
+            <div className="min-w-0">
+              <p className="whitespace-normal break-words text-xl font-semibold leading-tight">
+                {appName}
+              </p>
+              <p className="truncate text-xs text-muted-foreground">
+                Centro: {user.site.name}
+              </p>
+            </div>
           </div>
           <UserMenu user={user} />
         </div>

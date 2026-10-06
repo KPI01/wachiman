@@ -24,7 +24,7 @@ export default function AuthenticatedShell({
   items,
   children,
 }: AuthenticatedShellProps) {
-  const { appName } = useAppConfig();
+  const { appName, appLogo } = useAppConfig();
   const navigation = useNavigation();
   const location = useLocation();
   const isChangingPage =
@@ -39,8 +39,15 @@ export default function AuthenticatedShell({
       <SidebarInset className="max-w-full overflow-auto bg-background p-4 md:p-7">
         <div className="mb-4 flex items-center gap-3 md:hidden">
           <SidebarTrigger />
+          <img
+            src={appLogo}
+            alt={`Logo de ${appName}`}
+            className="size-9 shrink-0 object-contain"
+          />
           <div className="min-w-0">
-            <p className="truncate text-sm font-semibold">{appName}</p>
+            <p className="whitespace-normal break-words text-sm font-semibold leading-tight">
+              {appName}
+            </p>
             <p className="truncate text-xs text-muted-foreground">
               {title}
             </p>

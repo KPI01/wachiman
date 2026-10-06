@@ -15,6 +15,13 @@
       "when": 1791200019217,
       "tag": "0001_fixed_odin",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791295802351,
+      "tag": "0002_marvelous_warlock",
+      "breakpoints": true
     }
   ]
 }

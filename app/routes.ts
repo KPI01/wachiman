@@ -111,6 +111,7 @@ export default [
     route(":workerId/documents/:docId/file", "routes/api/external-workers/$workerId.documents.$docId.file.tsx"),
   ]),
   route("api/companies/search", "routes/api/companies/search.tsx"),
+  route("api/app-branding/:asset", "routes/api/app-branding.$asset.tsx"),
   ...prefix("api/access-logs", [
     route("allowed-areas/search", "routes/api/access-logs/allowed-areas/search.tsx"),
     route("approved-by/search", "routes/api/access-logs/approved-by/search.tsx"),

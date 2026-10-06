@@ -2,6 +2,8 @@ import { UserEntity } from "~/lib/database/user.server";
 import {
   AppSettingsEntity,
 } from "~/lib/database/app-settings.server";
+import type { BrandingAsset } from "~/lib/services/branding-image.server";
+import { validateBrandingImage } from "~/lib/services/branding-image.server";
 import {
   updateAppSettingsSchema,
   updateHolderCompanySettingsSchema,
@@ -11,9 +13,24 @@ export async function getGlobalAppSettings() {
   return AppSettingsEntity.getGlobal();
 }
 
+export async function getPublicBrandingAsset(asset: BrandingAsset) {
+  const storedAsset = await AppSettingsEntity.getBrandingAsset(asset);
+  if (!storedAsset?.data || !storedAsset.mimeType) return null;
+  return {
+    bytes: Buffer.from(storedAsset.data, "base64"),
+    mimeType: storedAsset.mimeType,
+  };
+}
+
 export async function updateGlobalAppSettings(
   input: unknown,
   actorUsername: string,
+  branding: {
+    appLogoFile?: File | null;
+    appFaviconFile?: File | null;
+    resetAppLogo?: boolean;
+    resetAppFavicon?: boolean;
+  } = {},
 ) {
   const parsed = updateAppSettingsSchema.safeParse(input);
   if (!parsed.success) {
@@ -30,19 +47,69 @@ export async function updateGlobalAppSettings(
     return { success: false as const, errors: "La configuración global no está inicializada." };
   }
 
-  if (current.earlyArrivalToleranceMinutes === parsed.data.earlyArrivalToleranceMinutes) {
+  const [logo, favicon] = await Promise.all([
+    branding.resetAppLogo ? null : validateBrandingImage(branding.appLogoFile),
+    branding.resetAppFavicon ? null : validateBrandingImage(branding.appFaviconFile),
+  ]);
+  if (logo && "error" in logo) {
+    return { success: false as const, errors: logo.error };
+  }
+  if (favicon && "error" in favicon) {
+    return { success: false as const, errors: favicon.error };
+  }
+
+  const logoChanged = branding.resetAppLogo
+    ? Boolean(current.appLogoMimeType)
+    : Boolean(logo);
+  const faviconChanged = branding.resetAppFavicon
+    ? Boolean(current.appFaviconMimeType)
+    : Boolean(favicon);
+  const settingsChanged =
+    current.earlyArrivalToleranceMinutes !== parsed.data.earlyArrivalToleranceMinutes;
+
+  if (!settingsChanged && !logoChanged && !faviconChanged) {
     return { success: true as const, changed: false as const, settings: current };
+  }
+
+  const summaryParts = [];
+  if (settingsChanged) summaryParts.push("parámetros de acceso");
+  if (logoChanged) summaryParts.push("logo");
+  if (faviconChanged) summaryParts.push("favicon");
+  const metadata: Record<string, unknown> = {
+    previous: {},
+    updated: {},
+  };
+  const previous = metadata.previous as Record<string, unknown>;
+  const updatedValues = metadata.updated as Record<string, unknown>;
+  if (settingsChanged) {
+    previous.earlyArrivalToleranceMinutes = current.earlyArrivalToleranceMinutes;
+    updatedValues.earlyArrivalToleranceMinutes = parsed.data.earlyArrivalToleranceMinutes;
+  }
+  if (logoChanged) {
+    previous.appLogoMimeType = current.appLogoMimeType;
+    updatedValues.appLogoMimeType = branding.resetAppLogo ? null : logo?.mimeType;
+  }
+  if (faviconChanged) {
+    previous.appFaviconMimeType = current.appFaviconMimeType;
+    updatedValues.appFaviconMimeType = branding.resetAppFavicon ? null : favicon?.mimeType;
   }
 
   const updated = await AppSettingsEntity.updateGlobalWithAudit({
     earlyArrivalToleranceMinutes: parsed.data.earlyArrivalToleranceMinutes,
     updatedById: actor.id,
     previousUpdatedAt: current.updatedAt,
-    summary: `Anticipación permitida modificada de ${current.earlyArrivalToleranceMinutes} a ${parsed.data.earlyArrivalToleranceMinutes} minutos`,
-    metadata: {
-      previous: { earlyArrivalToleranceMinutes: current.earlyArrivalToleranceMinutes },
-      updated: { earlyArrivalToleranceMinutes: parsed.data.earlyArrivalToleranceMinutes },
-    },
+    summary: `Configuración actualizada: ${summaryParts.join(", ")}`,
+    metadata,
+    ...(branding.resetAppLogo
+      ? { appLogoData: null, appLogoMimeType: null }
+      : logo
+        ? { appLogoData: logo.data, appLogoMimeType: logo.mimeType }
+        : {}),
+    ...(branding.resetAppFavicon
+      ? { appFaviconData: null, appFaviconMimeType: null }
+      : favicon
+        ? { appFaviconData: favicon.data, appFaviconMimeType: favicon.mimeType }
+        : {}),
   });
 
   if (!updated) {

@@ -47,7 +47,9 @@ export default function Welcome() {
           <span className="flex size-14 items-center justify-center rounded-xl bg-white p-2.5">
             <img src={appLogo} alt={`Logo de ${appName}`} className="max-h-full max-w-full object-contain" />
           </span>
-          <span className="font-heading text-xl font-semibold tracking-tight">{appName}</span>
+          <span className="min-w-0 flex-1 whitespace-normal break-words font-heading text-xl font-semibold leading-tight tracking-tight">
+            {appName}
+          </span>
         </div>
 
         <div className="relative max-w-xl py-16">
@@ -73,7 +75,9 @@ export default function Welcome() {
             <span className="flex size-12 items-center justify-center rounded-lg border bg-card p-2">
               <img src={appLogo} alt={`Logo de ${appName}`} className="max-h-full max-w-full object-contain" />
             </span>
-            <span className="font-heading text-lg font-semibold">{appName}</span>
+            <span className="min-w-0 flex-1 whitespace-normal break-words font-heading text-lg font-semibold leading-tight">
+              {appName}
+            </span>
           </div>
 
           <Card className="border-border/80 shadow-lg shadow-foreground/5">

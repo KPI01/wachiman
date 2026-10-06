@@ -8,6 +8,10 @@ export class AppSettingsEntity {
   public static async getGlobal() {
     const existing = await db.query.appSettings.findFirst({
       where: eq(appSettings.id, GLOBAL_APP_SETTINGS_ID),
+      columns: {
+        appLogoData: false,
+        appFaviconData: false,
+      },
       with: {
         updatedBy: {
           columns: { id: true, fullName: true, username: true },
@@ -22,12 +26,34 @@ export class AppSettingsEntity {
 
     return db.query.appSettings.findFirst({
       where: eq(appSettings.id, GLOBAL_APP_SETTINGS_ID),
+      columns: {
+        appLogoData: false,
+        appFaviconData: false,
+      },
       with: {
         updatedBy: {
           columns: { id: true, fullName: true, username: true },
         },
       },
     });
+  }
+
+  public static async getBrandingAsset(asset: "logo" | "favicon") {
+    const [settings] = await db
+      .select(
+        asset === "logo"
+          ? {
+              data: appSettings.appLogoData,
+              mimeType: appSettings.appLogoMimeType,
+            }
+          : {
+              data: appSettings.appFaviconData,
+              mimeType: appSettings.appFaviconMimeType,
+            },
+      )
+      .from(appSettings)
+      .where(eq(appSettings.id, GLOBAL_APP_SETTINGS_ID));
+    return settings ?? null;
   }
 
   public static async updateGlobalWithAudit(input: {
@@ -39,6 +65,10 @@ export class AppSettingsEntity {
     holderLegalName?: string;
     holderTaxId?: string;
     holderFiscalAddress?: string;
+    appLogoData?: string | null;
+    appLogoMimeType?: string | null;
+    appFaviconData?: string | null;
+    appFaviconMimeType?: string | null;
   }) {
     // Ensure successive updates have distinct version timestamps, even if they
     // happen during the same millisecond.
@@ -54,6 +84,16 @@ export class AppSettingsEntity {
     if (input.holderTaxId !== undefined) updateData.holderTaxId = input.holderTaxId;
     if (input.holderFiscalAddress !== undefined) {
       updateData.holderFiscalAddress = input.holderFiscalAddress;
+    }
+    if (input.appLogoData !== undefined) updateData.appLogoData = input.appLogoData;
+    if (input.appLogoMimeType !== undefined) {
+      updateData.appLogoMimeType = input.appLogoMimeType;
+    }
+    if (input.appFaviconData !== undefined) {
+      updateData.appFaviconData = input.appFaviconData;
+    }
+    if (input.appFaviconMimeType !== undefined) {
+      updateData.appFaviconMimeType = input.appFaviconMimeType;
     }
 
     return db.transaction(async (tx) => {
