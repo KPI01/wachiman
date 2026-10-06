@@ -12,6 +12,9 @@ import path from "node:path";
 import { deflateRaw, inflateRaw } from "node:zlib";
 import * as schema from "../../../db/schema";
 import { DatabaseBackupEntity } from "../database/backup.server";
+import { AuditLogEntity } from "../database/audit-log.server";
+import { UserEntity } from "../database/user.server";
+import { validateHashedText } from "../hash.server";
 
 const pbkdf2Async = promisify(pbkdf2);
 const deflateRawAsync = promisify(deflateRaw);
@@ -76,6 +79,27 @@ export type BackupSummary = {
   files: number;
   totalFileBytes: number;
 };
+
+export async function verifyBackupReauthentication(userId: string, password: string) {
+  const passwordHash = await UserEntity.getPasswordHashById(userId);
+  return Boolean(passwordHash && password && await validateHashedText(passwordHash, password));
+}
+
+export async function recordBackupAudit(
+  userId: string,
+  action: string,
+  summary: string,
+  metadata?: Record<string, unknown>,
+) {
+  return AuditLogEntity.create({
+    entityType: "Backup",
+    entityId: "portable-backup",
+    action,
+    changedBy: userId,
+    summary,
+    metadata,
+  });
+}
 
 function sha256(value: Uint8Array | string) {
   return createHash("sha256").update(value).digest("hex");

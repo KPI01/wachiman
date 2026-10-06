@@ -2,19 +2,19 @@ import { useFetcher, useNavigation } from "react-router";
 import { useState, type FormEvent } from "react";
 import type { Route } from "./+types/backups";
 import { validateUserRole } from "~/lib/auth.server";
-import { validateHashedText } from "~/lib/hash.server";
-import { UserEntity } from "~/lib/database/user.server";
 import {
   decryptBackupArchive,
   getBackupFileName,
   importBackupPayload,
   inspectBackupArchive,
+  recordBackupAudit,
+  verifyBackupReauthentication,
 } from "~/lib/services/backup.server";
-import { AuditLogEntity } from "~/lib/database/audit-log.server";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
+import { LoaderCircleIcon } from "lucide-react";
 
 const MAX_UPLOAD_BYTES = 512 * 1024 * 1024;
 
@@ -39,11 +39,6 @@ function getActionError(error: unknown) {
   return error instanceof Error ? error.message : "No se pudo completar la operación de respaldo.";
 }
 
-async function verifyReauthentication(userId: string, password: string) {
-  const hash = await UserEntity.getPasswordHashById(userId);
-  return Boolean(hash && password && await validateHashedText(hash, password));
-}
-
 export async function action({ request }: Route.ActionArgs) {
   const user = await validateUserRole(request, "ADMIN");
   const formData = await request.formData();
@@ -51,7 +46,7 @@ export async function action({ request }: Route.ActionArgs) {
 
   try {
     const currentPassword = getText(formData, `${intent}CurrentPassword`);
-    if (!(await verifyReauthentication(user.id, currentPassword))) {
+    if (!(await verifyBackupReauthentication(user.id, currentPassword))) {
       throw new Error("La contraseña actual no es correcta. Vuelve a autenticarte para continuar.");
     }
 
@@ -80,14 +75,7 @@ export async function action({ request }: Route.ActionArgs) {
   } catch (error) {
     const message = getActionError(error);
     try {
-      await AuditLogEntity.create({
-        entityType: "Backup",
-        entityId: "portable-backup",
-        action: "BACKUP_OPERATION_FAILED",
-        changedBy: user.id,
-        summary: "Falló una operación de copia de seguridad.",
-        metadata: { reason: message.slice(0, 240) },
-      });
+      await recordBackupAudit(user.id, "BACKUP_OPERATION_FAILED", "Falló una operación de copia de seguridad.", { reason: message.slice(0, 240) });
     } catch {
       // El error original debe seguir visible aunque la base de datos no permita auditarlo.
     }
@@ -194,7 +182,7 @@ export default function AdminBackups({ actionData: formData }: Route.ComponentPr
       ) : null}
 
       <div className="grid gap-6 xl:grid-cols-2">
-        <Card>
+        <Card className="rounded-xl shadow-sm">
           <CardHeader>
             <CardTitle>Exportar datos</CardTitle>
             <CardDescription>Guarda el archivo descargado en una ubicación segura distinta del servidor.</CardDescription>
@@ -211,13 +199,13 @@ export default function AdminBackups({ actionData: formData }: Route.ComponentPr
                 <Input id="exportArchivePasswordConfirm" name="archivePasswordConfirm" type="password" autoComplete="new-password" minLength={12} required />
               </label>
               <Button type="submit" disabled={navigation.state !== "idle" || isExporting}>
-                {isExporting ? "Preparando copia cifrada…" : "Descargar copia cifrada"}
+                {isExporting ? <><LoaderCircleIcon className="animate-spin" />Preparando copia cifrada…</> : "Descargar copia cifrada"}
               </Button>
             </form>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="rounded-xl shadow-sm">
           <CardHeader>
             <CardTitle>Importar datos</CardTitle>
             <CardDescription>
@@ -237,7 +225,7 @@ export default function AdminBackups({ actionData: formData }: Route.ComponentPr
               </label>
               <PasswordField name="previewCurrentPassword" label="Contraseña actual de tu cuenta" />
               <Button type="submit" variant="outline" disabled={previewFetcher.state !== "idle"}>
-                {previewFetcher.state === "submitting" ? "Validando archivo…" : "Validar y mostrar resumen"}
+                {previewFetcher.state !== "idle" ? <><LoaderCircleIcon className="animate-spin" />Validando archivo…</> : "Validar y mostrar resumen"}
               </Button>
             </previewFetcher.Form>
 
@@ -260,7 +248,7 @@ export default function AdminBackups({ actionData: formData }: Route.ComponentPr
                     <Input id="importConfirmation" name="confirmation" autoComplete="off" required />
                   </label>
                   <Button type="submit" variant="destructive" disabled={previewFetcher.state !== "idle"}>
-                    {previewFetcher.state === "submitting" ? "Restaurando datos…" : "Importar y combinar datos"}
+                    {previewFetcher.state !== "idle" ? <><LoaderCircleIcon className="animate-spin" />Restaurando datos…</> : "Importar y combinar datos"}
                   </Button>
                 </previewFetcher.Form>
               </>

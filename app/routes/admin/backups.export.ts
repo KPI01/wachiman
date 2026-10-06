@@ -1,11 +1,10 @@
 import type { ActionFunctionArgs } from "react-router";
-import { AuditLogEntity } from "~/lib/database/audit-log.server";
-import { UserEntity } from "~/lib/database/user.server";
 import { validateUserRole } from "~/lib/auth.server";
-import { validateHashedText } from "~/lib/hash.server";
 import {
   createBackupArchive,
   createBackupDownloadResponse,
+  recordBackupAudit,
+  verifyBackupReauthentication,
 } from "~/lib/services/backup.server";
 
 function getActionError(error: unknown) {
@@ -31,8 +30,7 @@ export async function action({ request }: ActionFunctionArgs) {
   try {
     const formData = await request.formData();
     const password = getText(formData, "exportCurrentPassword");
-    const passwordHash = await UserEntity.getPasswordHashById(user.id);
-    if (!passwordHash || !password || !(await validateHashedText(passwordHash, password))) {
+    if (!(await verifyBackupReauthentication(user.id, password))) {
       throw new Error("La contraseña actual no es correcta. Vuelve a autenticarte para continuar.");
     }
 
@@ -41,34 +39,14 @@ export async function action({ request }: ActionFunctionArgs) {
       throw new Error("Las contraseñas del archivo no coinciden.");
     }
 
-    await AuditLogEntity.create({
-      entityType: "Backup",
-      entityId: "portable-backup",
-      action: "BACKUP_EXPORT_STARTED",
-      changedBy: user.id,
-      summary: "Se inició una exportación de datos.",
-    });
+    await recordBackupAudit(user.id, "BACKUP_EXPORT_STARTED", "Se inició una exportación de datos.");
     const result = await createBackupArchive(passphrase);
-    await AuditLogEntity.create({
-      entityType: "Backup",
-      entityId: "portable-backup",
-      action: "BACKUP_EXPORTED",
-      changedBy: user.id,
-      summary: "Se exportó una copia de seguridad cifrada.",
-      metadata: { files: result.summary.files },
-    });
+    await recordBackupAudit(user.id, "BACKUP_EXPORTED", "Se exportó una copia de seguridad cifrada.", { files: result.summary.files });
     return createBackupDownloadResponse(result.archive);
   } catch (error) {
     const message = getActionError(error);
     try {
-      await AuditLogEntity.create({
-        entityType: "Backup",
-        entityId: "portable-backup",
-        action: "BACKUP_OPERATION_FAILED",
-        changedBy: user.id,
-        summary: "Falló una operación de copia de seguridad.",
-        metadata: { reason: message.slice(0, 240) },
-      });
+      await recordBackupAudit(user.id, "BACKUP_OPERATION_FAILED", "Falló una operación de copia de seguridad.", { reason: message.slice(0, 240) });
     } catch {
       // El error original debe seguir visible aunque la base de datos no permita auditarlo.
     }
