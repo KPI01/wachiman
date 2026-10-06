@@ -24,14 +24,18 @@ export function TodayAccessCountWidget({ scope, editMode }: WidgetComponentProps
       editMode={editMode}
       isLoading={isLoading}
       onRefresh={revalidate}
-      bodyClassName="flex flex-col items-center justify-center overflow-hidden"
+      bodyClassName="dashboard-widget-scroll flex flex-col"
     >
       {data === undefined ? (
-        <Skeleton className="h-16 w-24" />
+        <div className="space-y-2 py-2 pr-1">
+          {Array.from({ length: 3 }).map((_, index) => (
+            <Skeleton key={index} className="h-12 w-full" />
+          ))}
+        </div>
       ) : (
-        <div className="flex w-full flex-col gap-3">
+        <div className="flex w-full flex-col gap-2 py-2 pr-1">
           {data.sites.length === 0 ? (
-            <div className="flex flex-col items-center justify-center gap-0.5">
+            <div className="flex min-h-32 flex-col items-center justify-center gap-0.5">
               <span className="font-heading text-4xl font-bold leading-none tabular-nums text-foreground">
                 0
               </span>
@@ -39,7 +43,7 @@ export function TodayAccessCountWidget({ scope, editMode }: WidgetComponentProps
             </div>
           ) : (
             data.sites.map((site) => (
-              <div key={site.siteId} className="flex items-center justify-between gap-3 rounded-md border px-3 py-2">
+              <div key={site.siteId} className="flex min-h-12 items-center justify-between gap-3 rounded-md border px-3 py-2">
                 <span className="min-w-0 truncate text-sm text-muted-foreground">
                   {site.siteName}
                 </span>

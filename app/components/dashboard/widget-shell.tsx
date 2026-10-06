@@ -24,11 +24,11 @@ export function WidgetShell({
   bodyClassName,
 }: WidgetShellProps) {
   return (
-    <Card className={cn("h-full border-0.5 p-0 gap-0 shadow-sm", className)}>
-      <CardHeader className="flex items-center justify-between border-b py-1!">
+    <Card className={cn("flex h-full min-h-0 flex-col gap-0 overflow-hidden border-0.5 p-0 shadow-sm", className)}>
+      <CardHeader className="flex shrink-0 items-center justify-between gap-2 border-b py-2!">
         <CardTitle
           className={cn(
-            "widget-drag-handle select-none text-sm font-medium",
+            "widget-drag-handle min-w-0 truncate select-none text-sm font-medium",
             editMode &&
               cn(
                 buttonVariants({ variant: "ghost" }),
@@ -57,7 +57,7 @@ export function WidgetShell({
           )}
         </div>
       </CardHeader>
-      <CardContent className={cn("flex-1 overflow-hidden py-0", bodyClassName)}>
+      <CardContent className={cn("min-h-0 min-w-0 flex-1 overflow-hidden py-0", bodyClassName)}>
         {children}
       </CardContent>
     </Card>

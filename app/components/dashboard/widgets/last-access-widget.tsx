@@ -1,3 +1,5 @@
+import { MapPin } from "lucide-react";
+
 import { WidgetShell } from "../widget-shell";
 import { useWidgetData } from "../use-widget-data";
 import { WIDGET_REGISTRY } from "../widget-registry";
@@ -7,12 +9,15 @@ import { formatTimestamp } from "~/lib/utils";
 import type { WidgetComponentProps } from "../types";
 
 type LastAccessData = {
-  accessLog: {
-    id: string;
-    entryTimestamp: string;
+  sites: Array<{
+    siteId: string;
     siteName: string;
-    personFullName: string;
-  } | null;
+    accessLog: {
+      id: string;
+      entryTimestamp: string;
+      personFullName: string;
+    } | null;
+  }>;
 };
 
 export function LastAccessWidget({ scope, editMode }: WidgetComponentProps) {
@@ -29,39 +34,48 @@ export function LastAccessWidget({ scope, editMode }: WidgetComponentProps) {
       editMode={editMode}
       isLoading={isLoading}
       onRefresh={revalidate}
-      bodyClassName="flex flex-col justify-evenly items-center h-full"
+      bodyClassName="dashboard-widget-scroll"
     >
       {data === undefined ? (
-        <div className="space-y-2">
-          <Skeleton className="h-8 w-full" />
-          <Skeleton className="h-4 w-3/4" />
+        <div className="space-y-2 py-2 pr-1">
+          {Array.from({ length: 3 }).map((_, index) => (
+            <Skeleton key={index} className="h-14 w-full" />
+          ))}
         </div>
-      ) : data.accessLog === null ? (
+      ) : data.sites.length === 0 ? (
         <Empty className="py-6">
-          <EmptyTitle>Sin accesos</EmptyTitle>
-          <EmptyDescription>Aún no hay accesos registrados.</EmptyDescription>
+          <EmptyTitle>Sin plantas disponibles</EmptyTitle>
+          <EmptyDescription>
+            No hay plantas disponibles para mostrar.
+          </EmptyDescription>
         </Empty>
       ) : (
-        <>
-          <div className="text-lg font-bold">
-            {formatTimestamp({
-              date: new Date(data.accessLog.entryTimestamp),
-              template: "dd/MM/yyyy",
-            })}
-          </div>
-          <div className="text-2xl font-bold text-muted-foreground">
-            {formatTimestamp({
-              date: new Date(data.accessLog.entryTimestamp),
-              template: "HH:mm",
-            })}
-          </div>
-          <span className="truncate font-medium text-foreground">
-            {data.accessLog.personFullName}
-          </span>
-          <span className="truncate text-muted-foreground">
-            {data.accessLog.siteName}
-          </span>
-        </>
+        <div className="space-y-2 py-2 pr-1">
+          {data.sites.map((site) => (
+            <div
+              key={site.siteId}
+              className="min-w-0 rounded-md border px-3 py-2"
+            >
+              <div className="flex min-w-0 items-start justify-between gap-2">
+                <span className="flex min-w-0 items-center gap-1.5 text-sm font-medium">
+                  <MapPin className="size-3.5 shrink-0 text-muted-foreground" />
+                  <span className="truncate">{site.siteName}</span>
+                </span>
+                {site.accessLog ? (
+                  <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
+                    {formatTimestamp({
+                      date: new Date(site.accessLog.entryTimestamp),
+                      template: "dd/MM HH:mm",
+                    })}
+                  </span>
+                ) : null}
+              </div>
+              <p className="mt-1 truncate pl-5 text-xs text-muted-foreground">
+                {site.accessLog?.personFullName ?? "Sin accesos registrados"}
+              </p>
+            </div>
+          ))}
+        </div>
       )}
     </WidgetShell>
   );

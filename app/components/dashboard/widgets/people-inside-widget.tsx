@@ -87,10 +87,10 @@ export function PeopleInsideWidget({
       editMode={editMode}
       isLoading={isLoading}
       onRefresh={revalidate}
-      bodyClassName="overflow-y-auto"
+      bodyClassName="dashboard-widget-scroll"
     >
       {data === undefined ? (
-        <div className="space-y-3">
+        <div className="space-y-3 py-2 pr-1">
           {Array.from({ length: 3 }).map((_, i) => (
             <Skeleton key={i} className="h-12 w-full" />
           ))}
