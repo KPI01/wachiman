@@ -32,6 +32,7 @@ export default function DocumentsPage({ loaderData }: ComponentProps) {
       <DataTable
         columns={workerDocumentColumns()}
         data={loaderData.documents ?? []}
+        refreshDataKey="documents"
         globalFilterColumns={GLOBAL_FILTER_COLUMNS}
         empty={{
           title: "No hay documentos",
