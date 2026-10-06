@@ -37,12 +37,20 @@ export default function EditPlannedAccessForm({
   workCategories,
   allowedAreas,
   actionPath,
+  canChangeSite = false,
+  inline = false,
+  onCancel,
+  onSuccess,
 }: {
   plannedAccess: PlannedAccessListItem;
   sites: Array<{ id: string; name: string }>;
   workCategories: Array<Pick<WorkCategory, "id" | "name">>;
   allowedAreas: Array<Pick<AllowedArea, "id" | "name">>;
   actionPath: string;
+  canChangeSite?: boolean;
+  inline?: boolean;
+  onCancel?: () => void;
+  onSuccess?: () => void;
 }) {
   return (
     <PlannedAccessForm
@@ -50,7 +58,7 @@ export default function EditPlannedAccessForm({
       workCategories={workCategories}
       allowedAreas={allowedAreas}
       actionPath={actionPath}
-      lockedSiteId={plannedAccess.siteId}
+      lockedSiteId={canChangeSite ? undefined : plannedAccess.siteId}
       initialValues={getInitialValues(plannedAccess)}
       hiddenFields={{
         intent: "edit",
@@ -71,6 +79,9 @@ export default function EditPlannedAccessForm({
       description="Actualiza la información mientras la solicitud siga pendiente de aprobación."
       submitLabel="Guardar cambios"
       successMessage="Solicitud de acceso actualizada"
+      inline={inline}
+      onInlineCancel={onCancel}
+      onInlineSuccess={onSuccess}
     />
   );
 }

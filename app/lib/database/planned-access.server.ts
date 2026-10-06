@@ -1,10 +1,13 @@
-import { and, count, desc, eq, gte, inArray, isNotNull, isNull, lte, ne, or } from "drizzle-orm";
+import { and, count, desc, eq, gte, ilike, inArray, isNotNull, isNull, lte, ne, or } from "drizzle-orm";
 import { db } from "../../../db/server";
 import { calculateAccessDurationMs } from "../access-duration";
 import {
   accessLogs,
+  companies,
   plannedAccessPersons,
   plannedAccesses,
+  sites,
+  users,
 } from "../../../db/schema";
 import type { PlannedAccessStatus } from "../../../db/enums";
 
@@ -43,6 +46,12 @@ export type GetPlannedAccessInput = {
   requestedById?: string;
   departmentId?: string;
   expectedDate?: Date;
+  expectedFrom?: Date;
+  expectedTo?: Date;
+  query?: string;
+  requestedByQuery?: string;
+  visitorQuery?: string;
+  companyQuery?: string;
 };
 
 export type CreatePlannedAccessInput = {
@@ -190,6 +199,70 @@ export class PlannedAccessEntity {
           lte(plannedAccesses.expectedStartDatetime, endOfDay),
         )!,
       );
+    }
+    if (input?.expectedFrom) conditions.push(gte(plannedAccesses.expectedStartDatetime, input.expectedFrom));
+    if (input?.expectedTo) conditions.push(lte(plannedAccesses.expectedStartDatetime, input.expectedTo));
+    if (input?.requestedByQuery?.trim()) {
+      const query = `%${input.requestedByQuery.trim()}%`;
+      const matchingUsers = await db
+        .select({ id: users.id })
+        .from(users)
+        .where(or(ilike(users.fullName, query), ilike(users.username, query)));
+      if (!matchingUsers.length) return [];
+      conditions.push(inArray(plannedAccesses.requestedById, matchingUsers.map((user) => user.id)));
+    }
+    if (input?.visitorQuery?.trim()) {
+      const query = `%${input.visitorQuery.trim()}%`;
+      const matchingPeople = await db
+        .select({ plannedAccessId: plannedAccessPersons.plannedAccessId })
+        .from(plannedAccessPersons)
+        .where(or(
+          ilike(plannedAccessPersons.firstNameSnapshot, query),
+          ilike(plannedAccessPersons.middleNameSnapshot, query),
+          ilike(plannedAccessPersons.lastNameSnapshot, query),
+          ilike(plannedAccessPersons.secondLastNameSnapshot, query),
+          ilike(plannedAccessPersons.legalIdSnapshot, query),
+          ilike(plannedAccessPersons.phoneNumber, query),
+        ));
+      const matchingPlannedAccessIds = [...new Set(matchingPeople.map((person) => person.plannedAccessId))];
+      if (!matchingPlannedAccessIds.length) return [];
+      conditions.push(inArray(plannedAccesses.id, matchingPlannedAccessIds));
+    }
+    if (input?.companyQuery?.trim()) {
+      const query = `%${input.companyQuery.trim()}%`;
+      const matchingCompanies = await db
+        .select({ id: companies.id })
+        .from(companies)
+        .where(or(ilike(companies.name, query), ilike(companies.cif, query)));
+      const companyConditions = [ilike(plannedAccesses.companySnapshot, query)];
+      if (matchingCompanies.length) {
+        companyConditions.push(inArray(plannedAccesses.companyId, matchingCompanies.map((company) => company.id)));
+      }
+      conditions.push(or(...companyConditions)!);
+    }
+    if (input?.query?.trim()) {
+      const query = `%${input.query.trim()}%`;
+      const matchingPeople = await db
+        .select({ plannedAccessId: plannedAccessPersons.plannedAccessId })
+        .from(plannedAccessPersons)
+        .where(or(
+          ilike(plannedAccessPersons.firstNameSnapshot, query),
+          ilike(plannedAccessPersons.lastNameSnapshot, query),
+          ilike(plannedAccessPersons.legalIdSnapshot, query),
+        ));
+      const matchingIds = [...new Set(matchingPeople.map((person) => person.plannedAccessId))];
+      const [matchingSites, matchingUsers] = await Promise.all([
+        db.select({ id: sites.id }).from(sites).where(ilike(sites.name, query)),
+        db.select({ id: users.id }).from(users).where(or(ilike(users.fullName, query), ilike(users.username, query))),
+      ]);
+      const queryConditions = [
+        ilike(plannedAccesses.companySnapshot, query),
+        ilike(plannedAccesses.visitReason, query),
+      ];
+      if (matchingIds.length) queryConditions.push(inArray(plannedAccesses.id, matchingIds));
+      if (matchingSites.length) queryConditions.push(inArray(plannedAccesses.siteId, matchingSites.map((site) => site.id)));
+      if (matchingUsers.length) queryConditions.push(inArray(plannedAccesses.requestedById, matchingUsers.map((user) => user.id)));
+      conditions.push(or(...queryConditions)!);
     }
 
     const rows = await db.query.plannedAccesses.findMany({

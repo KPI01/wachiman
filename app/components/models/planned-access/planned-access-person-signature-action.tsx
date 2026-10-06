@@ -37,7 +37,7 @@ type Props = {
   plannedAccessId: string;
   person: PlannedAccessPerson;
   disabled?: boolean;
-  site: { id: string; name: string; address?: string | null; riskInformation?: string | null };
+  site: { id: string; name: string; address?: string | null; riskInformation?: string | null; riskInformationVersion?: number | null };
   holder?: { legalName: string; taxId: string; fiscalAddress: string };
   company?: { id: string; name: string; cif: string; address?: string | null };
   workPermit?: WorkPermit | null;
@@ -162,10 +162,10 @@ export default function PlannedAccessPersonSignatureAction({
         {workPermitsEnabled && workPermit ? <input type="hidden" name="workPermitId" value={workPermit.id} /> : null}
         {workPermitsEnabled ? <input type="hidden" name="workPermitSignaturePayload" value={permitSignaturePayload} /> : null}
         {errorMessage ? <Alert variant="destructive"><AlertTriangleIcon /><AlertTitle>Error</AlertTitle><AlertDescription>{errorMessage}</AlertDescription></Alert> : null}
-        <div className="rounded-lg border bg-muted/30 p-3 text-sm"><p className="font-medium">{getPersonFullName(person)}</p><p className="text-muted-foreground">DNI/NIE: {person.legalIdSnapshot}</p></div>
+        <div className="rounded-lg border bg-muted/30 p-3 text-sm"><p className="font-medium">{getPersonFullName(person)}</p><p className="text-muted-foreground">DNI/NIE: {person.legalIdSnapshot.toUpperCase()}</p></div>
         {step === "risks" ? (
           <>
-             {holder && company ? <RiskInformationPreview holderLegalName={holder.legalName} holderTaxId={holder.taxId} holderFiscalAddress={holder.fiscalAddress} siteName={site.name} siteAddress={site.address} companyName={company.name} companyCif={company.cif} companyAddress={company.address ?? ""} workerName={getPersonFullName(person)} legalId={person.legalIdSnapshot} /> : <Alert variant="destructive"><AlertTriangleIcon /><AlertTitle>Información incompleta</AlertTitle><AlertDescription>No se puede mostrar el documento porque faltan datos legales o de riesgos.</AlertDescription></Alert>}
+             {holder && company ? <RiskInformationPreview holderLegalName={holder.legalName} holderTaxId={holder.taxId} holderFiscalAddress={holder.fiscalAddress} siteName={site.name} siteAddress={site.address} facilityRiskInformation={site.riskInformation} facilityRiskInformationVersion={site.riskInformationVersion} companyName={company.name} companyCif={company.cif} companyAddress={company.address ?? ""} workerName={getPersonFullName(person)} legalId={person.legalIdSnapshot} /> : <Alert variant="destructive"><AlertTriangleIcon /><AlertTitle>Información incompleta</AlertTitle><AlertDescription>No se puede mostrar el documento porque faltan datos legales o de riesgos.</AlertDescription></Alert>}
             <label className="flex items-start gap-3 rounded-md border bg-muted/30 p-4 text-sm"><Checkbox checked={riskAcknowledged} onCheckedChange={(checked) => setRiskAcknowledged(checked === true)} /><span>Confirmo que he leído la información general y que he sido informado de los riesgos e instrucciones preventivas indicados.</span></label>
           </>
         ) : step === "permit" && workPermitsEnabled ? (

@@ -8,12 +8,17 @@ import {
 } from "react";
 import { useFetcher } from "react-router";
 import { toast } from "sonner";
-import AlertDialogContainer, {
-  AlertDialogCancel,
-} from "~/components/containers/alert-dialog-container";
 import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
 import { Button } from "~/components/ui/button";
 import { DateTimePicker } from "~/components/ui/date-time-picker";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "~/components/ui/dialog";
 import { Input } from "~/components/ui/input";
 import {
   Popover,
@@ -33,11 +38,15 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { Textarea } from "~/components/ui/textarea";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "~/components/ui/tooltip";
 import FieldWrapper from "~/components/ui/wrappers/field-wrapper";
 import { getFieldErrors } from "~/lib/utils/zod-errors";
 import type { AllowedArea, Site, WorkCategory } from "../../../../db/schema";
 import type { ExternalWorkerListItem } from "~/lib/database/external-worker.server";
-import WorkerDocumentViewer from "~/components/models/worker-document/worker-document-viewer";
 import CompanyCombobox from "~/components/models/company/company-combobox";
 import AllowedAreaCombobox from "~/components/models/access-logs/allowed-area-combobox";
 import { getActionErrorMessage } from "~/lib/utils/action-errors";
@@ -78,6 +87,9 @@ export type PlannedAccessFormProps = {
   buttonAriaLabel?: string;
   buttonTooltip?: string;
   triggerAsChild?: boolean;
+  inline?: boolean;
+  onInlineCancel?: () => void;
+  onInlineSuccess?: () => void;
 };
 
 type TreeifiedError = {
@@ -227,6 +239,9 @@ export default function PlannedAccessForm({
   buttonAriaLabel,
   buttonTooltip,
   triggerAsChild = false,
+  inline = false,
+  onInlineCancel,
+  onInlineSuccess,
 }: PlannedAccessFormProps) {
   const fetcher = useFetcher<FetcherData>();
   const [open, setOpen] = useState(false);
@@ -253,6 +268,8 @@ export default function PlannedAccessForm({
   const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(0);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   const suggestionsContainerRef = useRef<HTMLDivElement>(null);
+  const onInlineSuccessRef = useRef(onInlineSuccess);
+  onInlineSuccessRef.current = onInlineSuccess;
 
   const selectedSiteId = lockedSiteId ?? initialValues?.siteId ?? sites[0]?.id;
   const globalError =
@@ -269,7 +286,11 @@ export default function PlannedAccessForm({
 
     toast.success(successMessage);
 
-    setOpen(false);
+    if (inline) {
+      onInlineSuccessRef.current?.();
+    } else {
+      setOpen(false);
+    }
     if (!resetOnSuccess) {
       return;
     }
@@ -285,7 +306,7 @@ export default function PlannedAccessForm({
     setCompanyId("");
     setLegalIdSuggestions([]);
     setShowLegalIdSuggestions(false);
-  }, [fetcher.data, fetcher.state]);
+  }, [fetcher.data, fetcher.state, inline, resetOnSuccess]);
 
   useEffect(() => {
     if (fetcher.state === "idle" && fetcher.data?.errors) {
@@ -415,45 +436,12 @@ export default function PlannedAccessForm({
     setLocalVisitorsError(null);
   }
 
-  return (
-    <AlertDialogContainer
-      open={open}
-      onOpenChange={(nextOpen) => {
-        setOpen(nextOpen);
-
-        if (nextOpen) {
-          resetVisitorState();
-        }
-      }}
-      buttonLabel={buttonLabel}
-      buttonVariant={buttonVariant}
-      buttonSize={buttonSize}
-      buttonAriaLabel={buttonAriaLabel}
-      buttonTooltip={buttonTooltip}
-      triggerAsChild={triggerAsChild}
-      contentClassName="flex max-h-[90vh] w-[94vw] max-w-4xl flex-col overflow-hidden"
-      title={title}
-      description={description}
-      footer={
-        <>
-          <AlertDialogCancel variant="destructive">Cancelar</AlertDialogCancel>
-          <Button
-            type="submit"
-            form={formId}
-            disabled={
-              fetcher.state !== "idle" || !sites.length || !visitors.length
-            }
-          >
-            {fetcher.state === "submitting" ? "Guardando..." : submitLabel}
-          </Button>
-        </>
-      }
-    >
-      <fetcher.Form
-        id={formId}
-        method="post"
-        action={actionPath}
-        className="grid min-h-0 gap-x-8 gap-y-5 overflow-y-auto p-2 md:grid-cols-2"
+  const formContent = (
+    <fetcher.Form
+      id={formId}
+      method="post"
+      action={actionPath}
+      className="grid min-h-0 flex-1 gap-x-8 gap-y-5 overflow-y-auto px-6 py-5 md:grid-cols-2"
         onSubmit={(event) => {
           if (visitors.length > 0) {
             return;
@@ -518,6 +506,8 @@ export default function PlannedAccessForm({
             id="companySnapshot"
             name="companySnapshot"
             required
+            requireSelection
+            placeholder="Busca y selecciona una empresa..."
             value={companySnapshot}
             onValueChange={setCompanySnapshot}
             onCompanyIdChange={(id) => setCompanyId(id ?? "")}
@@ -525,11 +515,10 @@ export default function PlannedAccessForm({
           <Input type="hidden" name="companyId" value={companyId} />
         </FieldWrapper>
         <FieldWrapper
-          label="Inicio previsto *"
-          htmlFor="expectedStartDatetime"
-          errors={getFieldErrors(fetcher.data?.errors, "expectedStartDatetime")}
-          className="md:col-span-2"
-        >
+        label="Inicio previsto *"
+        htmlFor="expectedStartDatetime"
+        errors={getFieldErrors(fetcher.data?.errors, "expectedStartDatetime")}
+      >
           <DateTimePicker
             key={`expected-start-${datePickerResetKey}`}
             id="expectedStartDatetime"
@@ -540,11 +529,10 @@ export default function PlannedAccessForm({
           />
         </FieldWrapper>
         <FieldWrapper
-          label="Fin previsto"
-          htmlFor="expectedEndDatetime"
-          errors={getFieldErrors(fetcher.data?.errors, "expectedEndDatetime")}
-          className="md:col-span-2"
-        >
+        label="Fin previsto"
+        htmlFor="expectedEndDatetime"
+        errors={getFieldErrors(fetcher.data?.errors, "expectedEndDatetime")}
+      >
           <DateTimePicker
             key={`expected-end-${datePickerResetKey}`}
             id="expectedEndDatetime"
@@ -911,12 +899,7 @@ export default function PlannedAccessForm({
                         <TrashIcon />
                       </Button>
                     </div>
-                    {visitor.externalWorkerId ? (
-                      <div className="mt-3">
-                        <WorkerDocumentViewer workerId={visitor.externalWorkerId} />
-                      </div>
-                    ) : null}
-                    {visitorErrors ? (
+                  {visitorErrors ? (
                       <p className="mt-2 text-sm text-destructive">
                         {visitorErrors[0]}
                       </p>
@@ -931,7 +914,105 @@ export default function PlannedAccessForm({
             )}
           </div>
         </div>
-      </fetcher.Form>
-    </AlertDialogContainer>
+    </fetcher.Form>
+  );
+
+  if (inline) {
+    return (
+      <>
+        {formContent}
+        <div className="flex shrink-0 justify-end gap-2 border-t bg-background px-6 py-4">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onInlineCancel}
+            disabled={fetcher.state !== "idle"}
+          >
+            Volver a los detalles
+          </Button>
+          <Button
+            type="submit"
+            form={formId}
+            disabled={
+              fetcher.state !== "idle" || !sites.length || !visitors.length
+            }
+          >
+            {fetcher.state === "submitting" ? "Guardando..." : submitLabel}
+          </Button>
+        </div>
+      </>
+    );
+  }
+
+  const triggerButton = triggerAsChild ? (
+    buttonLabel
+  ) : (
+    <Button
+      type="button"
+      aria-label={buttonAriaLabel}
+      variant={buttonVariant}
+      size={buttonSize}
+    >
+      {buttonLabel}
+    </Button>
+  );
+  const trigger = (
+    <DialogTrigger
+      asChild
+      aria-label={triggerAsChild ? buttonAriaLabel : undefined}
+    >
+      {triggerButton}
+    </DialogTrigger>
+  );
+  const triggerWithTooltip = buttonTooltip ? (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span className="inline-flex">{trigger}</span>
+      </TooltipTrigger>
+      <TooltipContent side="top">{buttonTooltip}</TooltipContent>
+    </Tooltip>
+  ) : (
+    trigger
+  );
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(nextOpen) => {
+        setOpen(nextOpen);
+
+        if (nextOpen) {
+          resetVisitorState();
+        }
+      }}
+    >
+      {triggerWithTooltip}
+      <DialogContent className="w-[calc(100vw-2rem)] max-w-4xl gap-0 overflow-hidden p-0">
+        <DialogHeader className="shrink-0 gap-2 border-b px-6 py-5 pr-14 text-left">
+          <DialogTitle className="text-xl">{title}</DialogTitle>
+          <DialogDescription>{description}</DialogDescription>
+        </DialogHeader>
+        {formContent}
+        <div className="flex shrink-0 justify-end gap-2 border-t bg-background px-6 py-4">
+          <Button
+            type="button"
+            variant="destructive"
+            onClick={() => setOpen(false)}
+            disabled={fetcher.state !== "idle"}
+          >
+            Cancelar
+          </Button>
+          <Button
+            type="submit"
+            form={formId}
+            disabled={
+              fetcher.state !== "idle" || !sites.length || !visitors.length
+            }
+          >
+            {fetcher.state === "submitting" ? "Guardando..." : submitLabel}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }

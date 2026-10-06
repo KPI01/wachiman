@@ -29,7 +29,7 @@ export default function CreatePlannedAccessForm({
           Nueva solicitud
         </>
       }
-      title={<span className="text-2xl font-semibold">Nueva Solicitud de Acceso</span>}
+      title={<span className="font-semibold">Nueva Solicitud de Acceso</span>}
       description="Ingresa la informacion de la visita planificada. Los campos con (*) son obligatorios."
       submitLabel="Enviar"
       successMessage="Solicitud de acceso creada"

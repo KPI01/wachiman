@@ -1,10 +1,9 @@
+import { PencilIcon } from "lucide-react";
 import type { PlannedAccessStatus } from "../../../../db/enums";
+import { Button } from "~/components/ui/button";
 import CancelPlannedAccessButton from "./cancel-planned-access-button";
 import RejectPlannedAccessButton from "./reject-planned-access-button";
-import EditPlannedAccessButton from "./edit-planned-access-button";
 import ApprovePlannedAccessButton from "./approve-planned-access-button";
-import type { AllowedArea, Site, WorkCategory } from "../../../../db/schema";
-import type { PlannedAccessListItem } from "~/lib/database/planned-access.server";
 
 export type AllowedAction = "EDIT" | "APPROVE" | "REJECT" | "CANCEL";
 
@@ -13,10 +12,7 @@ type Props = {
   status: PlannedAccessStatus;
   actionPath?: string;
   allowedActions?: AllowedAction[];
-  plannedAccess?: PlannedAccessListItem;
-  sites?: Array<Pick<Site, "id" | "name">>;
-  workCategories?: Array<Pick<WorkCategory, "id" | "name">>;
-  allowedAreas?: Array<Pick<AllowedArea, "id" | "name">>;
+  onEdit?: () => void;
 };
 
 export default function PlannedAccessStatusActions({
@@ -24,10 +20,7 @@ export default function PlannedAccessStatusActions({
   status,
   actionPath = "/admin/planned-access",
   allowedActions = ["EDIT", "APPROVE", "REJECT", "CANCEL"],
-  plannedAccess,
-  sites = [],
-  workCategories = [],
-  allowedAreas = [],
+  onEdit,
 }: Props) {
   if (status !== "PENDING_APPROVAL" && status !== "APPROVED") {
     return <span className="sr-only">Sin acciones disponibles</span>;
@@ -37,32 +30,35 @@ export default function PlannedAccessStatusActions({
     <div className="flex justify-end gap-1">
       {status === "PENDING_APPROVAL" &&
       allowedActions.includes("EDIT") &&
-      plannedAccess ? (
-        <EditPlannedAccessButton
-          plannedAccess={plannedAccess}
-          sites={sites}
-          workCategories={workCategories}
-          allowedAreas={allowedAreas}
-          actionPath={actionPath}
-        />
+      onEdit ? (
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-sm"
+          aria-label="Editar solicitud de acceso"
+          title="Editar solicitud de acceso"
+          onClick={onEdit}
+        >
+          <PencilIcon aria-hidden="true" />
+        </Button>
       ) : null}
       {status === "PENDING_APPROVAL" && allowedActions.includes("APPROVE") ? (
-        // Comentado: antes el botón enlazaba a la página de aprobación.
-        // <TableActionButton
-        //   label="Aprobar solicitud"
-        //   icon={CheckIcon}
-        //   to={`${actionPath}/${plannedAccessId}/approve`}
-        // />
         <ApprovePlannedAccessButton
           actionPath={actionPath}
           plannedAccessId={plannedAccessId}
         />
       ) : null}
       {status === "PENDING_APPROVAL" && allowedActions.includes("REJECT") ? (
-        <RejectPlannedAccessButton actionPath={actionPath} plannedAccessId={plannedAccessId} />
+        <RejectPlannedAccessButton
+          actionPath={actionPath}
+          plannedAccessId={plannedAccessId}
+        />
       ) : null}
       {allowedActions.includes("CANCEL") ? (
-        <CancelPlannedAccessButton actionPath={actionPath} plannedAccessId={plannedAccessId} />
+        <CancelPlannedAccessButton
+          actionPath={actionPath}
+          plannedAccessId={plannedAccessId}
+        />
       ) : null}
     </div>
   );

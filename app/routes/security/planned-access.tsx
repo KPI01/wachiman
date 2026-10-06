@@ -14,6 +14,10 @@ import type { Route } from "./+types/planned-access";
 import { useMemo } from "react";
 import { getManyWorkCategories } from "~/lib/services/work-category.server";
 import { getManyAllowedAreas } from "~/lib/services/allowed-area.server";
+import { getPlannedAccessTableFilters, isTableOnlyDataRequest } from "~/lib/table-query.server";
+import { PLANNED_ACCESS_ADVANCED_FILTERS, PLANNED_ACCESS_QUICK_FILTERS } from "~/components/ui/table-filter-presets";
+import PlannedAccessDetailsSheet, { getPlannedAccessRowLabel } from "~/components/models/planned-access/planned-access-details-sheet";
+import { useSelectedPlannedAccess } from "~/components/models/planned-access/use-selected-planned-access";
 
 const PLANNED_ACCESS_GLOBAL_FILTER_COLUMNS = [
   "companySnapshot",
@@ -26,12 +30,21 @@ const PLANNED_ACCESS_GLOBAL_FILTER_COLUMNS = [
 export async function loader({ request }: Route.LoaderArgs) {
   await validateUserRole(request, "SECURITY_MANAGER");
 
-  const [plannedAccesses, sites, workCategories, allowedAreas] = await Promise.all([
-    getManyPlannedAccesses(),
+  if (isTableOnlyDataRequest(request)) {
+    return {
+      plannedAccesses: getManyPlannedAccesses(getPlannedAccessTableFilters(request)),
+      sites: [],
+      workCategories: [],
+      allowedAreas: [],
+    };
+  }
+
+  const [sites, workCategories, allowedAreas] = await Promise.all([
     getManySites(),
     getManyWorkCategories(),
     getManyAllowedAreas(),
   ]);
+  const plannedAccesses = getManyPlannedAccesses(getPlannedAccessTableFilters(request));
 
   return { plannedAccesses, sites, workCategories, allowedAreas };
 }
@@ -64,13 +77,17 @@ export async function action({ request }: Route.ActionArgs) {
 export default function SecurityPlannedAccess({
   loaderData,
 }: Route.ComponentProps) {
+  const plannedAccesses = loaderData.plannedAccesses ?? [];
+  const { selectedAccess, setSelectedAccess, reconcileSelection } =
+    useSelectedPlannedAccess(plannedAccesses);
   const columns = useMemo(
-     () => plannedAccessColumns({ actionPath: "/security/planned-access", sites: loaderData.sites ?? [], workCategories: loaderData.workCategories ?? [], allowedAreas: loaderData.allowedAreas ?? [] }),
-     [loaderData.sites, loaderData.workCategories, loaderData.allowedAreas],
+     () => plannedAccessColumns(),
+     [],
   );
   return (
-    <div className="grid space-y-6">
-      <div className="flex items-center justify-end">
+    <div className="grid gap-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <h2 className="text-2xl font-bold sm:text-3xl">Solicitudes de acceso</h2>
         <CreatePlannedAccessForm
           sites={loaderData.sites ?? []}
           workCategories={loaderData.workCategories ?? []}
@@ -80,13 +97,33 @@ export default function SecurityPlannedAccess({
       </div>
       <DataTable
         columns={columns}
-        data={loaderData.plannedAccesses ?? []}
+        data={plannedAccesses}
+        refreshDataKey="plannedAccesses"
+        onRowClick={setSelectedAccess}
+        getRowLabel={getPlannedAccessRowLabel}
+        onRowsRefresh={reconcileSelection}
         globalFilterColumns={PLANNED_ACCESS_GLOBAL_FILTER_COLUMNS}
+        quickFilters={PLANNED_ACCESS_QUICK_FILTERS}
+        advancedFilters={[
+          ...PLANNED_ACCESS_ADVANCED_FILTERS,
+          { param: "siteId", label: "Centro", type: "select", options: (loaderData.sites ?? []).map((site) => ({ value: site.id, label: site.name })) },
+        ]}
+        serverFiltering
+        refreshIntervalMs={5_000}
         empty={{
           title: "No hay solicitudes de acceso",
           description: "Las solicitudes de acceso apareceran aqui.",
         }}
         filterPlaceholder="Escribe aqui para empezar a buscar..."
+      />
+      <PlannedAccessDetailsSheet
+        plannedAccess={selectedAccess}
+        onClose={() => setSelectedAccess(null)}
+        actionPath="/security/planned-access"
+        canChangeSite
+        sites={loaderData.sites ?? []}
+        workCategories={loaderData.workCategories ?? []}
+        allowedAreas={loaderData.allowedAreas ?? []}
       />
     </div>
   );

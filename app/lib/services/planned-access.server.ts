@@ -61,6 +61,12 @@ export async function getManyPlannedAccesses(input?: {
   requestedById?: string;
   departmentId?: string;
   expectedDate?: Date;
+  expectedFrom?: Date;
+  expectedTo?: Date;
+  query?: string;
+  requestedByQuery?: string;
+  visitorQuery?: string;
+  companyQuery?: string;
 }) {
   return await PlannedAccessEntity.findMany(input);
 }
@@ -193,10 +199,18 @@ export async function createPlannedAccess(
         summary: "Solicitud de acceso planificado creada",
         metadata: {
           siteId,
+          companySnapshot: plannedAccess.companySnapshot,
+          visitReason: plannedAccess.visitReason,
           expectedStartDatetime: plannedAccess.expectedStartDatetime,
           expectedEndDatetime: plannedAccess.expectedEndDatetime,
           persons: plannedAccess.plannedAccessPersons.map((person) => ({
             id: person.id,
+            firstNameSnapshot: person.firstNameSnapshot,
+            middleNameSnapshot: person.middleNameSnapshot,
+            lastNameSnapshot: person.lastNameSnapshot,
+            secondLastNameSnapshot: person.secondLastNameSnapshot,
+            legalIdSnapshot: person.legalIdSnapshot,
+            phoneNumber: person.phoneNumber,
             externalWorkerId: person.externalWorkerId,
             workCategoryId: person.workCategoryId,
             allowedAreaId: person.allowedAreaId,
@@ -247,7 +261,10 @@ export async function updatePlannedAccess(
     return { success: false, errors: "No puedes editar solicitudes de otro departamento." };
   }
 
-  const siteId = options.lockedSiteId ?? plannedAccess.siteId;
+  const canChangeSite = isPrivileged && !options.lockedSiteId;
+  const siteId = canChangeSite
+    ? parsed.data.siteId
+    : (options.lockedSiteId ?? plannedAccess.siteId);
   if (parsed.data.siteId !== siteId) {
     return { success: false, errors: "No puedes cambiar el centro de esta solicitud." };
   }
@@ -303,6 +320,7 @@ export async function updatePlannedAccess(
 
   const result = await PlannedAccessEntity.updatePending({
     ...parsed.data,
+    siteId,
     expectedEndDatetime: parsed.data.expectedEndDatetime ?? null,
   });
   if (result.kind === "conflict") {
