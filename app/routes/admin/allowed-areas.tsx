@@ -9,10 +9,13 @@ import {
 } from "~/lib/services/allowed-area.server";
 import type { Route } from "./+types/allowed-areas";
 import CreateAllowedAreaForm from "~/components/models/allowed-area/create-allowed-area-form";
+import { catalogRecentFilter } from "~/components/ui/table-filter-presets";
+import { useState } from "react";
+import AllowedAreaDetailsForm from "~/components/models/allowed-area/allowed-area-details-form";
 
 export async function loader({ request }: Route.LoaderArgs) {
   await validateUserRole(request, ["ADMIN", "SECURITY_MANAGER", "ACCESS_APPROVER"]);
-  return { allowedAreas: await getManyAllowedAreas() };
+  return { allowedAreas: getManyAllowedAreas() };
 }
 
 export async function action({ request }: Route.ActionArgs) {
@@ -27,6 +30,10 @@ export async function action({ request }: Route.ActionArgs) {
 }
 
 export default function AllowedAreasIndex({ loaderData, actionData }: Route.ComponentProps) {
+  const allowedAreas = loaderData.allowedAreas;
+  type AllowedAreaRow = Awaited<typeof allowedAreas>[number];
+  const [selectedAllowedArea, setSelectedAllowedArea] = useState<AllowedAreaRow | null>(null);
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex">
@@ -35,9 +42,28 @@ export default function AllowedAreasIndex({ loaderData, actionData }: Route.Comp
       </div>
       <DataTable
         columns={allowedAreaColumns}
-        data={loaderData.allowedAreas ?? []}
+        data={allowedAreas}
+        refreshDataKey="allowedAreas"
         globalFilterColumns={["name"]}
+        quickFilters={catalogRecentFilter()}
+        onRowClick={setSelectedAllowedArea}
+        getRowLabel={(area) => `Abrir ficha del área autorizada ${area.name}`}
+        onRowsRefresh={(rows) =>
+          setSelectedAllowedArea((current) =>
+            current ? rows.find((area) => area.id === current.id) ?? current : null,
+          )
+        }
       />
+      {selectedAllowedArea ? (
+        <AllowedAreaDetailsForm
+          allowedArea={selectedAllowedArea}
+          open
+          onOpenChange={(open) => {
+            if (!open) setSelectedAllowedArea(null);
+          }}
+          showTrigger={false}
+        />
+      ) : null}
     </div>
   );
 }

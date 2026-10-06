@@ -10,6 +10,9 @@ import {
 import type { Route } from "./+types/work-categories";
 import CreateWorkCategoryForm from "~/components/models/work-category/create-work-category-form";
 import { Separator } from "~/components/ui/separator";
+import { catalogRecentFilter } from "~/components/ui/table-filter-presets";
+import { useState } from "react";
+import WorkCategoryDetailsForm from "~/components/models/work-category/work-category-details-form";
 
 export async function loader({ request }: Route.LoaderArgs) {
   await validateUserRole(request, [
@@ -18,7 +21,7 @@ export async function loader({ request }: Route.LoaderArgs) {
     "ACCESS_APPROVER",
   ]);
 
-  const workCategories = await getManyWorkCategories();
+  const workCategories = getManyWorkCategories();
 
   return { workCategories };
 }
@@ -51,6 +54,10 @@ export default function WorkCategoriesIndex({
   loaderData,
   actionData,
 }: Route.ComponentProps) {
+  const workCategories = loaderData.workCategories;
+  type WorkCategoryRow = Awaited<typeof workCategories>[number];
+  const [selectedWorkCategory, setSelectedWorkCategory] = useState<WorkCategoryRow | null>(null);
+
   return (
     <div className="flex flex-col gap-y-4">
       <div className="flex">
@@ -59,9 +66,28 @@ export default function WorkCategoriesIndex({
       </div>
       <DataTable
         columns={workCategoryColumns}
-        data={loaderData.workCategories ?? []}
+        data={workCategories}
+        refreshDataKey="workCategories"
         globalFilterColumns={["name", "description"]}
+        quickFilters={catalogRecentFilter()}
+        onRowClick={setSelectedWorkCategory}
+        getRowLabel={(category) => `Abrir ficha del tipo de trabajo ${category.name}`}
+        onRowsRefresh={(rows) =>
+          setSelectedWorkCategory((current) =>
+            current ? rows.find((category) => category.id === current.id) ?? current : null,
+          )
+        }
       />
+      {selectedWorkCategory ? (
+        <WorkCategoryDetailsForm
+          workCategory={selectedWorkCategory}
+          open
+          onOpenChange={(open) => {
+            if (!open) setSelectedWorkCategory(null);
+          }}
+          showTrigger={false}
+        />
+      ) : null}
     </div>
   );
 }

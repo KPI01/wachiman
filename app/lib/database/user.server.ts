@@ -1,4 +1,4 @@
-import { and, eq, ne } from "drizzle-orm";
+import { and, eq, ilike, ne, or } from "drizzle-orm";
 import { hashText } from "../hash.server";
 import { db } from "../../../db/server";
 import { users } from "../../../db/schema";
@@ -50,6 +50,7 @@ export class UserEntity {
         siteId: data.siteId,
         departmentId: data.departmentId,
       })
+      .onConflictDoNothing({ target: users.username })
       .returning();
     return user;
   }
@@ -85,11 +86,24 @@ export class UserEntity {
     return (await query.then((rows) => rows[0])) ?? null;
   }
 
+  public static async usernameExists(username: string, excludeId?: string) {
+    const conditions = [eq(users.username, normalizeUsername(username))];
+    if (excludeId) conditions.push(ne(users.id, excludeId));
+
+    const [user] = await db
+      .select({ id: users.id })
+      .from(users)
+      .where(and(...conditions))
+      .limit(1);
+
+    return Boolean(user);
+  }
+
   public static async getById(id: string) {
     const user = await db
       .select()
       .from(users)
-      .where(and(eq(users.isActive, true), eq(users.isTrashed, false), eq(users.id, id)))
+      .where(and(eq(users.isTrashed, false), eq(users.id, id)))
       .then((rows) => rows[0]);
     return user ?? null;
   }
@@ -98,15 +112,28 @@ export class UserEntity {
     isActive = true,
     isTrashed = false,
     exclude = {},
+    query,
+    siteId,
+    departmentId,
+    role,
   }: Partial<{
-    isActive: boolean;
+    isActive: boolean | null;
     isTrashed: boolean;
     exclude: Record<string, unknown>;
+    query: string;
+    siteId: string;
+    departmentId: string;
+    role: UserRole;
   }> = {}) {
-    const conditions = [
-      eq(users.isActive, isActive),
-      eq(users.isTrashed, isTrashed),
-    ];
+    const conditions = [eq(users.isTrashed, isTrashed)];
+    if (isActive !== null) conditions.push(eq(users.isActive, isActive));
+    if (siteId) conditions.push(eq(users.siteId, siteId));
+    if (departmentId) conditions.push(eq(users.departmentId, departmentId));
+    if (role) conditions.push(eq(users.role, role));
+    if (query?.trim()) {
+      const value = `%${query.trim()}%`;
+      conditions.push(or(ilike(users.fullName, value), ilike(users.username, value))!);
+    }
     // La opción exclude mantiene compatibilidad con las consultas actuales.
     if (Object.keys(exclude).length > 0) {
       for (const [key, value] of Object.entries(exclude)) {

@@ -1,23 +1,13 @@
-import { TrashIcon } from "lucide-react";
-import { Form } from "react-router";
-import TableActionButton from "~/components/table-action-button";
+import DeleteEntityButton from "~/components/models/shared/delete-entity-button";
 
 export default function DeleteWorkCategoryBtn({
   workCategoryId,
   actionPath = "/admin/work-categories",
+  onDeleted,
 }: {
   workCategoryId: string;
   actionPath?: string;
+  onDeleted?: () => void;
 }) {
-  return (
-    <Form method="delete" action={actionPath}>
-      <input name="id" value={workCategoryId} type="hidden" />
-      <TableActionButton
-        type="submit"
-        variant="destructive"
-        label="Eliminar tipo de trabajo"
-        icon={TrashIcon}
-      />
-    </Form>
-  );
+  return <DeleteEntityButton id={workCategoryId} action={actionPath} label="Eliminar tipo de trabajo" onDeleted={onDeleted} />;
 }

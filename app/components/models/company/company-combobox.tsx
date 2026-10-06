@@ -18,6 +18,7 @@ type CompanyComboboxProps = {
   onCompanyDetailsChange?: (company: CompanyOption | null) => void;
   required?: boolean;
   requireSelection?: boolean;
+  placeholder?: string;
 };
 
 export default function CompanyCombobox({
@@ -30,6 +31,7 @@ export default function CompanyCombobox({
   onCompanyDetailsChange,
   required,
   requireSelection = false,
+  placeholder,
 }: CompanyComboboxProps) {
   const [suggestions, setSuggestions] = useState<CompanyOption[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -37,6 +39,20 @@ export default function CompanyCombobox({
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const selectedValueRef = useRef<string | null>(null);
+  const validSelectionRef = useRef<string | null>(
+    requireSelection && value.trim() ? value.trim() : null,
+  );
+  const previousValueRef = useRef(value.trim());
+
+  useEffect(() => {
+    const nextValue = value.trim();
+    if (nextValue !== previousValueRef.current) {
+      if (validSelectionRef.current !== nextValue) {
+        validSelectionRef.current = null;
+      }
+      previousValueRef.current = nextValue;
+    }
+  }, [value]);
 
   function getFilteredOptions(query: string) {
     const normalizedQuery = query.trim().toLocaleLowerCase();
@@ -113,6 +129,7 @@ export default function CompanyCombobox({
 
   function selectSuggestion(company: CompanyOption) {
     selectedValueRef.current = company.name;
+    validSelectionRef.current = company.name.trim();
     inputRef.current?.setCustomValidity("");
     onValueChange(company.name);
     onCompanyIdChange?.(company.id);
@@ -152,6 +169,7 @@ export default function CompanyCombobox({
         id={id}
         name={name}
         value={value}
+        placeholder={placeholder}
         required={required}
         autoComplete="off"
         role="combobox"
@@ -164,7 +182,10 @@ export default function CompanyCombobox({
           }
         }}
         onBlur={() => {
-          if (requireSelection && !selectedValueRef.current) {
+          if (
+            requireSelection &&
+            validSelectionRef.current !== value.trim()
+          ) {
             inputRef.current?.setCustomValidity(
               value.trim() ? "Selecciona una empresa de la lista." : "",
             );
@@ -173,6 +194,7 @@ export default function CompanyCombobox({
         }}
         onChange={(event) => {
           selectedValueRef.current = null;
+          validSelectionRef.current = null;
           onValueChange(event.currentTarget.value);
           onCompanyIdChange?.(null);
           onCompanyDetailsChange?.(null);

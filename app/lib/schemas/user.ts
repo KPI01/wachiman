@@ -9,9 +9,6 @@ import {
 import { UserEntity } from "../database/user.server";
 import { SiteEntity } from "../database/site.server";
 import { DepartmentEntity } from "../database/department.server";
-import { and, eq, ne } from "drizzle-orm";
-import { db } from "../../../db/server";
-import { users } from "../../../db/schema";
 import { USER_ROLES, type UserRole } from "../../../db/enums";
 import { normalizeUsername } from "../username";
 
@@ -33,9 +30,7 @@ export const createUserSchema = z
   })
   .refine(
     async (data) => {
-      const userExists = (await UserEntity.getByUsername(data.username)) !== null;
-
-      return !userExists;
+      return !(await UserEntity.usernameExists(data.username));
     },
     {
       error: USER_ALREADY_EXISTS,
@@ -64,25 +59,9 @@ export const updateUserSchema = z
   .refine(
     async (data) => {
       const user = await UserEntity.getById(data.id);
-      if (user) {
-        // Query que luego tengo que centralizar
-        const existingUser = await db
-          .select()
-          .from(users)
-          .where(
-            and(
-              eq(users.username, data.username),
-              ne(users.id, user.id),
-            ),
-          )
-          .limit(1)
-          .then((rows) => rows[0]);
-        const userNameExists = existingUser !== undefined;
+      if (!user) return false;
 
-        return !userNameExists;
-      }
-
-      return false;
+      return !(await UserEntity.usernameExists(data.username, user.id));
     },
     {
       error: USER_ALREADY_EXISTS,

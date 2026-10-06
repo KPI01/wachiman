@@ -1,21 +1,18 @@
-import { TrashIcon } from "lucide-react";
-import { Form } from "react-router";
-import TableActionButton from "~/components/table-action-button";
+import DeleteEntityButton from "~/components/models/shared/delete-entity-button";
 
 export default function DeleteDepartmentBtn({
   departmentId,
+  onDeleted,
 }: {
   departmentId: string;
+  onDeleted?: () => void;
 }) {
   return (
-    <Form method="delete" action={`/admin/departments?id=${departmentId}`}>
-      <input name="id" value={departmentId} type="hidden" />
-      <TableActionButton
-        type="submit"
-        variant="destructive"
-        label="Eliminar departamento"
-        icon={TrashIcon}
-      />
-    </Form>
+    <DeleteEntityButton
+      id={departmentId}
+      action={`/admin/departments?id=${departmentId}`}
+      label="Eliminar departamento"
+      onDeleted={onDeleted}
+    />
   );
 }

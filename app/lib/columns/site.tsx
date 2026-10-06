@@ -1,8 +1,6 @@
 import { createColumnHelper } from "@tanstack/react-table";
 import type { Site } from "../../../db/schema";
 import { formatTimestamp } from "../utils";
-import SiteDetailsForm from "~/components/models/site/site-details-form";
-import DeleteSiteBtn from "~/components/models/site/delete-site-btn";
 
 const siteColHelper = createColumnHelper<Site>();
 
@@ -21,15 +19,5 @@ export const siteColumns = [
     header: "Creación",
     cell: ({ getValue }) =>
       formatTimestamp({ date: getValue(), template: "dd/MM/yyyy HH:mm" }),
-  }),
-  siteColHelper.display({
-    id: "actions",
-    header: "Acciones",
-    cell: ({ row }) => (
-      <div className="flex items-center justify-end gap-1">
-        <SiteDetailsForm site={row.original} />
-        <DeleteSiteBtn siteId={row.original.id} />
-      </div>
-    ),
   }),
 ];

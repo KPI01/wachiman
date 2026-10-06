@@ -20,10 +20,12 @@ import {
 interface AlertDialogContainerProps extends PropsWithChildren {
   open?: boolean;
   onOpenChange?: (value: boolean) => void;
+  showTrigger?: boolean;
   buttonLabel: ReactNode;
   buttonVariant?: ComponentProps<typeof Button>["variant"];
   buttonSize?: ComponentProps<typeof Button>["size"];
   buttonClassName?: string;
+  buttonDisabled?: boolean;
   buttonAriaLabel?: string;
   buttonTooltip?: string;
   triggerAsChild?: boolean;
@@ -38,10 +40,12 @@ export { AlertDialogAction, AlertDialogCancel };
 export default function AlertDialogContainer({
   open = undefined,
   onOpenChange,
+  showTrigger = true,
   buttonLabel,
   buttonVariant = "default",
   buttonSize = "default",
   buttonClassName,
+  buttonDisabled = false,
   buttonAriaLabel,
   buttonTooltip,
   triggerAsChild = false,
@@ -60,6 +64,7 @@ export default function AlertDialogContainer({
       variant={buttonVariant}
       size={buttonSize}
       className={buttonClassName}
+      disabled={buttonDisabled}
     >
       {buttonLabel}
     </Button>
@@ -91,7 +96,7 @@ export default function AlertDialogContainer({
 
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
-      {triggerWithTooltip}
+      {showTrigger ? triggerWithTooltip : null}
       <AlertDialogContent className={contentClassName}>
         {(title || description) && (
           <AlertDialogHeader>

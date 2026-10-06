@@ -1,9 +1,7 @@
 import { InfoIcon } from "lucide-react";
 import { useState } from "react";
-import AlertDialogContainer, {
-  AlertDialogAction,
-  AlertDialogCancel,
-} from "~/components/containers/alert-dialog-container";
+import EntityDetailsDialog from "~/components/models/shared/entity-details-dialog";
+import DeleteCompanyBtn from "~/components/models/company/delete-company-btn";
 import type { Company } from "../../../../db/schema";
 import { useFetcher } from "react-router";
 import FieldWrapper from "~/components/ui/wrappers/field-wrapper";
@@ -13,42 +11,52 @@ import { getFieldErrors } from "~/lib/utils/zod-errors";
 type CompanyDetailsProps = {
   company: Company;
   actionPath?: string;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  showTrigger?: boolean;
 };
 
 export default function CompanyDetailsForm({
   company,
   actionPath = "/admin/companies",
+  open,
+  onOpenChange,
+  showTrigger = true,
 }: CompanyDetailsProps) {
-  const [open, setOpen] = useState(false);
+  const [localOpen, setLocalOpen] = useState(false);
   const patchFetcher = useFetcher<{ errors?: unknown }>();
   const patchErrors = patchFetcher.data?.errors;
   const formId = `company-form-${company.id}`;
 
   return (
-    <AlertDialogContainer
-      open={open}
-      onOpenChange={setOpen}
-      buttonLabel={<InfoIcon aria-hidden="true" />}
-      buttonVariant="secondary"
-      buttonSize="icon-sm"
-      buttonAriaLabel="Editar empresa"
-      buttonTooltip="Editar empresa"
-      title="Ficha de Empresa"
-      footer={
-        <>
-          <AlertDialogCancel variant="destructive">Cancelar</AlertDialogCancel>
-          <AlertDialogAction type="submit" form={formId}>
-            Enviar
-          </AlertDialogAction>
-        </>
+    <EntityDetailsDialog
+      open={open ?? localOpen}
+      onOpenChange={onOpenChange ?? setLocalOpen}
+      showTrigger={showTrigger}
+      trigger={<InfoIcon aria-hidden="true" />}
+      triggerLabel="Abrir ficha de la empresa"
+      title="Ficha de la empresa"
+      description={company.name}
+      formId={formId}
+      isSubmitting={patchFetcher.state !== "idle"}
+      footerLeading={
+        <DeleteCompanyBtn
+          companyId={company.id}
+          actionPath={actionPath}
+          onDeleted={() => {
+            setLocalOpen(false);
+            onOpenChange?.(false);
+          }}
+        />
       }
     >
       <patchFetcher.Form
         id={formId}
         method="patch"
         action={actionPath}
-        className="space-y-4"
+        className="grid gap-4 md:grid-cols-2"
       >
+        <h3 className="text-sm font-semibold md:col-span-2">Datos de la empresa</h3>
         <Input name="id" defaultValue={company.id} type="hidden" />
         <FieldWrapper
           label="Nombre"
@@ -119,6 +127,6 @@ export default function CompanyDetailsForm({
           />
         </FieldWrapper>
       </patchFetcher.Form>
-    </AlertDialogContainer>
+    </EntityDetailsDialog>
   );
 }

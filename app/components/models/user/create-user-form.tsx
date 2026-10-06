@@ -1,9 +1,9 @@
 import { PlusIcon } from "lucide-react";
-import { Form } from "react-router";
-import AlertDialogContainer, {
-  AlertDialogAction,
-  AlertDialogCancel,
-} from "~/components/containers/alert-dialog-container";
+import { useEffect, useRef, useState } from "react";
+import { useFetcher, useRevalidator } from "react-router";
+import { toast } from "sonner";
+import AlertDialogContainer, { AlertDialogCancel } from "~/components/containers/alert-dialog-container";
+import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import {
   Select,
@@ -21,16 +21,36 @@ import { getFieldErrors } from "~/lib/utils/zod-errors";
 type CreateUserProps = {
   sites: Site[];
   departments: Department[];
-  errors?: unknown;
+};
+
+type CreateUserResult = {
+  success?: boolean;
+  error?: unknown;
 };
 
 export default function CreateUserForm({
   sites,
   departments,
-  errors,
 }: CreateUserProps) {
+  const fetcher = useFetcher<CreateUserResult>();
+  const { revalidate } = useRevalidator();
+  const [open, setOpen] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
+  const errors = fetcher.data?.error;
+
+  useEffect(() => {
+    if (fetcher.state !== "idle" || !fetcher.data?.success) return;
+
+    toast.success("Usuario creado correctamente");
+    formRef.current?.reset();
+    setOpen(false);
+    revalidate();
+  }, [fetcher.data, fetcher.state, revalidate]);
+
   return (
     <AlertDialogContainer
+      open={open}
+      onOpenChange={setOpen}
       buttonClassName="w-fit ms-auto"
       buttonLabel={
         <>
@@ -42,18 +62,23 @@ export default function CreateUserForm({
       description="Ingresa los datos del usuario para almacenarlos en el sistema."
       footer={
         <>
-          <AlertDialogCancel variant="destructive">Cancelar</AlertDialogCancel>
-          <AlertDialogAction type="submit" form="create-user">
-            Enviar
-          </AlertDialogAction>
+          <AlertDialogCancel variant="outline">Cancelar</AlertDialogCancel>
+          <Button
+            type="submit"
+            form="create-user"
+            disabled={fetcher.state !== "idle"}
+          >
+            {fetcher.state !== "idle" ? "Creando…" : "Crear usuario"}
+          </Button>
         </>
       }
     >
-      <Form
+      <fetcher.Form
         id="create-user"
+        ref={formRef}
         method="post"
         action="/admin/users"
-        className="space-y-4"
+        className="flex flex-col gap-4"
       >
         <FieldWrapper
           label="Nombre completo"
@@ -153,7 +178,7 @@ export default function CreateUserForm({
             required
           />
         </FieldWrapper>
-      </Form>
+      </fetcher.Form>
     </AlertDialogContainer>
   );
 }

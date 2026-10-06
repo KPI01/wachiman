@@ -10,11 +10,14 @@ import {
 import type { Route } from "./+types/sites";
 import CreateSiteForm from "~/components/models/site/create-site-form";
 import { Separator } from "~/components/ui/separator";
+import { catalogRecentFilter } from "~/components/ui/table-filter-presets";
+import { useState } from "react";
+import SiteDetailsForm from "~/components/models/site/site-details-form";
 
 export async function loader({ request }: Route.LoaderArgs) {
   await validateUserRole(request, "ADMIN");
 
-  const sites = await getManySites();
+  const sites = getManySites();
 
   return { sites };
 }
@@ -42,6 +45,10 @@ export default function IndexSites({
   loaderData,
   actionData,
 }: Route.ComponentProps) {
+  const sites = loaderData.sites;
+  type SiteRow = Awaited<typeof sites>[number];
+  const [selectedSite, setSelectedSite] = useState<SiteRow | null>(null);
+
   return (
     <div className="flex flex-col gap-y-4">
       <div className="flex">
@@ -50,9 +57,28 @@ export default function IndexSites({
       </div>
       <DataTable
         columns={siteColumns}
-        data={loaderData.sites ?? []}
+        data={sites}
+        refreshDataKey="sites"
         globalFilterColumns={["name", "slug", "address"]}
+        quickFilters={catalogRecentFilter()}
+        onRowClick={setSelectedSite}
+        getRowLabel={(site) => `Abrir ficha del centro ${site.name}`}
+        onRowsRefresh={(rows) =>
+          setSelectedSite((current) =>
+            current ? rows.find((site) => site.id === current.id) ?? current : null,
+          )
+        }
       />
+      {selectedSite ? (
+        <SiteDetailsForm
+          site={selectedSite}
+          open
+          onOpenChange={(open) => {
+            if (!open) setSelectedSite(null);
+          }}
+          showTrigger={false}
+        />
+      ) : null}
     </div>
   );
 }

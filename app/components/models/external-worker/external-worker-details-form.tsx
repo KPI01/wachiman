@@ -1,9 +1,7 @@
 import { InfoIcon } from "lucide-react";
 import { useState } from "react";
-import AlertDialogContainer, {
-  AlertDialogAction,
-  AlertDialogCancel,
-} from "~/components/containers/alert-dialog-container";
+import EntityDetailsDialog from "~/components/models/shared/entity-details-dialog";
+import DeleteExternalWorkerBtn from "~/components/models/external-worker/delete-external-worker-btn";
 import type { Company, WorkCategory } from "../../../../db/schema";
 import type { ExternalWorkerListItem } from "~/lib/database/external-worker.server";
 import { useFetcher } from "react-router";
@@ -23,6 +21,9 @@ type ExternalWorkerDetailsProps = {
   companies: Company[];
   workCategories: WorkCategory[];
   actionPath?: string;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  showTrigger?: boolean;
 };
 
 export default function ExternalWorkerDetailsForm({
@@ -30,30 +31,35 @@ export default function ExternalWorkerDetailsForm({
   companies,
   workCategories,
   actionPath = "/admin/external-workers",
+  open,
+  onOpenChange,
+  showTrigger = true,
 }: ExternalWorkerDetailsProps) {
-  const [open, setOpen] = useState(false);
+  const [localOpen, setLocalOpen] = useState(false);
   const patchFetcher = useFetcher<{ errors?: unknown }>();
   const patchErrors = patchFetcher.data?.errors;
   const formId = `external-worker-form-${worker.id}`;
 
   return (
-    <AlertDialogContainer
-      open={open}
-      onOpenChange={setOpen}
-      buttonLabel={<InfoIcon aria-hidden="true" />}
-      buttonVariant="secondary"
-      buttonSize="icon-sm"
-      buttonAriaLabel="Editar trabajador externo"
-      buttonTooltip="Editar trabajador externo"
-      title="Ficha de Trabajador Externo"
-      description="Edita los datos del trabajador externo."
-      footer={
-        <>
-          <AlertDialogCancel variant="destructive">Cancelar</AlertDialogCancel>
-          <AlertDialogAction type="submit" form={formId}>
-            Enviar
-          </AlertDialogAction>
-        </>
+    <EntityDetailsDialog
+      open={open ?? localOpen}
+      onOpenChange={onOpenChange ?? setLocalOpen}
+      showTrigger={showTrigger}
+      trigger={<InfoIcon aria-hidden="true" />}
+      triggerLabel="Abrir ficha del trabajador externo"
+      title="Ficha del trabajador externo"
+      description={`${[worker.firstName, worker.middleName, worker.lastName, worker.secondLastName].filter(Boolean).join(" ")} · ${worker.legalId}`}
+      formId={formId}
+      isSubmitting={patchFetcher.state !== "idle"}
+      footerLeading={
+        <DeleteExternalWorkerBtn
+          workerId={worker.id}
+          actionPath={actionPath}
+          onDeleted={() => {
+            setLocalOpen(false);
+            onOpenChange?.(false);
+          }}
+        />
       }
     >
       <patchFetcher.Form
@@ -63,6 +69,7 @@ export default function ExternalWorkerDetailsForm({
         className="grid gap-4 md:grid-cols-2"
       >
         <Input name="id" defaultValue={worker.id} type="hidden" />
+        <h3 className="text-sm font-semibold md:col-span-2">Datos del trabajador</h3>
         <FieldWrapper
           label="Nombres"
           htmlFor={`firstName-${worker.id}`}
@@ -145,6 +152,6 @@ export default function ExternalWorkerDetailsForm({
           </Select>
         </FieldWrapper>
       </patchFetcher.Form>
-    </AlertDialogContainer>
+    </EntityDetailsDialog>
   );
 }

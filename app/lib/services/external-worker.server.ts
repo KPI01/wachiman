@@ -21,8 +21,13 @@ async function audit(
   });
 }
 
-export async function getManyExternalWorkers() {
-  return ExternalWorkerEntity.findMany();
+export async function getManyExternalWorkers(input?: {
+  query?: string;
+  companyId?: string;
+  workCategoryId?: string;
+  createdAfter?: Date;
+}) {
+  return ExternalWorkerEntity.findMany(input);
 }
 
 export async function getExternalWorkerById(id: string) {
@@ -94,6 +99,18 @@ export async function deleteExternalWorker(input: Record<string, unknown>, userI
     parsed.data.id,
     "DELETE",
     `Trabajador externo ${worker.firstName} ${worker.lastName} (${worker.legalId}) eliminado`,
+    {
+      before: {
+        firstName: worker.firstName,
+        middleName: worker.middleName,
+        lastName: worker.lastName,
+        secondLastName: worker.secondLastName,
+        legalId: worker.legalId,
+        phoneNumber: worker.phoneNumber,
+        companyId: worker.companyId,
+        workCategoryId: worker.workCategoryId,
+      },
+    },
   );
 
   return { success: true };

@@ -10,11 +10,14 @@ import {
 import CreateDepartmentForm from "~/components/models/department/create-department-form";
 import type { Route } from "./+types/departments";
 import { Separator } from "~/components/ui/separator";
+import { catalogRecentFilter } from "~/components/ui/table-filter-presets";
+import { useState } from "react";
+import DepartmentDetailsForm from "~/components/models/department/department-details-form";
 
 export async function loader({ request }: Route.LoaderArgs) {
   await validateUserRole(request, "ADMIN");
 
-  const departments = await getManyDepartments();
+  const departments = getManyDepartments();
 
   return { departments };
 }
@@ -42,6 +45,10 @@ export default function IndexDepartments({
   loaderData,
   actionData,
 }: Route.ComponentProps) {
+  const departments = loaderData.departments;
+  type DepartmentRow = Awaited<typeof departments>[number];
+  const [selectedDepartment, setSelectedDepartment] = useState<DepartmentRow | null>(null);
+
   return (
     <div className="flex flex-col gap-y-4">
       <div className="flex">
@@ -50,9 +57,28 @@ export default function IndexDepartments({
       </div>
       <DataTable
         columns={departmentColumns}
-        data={loaderData.departments ?? []}
+        data={departments}
+        refreshDataKey="departments"
         globalFilterColumns={["name", "slug"]}
+        quickFilters={catalogRecentFilter()}
+        onRowClick={setSelectedDepartment}
+        getRowLabel={(department) => `Abrir ficha del departamento ${department.name}`}
+        onRowsRefresh={(rows) =>
+          setSelectedDepartment((current) =>
+            current ? rows.find((department) => department.id === current.id) ?? current : null,
+          )
+        }
       />
+      {selectedDepartment ? (
+        <DepartmentDetailsForm
+          department={selectedDepartment}
+          open
+          onOpenChange={(open) => {
+            if (!open) setSelectedDepartment(null);
+          }}
+          showTrigger={false}
+        />
+      ) : null}
     </div>
   );
 }

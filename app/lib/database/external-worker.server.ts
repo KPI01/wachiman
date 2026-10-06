@@ -1,4 +1,4 @@
-import { and, eq, like, or, desc, ne, sql } from "drizzle-orm";
+import { and, desc, eq, gte, ilike, inArray, like, or, ne, sql } from "drizzle-orm";
 import { db } from "../../../db/server";
 import {
   externalWorkers,
@@ -166,8 +166,34 @@ export class ExternalWorkerEntity {
     return row ?? null;
   }
 
-  public static async findMany(): Promise<ExternalWorkerListItem[]> {
+  public static async findMany(input: {
+    query?: string;
+    companyId?: string;
+    workCategoryId?: string;
+    createdAfter?: Date;
+  } = {}): Promise<ExternalWorkerListItem[]> {
+    const conditions = [];
+    if (input.companyId) conditions.push(eq(externalWorkers.companyId, input.companyId));
+    if (input.workCategoryId) conditions.push(eq(externalWorkers.workCategoryId, input.workCategoryId));
+    if (input.createdAfter) conditions.push(gte(externalWorkers.createdAt, input.createdAfter));
+    if (input.query?.trim()) {
+      const value = `%${input.query.trim()}%`;
+      const matchingCompanies = await db.select({ id: companies.id }).from(companies).where(ilike(companies.name, value));
+      const matchingCategories = await db.select({ id: workCategories.id }).from(workCategories).where(ilike(workCategories.name, value));
+      const queryConditions = [
+        ilike(externalWorkers.firstName, value),
+        ilike(externalWorkers.middleName, value),
+        ilike(externalWorkers.lastName, value),
+        ilike(externalWorkers.secondLastName, value),
+        ilike(externalWorkers.legalId, value),
+        ilike(externalWorkers.phoneNumber, value),
+      ];
+      if (matchingCompanies.length) queryConditions.push(inArray(externalWorkers.companyId, matchingCompanies.map((company) => company.id)));
+      if (matchingCategories.length) queryConditions.push(inArray(externalWorkers.workCategoryId, matchingCategories.map((category) => category.id)));
+      conditions.push(or(...queryConditions)!);
+    }
     const rows = await db.query.externalWorkers.findMany({
+      where: conditions.length ? and(...conditions) : undefined,
       orderBy: (worker, { desc: d }) => [d(worker.createdAt)],
       with: {
         company: { columns: { id: true, name: true } },

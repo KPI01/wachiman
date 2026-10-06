@@ -10,6 +10,9 @@ import {
 import type { Route } from "./+types/companies";
 import CreateCompanyForm from "~/components/models/company/create-company-form";
 import { Separator } from "~/components/ui/separator";
+import { catalogRecentFilter } from "~/components/ui/table-filter-presets";
+import { useState } from "react";
+import CompanyDetailsForm from "~/components/models/company/company-details-form";
 
 export async function loader({ request }: Route.LoaderArgs) {
   await validateUserRole(request, [
@@ -18,7 +21,7 @@ export async function loader({ request }: Route.LoaderArgs) {
     "ACCESS_APPROVER",
   ]);
 
-  const companies = await getManyCompanies();
+  const companies = getManyCompanies();
 
   return { companies };
 }
@@ -51,6 +54,10 @@ export default function CompaniesIndex({
   loaderData,
   actionData,
 }: Route.ComponentProps) {
+  const companies = loaderData.companies;
+  type CompanyRow = Awaited<typeof companies>[number];
+  const [selectedCompany, setSelectedCompany] = useState<CompanyRow | null>(null);
+
   return (
     <div className="flex flex-col gap-y-4">
       <div className="flex">
@@ -59,9 +66,28 @@ export default function CompaniesIndex({
       </div>
       <DataTable
         columns={companyColumns}
-        data={loaderData.companies ?? []}
+        data={companies}
+        refreshDataKey="companies"
         globalFilterColumns={["name", "slug", "cif", "email"]}
+        quickFilters={catalogRecentFilter()}
+        onRowClick={setSelectedCompany}
+        getRowLabel={(company) => `Abrir ficha de la empresa ${company.name}`}
+        onRowsRefresh={(rows) =>
+          setSelectedCompany((current) =>
+            current ? rows.find((company) => company.id === current.id) ?? current : null,
+          )
+        }
       />
+      {selectedCompany ? (
+        <CompanyDetailsForm
+          company={selectedCompany}
+          open
+          onOpenChange={(open) => {
+            if (!open) setSelectedCompany(null);
+          }}
+          showTrigger={false}
+        />
+      ) : null}
     </div>
   );
 }

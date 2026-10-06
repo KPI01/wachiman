@@ -1,9 +1,7 @@
 import { InfoIcon } from "lucide-react";
 import { useState } from "react";
-import AlertDialogContainer, {
-  AlertDialogAction,
-  AlertDialogCancel,
-} from "~/components/containers/alert-dialog-container";
+import EntityDetailsDialog from "~/components/models/shared/entity-details-dialog";
+import DeleteWorkCategoryBtn from "~/components/models/work-category/delete-work-category-btn";
 import type { WorkCategory } from "../../../../db/schema";
 import { useFetcher } from "react-router";
 import FieldWrapper from "~/components/ui/wrappers/field-wrapper";
@@ -16,44 +14,54 @@ import { useAppConfig } from "~/lib/app-config";
 type WorkCategoryDetailsProps = {
   workCategory: WorkCategory;
   actionPath?: string;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  showTrigger?: boolean;
 };
 
 export default function WorkCategoryDetailsForm({
   workCategory,
   actionPath = "/admin/work-categories",
+  open,
+  onOpenChange,
+  showTrigger = true,
 }: WorkCategoryDetailsProps) {
   const { workPermitsEnabled } = useAppConfig();
 
-  const [open, setOpen] = useState(false);
+  const [localOpen, setLocalOpen] = useState(false);
   const patchFetcher = useFetcher<{ errors?: unknown }>();
   const patchErrors = patchFetcher.data?.errors;
   const formId = `work-category-form-${workCategory.id}`;
 
   return (
-    <AlertDialogContainer
-      open={open}
-      onOpenChange={setOpen}
-      buttonLabel={<InfoIcon aria-hidden="true" />}
-      buttonVariant="secondary"
-      buttonSize="icon-sm"
-      buttonAriaLabel="Editar tipo de trabajo"
-      buttonTooltip="Editar tipo de trabajo"
-      title="Ficha de tipo de trabajo"
-      footer={
-        <>
-          <AlertDialogCancel variant="destructive">Cancelar</AlertDialogCancel>
-          <AlertDialogAction type="submit" form={formId}>
-            Enviar
-          </AlertDialogAction>
-        </>
+    <EntityDetailsDialog
+      open={open ?? localOpen}
+      onOpenChange={onOpenChange ?? setLocalOpen}
+      showTrigger={showTrigger}
+      trigger={<InfoIcon aria-hidden="true" />}
+      triggerLabel="Abrir ficha del tipo de trabajo"
+      title="Ficha del tipo de trabajo"
+      description={workCategory.name}
+      formId={formId}
+      isSubmitting={patchFetcher.state !== "idle"}
+      footerLeading={
+        <DeleteWorkCategoryBtn
+          workCategoryId={workCategory.id}
+          actionPath={actionPath}
+          onDeleted={() => {
+            setLocalOpen(false);
+            onOpenChange?.(false);
+          }}
+        />
       }
     >
       <patchFetcher.Form
         id={formId}
         method="patch"
         action={actionPath}
-        className="space-y-4"
+        className="grid gap-4 md:grid-cols-2"
       >
+        <h3 className="text-sm font-semibold md:col-span-2">Datos del tipo de trabajo</h3>
         <Input name="id" defaultValue={workCategory.id} type="hidden" />
         <FieldWrapper
           label="Nombre"
@@ -101,6 +109,6 @@ export default function WorkCategoryDetailsForm({
           </label>
         ) : null}
       </patchFetcher.Form>
-    </AlertDialogContainer>
+    </EntityDetailsDialog>
   );
 }

@@ -1,19 +1,12 @@
 import { createColumnHelper } from "@tanstack/react-table";
-import type { Company, WorkCategory } from "../../../db/schema";
 import type { ExternalWorkerListItem } from "../database/external-worker.server";
 import { formatTimestamp } from "../utils";
-import ExternalWorkerDetailsForm from "~/components/models/external-worker/external-worker-details-form";
-import DeleteExternalWorkerBtn from "~/components/models/external-worker/delete-external-worker-btn";
 
 type ExternalWorkerRow = ExternalWorkerListItem;
 
 const externalWorkerColHelper = createColumnHelper<ExternalWorkerRow>();
 
-export function getExternalWorkerColumns(
-  companies: Company[],
-  workCategories: WorkCategory[],
-  actionPath: string,
-) {
+export function getExternalWorkerColumns() {
   return [
     externalWorkerColHelper.accessor(
       (worker) => [worker.firstName, worker.middleName].filter(Boolean).join(" "),
@@ -26,7 +19,7 @@ export function getExternalWorkerColumns(
       (worker) => [worker.lastName, worker.secondLastName].filter(Boolean).join(" "),
       {
         id: "surnames",
-      header: "Apellidos",
+        header: "Apellidos",
       },
     ),
     externalWorkerColHelper.accessor("legalId", {
@@ -50,24 +43,6 @@ export function getExternalWorkerColumns(
       header: "Creación",
       cell: ({ getValue }) =>
         formatTimestamp({ date: getValue(), template: "dd/MM/yyyy HH:mm" }),
-    }),
-    externalWorkerColHelper.display({
-      id: "actions",
-      header: "Acciones",
-      cell: ({ row }) => (
-        <div className="flex items-center justify-end gap-1">
-          <ExternalWorkerDetailsForm
-            worker={row.original}
-            companies={companies}
-            workCategories={workCategories}
-            actionPath={actionPath}
-          />
-          <DeleteExternalWorkerBtn
-            workerId={row.original.id}
-            actionPath={actionPath}
-          />
-        </div>
-      ),
     }),
   ];
 }
