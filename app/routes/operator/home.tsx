@@ -12,8 +12,7 @@ import { getSessionSite } from "~/lib/session.server";
 import type { Route } from "./+types/home";
 import { validateUserRole } from "~/lib/auth.server";
 import { getFormData } from "~/lib/services/http.server";
-import { useEffect, useMemo } from "react";
-import { useRevalidator } from "react-router";
+import { useMemo } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import {
   createAccessLogFromPlannedAccess,
@@ -24,6 +23,7 @@ import {
   getApprovedWorkPermitsForSiteOnDate,
 } from "~/lib/services/work-permit.server";
 import type { PlannedAccessListItem } from "~/lib/database/planned-access.server";
+import type { AccessLogListItem } from "~/lib/database/access-log.server";
 import { Badge } from "~/components/ui/badge";
 import {
   Empty,
@@ -41,6 +41,8 @@ import { getGlobalAppSettings } from "~/lib/services/app-settings.server";
 import { SiteEntity } from "~/lib/database/site.server";
 import { getManyCompanies } from "~/lib/services/company.server";
 import { getAppConfig } from "~/lib/app-config.server";
+import { isTableOnlyDataRequest } from "~/lib/table-query.server";
+import { useResolvedValue } from "~/hooks/use-resolved-value";
 
 export async function loader({ request }: Route.LoaderArgs) {
   await validateUserRole(request, "ACCESS_OPERATOR");
@@ -51,12 +53,28 @@ export async function loader({ request }: Route.LoaderArgs) {
   }
 
   const { workPermitsEnabled } = getAppConfig();
-  const [accessLogs, plannedAccesses, openAccessLogs, allowedAreas, settings, site, companies, approvedWorkPermits] = await Promise.all([
-    getManyAccessLogs({
-      siteId: sessionSite.id,
-      timestampField: "entryTimestamp",
-      date: new Date(),
-    }),
+  if (isTableOnlyDataRequest(request)) {
+    const site = await SiteEntity.findById(sessionSite.id);
+    if (!site) throw new Response("Unauthorized", { status: 401 });
+
+    return {
+      accessLogs: getManyAccessLogs({
+        siteId: sessionSite.id,
+        timestampField: "entryTimestamp",
+        date: new Date(),
+      }),
+      plannedAccesses: [],
+      openAccessLogs: [],
+      site,
+      allowedAreas: [],
+      holder: undefined,
+      companies: [],
+      workPermitsEnabled,
+      workPermits: [],
+    };
+  }
+
+  const [plannedAccesses, openAccessLogs, allowedAreas, settings, site, companies, approvedWorkPermits] = await Promise.all([
     getManyPlannedAccesses({
       siteId: sessionSite.id,
       status: ["APPROVED", "PARTIALLY_USED", "USED"],
@@ -75,6 +93,12 @@ export async function loader({ request }: Route.LoaderArgs) {
   if (!site) {
     throw new Response("Unauthorized", { status: 401 });
   }
+
+  const accessLogs = getManyAccessLogs({
+    siteId: sessionSite.id,
+    timestampField: "entryTimestamp",
+    date: new Date(),
+  });
 
   return {
     accessLogs,
@@ -295,6 +319,10 @@ function PlannedAccessesToday({
 }
 
 export default function OperatorHome({ loaderData }: Route.ComponentProps) {
+  const [accessLogRows, setAccessLogRows, accessLogsReady] = useResolvedValue<AccessLogListItem[]>(
+    loaderData.accessLogs as unknown as PromiseLike<AccessLogListItem[]>,
+    [],
+  );
   const columns = useMemo(
     () => getAccessLogColumns(["vehicleDetails", "visitReason", "actions"], loaderData.allowedAreas ?? []),
     [loaderData.allowedAreas],
@@ -309,21 +337,6 @@ export default function OperatorHome({ loaderData }: Route.ComponentProps) {
     [loaderData.openAccessLogs],
   );
 
-  const revalidator = useRevalidator();
-
-  useEffect(() => {
-    const intervalId = window.setInterval(() => {
-      if (
-        document.visibilityState === "visible" &&
-        revalidator.state === "idle"
-      ) {
-        revalidator.revalidate();
-      }
-    }, 5000);
-
-    return () => window.clearInterval(intervalId);
-  }, [revalidator]);
-
   return (
     <Tabs defaultValue="access-logs" className="w-full">
       <StaleAccessWarning accessLogs={loaderData.openAccessLogs ?? []} allowExit />
@@ -333,33 +346,38 @@ export default function OperatorHome({ loaderData }: Route.ComponentProps) {
       </TabsList>
 
       <TabsContent value="access-logs" className="flex flex-col gap-6">
-        <div className="flex flex-wrap justify-end gap-2">
+        <div className="flex flex-wrap items-center justify-end gap-2">
           <CreateAccessLogForm
             sites={[loaderData.site]}
             allowedAreas={loaderData.allowedAreas ?? []}
             actionPath="/operator?index"
+            ready={accessLogsReady}
             lockedSiteId={loaderData.site.id}
             buttonLabel="Acceso de persona"
+            buttonClassName="ms-0"
             holder={loaderData.holder}
             companies={loaderData.companies ?? []}
             workPermits={loaderData.workPermits ?? []}
-            dailyRiskAcknowledgements={(loaderData.accessLogs ?? []).map((log) => ({ legalIdSnapshot: log.legalIdSnapshot, companyId: log.companyId, siteId: log.siteId, riskAcknowledgedAt: log.riskAcknowledgedAt }))}
+            dailyRiskAcknowledgements={accessLogRows.map((log) => ({ legalIdSnapshot: log.legalIdSnapshot, companyId: log.companyId, siteId: log.siteId, riskAcknowledgedAt: log.riskAcknowledgedAt }))}
           />
           <CreateVehicleAccessLogForm
             sites={[loaderData.site]}
             allowedAreas={loaderData.allowedAreas ?? []}
             actionPath="/operator?index"
             lockedSiteId={loaderData.site.id}
+            buttonClassName="ms-0"
             holder={loaderData.holder}
             companies={loaderData.companies ?? []}
           />
         </div>
 
-        <DataTable
+        <DataTable<AccessLogListItem>
           columns={columns}
-          data={loaderData.accessLogs ?? []}
-          showGlobalFilter={false}
+          data={loaderData.accessLogs as unknown as PromiseLike<AccessLogListItem[]>}
+          refreshDataKey="accessLogs"
+          onRowsRefresh={setAccessLogRows}
           showColumnVisibility={false}
+          refreshIntervalMs={5_000}
           empty={{
             title: "No hay accesos registrados hoy",
             description:
@@ -374,7 +392,7 @@ export default function OperatorHome({ loaderData }: Route.ComponentProps) {
           openLegalIds={openLegalIds}
           site={loaderData.site}
           holder={loaderData.holder}
-          dailyRiskAcknowledgements={(loaderData.accessLogs ?? []).map((log) => ({
+          dailyRiskAcknowledgements={accessLogRows.map((log) => ({
             legalIdSnapshot: log.legalIdSnapshot,
             companyId: log.companyId,
             siteId: log.siteId,

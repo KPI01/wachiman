@@ -1,8 +1,6 @@
 import {
-  CarFrontIcon,
   PlusIcon,
   Trash2Icon,
-  UserRoundIcon,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useFetcher } from "react-router";
@@ -31,6 +29,7 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { Textarea } from "~/components/ui/textarea";
+import { Separator } from "~/components/ui/separator";
 import type { AllowedArea, Company, Site } from "../../../../db/schema";
 import CompanyCombobox from "../company/company-combobox";
 import AllowedAreaCombobox from "./allowed-area-combobox";
@@ -76,6 +75,57 @@ function getDefaultTimestamp() {
   return new Date();
 }
 
+function VehicleAccessStepIndicator({
+  currentStep,
+}: {
+  currentStep: "details" | "risks";
+}) {
+  const steps = [
+    { id: "details", label: "Datos" },
+    { id: "risks", label: "Riesgos y firma" },
+  ] as const;
+  const currentIndex = steps.findIndex((step) => step.id === currentStep);
+
+  return (
+    <ol
+      className="grid grid-cols-2 gap-2 border-b px-2 pb-4 pt-2"
+      aria-label="Progreso del registro de acceso vehicular"
+    >
+      {steps.map((step, index) => {
+        const isCurrent = index === currentIndex;
+        const isComplete = index < currentIndex;
+
+        return (
+          <li key={step.id} className="min-w-0">
+            <div
+              className={`flex items-center gap-2 text-sm font-medium ${
+                isCurrent
+                  ? "text-primary"
+                  : isComplete
+                    ? "text-foreground"
+                    : "text-muted-foreground"
+              }`}
+            >
+              <span
+                className={`flex size-8 shrink-0 items-center justify-center rounded-full border ${
+                  isCurrent
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : isComplete
+                      ? "border-foreground bg-foreground text-background"
+                      : "border-muted-foreground/40"
+                }`}
+              >
+                {index + 1}
+              </span>
+              <span className="truncate">{step.label}</span>
+            </div>
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
 export default function CreateVehicleAccessLogForm({
   sites,
   allowedAreas,
@@ -83,6 +133,7 @@ export default function CreateVehicleAccessLogForm({
   lockedSiteId,
   holder,
   companies,
+  buttonClassName = "ms-auto",
 }: {
   sites: SiteOption[];
   allowedAreas: Array<Pick<AllowedArea, "id" | "name">>;
@@ -90,6 +141,7 @@ export default function CreateVehicleAccessLogForm({
   lockedSiteId?: string;
   holder?: { legalName: string; taxId: string; fiscalAddress: string };
   companies: Array<Pick<Company, "id" | "name" | "cif" | "address">>;
+  buttonClassName?: string;
 }) {
   const fetcher = useFetcher<{ success?: boolean; errors?: unknown }>();
   const [open, setOpen] = useState(false);
@@ -324,21 +376,21 @@ export default function CreateVehicleAccessLogForm({
         setOpen(nextOpen);
         if (nextOpen) reset();
       }}
-      buttonClassName="ms-auto"
+      buttonClassName={buttonClassName}
       buttonLabel={
         <>
           <PlusIcon /> Acceso de vehículo
         </>
       }
-      contentClassName="flex max-h-9/10 w-[94vw] max-w-5xl flex-col overflow-hidden"
+      contentClassName="flex max-h-9/10 w-[94vw] max-w-4xl flex-col overflow-hidden"
       title={
         step === "details"
           ? "Nuevo acceso vehicular"
-          : "Validación individual de ocupantes"
+          : "Información y validación"
       }
       description={
         step === "details"
-          ? "Registra el vehículo y añade todas las personas que viajan en él."
+          ? "Registra el vehículo y añade a sus ocupantes. Los campos con (*) son obligatorios."
           : `Cada ocupante debe leer la información de riesgos y firmar. Persona ${activeOccupant + 1} de ${occupants.length}.`
       }
       footer={
@@ -392,18 +444,15 @@ export default function CreateVehicleAccessLogForm({
         )
       }
     >
+      <VehicleAccessStepIndicator currentStep={step} />
       {step === "details" ? (
-        <div className="min-h-0 overflow-y-auto space-y-5 p-2">
-          <section className="grid min-w-0 gap-4 rounded-xl border bg-muted/20 p-4 xl:grid-cols-2">
-            <div className="flex min-w-0 items-start gap-3 xl:col-span-2">
-              <CarFrontIcon className="mt-1 size-5 shrink-0 text-primary" />
-              <div className="min-w-0">
-                <h3 className="font-semibold">Vehículo</h3>
-                <p className="text-sm text-muted-foreground">
-                  Los datos se compartirán con todos los registros de este
-                  ingreso.
-                </p>
-              </div>
+        <div className="min-h-0 overflow-y-auto p-2">
+          <div className="grid min-w-0 gap-x-6 gap-y-4 md:grid-cols-2">
+            <div className="md:col-span-2">
+              <h3 className="text-sm font-semibold">Vehículo</h3>
+              <p className="text-sm text-muted-foreground">
+                Los datos se compartirán con todos los registros de este ingreso.
+              </p>
             </div>
             <FieldWrapper
               className="min-w-0"
@@ -509,20 +558,16 @@ export default function CreateVehicleAccessLogForm({
                 }}
               />
             </FieldWrapper>
-          </section>
 
-          <section className="grid min-w-0 gap-4 rounded-xl border p-4 xl:grid-cols-2">
-            <div className="flex min-w-0 items-start gap-3 xl:col-span-2">
-              <UserRoundIcon className="mt-1 size-5 shrink-0 text-muted-foreground" />
-              <div className="min-w-0">
-                <h3 className="font-semibold">Datos de autorización</h3>
-                <p className="text-sm text-muted-foreground">
-                  Se aplican a todos los ocupantes.
-                </p>
-              </div>
+            <Separator className="md:col-span-2" />
+            <div className="md:col-span-2">
+              <h3 className="text-sm font-semibold">Datos de autorización</h3>
+              <p className="text-sm text-muted-foreground">
+                Se aplican a todos los ocupantes.
+              </p>
             </div>
             <FieldWrapper
-              className="min-w-0 xl:col-span-2"
+              className="min-w-0 md:col-span-2"
               label="Empresa *"
               htmlFor="vehicle-company"
             >
@@ -575,7 +620,7 @@ export default function CreateVehicleAccessLogForm({
               />
             </FieldWrapper>
             <FieldWrapper
-              className="min-w-0 xl:col-span-2"
+              className="min-w-0 md:col-span-2"
               label="Motivo de visita *"
               htmlFor="vehicle-reason"
             >
@@ -589,14 +634,14 @@ export default function CreateVehicleAccessLogForm({
                 }}
               />
             </FieldWrapper>
-          </section>
 
-          <section className="rounded-xl border bg-muted/20 p-4">
-            <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
+            <Separator className="md:col-span-2" />
+            <div className="flex min-w-0 items-center justify-between gap-3 md:col-span-2">
               <div className="min-w-0">
-                <h3 className="font-semibold">
-                  Ocupantes ({occupants.length})
-                </h3>
+                <h3 className="text-lg font-semibold">Ocupantes</h3>
+                <p className="text-sm text-muted-foreground">
+                  {occupants.length} {occupants.length === 1 ? "persona" : "personas"} añadidas
+                </p>
               </div>
               <Popover
                 open={occupantPopoverOpen}
@@ -606,8 +651,9 @@ export default function CreateVehicleAccessLogForm({
                   <Button
                     type="button"
                     variant="outline"
-                    size="sm"
+                    size="icon"
                     className="shrink-0"
+                    aria-label="Añadir ocupante"
                   >
                     <PlusIcon />
                   </Button>
@@ -620,8 +666,7 @@ export default function CreateVehicleAccessLogForm({
                   <PopoverHeader>
                     <PopoverTitle>Añadir ocupante</PopoverTitle>
                     <PopoverDescription>
-                      Introduce los datos de la persona que viaja en el
-                      vehículo.
+                      Introduce los datos de la persona que viaja en el vehículo.
                     </PopoverDescription>
                   </PopoverHeader>
                   <div className="space-y-4">
@@ -704,37 +749,35 @@ export default function CreateVehicleAccessLogForm({
                 </PopoverContent>
               </Popover>
             </div>
-            <div className="mt-3 space-y-2">
-              {occupants.map((occupant, index) => (
-                <div
-                  key={occupant.id}
-                  className="flex items-center gap-3 rounded-lg border bg-background p-3"
-                >
-                  <span className="flex size-8 items-center justify-center rounded-full bg-muted text-sm font-semibold">
-                    {index + 1}
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <p className="font-medium">
-                      {occupant.firstNameSnapshot} {occupant.lastNameSnapshot}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      {occupant.legalIdSnapshot}
-                      {occupant.phoneNumber ? ` · ${occupant.phoneNumber}` : ""}
-                    </p>
-                  </div>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => removeOccupant(occupant.id)}
-                    aria-label={`Eliminar a ${occupant.firstNameSnapshot}`}
-                  >
-                    <Trash2Icon />
-                  </Button>
+            {occupants.map((occupant, index) => (
+              <div
+                key={occupant.id}
+                className="flex min-w-0 items-center gap-3 rounded-lg border p-3 md:col-span-2"
+              >
+                <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-muted text-sm font-semibold">
+                  {index + 1}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-medium">
+                    {occupant.firstNameSnapshot} {occupant.lastNameSnapshot}
+                  </p>
+                  <p className="truncate text-sm text-muted-foreground">
+                    {occupant.legalIdSnapshot}
+                    {occupant.phoneNumber ? ` · ${occupant.phoneNumber}` : ""}
+                  </p>
                 </div>
-              ))}
-            </div>
-          </section>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => removeOccupant(occupant.id)}
+                  aria-label={`Eliminar a ${occupant.firstNameSnapshot}`}
+                >
+                  <Trash2Icon />
+                </Button>
+              </div>
+            ))}
+          </div>
         </div>
       ) : currentOccupant ? (
         <div className="min-h-0 overflow-y-auto space-y-4 p-2">

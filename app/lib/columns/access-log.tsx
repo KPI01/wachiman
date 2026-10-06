@@ -54,12 +54,31 @@ const entryTimestampColumn = accessLogColHelper.accessor("entryTimestamp", {
 
 const exitTimestampColumn = accessLogColHelper.accessor("exitTimestamp", {
   header: "Salida",
-  cell: ({ getValue }) => {
+  cell: ({ getValue, row }) => {
     const value = getValue();
+    const closureMethod = row.original.exitClosureMethod;
 
-    return value
-      ? formatTimestamp({ date: value, template: "dd/MM/yyyy HH:mm" })
-      : "-";
+    if (!value) {
+      return (
+        <div className="flex flex-col items-start gap-1">
+          <span>-</span>
+          {row.original.exitSignatureRequestedAt ? (
+            <Badge variant="secondary">Firma solicitada</Badge>
+          ) : null}
+        </div>
+      );
+    }
+
+    return (
+      <div className="flex flex-col items-start gap-1">
+        <span>{formatTimestamp({ date: value, template: "dd/MM/yyyy HH:mm" })}</span>
+        {closureMethod === "FORCED" ? (
+          <Badge variant="secondary">Cierre forzado</Badge>
+        ) : closureMethod === "SYSTEM" ? (
+          <Badge variant="outline">Cierre automático</Badge>
+        ) : null}
+      </div>
+    );
   },
 });
 
@@ -134,13 +153,23 @@ const actionsColumn = accessLogColHelper.display({
 
     return (
       <div className="flex justify-end">
-        <MarkAccessLogExit accessLogId={row.original.id} compact />
+        <MarkAccessLogExit
+          accessLogId={row.original.id}
+          compact
+          mode="supervisor"
+          signatureRequested={Boolean(row.original.exitSignatureRequestedAt)}
+        />
       </div>
     );
   },
 });
 
-function createEditableActionsColumn(allowedAreas: AllowedArea[]) {
+type ExitActionMode = "operator" | "supervisor";
+
+function createEditableActionsColumn(
+  allowedAreas: AllowedArea[],
+  exitActionMode: ExitActionMode,
+) {
   return accessLogColHelper.display({
     id: "actions",
     header: "Acciones",
@@ -148,7 +177,12 @@ function createEditableActionsColumn(allowedAreas: AllowedArea[]) {
       <div className="flex justify-end gap-1">
         <EditAccessLog accessLog={row.original} allowedAreas={allowedAreas} />
         {!row.original.exitTimestamp ? (
-          <MarkAccessLogExit accessLogId={row.original.id} compact />
+          <MarkAccessLogExit
+            accessLogId={row.original.id}
+            compact
+            mode={exitActionMode}
+            signatureRequested={Boolean(row.original.exitSignatureRequestedAt)}
+          />
         ) : null}
       </div>
     ),
@@ -176,7 +210,10 @@ export type OptionalColumnsOptions =
   | "createdBy"
   | "actions";
 
-export function createAccessLogColumns(allowedAreas: AllowedArea[] = []): AccessLogColumnDef[] {
+export function createAccessLogColumns(
+  allowedAreas: AllowedArea[] = [],
+  exitActionMode: ExitActionMode = "supervisor",
+): AccessLogColumnDef[] {
   return [
     entryTimestampColumn,
     exitTimestampColumn,
@@ -189,7 +226,7 @@ export function createAccessLogColumns(allowedAreas: AllowedArea[] = []): Access
     visitReasonColumn,
     siteNameColumn,
     createdByNameColumn,
-    createEditableActionsColumn(allowedAreas),
+    createEditableActionsColumn(allowedAreas, exitActionMode),
   ];
 }
 
@@ -249,6 +286,7 @@ const optionalColumns: Record<OptionalColumnsOptions, AccessLogColumnDef> = {
 export function getAccessLogColumns(
   columns: OptionalColumnsOptions | readonly OptionalColumnsOptions[] = [],
   allowedAreas: AllowedArea[] = [],
+  exitActionMode: ExitActionMode = "operator",
 ): AccessLogColumnDef[] {
   const selectedColumns: readonly OptionalColumnsOptions[] = Array.isArray(
     columns,
@@ -259,7 +297,7 @@ export function getAccessLogColumns(
   return [
     ...baseColumns,
     ...selectedColumns.map((column) =>
-      column === "actions" ? createEditableActionsColumn(allowedAreas) : optionalColumns[column],
+      column === "actions" ? createEditableActionsColumn(allowedAreas, exitActionMode) : optionalColumns[column],
     ),
   ];
 }

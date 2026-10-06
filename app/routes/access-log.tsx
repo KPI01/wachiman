@@ -3,7 +3,9 @@ import type { Route } from "./+types/access-log";
 import { getSessionSite } from "~/lib/session.server";
 import { isAuthenticated, validateUserRole } from "~/lib/auth.server";
 import {
+  forceAccessLogExit,
   markAccessLogExit,
+  requestAccessLogExitSignature,
   updateAccessLog,
 } from "~/lib/services/access-log.server";
 
@@ -69,16 +71,39 @@ export async function action({ params, request }: Route.ActionArgs) {
     throw new Response("Unauthorized", { status: 401 });
   }
 
-  const result = await markAccessLogExit(jsonData, params.id, {
+  const exitOptions = {
     authorUsername: sessionUser.username,
     siteId: sessionSite?.id,
-  });
+  };
+  const intent = String(jsonData.intent ?? "");
+
+  const result =
+    sessionUser.role === USER_ROLES.ACCESS_OPERATOR
+      ? intent === "sign-exit"
+        ? await markAccessLogExit(jsonData, params.id, exitOptions)
+        : {
+            success: false as const,
+            errors: "El operador debe registrar la salida con la firma del visitante.",
+          }
+      : intent === "request-exit-signature"
+        ? await requestAccessLogExitSignature(params.id, exitOptions)
+        : intent === "force-exit"
+          ? await forceAccessLogExit(params.id, exitOptions)
+          : {
+              success: false as const,
+              errors: "Selecciona si quieres solicitar la firma o cerrar el acceso sin ella.",
+            };
 
   if (!result.success) {
-    if (result.errors === "conflict") {
-      throw new Response("Conflict", { status: 409 });
-    }
-    return Response.json(result, { status: 400 });
+    const status =
+      "code" in result && result.code === "not_found"
+        ? 404
+        : "code" in result && result.code === "conflict"
+          ? 409
+          : result.errors === "unauthorized"
+            ? 401
+            : 400;
+    return Response.json(result, { status });
   }
 
   return Response.json(result);

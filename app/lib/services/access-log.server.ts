@@ -6,6 +6,7 @@ import {
   vehicleAccessPayloadSchema,
 } from "../schemas/access-log";
 import { UserEntity } from "../database/user.server";
+import { ACCESS_LOG_EXIT_METHODS, USER_ROLES } from "../../../db/enums";
 import {
   AccessLogEntity,
   type GetAccessLogsInput,
@@ -370,20 +371,201 @@ export async function markAccessLogExit(
     return { success: false, errors: "unauthorized" };
   }
 
+  if (exitRecordedBy.role !== USER_ROLES.ACCESS_OPERATOR) {
+    return {
+      success: false as const,
+      errors: "Solo el operador de accesos puede registrar la firma del visitante.",
+    };
+  }
+
+  const accessLog = await AccessLogEntity.findFirst({ id: accessLogId });
+  if (!accessLog || (options.siteId && accessLog.siteId !== options.siteId)) {
+    return { success: false as const, code: "not_found" as const, errors: "not_found" };
+  }
+
+  const personName = getAccessLogPersonName(accessLog);
+  const exitTimestamp = new Date();
+
   const wasExitRecorded = await AccessLogEntity.markExit({
     accessLogId,
+    exitTimestamp,
     exitSignatureEnvelope: await encryptValue(
       JSON.stringify(data.exitSignaturePayload),
     ),
     exitRecordedById: exitRecordedBy.id,
+    exitClosureMethod: ACCESS_LOG_EXIT_METHODS.SIGNED,
     siteId: options.siteId,
+    auditData: {
+      entityType: "AccessLog",
+      entityId: accessLogId,
+      action: "REGISTER_EXIT",
+      changedBy: exitRecordedBy.id,
+      summary: `${exitRecordedBy.fullName} registró la salida firmada de ${personName}.`,
+      metadata: {
+        exitClosureMethod: ACCESS_LOG_EXIT_METHODS.SIGNED,
+        exitTimestamp,
+        personName,
+        legalIdSnapshot: accessLog.legalIdSnapshot,
+        siteId: accessLog.siteId,
+      },
+    },
   });
 
   if (!wasExitRecorded) {
-    return { success: false, errors: "conflict" };
+    return {
+      success: false as const,
+      code: "conflict" as const,
+      errors: "La salida ya se registró desde otra sesión. Actualiza la tabla antes de volver a intentarlo.",
+    };
   }
 
-  return { success: true };
+  return { success: true as const, outcome: "signed" as const };
+}
+
+type ManageAccessLogExitOptions = {
+  authorUsername: string;
+  siteId?: string;
+};
+
+function getAccessLogPersonName(accessLog: {
+  firstNameSnapshot: string;
+  middleNameSnapshot: string | null;
+  lastNameSnapshot: string;
+  secondLastNameSnapshot: string | null;
+}) {
+  return [
+    accessLog.firstNameSnapshot,
+    accessLog.middleNameSnapshot,
+    accessLog.lastNameSnapshot,
+    accessLog.secondLastNameSnapshot,
+  ].filter(Boolean).join(" ");
+}
+
+async function getManagedExitContext(
+  accessLogId: string,
+  options: ManageAccessLogExitOptions,
+) {
+  const actor = await UserEntity.getByUsername(options.authorUsername);
+  if (!actor) {
+    return { success: false as const, errors: "unauthorized" };
+  }
+
+  if (
+    actor.role !== USER_ROLES.ADMIN &&
+    actor.role !== USER_ROLES.SECURITY_MANAGER &&
+    actor.role !== USER_ROLES.ACCESS_APPROVER
+  ) {
+    return {
+      success: false as const,
+      errors: "Solo los perfiles de administración, seguridad y aprobación pueden solicitar o forzar una salida.",
+    };
+  }
+
+  const accessLog = await AccessLogEntity.findFirst({ id: accessLogId });
+  if (!accessLog || (options.siteId && accessLog.siteId !== options.siteId)) {
+    return { success: false as const, code: "not_found" as const, errors: "not_found" };
+  }
+
+  if (accessLog.exitTimestamp) {
+    return {
+      success: false as const,
+      code: "conflict" as const,
+      errors: "Este acceso ya tiene una salida registrada.",
+    };
+  }
+
+  return { success: true as const, actor, accessLog };
+}
+
+export async function requestAccessLogExitSignature(
+  accessLogId: string,
+  options: ManageAccessLogExitOptions,
+) {
+  const context = await getManagedExitContext(accessLogId, options);
+  if (!context.success) return context;
+
+  if (context.accessLog.exitSignatureRequestedAt) {
+    return {
+      success: false as const,
+      code: "conflict" as const,
+      errors: "La firma de salida ya se ha solicitado al operador de accesos.",
+    };
+  }
+
+  const requestedAt = new Date();
+  const personName = getAccessLogPersonName(context.accessLog);
+  const wasRequested = await AccessLogEntity.requestExitSignature({
+    accessLogId,
+    exitSignatureRequestedAt: requestedAt,
+    exitSignatureRequestedById: context.actor.id,
+    siteId: options.siteId,
+    auditData: {
+      entityType: "AccessLog",
+      entityId: accessLogId,
+      action: "EXIT_SIGNATURE_REQUESTED",
+      changedBy: context.actor.id,
+      summary: `${context.actor.fullName} solicitó al operador la firma de salida de ${personName}.`,
+      metadata: {
+        exitSignatureRequestedAt: requestedAt,
+        personName,
+        legalIdSnapshot: context.accessLog.legalIdSnapshot,
+        siteId: context.accessLog.siteId,
+      },
+    },
+  });
+
+  if (!wasRequested) {
+    return {
+      success: false as const,
+      code: "conflict" as const,
+      errors: "El registro cambió mientras se solicitaba la firma. Actualiza la tabla e inténtalo de nuevo.",
+    };
+  }
+
+  return { success: true as const, outcome: "requested" as const };
+}
+
+export async function forceAccessLogExit(
+  accessLogId: string,
+  options: ManageAccessLogExitOptions,
+) {
+  const context = await getManagedExitContext(accessLogId, options);
+  if (!context.success) return context;
+
+  const exitTimestamp = new Date();
+  const personName = getAccessLogPersonName(context.accessLog);
+  const wasExitRecorded = await AccessLogEntity.markExit({
+    accessLogId,
+    exitTimestamp,
+    exitSignatureEnvelope: null,
+    exitRecordedById: context.actor.id,
+    exitClosureMethod: ACCESS_LOG_EXIT_METHODS.FORCED,
+    siteId: options.siteId,
+    auditData: {
+      entityType: "AccessLog",
+      entityId: accessLogId,
+      action: "FORCE_EXIT",
+      changedBy: context.actor.id,
+      summary: `${context.actor.fullName} cerró sin firma el acceso de ${personName}.`,
+      metadata: {
+        exitClosureMethod: ACCESS_LOG_EXIT_METHODS.FORCED,
+        exitTimestamp,
+        personName,
+        legalIdSnapshot: context.accessLog.legalIdSnapshot,
+        siteId: context.accessLog.siteId,
+      },
+    },
+  });
+
+  if (!wasExitRecorded) {
+    return {
+      success: false as const,
+      code: "conflict" as const,
+      errors: "La salida ya se registró desde otra sesión. Actualiza la tabla antes de volver a intentarlo.",
+    };
+  }
+
+  return { success: true as const, outcome: "forced" as const };
 }
 
 type UpdateAccessLogOptions = {
@@ -394,6 +576,7 @@ type UpdateAccessLogOptions = {
 const editableSnapshot = (accessLog: {
   entryTimestamp: Date;
   exitTimestamp: Date | null;
+  exitClosureMethod: string | null;
   companyNameSnapshot: string;
   firstNameSnapshot: string;
   middleNameSnapshot: string | null;
@@ -409,6 +592,7 @@ const editableSnapshot = (accessLog: {
 }) => ({
   entryTimestamp: accessLog.entryTimestamp,
   exitTimestamp: accessLog.exitTimestamp,
+  exitClosureMethod: accessLog.exitClosureMethod,
   companyNameSnapshot: accessLog.companyNameSnapshot,
   firstNameSnapshot: accessLog.firstNameSnapshot,
   middleNameSnapshot: accessLog.middleNameSnapshot,
@@ -507,6 +691,11 @@ export async function updateAccessLog(
     exitSignatureEnvelope: exitWasRemoved
       ? null
       : current.exitSignatureEnvelope,
+    exitClosureMethod: exitWasRemoved
+      ? null
+      : exitWasAdded
+        ? ACCESS_LOG_EXIT_METHODS.FORCED
+        : current.exitClosureMethod,
     exitRecordedById: exitWasRemoved
       ? null
       : exitWasAdded
@@ -521,12 +710,23 @@ export async function updateAccessLog(
     {
       entityType: "AccessLog",
       entityId: accessLogId,
-      action: "UPDATE",
+      action: exitWasAdded ? "FORCE_EXIT" : "UPDATE",
       changedBy: editor.id,
-      summary: `Registro de acceso de ${expectedUpdated.firstNameSnapshot} ${expectedUpdated.lastNameSnapshot} actualizado`,
+      summary: exitWasAdded
+        ? `${editor.fullName} cerró sin firma el acceso de ${getAccessLogPersonName(expectedUpdated)} desde la ficha del registro.`
+        : `Registro de acceso de ${expectedUpdated.firstNameSnapshot} ${expectedUpdated.lastNameSnapshot} actualizado`,
       metadata: {
         previous: editableSnapshot(current),
         updated: editableSnapshot(expectedUpdated),
+        ...(exitWasAdded
+          ? {
+              exitClosureMethod: ACCESS_LOG_EXIT_METHODS.FORCED,
+              exitTimestamp: data.exitTimestamp,
+              personName: getAccessLogPersonName(expectedUpdated),
+              legalIdSnapshot: expectedUpdated.legalIdSnapshot,
+              siteId: current.siteId,
+            }
+          : {}),
       },
     },
     {

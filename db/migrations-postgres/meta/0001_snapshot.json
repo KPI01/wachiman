@@ -1,0 +1,2477 @@
+{
+  "id": "5abe88e4-8380-4bbb-8fa3-d941b66ac451",
+  "prevId": "d41f8704-c6ce-4c92-ad25-d71b28551c58",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.access_log_vehicles": {
+      "name": "access_log_vehicles",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "type_snapshot": {
+          "name": "type_snapshot",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "brand_snapshot": {
+          "name": "brand_snapshot",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "model_snapshot": {
+          "name": "model_snapshot",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "plate_snapshot": {
+          "name": "plate_snapshot",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.access_logs": {
+      "name": "access_logs",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "entry_timestamp": {
+          "name": "entry_timestamp",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "entry_signature_envelope": {
+          "name": "entry_signature_envelope",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "risk_acknowledged_at": {
+          "name": "risk_acknowledged_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "risk_acknowledgement_snapshot": {
+          "name": "risk_acknowledgement_snapshot",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "exit_timestamp": {
+          "name": "exit_timestamp",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "exit_signature_envelope": {
+          "name": "exit_signature_envelope",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "exit_signature_requested_at": {
+          "name": "exit_signature_requested_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "exit_signature_requested_by_id": {
+          "name": "exit_signature_requested_by_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "exit_closure_method": {
+          "name": "exit_closure_method",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "company_name_snapshot": {
+          "name": "company_name_snapshot",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "company_id": {
+          "name": "company_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "first_name_snapshot": {
+          "name": "first_name_snapshot",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "middle_name_snapshot": {
+          "name": "middle_name_snapshot",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "last_name_snapshot": {
+          "name": "last_name_snapshot",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "second_last_name_snapshot": {
+          "name": "second_last_name_snapshot",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "phone_number": {
+          "name": "phone_number",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "legal_id_snapshot": {
+          "name": "legal_id_snapshot",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "allowed_area_snapshot": {
+          "name": "allowed_area_snapshot",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'No especificado'"
+        },
+        "allowed_area_id": {
+          "name": "allowed_area_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "approved_by_snapshot": {
+          "name": "approved_by_snapshot",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'No especificado'"
+        },
+        "with_vehicle": {
+          "name": "with_vehicle",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false,
+          "default": false
+        },
+        "visit_reason": {
+          "name": "visit_reason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "site_id": {
+          "name": "site_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_by_id": {
+          "name": "created_by_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "exit_recorded_by_id": {
+          "name": "exit_recorded_by_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "vehicle_access_log_id": {
+          "name": "vehicle_access_log_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "planned_access_id": {
+          "name": "planned_access_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "planned_access_person_id": {
+          "name": "planned_access_person_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "external_worker_id": {
+          "name": "external_worker_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "work_permit_id": {
+          "name": "work_permit_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "access_logs_exit_signature_requested_by_id_users_id_fk": {
+          "name": "access_logs_exit_signature_requested_by_id_users_id_fk",
+          "tableFrom": "access_logs",
+          "tableTo": "users",
+          "columnsFrom": [
+            "exit_signature_requested_by_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "access_logs_company_id_companies_id_fk": {
+          "name": "access_logs_company_id_companies_id_fk",
+          "tableFrom": "access_logs",
+          "tableTo": "companies",
+          "columnsFrom": [
+            "company_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "access_logs_allowed_area_id_allowed_areas_id_fk": {
+          "name": "access_logs_allowed_area_id_allowed_areas_id_fk",
+          "tableFrom": "access_logs",
+          "tableTo": "allowed_areas",
+          "columnsFrom": [
+            "allowed_area_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "access_logs_site_id_sites_id_fk": {
+          "name": "access_logs_site_id_sites_id_fk",
+          "tableFrom": "access_logs",
+          "tableTo": "sites",
+          "columnsFrom": [
+            "site_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "access_logs_created_by_id_users_id_fk": {
+          "name": "access_logs_created_by_id_users_id_fk",
+          "tableFrom": "access_logs",
+          "tableTo": "users",
+          "columnsFrom": [
+            "created_by_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "access_logs_exit_recorded_by_id_users_id_fk": {
+          "name": "access_logs_exit_recorded_by_id_users_id_fk",
+          "tableFrom": "access_logs",
+          "tableTo": "users",
+          "columnsFrom": [
+            "exit_recorded_by_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "access_logs_vehicle_access_log_id_access_log_vehicles_id_fk": {
+          "name": "access_logs_vehicle_access_log_id_access_log_vehicles_id_fk",
+          "tableFrom": "access_logs",
+          "tableTo": "access_log_vehicles",
+          "columnsFrom": [
+            "vehicle_access_log_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "access_logs_planned_access_id_planned_accesses_id_fk": {
+          "name": "access_logs_planned_access_id_planned_accesses_id_fk",
+          "tableFrom": "access_logs",
+          "tableTo": "planned_accesses",
+          "columnsFrom": [
+            "planned_access_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "access_logs_planned_access_person_id_planned_access_persons_id_fk": {
+          "name": "access_logs_planned_access_person_id_planned_access_persons_id_fk",
+          "tableFrom": "access_logs",
+          "tableTo": "planned_access_persons",
+          "columnsFrom": [
+            "planned_access_person_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "access_logs_external_worker_id_external_workers_id_fk": {
+          "name": "access_logs_external_worker_id_external_workers_id_fk",
+          "tableFrom": "access_logs",
+          "tableTo": "external_workers",
+          "columnsFrom": [
+            "external_worker_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "access_logs_work_permit_id_work_permits_id_fk": {
+          "name": "access_logs_work_permit_id_work_permits_id_fk",
+          "tableFrom": "access_logs",
+          "tableTo": "work_permits",
+          "columnsFrom": [
+            "work_permit_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.allowed_areas": {
+      "name": "allowed_areas",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "slug": {
+          "name": "slug",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "allowed_areas_name_unique": {
+          "name": "allowed_areas_name_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "name"
+          ]
+        },
+        "allowed_areas_slug_unique": {
+          "name": "allowed_areas_slug_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "slug"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.app_settings": {
+      "name": "app_settings",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "early_arrival_tolerance_minutes": {
+          "name": "early_arrival_tolerance_minutes",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 60
+        },
+        "holder_legal_name": {
+          "name": "holder_legal_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "holder_tax_id": {
+          "name": "holder_tax_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "holder_fiscal_address": {
+          "name": "holder_fiscal_address",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "updated_by_id": {
+          "name": "updated_by_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "app_settings_updated_by_id_users_id_fk": {
+          "name": "app_settings_updated_by_id_users_id_fk",
+          "tableFrom": "app_settings",
+          "tableTo": "users",
+          "columnsFrom": [
+            "updated_by_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.audit_logs": {
+      "name": "audit_logs",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "entity_type": {
+          "name": "entity_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "entity_id": {
+          "name": "entity_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "action": {
+          "name": "action",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "changed_by": {
+          "name": "changed_by",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "summary": {
+          "name": "summary",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "metadata": {
+          "name": "metadata",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.companies": {
+      "name": "companies",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "cif": {
+          "name": "cif",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "''"
+        },
+        "address": {
+          "name": "address",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "phone": {
+          "name": "phone",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "email": {
+          "name": "email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "slug": {
+          "name": "slug",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "companies_slug_unique": {
+          "name": "companies_slug_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "slug"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.departments": {
+      "name": "departments",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "slug": {
+          "name": "slug",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "departments_slug_unique": {
+          "name": "departments_slug_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "slug"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.document_reviews": {
+      "name": "document_reviews",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "document_id": {
+          "name": "document_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "decision": {
+          "name": "decision",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "reason": {
+          "name": "reason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "evidence_snapshot": {
+          "name": "evidence_snapshot",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "reviewed_by_id": {
+          "name": "reviewed_by_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "reviewed_at": {
+          "name": "reviewed_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "document_reviews_document_id_worker_documents_id_fk": {
+          "name": "document_reviews_document_id_worker_documents_id_fk",
+          "tableFrom": "document_reviews",
+          "tableTo": "worker_documents",
+          "columnsFrom": [
+            "document_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "document_reviews_reviewed_by_id_users_id_fk": {
+          "name": "document_reviews_reviewed_by_id_users_id_fk",
+          "tableFrom": "document_reviews",
+          "tableTo": "users",
+          "columnsFrom": [
+            "reviewed_by_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.external_workers": {
+      "name": "external_workers",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "first_name": {
+          "name": "first_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "middle_name": {
+          "name": "middle_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "last_name": {
+          "name": "last_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "second_last_name": {
+          "name": "second_last_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "phone_number": {
+          "name": "phone_number",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "legal_id": {
+          "name": "legal_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "company_id": {
+          "name": "company_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "work_category_id": {
+          "name": "work_category_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "external_workers_company_id_companies_id_fk": {
+          "name": "external_workers_company_id_companies_id_fk",
+          "tableFrom": "external_workers",
+          "tableTo": "companies",
+          "columnsFrom": [
+            "company_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "external_workers_work_category_id_work_categories_id_fk": {
+          "name": "external_workers_work_category_id_work_categories_id_fk",
+          "tableFrom": "external_workers",
+          "tableTo": "work_categories",
+          "columnsFrom": [
+            "work_category_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "external_workers_legal_id_unique": {
+          "name": "external_workers_legal_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "legal_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.planned_access_person_decisions": {
+      "name": "planned_access_person_decisions",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "planned_access_person_id": {
+          "name": "planned_access_person_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "work_permit_id": {
+          "name": "work_permit_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "access_decision": {
+          "name": "access_decision",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'PENDING'"
+        },
+        "work_decision": {
+          "name": "work_decision",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'PENDING'"
+        },
+        "decision_reason": {
+          "name": "decision_reason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "decided_by_id": {
+          "name": "decided_by_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "decided_at": {
+          "name": "decided_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "planned_access_person_decisions_person_idx": {
+          "name": "planned_access_person_decisions_person_idx",
+          "columns": [
+            {
+              "expression": "planned_access_person_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "planned_access_person_decisions_planned_access_person_id_planned_access_persons_id_fk": {
+          "name": "planned_access_person_decisions_planned_access_person_id_planned_access_persons_id_fk",
+          "tableFrom": "planned_access_person_decisions",
+          "tableTo": "planned_access_persons",
+          "columnsFrom": [
+            "planned_access_person_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "planned_access_person_decisions_work_permit_id_work_permits_id_fk": {
+          "name": "planned_access_person_decisions_work_permit_id_work_permits_id_fk",
+          "tableFrom": "planned_access_person_decisions",
+          "tableTo": "work_permits",
+          "columnsFrom": [
+            "work_permit_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "planned_access_person_decisions_decided_by_id_users_id_fk": {
+          "name": "planned_access_person_decisions_decided_by_id_users_id_fk",
+          "tableFrom": "planned_access_person_decisions",
+          "tableTo": "users",
+          "columnsFrom": [
+            "decided_by_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.planned_access_persons": {
+      "name": "planned_access_persons",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "first_name_snapshot": {
+          "name": "first_name_snapshot",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "middle_name_snapshot": {
+          "name": "middle_name_snapshot",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "last_name_snapshot": {
+          "name": "last_name_snapshot",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "second_last_name_snapshot": {
+          "name": "second_last_name_snapshot",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "phone_number": {
+          "name": "phone_number",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "legal_id_snapshot": {
+          "name": "legal_id_snapshot",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "work_category_id": {
+          "name": "work_category_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "allowed_area_snapshot": {
+          "name": "allowed_area_snapshot",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'No especificada'"
+        },
+        "allowed_area_id": {
+          "name": "allowed_area_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "planned_access_id": {
+          "name": "planned_access_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "external_worker_id": {
+          "name": "external_worker_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "planned_access_persons_work_category_id_work_categories_id_fk": {
+          "name": "planned_access_persons_work_category_id_work_categories_id_fk",
+          "tableFrom": "planned_access_persons",
+          "tableTo": "work_categories",
+          "columnsFrom": [
+            "work_category_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "planned_access_persons_allowed_area_id_allowed_areas_id_fk": {
+          "name": "planned_access_persons_allowed_area_id_allowed_areas_id_fk",
+          "tableFrom": "planned_access_persons",
+          "tableTo": "allowed_areas",
+          "columnsFrom": [
+            "allowed_area_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "planned_access_persons_planned_access_id_planned_accesses_id_fk": {
+          "name": "planned_access_persons_planned_access_id_planned_accesses_id_fk",
+          "tableFrom": "planned_access_persons",
+          "tableTo": "planned_accesses",
+          "columnsFrom": [
+            "planned_access_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "planned_access_persons_external_worker_id_external_workers_id_fk": {
+          "name": "planned_access_persons_external_worker_id_external_workers_id_fk",
+          "tableFrom": "planned_access_persons",
+          "tableTo": "external_workers",
+          "columnsFrom": [
+            "external_worker_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.planned_accesses": {
+      "name": "planned_accesses",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "expected_start_datetime": {
+          "name": "expected_start_datetime",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "expected_end_datetime": {
+          "name": "expected_end_datetime",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'PENDING_APPROVAL'"
+        },
+        "company_snapshot": {
+          "name": "company_snapshot",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "company_id": {
+          "name": "company_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "visit_reason": {
+          "name": "visit_reason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "approved_at": {
+          "name": "approved_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "approved_by_id": {
+          "name": "approved_by_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "decision_reason": {
+          "name": "decision_reason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "decision_at": {
+          "name": "decision_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "decision_by_id": {
+          "name": "decision_by_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "requested_by_id": {
+          "name": "requested_by_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "department_id": {
+          "name": "department_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "site_id": {
+          "name": "site_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "planned_accesses_company_id_companies_id_fk": {
+          "name": "planned_accesses_company_id_companies_id_fk",
+          "tableFrom": "planned_accesses",
+          "tableTo": "companies",
+          "columnsFrom": [
+            "company_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "planned_accesses_approved_by_id_users_id_fk": {
+          "name": "planned_accesses_approved_by_id_users_id_fk",
+          "tableFrom": "planned_accesses",
+          "tableTo": "users",
+          "columnsFrom": [
+            "approved_by_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "planned_accesses_decision_by_id_users_id_fk": {
+          "name": "planned_accesses_decision_by_id_users_id_fk",
+          "tableFrom": "planned_accesses",
+          "tableTo": "users",
+          "columnsFrom": [
+            "decision_by_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "planned_accesses_requested_by_id_users_id_fk": {
+          "name": "planned_accesses_requested_by_id_users_id_fk",
+          "tableFrom": "planned_accesses",
+          "tableTo": "users",
+          "columnsFrom": [
+            "requested_by_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "planned_accesses_department_id_departments_id_fk": {
+          "name": "planned_accesses_department_id_departments_id_fk",
+          "tableFrom": "planned_accesses",
+          "tableTo": "departments",
+          "columnsFrom": [
+            "department_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "planned_accesses_site_id_sites_id_fk": {
+          "name": "planned_accesses_site_id_sites_id_fk",
+          "tableFrom": "planned_accesses",
+          "tableTo": "sites",
+          "columnsFrom": [
+            "site_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.sites": {
+      "name": "sites",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "slug": {
+          "name": "slug",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "address": {
+          "name": "address",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "risk_information": {
+          "name": "risk_information",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "risk_information_version": {
+          "name": "risk_information_version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "sites_slug_unique": {
+          "name": "sites_slug_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "slug"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.users": {
+      "name": "users",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "full_name": {
+          "name": "full_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "username": {
+          "name": "username",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "password": {
+          "name": "password",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "role": {
+          "name": "role",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'ACCESS_OPERATOR'"
+        },
+        "is_active": {
+          "name": "is_active",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false,
+          "default": true
+        },
+        "is_trashed": {
+          "name": "is_trashed",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false,
+          "default": false
+        },
+        "site_id": {
+          "name": "site_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "department_id": {
+          "name": "department_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "users_site_id_sites_id_fk": {
+          "name": "users_site_id_sites_id_fk",
+          "tableFrom": "users",
+          "tableTo": "sites",
+          "columnsFrom": [
+            "site_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "users_department_id_departments_id_fk": {
+          "name": "users_department_id_departments_id_fk",
+          "tableFrom": "users",
+          "tableTo": "departments",
+          "columnsFrom": [
+            "department_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "users_username_unique": {
+          "name": "users_username_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "username"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.work_categories": {
+      "name": "work_categories",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "risk_information": {
+          "name": "risk_information",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "requires_special_permission": {
+          "name": "requires_special_permission",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false,
+          "default": false
+        },
+        "requires_training": {
+          "name": "requires_training",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false,
+          "default": false
+        },
+        "requires_work_permit": {
+          "name": "requires_work_permit",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false,
+          "default": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.work_permit_activities": {
+      "name": "work_permit_activities",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "planned_access_id": {
+          "name": "planned_access_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "site_id": {
+          "name": "site_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "company_id": {
+          "name": "company_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "company_snapshot": {
+          "name": "company_snapshot",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "task_description": {
+          "name": "task_description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "work_area_snapshot": {
+          "name": "work_area_snapshot",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "expected_start_datetime": {
+          "name": "expected_start_datetime",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "expected_end_datetime": {
+          "name": "expected_end_datetime",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "risk_items": {
+          "name": "risk_items",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "tools_and_equipment": {
+          "name": "tools_and_equipment",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "personal_protective_equipment": {
+          "name": "personal_protective_equipment",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "checklist": {
+          "name": "checklist",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "incidents": {
+          "name": "incidents",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "facility_risk_snapshot": {
+          "name": "facility_risk_snapshot",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "facility_risk_version": {
+          "name": "facility_risk_version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "created_by_id": {
+          "name": "created_by_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "work_permit_activities_planned_access_id_planned_accesses_id_fk": {
+          "name": "work_permit_activities_planned_access_id_planned_accesses_id_fk",
+          "tableFrom": "work_permit_activities",
+          "tableTo": "planned_accesses",
+          "columnsFrom": [
+            "planned_access_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "work_permit_activities_site_id_sites_id_fk": {
+          "name": "work_permit_activities_site_id_sites_id_fk",
+          "tableFrom": "work_permit_activities",
+          "tableTo": "sites",
+          "columnsFrom": [
+            "site_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "work_permit_activities_company_id_companies_id_fk": {
+          "name": "work_permit_activities_company_id_companies_id_fk",
+          "tableFrom": "work_permit_activities",
+          "tableTo": "companies",
+          "columnsFrom": [
+            "company_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "work_permit_activities_created_by_id_users_id_fk": {
+          "name": "work_permit_activities_created_by_id_users_id_fk",
+          "tableFrom": "work_permit_activities",
+          "tableTo": "users",
+          "columnsFrom": [
+            "created_by_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.work_permit_signatures": {
+      "name": "work_permit_signatures",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "work_permit_id": {
+          "name": "work_permit_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "signer_type": {
+          "name": "signer_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "signer_name": {
+          "name": "signer_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "signer_legal_id": {
+          "name": "signer_legal_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "signature_envelope": {
+          "name": "signature_envelope",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "captured_by_id": {
+          "name": "captured_by_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "signed_at": {
+          "name": "signed_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "work_permit_signatures_type_idx": {
+          "name": "work_permit_signatures_type_idx",
+          "columns": [
+            {
+              "expression": "work_permit_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "signer_type",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "work_permit_signatures_work_permit_id_work_permits_id_fk": {
+          "name": "work_permit_signatures_work_permit_id_work_permits_id_fk",
+          "tableFrom": "work_permit_signatures",
+          "tableTo": "work_permits",
+          "columnsFrom": [
+            "work_permit_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "work_permit_signatures_captured_by_id_users_id_fk": {
+          "name": "work_permit_signatures_captured_by_id_users_id_fk",
+          "tableFrom": "work_permit_signatures",
+          "tableTo": "users",
+          "columnsFrom": [
+            "captured_by_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.work_permits": {
+      "name": "work_permits",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "activity_id": {
+          "name": "activity_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "planned_access_person_id": {
+          "name": "planned_access_person_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "external_worker_id": {
+          "name": "external_worker_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "first_name_snapshot": {
+          "name": "first_name_snapshot",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "last_name_snapshot": {
+          "name": "last_name_snapshot",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "legal_id_snapshot": {
+          "name": "legal_id_snapshot",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "work_category_id": {
+          "name": "work_category_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "work_category_risk_snapshot": {
+          "name": "work_category_risk_snapshot",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "restrictions": {
+          "name": "restrictions",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'DRAFT'"
+        },
+        "approved_by_id": {
+          "name": "approved_by_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "approved_at": {
+          "name": "approved_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "approved_snapshot": {
+          "name": "approved_snapshot",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_by_id": {
+          "name": "created_by_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "work_permits_activity_person_idx": {
+          "name": "work_permits_activity_person_idx",
+          "columns": [
+            {
+              "expression": "activity_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "planned_access_person_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "work_permits_activity_id_work_permit_activities_id_fk": {
+          "name": "work_permits_activity_id_work_permit_activities_id_fk",
+          "tableFrom": "work_permits",
+          "tableTo": "work_permit_activities",
+          "columnsFrom": [
+            "activity_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "work_permits_planned_access_person_id_planned_access_persons_id_fk": {
+          "name": "work_permits_planned_access_person_id_planned_access_persons_id_fk",
+          "tableFrom": "work_permits",
+          "tableTo": "planned_access_persons",
+          "columnsFrom": [
+            "planned_access_person_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "work_permits_external_worker_id_external_workers_id_fk": {
+          "name": "work_permits_external_worker_id_external_workers_id_fk",
+          "tableFrom": "work_permits",
+          "tableTo": "external_workers",
+          "columnsFrom": [
+            "external_worker_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "work_permits_work_category_id_work_categories_id_fk": {
+          "name": "work_permits_work_category_id_work_categories_id_fk",
+          "tableFrom": "work_permits",
+          "tableTo": "work_categories",
+          "columnsFrom": [
+            "work_category_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "work_permits_approved_by_id_users_id_fk": {
+          "name": "work_permits_approved_by_id_users_id_fk",
+          "tableFrom": "work_permits",
+          "tableTo": "users",
+          "columnsFrom": [
+            "approved_by_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "work_permits_created_by_id_users_id_fk": {
+          "name": "work_permits_created_by_id_users_id_fk",
+          "tableFrom": "work_permits",
+          "tableTo": "users",
+          "columnsFrom": [
+            "created_by_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.worker_documents": {
+      "name": "worker_documents",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "document_type": {
+          "name": "document_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "record_type": {
+          "name": "record_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'TRAINING_EVIDENCE'"
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'PENDING_REVIEW'"
+        },
+        "file_name": {
+          "name": "file_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "file_path": {
+          "name": "file_path",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "file_size": {
+          "name": "file_size",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "mime_type": {
+          "name": "mime_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "content_hash": {
+          "name": "content_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "completed_at": {
+          "name": "completed_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "issued_at": {
+          "name": "issued_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "valid_from": {
+          "name": "valid_from",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "expiry_date": {
+          "name": "expiry_date",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "refresher_due_at": {
+          "name": "refresher_due_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "review_due_at": {
+          "name": "review_due_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "last_performed_at": {
+          "name": "last_performed_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "expiry_basis": {
+          "name": "expiry_basis",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'NOT_APPLICABLE'"
+        },
+        "legal_source": {
+          "name": "legal_source",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "jurisdiction": {
+          "name": "jurisdiction",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "sector": {
+          "name": "sector",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "site_id": {
+          "name": "site_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "work_category_id": {
+          "name": "work_category_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "task_scope": {
+          "name": "task_scope",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "risk_scopes": {
+          "name": "risk_scopes",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "equipment_types": {
+          "name": "equipment_types",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "procedure_version": {
+          "name": "procedure_version",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "issuer": {
+          "name": "issuer",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "employer_authorizer": {
+          "name": "employer_authorizer",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "reviewed_by_id": {
+          "name": "reviewed_by_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "reviewed_at": {
+          "name": "reviewed_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "review_reason": {
+          "name": "review_reason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "supersedes_document_id": {
+          "name": "supersedes_document_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "notes": {
+          "name": "notes",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "external_worker_id": {
+          "name": "external_worker_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "worker_documents_site_id_sites_id_fk": {
+          "name": "worker_documents_site_id_sites_id_fk",
+          "tableFrom": "worker_documents",
+          "tableTo": "sites",
+          "columnsFrom": [
+            "site_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "worker_documents_work_category_id_work_categories_id_fk": {
+          "name": "worker_documents_work_category_id_work_categories_id_fk",
+          "tableFrom": "worker_documents",
+          "tableTo": "work_categories",
+          "columnsFrom": [
+            "work_category_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "worker_documents_reviewed_by_id_users_id_fk": {
+          "name": "worker_documents_reviewed_by_id_users_id_fk",
+          "tableFrom": "worker_documents",
+          "tableTo": "users",
+          "columnsFrom": [
+            "reviewed_by_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "worker_documents_external_worker_id_external_workers_id_fk": {
+          "name": "worker_documents_external_worker_id_external_workers_id_fk",
+          "tableFrom": "worker_documents",
+          "tableTo": "external_workers",
+          "columnsFrom": [
+            "external_worker_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {},
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}

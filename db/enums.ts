@@ -99,3 +99,12 @@ export const WORK_DECISIONS = {
 
 export type WorkDecision =
   (typeof WORK_DECISIONS)[keyof typeof WORK_DECISIONS];
+
+export const ACCESS_LOG_EXIT_METHODS = {
+  SIGNED: "SIGNED",
+  FORCED: "FORCED",
+  SYSTEM: "SYSTEM",
+} as const;
+
+export type AccessLogExitMethod =
+  (typeof ACCESS_LOG_EXIT_METHODS)[keyof typeof ACCESS_LOG_EXIT_METHODS];

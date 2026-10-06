@@ -10,6 +10,7 @@ import type {
   WorkPermitStatus,
   AccessDecision,
   WorkDecision,
+  AccessLogExitMethod,
 } from "./enums";
 
 // ───── Enums ────────────────────────────────────────
@@ -248,6 +249,11 @@ export const accessLogs = pgTable("access_logs", {
   exitTimestamp: timestamp("exit_timestamp"),
   exitSignatureEnvelope: jsonb("exit_signature_envelope")
     .$type<Record<string, unknown>>(),
+  exitSignatureRequestedAt: timestamp("exit_signature_requested_at"),
+  exitSignatureRequestedById: text("exit_signature_requested_by_id").references(
+    () => users.id,
+  ),
+  exitClosureMethod: text("exit_closure_method").$type<AccessLogExitMethod>(),
   companyNameSnapshot: text("company_name_snapshot").notNull(),
   companyId: text("company_id").references(() => companies.id),
   firstNameSnapshot: text("first_name_snapshot").notNull(),
@@ -472,6 +478,9 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   }),
   createdAccesLogs: many(accessLogs, { relationName: "createdBy" }),
   accessLogsMarkedExit: many(accessLogs, { relationName: "exitRecordedBy" }),
+  accessLogsSignatureRequested: many(accessLogs, {
+    relationName: "exitSignatureRequestedBy",
+  }),
   requestedPlannedAccesses: many(plannedAccesses, {
     relationName: "requestedBy",
   }),
@@ -557,6 +566,11 @@ export const accessLogsRelations = relations(accessLogs, ({ one }) => ({
     fields: [accessLogs.exitRecordedById],
     references: [users.id],
     relationName: "exitRecordedBy",
+  }),
+  exitSignatureRequestedBy: one(users, {
+    fields: [accessLogs.exitSignatureRequestedById],
+    references: [users.id],
+    relationName: "exitSignatureRequestedBy",
   }),
   vehicleAccessLog: one(accessLogVehicles, {
     fields: [accessLogs.vehicleAccessLogId],

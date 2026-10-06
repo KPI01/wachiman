@@ -1,5 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { Input } from "~/components/ui/input";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "~/components/ui/popover";
 
 type AllowedAreaOption = {
   id: string;
@@ -37,7 +42,6 @@ export default function AllowedAreaCombobox({
   const [suggestions, setSuggestions] = useState<AllowedAreaOption[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(0);
-  const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const selectedValueRef = useRef<string | null>(null);
 
@@ -67,7 +71,6 @@ export default function AllowedAreaCombobox({
 
     if (searchQuery.length < 2) {
       setSuggestions([]);
-      setShowSuggestions(false);
       return () => controller.abort();
     }
 
@@ -83,11 +86,11 @@ export default function AllowedAreaCombobox({
         const data = (await response.json()) as AllowedAreaOption[];
         setSuggestions(data);
         setSelectedSuggestionIndex(0);
-        setShowSuggestions(data.length > 0);
+        setShowSuggestions(true);
       } catch (error) {
         if ((error as Error).name !== "AbortError") {
           setSuggestions([]);
-          setShowSuggestions(false);
+          setShowSuggestions(true);
         }
       }
     }, 300);
@@ -102,17 +105,6 @@ export default function AllowedAreaCombobox({
     if (selectedName) setQuery(selectedName);
     else if (!value) setQuery("");
   }, [selectedName, value]);
-
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
-        setShowSuggestions(false);
-      }
-    }
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
 
   function selectSuggestion(suggestion: AllowedAreaOption) {
     selectedValueRef.current = suggestion.name;
@@ -159,66 +151,93 @@ export default function AllowedAreaCombobox({
   }
 
   return (
-    <div ref={containerRef} className="relative">
-      <Input
-        ref={inputRef}
-        id={`${id}-search`}
-        value={query}
-        required={required && !value}
-        placeholder={placeholder}
-        autoComplete="off"
-        role="combobox"
-        aria-expanded={showSuggestions}
-        aria-controls={`${id}-suggestions`}
-        onFocus={() => {
-          if (options) {
-            setSuggestions(getFilteredOptions(query));
-            setShowSuggestions(true);
-          }
-        }}
-        onBlur={() => {
-          if (requireSelection && !selectedValueRef.current) {
-            inputRef.current?.setCustomValidity(
-              query.trim() ? "Selecciona un área autorizada de la lista." : "",
-            );
-          }
-          setShowSuggestions(false);
-        }}
-        onChange={(event) => handleQueryChange(event.currentTarget.value)}
-        onKeyDown={handleKeyDown}
-      />
-      {name ? <input type="hidden" name={name} value={value} form={form} /> : null}
-      {showSuggestions && (
-        <ul
+    <Popover open={showSuggestions} onOpenChange={setShowSuggestions}>
+      <PopoverTrigger asChild>
+        <div className="w-full">
+          <Input
+            ref={inputRef}
+            id={`${id}-search`}
+            value={query}
+            required={required && !value}
+            placeholder={placeholder}
+            autoComplete="off"
+            role="combobox"
+            aria-expanded={showSuggestions}
+            aria-controls={`${id}-suggestions`}
+            onFocus={() => {
+              if (options !== undefined) {
+                setSuggestions(getFilteredOptions(query));
+              }
+            }}
+            onInvalid={(event) => {
+              // Keep the required-field browser tooltip from covering the options.
+              event.preventDefault();
+              if (options !== undefined) {
+                setSuggestions(getFilteredOptions(query));
+              }
+              setShowSuggestions(true);
+            }}
+            onBlur={() => {
+              if (requireSelection && !selectedValueRef.current) {
+                inputRef.current?.setCustomValidity(
+                  query.trim()
+                    ? "Selecciona un área autorizada de la lista."
+                    : "",
+                );
+              }
+            }}
+            onChange={(event) => {
+              handleQueryChange(event.currentTarget.value);
+              setShowSuggestions(true);
+            }}
+            onKeyDown={handleKeyDown}
+          />
+          {name ? (
+            <input type="hidden" name={name} value={value} form={form} />
+          ) : null}
+        </div>
+      </PopoverTrigger>
+      {showSuggestions ? (
+        <PopoverContent
           id={`${id}-suggestions`}
-          role="listbox"
-          className="absolute z-50 mt-1 max-h-48 w-full overflow-auto rounded-md border bg-popover p-1 shadow-md"
+          side="bottom"
+          align="start"
+          sideOffset={4}
+          className="z-[60] max-h-48 w-[var(--radix-popover-trigger-width)] gap-0 overflow-y-auto p-1"
+          onOpenAutoFocus={(event) => event.preventDefault()}
+          aria-label="Áreas autorizadas"
         >
-          {suggestions.length === 0 ? (
-            <li className="px-2 py-1.5 text-sm text-muted-foreground">
-              No se encontraron áreas.
-            </li>
-          ) : suggestions.map((suggestion, index) => (
-            <li
-              key={suggestion.id}
-              role="option"
-              aria-selected={index === selectedSuggestionIndex}
-              className={`cursor-pointer rounded-sm px-2 py-1.5 text-sm ${
-                index === selectedSuggestionIndex
-                  ? "bg-accent text-accent-foreground"
-                  : "hover:bg-accent/50"
-              }`}
-              onMouseDown={(event) => {
-                event.preventDefault();
-                selectSuggestion(suggestion);
-              }}
-              onMouseEnter={() => setSelectedSuggestionIndex(index)}
-            >
-              {suggestion.name}
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
+          <ul role="listbox" className="w-full">
+            {suggestions.length === 0 ? (
+              <li className="px-2 py-1.5 text-sm text-muted-foreground">
+                {options?.length === 0
+                  ? "No hay áreas autorizadas configuradas."
+                  : "No se encontraron áreas."}
+              </li>
+            ) : (
+              suggestions.map((suggestion, index) => (
+                <li
+                  key={suggestion.id}
+                  role="option"
+                  aria-selected={index === selectedSuggestionIndex}
+                  className={`cursor-pointer rounded-sm px-2 py-1.5 text-sm ${
+                    index === selectedSuggestionIndex
+                      ? "bg-accent text-accent-foreground"
+                      : "hover:bg-accent/50"
+                  }`}
+                  onPointerDown={(event) => {
+                    event.preventDefault();
+                    selectSuggestion(suggestion);
+                  }}
+                  onMouseEnter={() => setSelectedSuggestionIndex(index)}
+                >
+                  {suggestion.name}
+                </li>
+              ))
+            )}
+          </ul>
+        </PopoverContent>
+      ) : null}
+    </Popover>
   );
 }

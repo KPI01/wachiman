@@ -45,6 +45,8 @@ type CreateAccessLogProps = {
   actionPath: string;
   lockedSiteId?: string;
   buttonLabel?: string;
+  buttonClassName?: string;
+  ready?: boolean;
   holder?: { legalName: string; taxId: string; fiscalAddress: string };
   companies: Array<Pick<Company, "id" | "name" | "cif" | "address">>;
   dailyRiskAcknowledgements?: Array<{ legalIdSnapshot: string; companyId: string | null; siteId: string; riskAcknowledgedAt: Date | null }>;
@@ -105,6 +107,8 @@ export default function CreateAccessLog({
   actionPath,
   lockedSiteId,
   buttonLabel = "Acceso de persona",
+  buttonClassName = "ms-auto",
+  ready = true,
   holder,
   companies,
   dailyRiskAcknowledgements = [],
@@ -152,6 +156,7 @@ export default function CreateAccessLog({
   const phoneRef = useRef<HTMLInputElement>(null);
   const suggestionContainerRef = useRef<HTMLDivElement>(null);
   const [selectedSiteId, setSelectedSiteId] = useState(lockedSiteId ?? sites[0]?.id);
+  const selectedSite = sites.find((site) => site.id === selectedSiteId);
   const globalError =
     typeof fetcher.data?.errors === "string" ? fetcher.data.errors : null;
   const hasDailyRiskAcknowledgement = dailyRiskAcknowledgements.some(
@@ -186,7 +191,7 @@ export default function CreateAccessLog({
     setSelectedWorkerRequiresWorkPermit(Boolean(worker.workCategory?.requiresWorkPermit));
     setSelectedWorkCategoryName(worker.workCategory?.name ?? null);
     setSelectedWorkCategoryRiskInformation(worker.workCategory?.riskInformation ?? null);
-    setLegalIdValue(worker.legalId);
+    setLegalIdValue(worker.legalId.toUpperCase());
 
     if (firstNameRef.current) {
       firstNameRef.current.value = [worker.firstName, worker.middleName]
@@ -375,7 +380,9 @@ export default function CreateAccessLog({
           setShowSuggestions(false);
         }
       }}
-      buttonClassName="ms-auto"
+      buttonClassName={buttonClassName}
+      buttonDisabled={!ready}
+      buttonTooltip={ready ? undefined : "Cargando los accesos recientes"}
       buttonLabel={
         <>
           <PlusIcon />
@@ -531,7 +538,7 @@ export default function CreateAccessLog({
                   required
                   value={legalIdValue}
                   onChange={(event) => {
-                    setLegalIdValue(event.currentTarget.value);
+                    setLegalIdValue(event.currentTarget.value.toUpperCase());
                     if (selectedExternalWorkerId) {
                       clearSelectedExternalWorker();
                     }
@@ -706,8 +713,10 @@ export default function CreateAccessLog({
               holderLegalName={holder?.legalName ?? ""}
               holderTaxId={holder?.taxId ?? ""}
               holderFiscalAddress={holder?.fiscalAddress ?? ""}
-              siteName={sites.find((site) => site.id === selectedSiteId)?.name ?? ""}
-              siteAddress={sites.find((site) => site.id === selectedSiteId)?.address}
+              siteName={selectedSite?.name ?? ""}
+              siteAddress={selectedSite?.address}
+              facilityRiskInformation={selectedSite?.riskInformation}
+              facilityRiskInformationVersion={selectedSite?.riskInformationVersion}
               companyName={companyNameValue}
               companyCif={companies.find((company) => company.id === companyId)?.cif ?? ""}
               companyAddress={companies.find((company) => company.id === companyId)?.address ?? ""}
@@ -730,9 +739,9 @@ export default function CreateAccessLog({
           </div>
         ) : step === "permit" && workPermitsEnabled ? (
           <div className="md:col-span-2 space-y-4">
-            {selectedWorkCategoryRiskInformation || selectedWorkCategoryName || sites.find((site) => site.id === selectedSiteId)?.riskInformation ? (
+            {selectedWorkCategoryRiskInformation || selectedWorkCategoryName || selectedSite?.riskInformation ? (
               <>
-                {permitForSignature ? <WorkPermitPreview workPermit={permitForSignature} /> : <WorkRiskPreview siteName={sites.find((site) => site.id === selectedSiteId)?.name ?? "Centro de trabajo"} siteAddress={sites.find((site) => site.id === selectedSiteId)?.address} facilityRiskInformation={sites.find((site) => site.id === selectedSiteId)?.riskInformation} workCategoryName={selectedWorkCategoryName} workCategoryRiskInformation={selectedWorkCategoryRiskInformation} companyName={companyNameValue} workerName={[getDraftValue("firstNameSnapshot"), getDraftValue("middleNameSnapshot"), getDraftValue("lastNameSnapshot"), getDraftValue("secondLastNameSnapshot")].filter(Boolean).join(" ")} legalId={legalIdValue} />}
+                {permitForSignature ? <WorkPermitPreview workPermit={permitForSignature} /> : <WorkRiskPreview siteName={selectedSite?.name ?? "Centro de trabajo"} siteAddress={selectedSite?.address} facilityRiskInformation={selectedSite?.riskInformation} workCategoryName={selectedWorkCategoryName} workCategoryRiskInformation={selectedWorkCategoryRiskInformation} companyName={companyNameValue} workerName={[getDraftValue("firstNameSnapshot"), getDraftValue("middleNameSnapshot"), getDraftValue("lastNameSnapshot"), getDraftValue("secondLastNameSnapshot")].filter(Boolean).join(" ")} legalId={legalIdValue} />}
                 {permitForSignature ? <AccessLogSignature key={`permit-signature-${open}`} initialStrokes={getSignatureStrokes(permitSignaturePayload)} onSignatureChange={setHasPermitSignature} onSignaturePayloadChange={setPermitSignaturePayload} /> : null}
               </>
             ) : (

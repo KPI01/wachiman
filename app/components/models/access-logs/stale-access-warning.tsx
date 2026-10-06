@@ -46,7 +46,7 @@ export default function StaleAccessWarning({
                 <span className="flex flex-wrap items-center gap-2 text-xs">
                   <Badge variant="destructive">{getOpenDurationLabel(accessLog)}</Badge>
                   Ingreso: {formatTimestamp({ date: accessLog.entryTimestamp, template: "dd/MM/yyyy HH:mm" })}
-                  {allowExit ? <MarkAccessLogExit accessLogId={accessLog.id} /> : null}
+                  {allowExit ? <MarkAccessLogExit accessLogId={accessLog.id} mode="operator" /> : null}
                 </span>
               </div>
             ))}

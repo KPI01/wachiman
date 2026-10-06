@@ -43,7 +43,7 @@ export default function RiskInformationPreview(
       <section className="border-b pb-6">
         <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Persona que firma</p>
         <p className="mt-2 font-medium">{props.workerName}</p>
-        <p className="text-sm text-muted-foreground">DNI/NIE: {props.legalId}</p>
+        <p className="text-sm text-muted-foreground">DNI/NIE: {props.legalId.toUpperCase()}</p>
       </section>
 
       <section className="whitespace-pre-wrap text-base leading-8 sm:text-lg">

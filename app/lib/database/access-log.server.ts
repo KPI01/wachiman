@@ -1,4 +1,4 @@
-import { and, count, desc, eq, gte, inArray, isNotNull, isNull, like, lte, ne, or, sql, type SQL } from "drizzle-orm";
+import { and, count, desc, eq, gte, ilike, inArray, isNotNull, isNull, like, lte, ne, or, sql, type SQL } from "drizzle-orm";
 import { db } from "../../../db/server";
 import {
   accessLogs,
@@ -11,6 +11,7 @@ import {
   users,
 } from "../../../db/schema";
 import type { CreateAuditLogInput } from "./audit-log.server";
+import type { AccessLogExitMethod } from "../../../db/enums";
 
 export type AccessLogListItem = typeof accessLogs.$inferSelect & {
   site?: { id: string; name: string } | null;
@@ -21,13 +22,19 @@ export type AccessLogListItem = typeof accessLogs.$inferSelect & {
 type AccessLogTimestampField = "entryTimestamp" | "exitTimestamp";
 
 type AccessLogDateFilter =
-  | { date: Date; from?: never; to?: never }
+  | { date?: Date; from?: never; to?: never }
   | { date?: never; from: Date; to: Date };
 
 export type GetAccessLogsInput = {
   siteId?: string;
   timestampField?: AccessLogTimestampField;
   exitTimestamp?: Date | null | { not: null };
+  query?: string;
+  companyName?: string;
+  allowedAreaId?: string;
+  legalId?: string;
+  approvedBy?: string;
+  vehicleQuery?: string;
 } & AccessLogDateFilter;
 
 type AccessLogFindFirstInput = {
@@ -69,8 +76,19 @@ export type CreateAccessLogInput = {
 
 export type MarkAccessLogExitInput = {
   accessLogId: string;
-  exitSignatureEnvelope: Record<string, unknown>;
-  exitRecordedById: string;
+  exitTimestamp: Date;
+  exitSignatureEnvelope: Record<string, unknown> | null;
+  exitRecordedById: string | null;
+  exitClosureMethod: AccessLogExitMethod;
+  auditData: CreateAuditLogInput;
+  siteId?: string;
+};
+
+export type RequestAccessLogExitSignatureInput = {
+  accessLogId: string;
+  exitSignatureRequestedAt: Date;
+  exitSignatureRequestedById: string;
+  auditData: CreateAuditLogInput;
   siteId?: string;
 };
 
@@ -78,6 +96,7 @@ export type UpdateAccessLogInput = {
   entryTimestamp: Date;
   exitTimestamp: Date | null;
   exitSignatureEnvelope: Record<string, unknown> | null;
+  exitClosureMethod: AccessLogExitMethod | null;
   exitRecordedById: string | null;
   companyNameSnapshot: string;
   firstNameSnapshot: string;
@@ -101,10 +120,8 @@ function getTimestampRangeFilter(input: AccessLogDateFilter) {
     end.setHours(23, 59, 59, 999);
     return { gte: start, lte: end };
   }
-  return {
-    gte: input.from,
-    lte: input.to,
-  };
+  if (input.from && input.to) return { gte: input.from, lte: input.to };
+  return {};
 }
 
 async function loadAccessLogRelations(rows: (typeof accessLogs.$inferSelect)[]):
@@ -217,16 +234,48 @@ export class AccessLogEntity {
     ];
     if (data.siteId) conditions.push(eq(accessLogs.siteId, data.siteId));
 
-    const [log] = await db
-      .update(accessLogs)
-      .set({
-        exitTimestamp: new Date(),
-        exitSignatureEnvelope: data.exitSignatureEnvelope,
-        exitRecordedById: data.exitRecordedById,
-      })
-      .where(and(...conditions))
-      .returning();
-    return log;
+    return db.transaction(async (tx) => {
+      const [log] = await tx
+        .update(accessLogs)
+        .set({
+          exitTimestamp: data.exitTimestamp,
+          exitSignatureEnvelope: data.exitSignatureEnvelope,
+          exitClosureMethod: data.exitClosureMethod,
+          exitRecordedById: data.exitRecordedById,
+        })
+        .where(and(...conditions))
+        .returning();
+      if (!log) return undefined;
+
+      await tx.insert(auditLogs).values(data.auditData);
+      return log;
+    });
+  }
+
+  public static async requestExitSignature(
+    data: RequestAccessLogExitSignatureInput,
+  ) {
+    const conditions = [
+      eq(accessLogs.id, data.accessLogId),
+      isNull(accessLogs.exitTimestamp),
+      isNull(accessLogs.exitSignatureRequestedAt),
+    ];
+    if (data.siteId) conditions.push(eq(accessLogs.siteId, data.siteId));
+
+    return db.transaction(async (tx) => {
+      const [log] = await tx
+        .update(accessLogs)
+        .set({
+          exitSignatureRequestedAt: data.exitSignatureRequestedAt,
+          exitSignatureRequestedById: data.exitSignatureRequestedById,
+        })
+        .where(and(...conditions))
+        .returning();
+      if (!log) return undefined;
+
+      await tx.insert(auditLogs).values(data.auditData);
+      return log;
+    });
   }
 
   public static async updateWithAudit(
@@ -269,6 +318,42 @@ export class AccessLogEntity {
     const range = getTimestampRangeFilter(input);
 
     if (input.siteId) conditions.push(eq(accessLogs.siteId, input.siteId));
+    if (input.companyName) conditions.push(eq(accessLogs.companyNameSnapshot, input.companyName));
+    if (input.allowedAreaId) conditions.push(eq(accessLogs.allowedAreaId, input.allowedAreaId));
+    if (input.legalId?.trim()) conditions.push(ilike(accessLogs.legalIdSnapshot, `%${input.legalId.trim()}%`));
+    if (input.approvedBy?.trim()) conditions.push(ilike(accessLogs.approvedBySnapshot, `%${input.approvedBy.trim()}%`));
+    if (input.vehicleQuery?.trim()) {
+      const value = `%${input.vehicleQuery.trim()}%`;
+      const matchingVehicles = await db.select({ id: accessLogVehicles.id })
+        .from(accessLogVehicles)
+        .where(or(
+          ilike(accessLogVehicles.plateSnapshot, value),
+          ilike(accessLogVehicles.brandSnapshot, value),
+          ilike(accessLogVehicles.modelSnapshot, value),
+        ));
+      if (matchingVehicles.length) conditions.push(inArray(accessLogs.vehicleAccessLogId, matchingVehicles.map((vehicle) => vehicle.id)));
+      else conditions.push(sql`false`);
+    }
+    if (input.query?.trim()) {
+      const query = `%${input.query.trim()}%`;
+      const matchingVehicles = await db.select({ id: accessLogVehicles.id })
+        .from(accessLogVehicles)
+        .where(or(
+          ilike(accessLogVehicles.plateSnapshot, query),
+          ilike(accessLogVehicles.brandSnapshot, query),
+          ilike(accessLogVehicles.modelSnapshot, query),
+        ));
+      const queryConditions = [
+        ilike(accessLogs.firstNameSnapshot, query),
+        ilike(accessLogs.lastNameSnapshot, query),
+        ilike(accessLogs.legalIdSnapshot, query),
+        ilike(accessLogs.companyNameSnapshot, query),
+        ilike(accessLogs.allowedAreaSnapshot, query),
+        ilike(accessLogs.visitReason, query),
+      ];
+      if (matchingVehicles.length) queryConditions.push(inArray(accessLogs.vehicleAccessLogId, matchingVehicles.map((vehicle) => vehicle.id)));
+      conditions.push(or(...queryConditions)!);
+    }
     if (input.exitTimestamp !== undefined) {
       if (input.exitTimestamp === null) {
         conditions.push(isNull(accessLogs.exitTimestamp));
@@ -284,8 +369,8 @@ export class AccessLogEntity {
         ? accessLogs.entryTimestamp
         : accessLogs.exitTimestamp;
 
-    conditions.push(gte(timestampCol, range.gte));
-    conditions.push(lte(timestampCol, range.lte));
+    if (range.gte) conditions.push(gte(timestampCol, range.gte));
+    if (range.lte) conditions.push(lte(timestampCol, range.lte));
 
     const rows = await db
       .select()
@@ -501,6 +586,22 @@ export class AccessLogEntity {
 
     if (!row) return null;
     return (await loadAccessLogRelations([row]))[0] ?? null;
+  }
+
+  public static async findLatestEntriesBySite(
+    input: { siteId?: string } = {},
+  ) {
+    const rows = await db
+      .selectDistinctOn([accessLogs.siteId])
+      .from(accessLogs)
+      .where(input.siteId ? eq(accessLogs.siteId, input.siteId) : undefined)
+      .orderBy(
+        accessLogs.siteId,
+        desc(accessLogs.entryTimestamp),
+        desc(accessLogs.id),
+      );
+
+    return loadAccessLogRelations(rows);
   }
 
   public static async findPeopleInsideByDepartment(

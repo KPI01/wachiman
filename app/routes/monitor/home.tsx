@@ -3,43 +3,39 @@ import type { Route } from "./+types/home";
 import { validateUserRole } from "~/lib/auth.server";
 import { getOpenAccessLogs } from "~/lib/services/access-log.server";
 import { getAccessLogColumns } from "~/lib/columns/access-log";
-import { useEffect, useMemo } from "react";
-import { useRevalidator } from "react-router";
+import { useMemo } from "react";
 import { useAccessLogNotifications } from "~/hooks/use-access-log-notifications";
+import { useResolvedValue } from "~/hooks/use-resolved-value";
+import type { AccessLogListItem } from "~/lib/database/access-log.server";
 import StaleAccessWarning from "~/components/models/access-logs/stale-access-warning";
 
 export async function loader({ request }: Route.LoaderArgs) {
   await validateUserRole(request, "ACCESS_MONITOR");
 
-  const accessLogs = await getOpenAccessLogs();
+  const accessLogs = getOpenAccessLogs();
 
   return { accessLogs };
 }
 
 export default function MonitorHome({ loaderData }: Route.ComponentProps) {
   const columns = useMemo(() => getAccessLogColumns("createdBy"), []);
-  const revalidator = useRevalidator();
-
-  useAccessLogNotifications(loaderData.accessLogs ?? []);
-
-  useEffect(() => {
-    const intervalId = window.setInterval(() => {
-      if (document.visibilityState === "visible" && revalidator.state === "idle") {
-        revalidator.revalidate();
-      }
-    }, 5000);
-
-    return () => window.clearInterval(intervalId);
-  }, [revalidator]);
+  const [accessLogRows, setAccessLogRows] = useResolvedValue<AccessLogListItem[]>(
+    loaderData.accessLogs as unknown as PromiseLike<AccessLogListItem[]>,
+    [],
+  );
+  useAccessLogNotifications(accessLogRows);
 
   return (
     <div className="grid space-y-6">
-      <StaleAccessWarning accessLogs={loaderData.accessLogs ?? []} />
-      <DataTable
+      <StaleAccessWarning accessLogs={accessLogRows} />
+      <DataTable<AccessLogListItem>
         columns={columns}
-        data={loaderData.accessLogs}
+        data={loaderData.accessLogs as unknown as PromiseLike<AccessLogListItem[]>}
+        refreshDataKey="accessLogs"
+        onRowsRefresh={setAccessLogRows}
         showGlobalFilter={false}
         showColumnVisibility={false}
+        refreshIntervalMs={5_000}
         empty={{
           title: "No existen registros",
           description:
