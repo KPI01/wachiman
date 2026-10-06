@@ -33,6 +33,7 @@ export const ROLE_NAVIGATION: Record<UserRole, SidebarLinkItem[]> = {
         item("Centros", "/admin/sites", Building2Icon),
         item("Departamentos", "/admin/departments", TagsIcon),
         item("Empresas", "/admin/companies", Building2Icon),
+        item("Empresa titular", "/admin/holder-company", Building2Icon),
         item("Tipos de trabajo", "/admin/work-categories", TagsIcon),
         item("Áreas autorizadas", "/admin/allowed-areas", TagsIcon),
       ],
@@ -64,49 +65,60 @@ export const ROLE_NAVIGATION: Record<UserRole, SidebarLinkItem[]> = {
   SECURITY_MANAGER: [
     item("Inicio", "/security", LayoutDashboardIcon),
     {
-      label: "Operación",
+      label: "Maestros",
       children: [
-        item("Accesos", "/security/access-logs", KeyRoundIcon),
-        item("Solicitudes", "/security/planned-access", ClipboardListIcon),
-        item("Trabajadores", "/security/external-workers", UsersIcon),
+        item("Centros", "/security/sites", Building2Icon),
+        item("Empresas", "/security/companies", Building2Icon),
+        item("Empresa titular", "/security/holder-company", Building2Icon),
+        item("Tipos de trabajo", "/security/work-categories", TagsIcon),
+        item("Áreas autorizadas", "/security/allowed-areas", TagsIcon),
       ],
     },
     {
-      label: "Catálogos",
+      label: "Trabajadores",
       children: [
-        item("Empresas", "/security/companies", Building2Icon),
-        item("Tipos de trabajo", "/security/work-categories", TagsIcon),
-        item("Áreas autorizadas", "/security/allowed-areas", TagsIcon),
+        item("Trabajadores externos", "/security/external-workers", UsersIcon),
         // Comentado: el flujo de documentación ya no se muestra.
         // item("Documentación", "/security/documents", FileArchiveIcon),
       ],
     },
-    item("Auditoría", "/security/audit-log", HistoryIcon),
+    {
+      label: "Eventos",
+      children: [
+        item("Registros de acceso", "/security/access-logs", KeyRoundIcon),
+        item("Solicitudes de acceso", "/security/planned-access", ClipboardListIcon),
+        item("Auditoría", "/security/audit-log", HistoryIcon),
+      ],
+    },
   ],
   ACCESS_APPROVER: [
     item("Inicio", "/approver", LayoutDashboardIcon),
     {
-      label: "Operación",
-      children: [
-        item("Solicitudes", "/approver/planned-access", ClipboardCheckIcon),
-        item("Accesos", "/approver/access-logs", KeyRoundIcon),
-        item("Trabajadores", "/approver/external-workers", UsersIcon),
-      ],
-    },
-    {
-      label: "Catálogos",
+      label: "Maestros",
       children: [
         item("Empresas", "/approver/companies", Building2Icon),
         item("Tipos de trabajo", "/approver/work-categories", TagsIcon),
         item("Áreas autorizadas", "/approver/allowed-areas", TagsIcon),
+      ],
+    },
+    {
+      label: "Trabajadores",
+      children: [
+        item("Trabajadores externos", "/approver/external-workers", UsersIcon),
         // Comentado: el flujo de documentación ya no se muestra.
         // item("Documentación", "/approver/documents", FileArchiveIcon),
       ],
     },
+    {
+      label: "Eventos",
+      children: [
+        item("Solicitudes de acceso", "/approver/planned-access", ClipboardCheckIcon),
+        item("Registros de acceso", "/approver/access-logs", KeyRoundIcon),
+      ],
+    },
   ],
   ACCESS_REQUESTER: [
-    item("Inicio", "/requester", LayoutDashboardIcon),
-    item("Solicitudes", "/requester/planned-access", ClipboardListIcon),
+    item("Solicitudes de acceso", "/requester/planned-access", ClipboardListIcon),
   ],
   ACCESS_OPERATOR: [item("Inicio", "/operator", GaugeIcon)],
   ACCESS_MONITOR: [item("Inicio", "/monitor", ShieldCheckIcon)],

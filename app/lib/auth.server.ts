@@ -26,7 +26,7 @@ export async function isAuthenticated(request: Request) {
   const user = await getSessionUser(request);
 
   if (!user) {
-    throw redirect("/login");
+    throw redirect("/");
   }
 
   return user;
@@ -116,7 +116,7 @@ export async function login(request: Request) {
 export async function logout(request: Request) {
   await isAuthenticated(request);
 
-  return redirect("/login", {
+  return redirect("/", {
     headers: {
       "Set-Cookie": await destroySession(request),
     },

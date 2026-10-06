@@ -4,6 +4,7 @@ import {
   Links,
   Meta,
   Outlet,
+  Link,
   Scripts,
   ScrollRestoration,
   useLoaderData,
@@ -11,11 +12,15 @@ import {
 
 import type { Route } from "./+types/root";
 import { Toaster } from "~/components/ui/sonner";
+import { Button } from "~/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
 import { TooltipProvider } from "~/components/ui/tooltip";
 import { initDb, isDbInitialized } from "../db/server";
 import { AppConfigContext, DEFAULT_APP_CONFIG } from "~/lib/app-config";
 import type { AppConfig } from "~/lib/app-config";
 import { getAppConfig } from "~/lib/app-config.server";
+import { CircleAlertIcon } from "lucide-react";
 import "./app.css";
 
 export function loader() {
@@ -63,30 +68,80 @@ export default function App() {
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
-  let message = "Oops!";
-  let details = "An unexpected error occurred.";
+  let status: number | undefined;
+  let message = "No se pudo completar la solicitud";
+  let details = "Inténtalo de nuevo. Si el problema continúa, contacta con la persona administradora.";
   let stack: string | undefined;
 
   if (isRouteErrorResponse(error)) {
-    message = error.status === 404 ? "404" : "Error";
-    details =
-      error.status === 404
-        ? "The requested page could not be found."
-        : error.statusText || details;
+    status = error.status;
+    const messages: Record<number, { title: string; description: string }> = {
+      400: {
+        title: "No se pudo procesar la solicitud",
+        description: "Revisa la información e inténtalo de nuevo.",
+      },
+      401: {
+        title: "Tu sesión ha caducado",
+        description: "Inicia sesión de nuevo para continuar.",
+      },
+      403: {
+        title: "No tienes permiso para acceder",
+        description: "Solicita acceso a la persona administradora del sistema.",
+      },
+      404: {
+        title: "Página no encontrada",
+        description: "La dirección no existe o el contenido ya no está disponible.",
+      },
+      405: {
+        title: "No se pudo completar esta acción",
+        description: "Vuelve a la pantalla anterior e inténtalo de nuevo.",
+      },
+      409: {
+        title: "Los datos han cambiado",
+        description: "Actualiza la pantalla y vuelve a intentarlo.",
+      },
+      429: {
+        title: "Demasiadas solicitudes",
+        description: "Espera un momento antes de volver a intentarlo.",
+      },
+      500: {
+        title: "El servicio no está disponible",
+        description: "No se pudo completar la solicitud. Inténtalo de nuevo más tarde.",
+      },
+    };
+    const copy = messages[error.status];
+    message = copy?.title ?? message;
+    details = copy?.description ?? details;
   } else if (import.meta.env.DEV && error && error instanceof Error) {
-    details = error.message;
+    details = "Se produjo un error inesperado durante la solicitud.";
     stack = error.stack;
   }
 
   return (
-    <main className="pt-16 p-4 container mx-auto">
-      <h1>{message}</h1>
-      <p>{details}</p>
-      {stack && (
-        <pre className="w-full p-4 overflow-x-auto">
-          <code>{stack}</code>
-        </pre>
-      )}
+    <main className="grid min-h-svh place-items-center bg-muted/40 p-4">
+      <Card className="w-full max-w-xl border-destructive/20 shadow-sm">
+        <CardHeader className="gap-3">
+          <p className="text-sm font-medium text-primary">Wachiman</p>
+          <div className="flex items-center gap-3">
+            <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-destructive/10 text-destructive">
+              <CircleAlertIcon aria-hidden="true" />
+            </span>
+            <CardTitle className="text-2xl">{message}</CardTitle>
+          </div>
+        </CardHeader>
+        <CardContent className="grid gap-5">
+          <Alert variant="destructive">
+            <AlertTitle>{status ? `Error ${status}` : "Error inesperado"}</AlertTitle>
+            <AlertDescription>{details}</AlertDescription>
+          </Alert>
+          {stack && (
+            <pre className="max-h-72 w-full overflow-auto rounded-lg bg-muted p-4 text-xs">
+              <code>{stack}</code>
+            </pre>
+          )}
+          <Button asChild className="w-fit"><Link to="/">Volver al inicio</Link></Button>
+        </CardContent>
+      </Card>
     </main>
   );
 }

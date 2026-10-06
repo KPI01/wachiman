@@ -10,7 +10,6 @@ export default [
   // Public
   layout("routes/layout.tsx", [
     index("routes/welcome.tsx"),
-    route("login", "routes/login.tsx"),
     route("unauthorized", "routes/unauthorized.tsx"),
   ]),
 
@@ -28,6 +27,7 @@ export default [
     index("routes/admin/home.tsx"),
      route("users", "routes/admin/users.tsx"),
     route("settings", "routes/admin/settings.tsx"),
+    route("holder-company", "routes/admin/holder-company.tsx"),
     route("backups", "routes/admin/backups.tsx"),
     route("backups/export", "routes/admin/backups.export.ts"),
      route("sites", "routes/admin/sites.tsx"),
@@ -58,12 +58,14 @@ export default [
   // Director de seguridad
   route("security", "routes/security/layout.tsx", [
     index("routes/security/home.tsx"),
+    route("sites", "routes/security/sites.tsx"),
     route("access-logs", "routes/security/access-logs.tsx"),
      route("planned-access", "routes/security/planned-access.tsx"),
      route("planned-access/:id/approve", "routes/security/planned-access.$id.approve.tsx"),
     route("external-workers", "routes/security/external-workers.tsx"),
     route("external-worker/:id", "routes/security/external-worker.$id.tsx"),
     route("companies", "routes/security/companies.tsx"),
+    route("holder-company", "routes/security/holder-company.tsx"),
      route("work-categories", "routes/security/work-categories.tsx"),
      route("allowed-areas", "routes/security/allowed-areas.tsx"),
     route("audit-log", "routes/security/audit-log.tsx"),
