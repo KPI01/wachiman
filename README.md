@@ -16,13 +16,16 @@ Requisitos: Node.js 24, pnpm 10 y Docker Compose.
 ```bash
 cp .env.local.example .env
 cp .env.production.example .env.production
-docker compose up -d db
 pnpm install --frozen-lockfile
+# Docker Compose:
+docker compose up -d db
+# Podman en Windows:
+pnpm db:up
 pnpm db:setup
 pnpm dev
 ```
 
-La base de datos queda disponible solo en `127.0.0.1:55432`. Los ejemplos usan la misma contraseña local para PostgreSQL; cámbiala en ambos archivos si la modificas. `pnpm db:setup` aplica las migraciones y crea el usuario inicial. Cambia las contraseñas de ejemplo antes de usar datos reales.
+La base de datos queda disponible solo en `127.0.0.1:55432`. En Podman para Windows, `pnpm db:up` usa `docker-compose.dev.yml` para evitar un fallo del reenvío de puertos de la red bridge; reutiliza el volumen PostgreSQL existente. `pnpm db:down` detiene ese contenedor sin borrar los datos. Los ejemplos usan la misma contraseña local para PostgreSQL; cámbiala en ambos archivos si la modificas. `pnpm db:setup` aplica las migraciones y crea el usuario inicial. Cambia las contraseñas de ejemplo antes de usar datos reales.
 
 Variables principales:
 

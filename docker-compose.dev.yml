@@ -1,0 +1,28 @@
+services:
+  db:
+    image: postgres:18.4-alpine
+    restart: unless-stopped
+    env_file:
+      - .env.production
+    volumes:
+      - postgres_data:/var/lib/postgresql
+    network_mode: host
+    command:
+      - postgres
+      - -c
+      - port=55432
+      - -c
+      - listen_addresses=127.0.0.1
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -h 127.0.0.1 -p 55432 -U $${POSTGRES_USER} -d $${POSTGRES_DB}",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  postgres_data:
+    name: control-accesos_postgres_data
