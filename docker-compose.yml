@@ -24,7 +24,7 @@ services:
       - .env.production
     environment:
       UPLOADS_BASE_PATH: /uploads
-      BRANDING_BASE_PATH: /app/public/branding
+      BRANDING_BASE_PATH: /app/dist/client/branding
       SESSION_COOKIE_SECURE: "false"
     depends_on:
       db:
@@ -33,7 +33,7 @@ services:
       - "0.0.0.0:3000:3000"
     volumes:
       - uploads_data:/uploads
-      - ./branding:/app/public/branding
+      - ./branding:/app/dist/client/branding
     networks:
       - internal
     command: ["sh", "-c", "pnpm db:migrate:runtime && pnpm db:seed && exec pnpm start"]
