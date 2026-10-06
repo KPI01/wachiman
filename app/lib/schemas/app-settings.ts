@@ -16,10 +16,13 @@ export const updateAppSettingsSchema = z.object({
       EARLY_ARRIVAL_TOLERANCE_MINUTES_MAX,
       "La anticipación máxima es de 360 minutos.",
     ),
-  updatedAt: z.coerce.date().optional(),
+});
+
+export const updateHolderCompanySettingsSchema = z.object({
   holderLegalName: z.string().trim().min(1, "La razón social es obligatoria."),
   holderTaxId: z.string().trim().min(1, "El NIF/CIF es obligatorio."),
   holderFiscalAddress: z.string().trim().min(1, "El domicilio fiscal es obligatorio."),
 });
 
 export type UpdateAppSettingsInput = z.infer<typeof updateAppSettingsSchema>;
+export type UpdateHolderCompanySettingsInput = z.infer<typeof updateHolderCompanySettingsSchema>;
