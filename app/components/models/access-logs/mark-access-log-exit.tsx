@@ -95,7 +95,7 @@ function OperatorExitAction({
       buttonAriaLabel={compact ? "Marcar salida con firma" : undefined}
       buttonTooltip={compact ? "Marcar salida con firma" : undefined}
       title="Registrar salida"
-      description="El operador de accesos debe recoger la firma del visitante para registrar su salida."
+      description="El portero debe recoger la firma del visitante para registrar su salida."
       footer={
         <>
           <AlertDialogCancel variant="outline">Volver</AlertDialogCancel>
@@ -154,7 +154,7 @@ function SupervisorExitActions({
       return;
     }
 
-    toast.success("Solicitud de firma enviada al operador de accesos");
+    toast.success("Solicitud de firma enviada al portero");
     revalidate();
   }, [requestFetcher.data, requestFetcher.state, revalidate]);
 

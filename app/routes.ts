@@ -45,12 +45,12 @@ export default [
     // route("documents", "routes/admin/documents.tsx"),
   ]),
 
-  // Operador de accesos
+  // Portero
   route("operator", "routes/operator/layout.tsx", [
     index("routes/operator/home.tsx"),
   ]),
 
-  // Monitor de accesos
+  // Mostrador
   route("monitor", "routes/monitor/layout.tsx", [
     index("routes/monitor/home.tsx"),
   ]),
@@ -73,13 +73,13 @@ export default [
     // route("documents", "routes/security/documents.tsx"),
   ]),
 
-  // Solicitante de accesos
+  // Usuario interno
   route("requester", "routes/requester/layout.tsx", [
     index("routes/requester/home.tsx"),
     route("planned-access", "routes/requester/planned-access.tsx"),
   ]),
 
-  // Aprobador de accesos
+  // Recursos Humanos
   route("approver", "routes/approver/layout.tsx", [
     index("routes/approver/home.tsx"),
      route("planned-access", "routes/approver/planned-access.tsx"),

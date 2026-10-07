@@ -10,7 +10,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 export default function ApproverLayout({ loaderData }: Route.ComponentProps) {
   return (
     <AuthenticatedShell
-      title="Aprobador de accesos"
+      title="Recursos Humanos"
       user={loaderData}
       items={ROLE_NAVIGATION.ACCESS_APPROVER}
     />

@@ -374,7 +374,7 @@ export async function markAccessLogExit(
   if (exitRecordedBy.role !== USER_ROLES.ACCESS_OPERATOR) {
     return {
       success: false as const,
-      errors: "Solo el operador de accesos puede registrar la firma del visitante.",
+      errors: "Solo el portero puede registrar la firma del visitante.",
     };
   }
 
@@ -488,7 +488,7 @@ export async function requestAccessLogExitSignature(
     return {
       success: false as const,
       code: "conflict" as const,
-      errors: "La firma de salida ya se ha solicitado al operador de accesos.",
+      errors: "La firma de salida ya se ha solicitado al portero.",
     };
   }
 
