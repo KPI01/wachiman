@@ -7,6 +7,7 @@ import {
   Link,
   Scripts,
   ScrollRestoration,
+  useLocation,
   useLoaderData,
 } from "react-router";
 
@@ -22,6 +23,67 @@ import type { AppConfig } from "~/lib/app-config";
 import { getResolvedAppConfig } from "~/lib/app-config.server";
 import { CircleAlertIcon } from "lucide-react";
 import "./app.css";
+
+const PAGE_TITLES: Record<string, string> = {
+  "/": "Iniciar sesión",
+  "/unauthorized": "Acceso no autorizado",
+  "/admin": "Panel de administración",
+  "/admin/users": "Usuarios",
+  "/admin/settings": "Configuración",
+  "/admin/holder-company": "Empresa titular",
+  "/admin/backups": "Copias de seguridad",
+  "/admin/sites": "Centros",
+  "/admin/departments": "Departamentos",
+  "/admin/access-logs": "Registros de acceso",
+  "/admin/planned-access": "Solicitudes de acceso",
+  "/admin/external-workers": "Trabajadores externos",
+  "/admin/companies": "Empresas",
+  "/admin/work-categories": "Tipos de trabajo",
+  "/admin/allowed-areas": "Áreas autorizadas",
+  "/admin/audit-log": "Auditoría",
+  "/operator": "Portería",
+  "/monitor": "Mostrador",
+  "/security": "Panel de seguridad",
+  "/security/sites": "Centros",
+  "/security/access-logs": "Registros de acceso",
+  "/security/planned-access": "Solicitudes de acceso",
+  "/security/external-workers": "Trabajadores externos",
+  "/security/companies": "Empresas",
+  "/security/holder-company": "Empresa titular",
+  "/security/work-categories": "Tipos de trabajo",
+  "/security/allowed-areas": "Áreas autorizadas",
+  "/security/audit-log": "Auditoría",
+  "/requester": "Solicitudes de acceso",
+  "/requester/planned-access": "Solicitudes de acceso",
+  "/approver": "Solicitudes de acceso",
+  "/approver/planned-access": "Solicitudes de acceso",
+  "/approver/access-logs": "Registros de acceso",
+  "/approver/external-workers": "Trabajadores externos",
+  "/approver/companies": "Empresas",
+  "/approver/work-categories": "Tipos de trabajo",
+  "/approver/allowed-areas": "Áreas autorizadas",
+};
+
+function getPageTitle(pathname: string) {
+  const normalizedPath = pathname.replace(/\/+$/, "") || "/";
+  const exactTitle = PAGE_TITLES[normalizedPath];
+  if (exactTitle) return exactTitle;
+
+  if (/^\/auth\/reset-password\/[^/]+$/.test(normalizedPath)) {
+    return "Restablecer contraseña";
+  }
+  if (/^\/access-log\/[^/]+$/.test(normalizedPath)) {
+    return "Registro de acceso";
+  }
+  if (/^\/(admin|security|approver)\/planned-access\/[^/]+\/approve$/.test(normalizedPath)) {
+    return "Aprobar solicitud de acceso";
+  }
+  if (/^\/(admin|security|approver)\/external-worker\/[^/]+$/.test(normalizedPath)) {
+    return "Ficha del trabajador externo";
+  }
+
+  return null;
+}
 
 export function loader() {
   return getResolvedAppConfig();
@@ -39,12 +101,18 @@ export const middleware: Route.MiddlewareFunction[] = [
 export function Layout({ children }: { children: React.ReactNode }) {
   const appConfig =
     (useLoaderData() as AppConfig | undefined) ?? DEFAULT_APP_CONFIG;
+  const location = useLocation();
+  const pageTitle = getPageTitle(location.pathname);
+  const documentTitle = pageTitle
+    ? `${pageTitle} | ${appConfig.appName || "Control Accesos"}`
+    : appConfig.appName || "Control Accesos";
 
   return (
     <html lang="es" suppressHydrationWarning>
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>{documentTitle}</title>
         <link rel="icon" href={appConfig.appFavicon} />
         <Meta />
         <Links />

@@ -34,7 +34,6 @@ export default function AuthenticatedShell({
   return (
     <SidebarProvider>
       <NavigationPending />
-      <title>{title}</title>
       <AppSidebar items={items} user={user} />
       <SidebarInset className="max-w-full overflow-auto bg-background p-4 md:p-7">
         <div className="mb-4 flex items-center gap-3 md:hidden">

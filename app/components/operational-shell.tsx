@@ -27,7 +27,6 @@ export default function OperationalShell({
   return (
     <div className="min-h-svh">
       <NavigationPending />
-      <title>{title}</title>
       <header className="border-b bg-card">
         <div className="flex w-full flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between md:px-7 lg:px-10">
           <div className="flex min-w-0 items-center gap-3">
