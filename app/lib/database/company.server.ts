@@ -1,8 +1,17 @@
-import { and, eq, like, ne } from "drizzle-orm";
+import { and, eq, ilike, ne, or, sql } from "drizzle-orm";
+import { normalizeCompanyName } from "../company-name";
 import { db } from "../../../db/server";
 import { companies } from "../../../db/schema";
 
 export class CompanyEntity {
+  public static async findNameMatches(name: string) {
+    // La misma normalización que el cliente, sin límite de sugerencias ni búsqueda difusa.
+    return db.select().from(companies).where(sql`
+      lower(regexp_replace(trim(replace(regexp_replace(normalize(${companies.name}, NFD),
+        '[\u0300-\u036f]', '', 'g'), '.', '')), '\\s+', ' ', 'g')) = ${normalizeCompanyName(name)}
+    `).limit(2);
+  }
+
   public static async create(data: {
     name: string;
     slug: string;
@@ -15,7 +24,7 @@ export class CompanyEntity {
     return company;
   }
 
-  public static async findById(id: string) {
+  public static async findById(id: string): Promise<typeof companies.$inferSelect | null> {
     const company = await db
       .select()
       .from(companies)
@@ -24,7 +33,7 @@ export class CompanyEntity {
     return company ?? null;
   }
 
-  public static async findBySlug(slug: string, excludeId?: string) {
+  public static async findBySlug(slug: string, excludeId?: string): Promise<typeof companies.$inferSelect | null> {
     const conditions = [eq(companies.slug, slug)];
     if (excludeId) conditions.push(ne(companies.id, excludeId));
     const company = await db
@@ -70,7 +79,7 @@ export class CompanyEntity {
     return db
       .select({ id: companies.id, name: companies.name, cif: companies.cif, address: companies.address })
       .from(companies)
-      .where(like(companies.name, `%${query}%`))
+      .where(or(ilike(companies.name, `%${query}%`), ilike(companies.cif, `%${query}%`)))
       .limit(5);
   }
 

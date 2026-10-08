@@ -1,4 +1,4 @@
-import { and, count, desc, eq, gte, ilike, inArray, isNotNull, isNull, like, lte, ne, or, sql, type SQL } from "drizzle-orm";
+import { and, count, desc, eq, gte, ilike, inArray, isNotNull, isNull, lte, ne, or, sql, type SQL } from "drizzle-orm";
 import { db } from "../../../db/server";
 import {
   accessLogs,
@@ -495,7 +495,7 @@ export class AccessLogEntity {
     return db
       .selectDistinct({ id: allowedAreas.id, name: allowedAreas.name })
       .from(allowedAreas)
-      .where(like(allowedAreas.name, `%${query}%`))
+      .where(ilike(allowedAreas.name, `%${query}%`))
       .limit(8);
   }
 
@@ -503,7 +503,7 @@ export class AccessLogEntity {
     return db
       .selectDistinct({ name: accessLogs.approvedBySnapshot })
       .from(accessLogs)
-      .where(like(accessLogs.approvedBySnapshot, `%${query}%`))
+      .where(ilike(accessLogs.approvedBySnapshot, `%${query}%`))
       .limit(8);
   }
 

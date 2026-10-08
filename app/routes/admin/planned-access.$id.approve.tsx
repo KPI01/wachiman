@@ -1,297 +1,96 @@
-import { data, Form, redirect } from "react-router";
+import { data, Link, redirect } from "react-router";
 import { validateUserRole } from "~/lib/auth.server";
-import { PlannedAccessEntity } from "~/lib/database/planned-access.server";
-import { WorkCategoryEntity } from "~/lib/database/work-category.server";
-import {
-  updatePlannedAccessStatus,
-  // Comentado: la documentación ya no se gestiona desde este flujo.
-  // uploadPlannedAccessPersonDocument,
-} from "~/lib/services/planned-access.server";
-import {
-  createAndApproveWorkPermitActivity,
-  getPersonDecisionInput,
-} from "~/lib/services/work-permit.server";
-// Comentado: la documentación ya no se revisa en el flujo de aprobación.
-// import { reviewWorkerDocument } from "~/lib/services/worker-document.server";
-import type { Route } from "./+types/planned-access.$id.approve";
-import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
-import { Button } from "~/components/ui/button";
 import { getSessionSite } from "~/lib/session.server";
-import { ExternalWorkerEntity } from "~/lib/database/external-worker.server";
-import { getManyAllowedAreas } from "~/lib/services/allowed-area.server";
+import { getPlannedAccessApprovalData, validatePlannedAccessCompany } from "~/lib/services/planned-access.server";
+import { reviewPlannedAccessPerson } from "~/lib/services/planned-access-review.server";
+import type { Route } from "./+types/planned-access.$id.approve";
+import { Button } from "~/components/ui/button";
+import { Badge } from "~/components/ui/badge";
+import { Card, CardHeader, CardTitle, CardContent } from "~/components/ui/card";
+import ValidatePlannedAccessCompanyForm from "~/components/models/planned-access/validate-planned-access-company-form";
 import PlannedAccessApprovalPersonCard from "~/components/models/planned-access/planned-access-approval-person-card";
-import WorkPermitApprovalFields from "~/components/models/planned-access/work-permit-approval-fields";
-import { ItemGroup } from "~/components/ui/item";
-import { getAppConfig } from "~/lib/app-config.server";
-// Comentado: la documentación ya no se gestiona desde este flujo.
-// import { getDocumentByWorkerId } from "~/lib/services/worker-document.server";
+import { formatTimestamp } from "~/lib/utils";
 
 export async function loader({ request, params }: Route.LoaderArgs) {
-  const user = await validateUserRole(request, [
-    "ADMIN",
-    "SECURITY_MANAGER",
-    "ACCESS_APPROVER",
-  ]);
-  const sessionSite =
-    user.role === "ACCESS_APPROVER" ? await getSessionSite(request) : null;
-  const { workPermitsEnabled } = getAppConfig();
-  const [plannedAccess, workCategories, allowedAreas] = await Promise.all([
-    PlannedAccessEntity.findById(params.id),
-    WorkCategoryEntity.findMany(),
-    getManyAllowedAreas(),
-  ]);
-
+  const user = await validateUserRole(request, ["ADMIN", "SECURITY_MANAGER", "ACCESS_APPROVER"]);
+  const sessionSite = user.role === "ACCESS_APPROVER" ? await getSessionSite(request) : null;
+  if (user.role === "ACCESS_APPROVER" && !sessionSite) throw data("Selecciona un centro", { status: 403 });
+  const { plannedAccess } = await getPlannedAccessApprovalData(params.id);
   if (!plannedAccess) throw data("Solicitud no encontrada", { status: 404 });
-  if (sessionSite && plannedAccess.siteId !== sessionSite.id) {
-    throw data("No tienes permisos para esta solicitud", { status: 403 });
-  }
-  if (plannedAccess.status !== "PENDING_APPROVAL") {
-    throw data("La solicitud ya no está pendiente de aprobación", {
-      status: 409,
-    });
-  }
-
-  const people = await Promise.all(
-    plannedAccess.plannedAccessPersons.map(async (person) => {
-      const matched = await ExternalWorkerEntity.findByLegalId(
-        person.legalIdSnapshot,
-      );
-      const worker = matched
-        ? await ExternalWorkerEntity.findById(matched.id)
-        : null;
-      return { person, worker };
-    }),
-  );
-// Comentado: la documentación ya no se revisa en el flujo de aprobación.
-  // const hasPendingDocuments = people.some(({ worker }) =>
-  //   worker?.documents?.some((document) => document.status === "PENDING_REVIEW"),
-  // );
-  const listPath =
-    user.role === "ADMIN"
-      ? "/admin/planned-access"
-      : user.role === "SECURITY_MANAGER"
-        ? "/security/planned-access"
-        : "/approver/planned-access";
-
-  const workerPath = listPath.replace("/planned-access", "/external-worker");
-  const approvePath = `${listPath}/${params.id}/approve`;
-return {
-    plannedAccess,
-    workCategories,
-    allowedAreas,
-    people,
-    // Comentado: la documentación ya no se revisa en el flujo de aprobación.
-    // hasPendingDocuments,
-    listPath,
-    workerPath,
-    approvePath,
-     requiresWorkPermit: workPermitsEnabled && people.some(({ person }) =>
-       Boolean(person.workCategory?.requiresWorkPermit),
-     ),
-     workPermitsEnabled,
-  };
+  if (sessionSite && plannedAccess.siteId !== sessionSite.id) throw data("No tienes permisos para esta solicitud", { status: 403 });
+  const listPath = user.role === "ADMIN" ? "/admin/planned-access" : user.role === "SECURITY_MANAGER" ? "/security/planned-access" : "/approver/planned-access";
+  return { plannedAccess, listPath, approvePath: `${listPath}/${params.id}/approve` };
 }
 
 export async function action({ request, params }: Route.ActionArgs) {
-  const user = await validateUserRole(request, [
-    "ADMIN",
-    "SECURITY_MANAGER",
-    "ACCESS_APPROVER",
-  ]);
-  const sessionSite =
-    user.role === "ACCESS_APPROVER" ? await getSessionSite(request) : null;
+  const user = await validateUserRole(request, ["ADMIN", "SECURITY_MANAGER", "ACCESS_APPROVER"]);
+  const sessionSite = user.role === "ACCESS_APPROVER" ? await getSessionSite(request) : null;
+  if (user.role === "ACCESS_APPROVER" && !sessionSite) throw data("Selecciona un centro", { status: 403 });
   const formData = await request.formData();
-  const { workPermitsEnabled } = getAppConfig();
-  if (workPermitsEnabled && formData.get("intent") === "approve-with-work-permits") {
-    const rawInput = Object.fromEntries(formData);
-    const result = await createAndApproveWorkPermitActivity(
-      {
-        plannedAccessId: params.id,
-        taskDescription: rawInput.workPermitTaskDescription,
-        workAreaSnapshot: rawInput.workPermitArea,
-        riskItems: JSON.stringify([]),
-        toolsAndEquipment: rawInput.workPermitTools,
-        personalProtectiveEquipment: rawInput.workPermitPpe,
-        incidents: rawInput.workPermitIncidents,
-        toolsAdequate: rawInput.workPermitToolsAdequate,
-        procedureKnown: rawInput.workPermitProcedureKnown,
-        trainingProvided: rawInput.workPermitTrainingProvided,
-        areaOrderly: rawInput.workPermitAreaOrderly,
-        ppeAdequate: rawInput.workPermitPpeAdequate,
-      },
-      getPersonDecisionInput(formData),
-      {
-        authorUsername: user.username,
-        lockedSiteId: sessionSite?.id,
-      },
-    );
-    if (result.success) {
-      return redirect(
-        user.role === "ADMIN"
-          ? "/admin/planned-access"
-          : user.role === "SECURITY_MANAGER"
-            ? "/security/planned-access"
-            : "/approver/planned-access",
-      );
+  const input = { ...Object.fromEntries(formData), id: params.id };
+  const options = { authorUsername: user.username, lockedSiteId: sessionSite?.id };
+  if (formData.get("intent") === "validate-company") return validatePlannedAccessCompany(input, options);
+  if (formData.get("intent") === "review-person") {
+    const result = await reviewPlannedAccessPerson(input, options);
+    if (result.success && (result.status === "APPROVED" || result.status === "REJECTED")) {
+      const listPath = user.role === "ADMIN" ? "/admin/planned-access" : user.role === "SECURITY_MANAGER" ? "/security/planned-access" : "/approver/planned-access";
+      return redirect(listPath);
     }
-    return { errors: result.errors };
+    return result;
   }
-  // Comentado: la documentación ya no se revisa ni se sube desde este flujo.
-  // if (formData.get("intent") === "review-document") {
-  //   const plannedAccess = await PlannedAccessEntity.findById(params.id);
-  //   const documentId = String(formData.get("documentId") ?? "");
-  //   const personId = String(formData.get("personId") ?? "");
-  //   const person = plannedAccess?.plannedAccessPersons.find((item) => item.id === personId);
-
-  //   if (!plannedAccess || !person) {
-  //     return { errors: "La persona o la solicitud no fueron encontradas." };
-  //   }
-  //   if (plannedAccess.status !== "PENDING_APPROVAL") {
-  //     return { errors: "La solicitud ya no está pendiente de aprobación." };
-  //   }
-  //   if (sessionSite && plannedAccess.siteId !== sessionSite.id) {
-  //     return { errors: "No tienes permisos para esta solicitud." };
-  //   }
-
-  //   const worker = await ExternalWorkerEntity.findByLegalId(person.legalIdSnapshot);
-  //   if (!worker) {
-  //     return { errors: "No se encontró el trabajador asociado a la persona." };
-  //   }
-
-  //   const document = await getDocumentByWorkerId(documentId, worker.id);
-  //   if (!document) {
-  //     return { errors: "El documento no pertenece al trabajador de esta solicitud." };
-  //   }
-
-  //   const result = await reviewWorkerDocument(
-  //     documentId,
-  //     {
-  //       decision: String(formData.get("reviewDecision") ?? ""),
-  //       reviewReason: String(formData.get("reviewReason") ?? ""),
-  //     },
-  //     user.id,
-  //   );
-  //   return result.success ? { success: true } : { errors: result.errors };
-  // }
-  // if (formData.get("intent") === "upload-document") {
-  //   const file = formData.get("file");
-  //   const personId = String(formData.get("personId") ?? "");
-  //   const data: Record<string, string> = {};
-  //   for (const [key, value] of formData.entries()) {
-  //     if (key !== "file" && typeof value === "string") data[key] = value;
-  //   }
-  //   if (!(file instanceof File)) {
-  //     return { errors: "Selecciona un archivo para cargar." };
-  //   }
-  //   const result = await uploadPlannedAccessPersonDocument(
-  //     params.id,
-  //     personId,
-  //     file,
-  //     data,
-  //     {
-  //       authorUsername: user.username,
-  //       canApprove: true,
-  //       lockedSiteId: sessionSite?.id,
-  //     },
-  //   );
-  //   return result.success ? { upload: result.document } : { errors: result.errors };
-  // }
-  const result = await updatePlannedAccessStatus(
-    { ...Object.fromEntries(formData), id: params.id, status: "APPROVED" },
-    {
-      authorUsername: user.username,
-      canApprove: true,
-      lockedSiteId: sessionSite?.id,
-    },
-  );
-
-  if (result.success) {
-    return redirect(
-      user.role === "ADMIN"
-        ? "/admin/planned-access"
-        : user.role === "SECURITY_MANAGER"
-          ? "/security/planned-access"
-          : "/approver/planned-access",
-    );
-  }
-  return { errors: result.errors };
+  return { success: false, errors: "Selecciona aprobar o rechazar para cada visitante." };
 }
 
-export default function ApprovePlannedAccess({
-  loaderData,
-  actionData,
-}: Route.ComponentProps) {
+export default function ApprovePlannedAccess({ loaderData }: Route.ComponentProps) {
+  const access = loaderData.plannedAccess;
+  const pending = (access.status ?? "PENDING_APPROVAL") === "PENDING_APPROVAL";
+  const decided = access.plannedAccessPersons.filter((person) => person.decision && person.decision.accessDecision !== "PENDING").length;
+  const info = [
+    ["Centro", access.site?.name ?? "—"],
+    ["Empresa", access.companySnapshot],
+    ["Solicitado por", access.requestedBy?.fullName ?? "—"],
+    ["Fecha de creación", formatTimestamp({ date: access.createdAt, template: "dd/MM/yyyy HH:mm" })],
+    ["Inicio previsto", formatTimestamp({ date: access.expectedStartDatetime, template: "dd/MM/yyyy HH:mm" })],
+    ["Fin previsto", access.expectedEndDatetime ? formatTimestamp({ date: access.expectedEndDatetime, template: "dd/MM/yyyy HH:mm" }) : "Sin fecha de fin"],
+  ];
   return (
     <div className="flex w-full flex-col gap-6">
-      <div>
-        <div className="flex justify-between gap-2 basis-full">
-          <h2 className="text-3xl font-bold">Aprobar solicitud</h2>
-          <div className="flex gap-2">
-<Button
-              type="submit"
-              form="documentation-form"
-              // Comentado: la documentación ya no bloquea la aprobación.
-              // disabled={loaderData.hasPendingDocuments}
-              // title={
-              //   loaderData.hasPendingDocuments
-              //     ? "Revisa los documentos pendientes antes de aprobar"
-              //     : undefined
-              // }
-            >
-              Confirmar aprobación
-            </Button>
-
-            <Button asChild variant="outline">
-              <a href={loaderData.listPath}>Cancelar</a>
-            </Button>
-          </div>
-        </div>
-      <p className="text-muted-foreground">
-           Decide por persona si puede acceder al centro y si puede realizar el trabajo planificado.{" "}
-          {/* Comentado: ya no se exige revisión documental. */}
-          {/* La identificación vigente siempre es obligatoria. */}
-          {/* Los documentos pendientes deben revisarse antes de confirmar. */}
-        </p>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h2 className="text-3xl font-bold">Revisar solicitud</h2>
+        <Button asChild variant="outline"><Link to={loaderData.listPath}>Volver a solicitudes</Link></Button>
       </div>
-
-      {actionData?.errors ? (
-        <Alert variant="destructive">
-          <AlertTitle>No se puede aprobar la solicitud</AlertTitle>
-          <AlertDescription>{formatErrors(actionData.errors)}</AlertDescription>
-        </Alert>
-      ) : null}
-      <Form id="documentation-form" method="post" className="flex flex-col gap-6">
-        <input type="hidden" name="intent" value={loaderData.workPermitsEnabled ? "approve-with-work-permits" : "approve"} />
-        {loaderData.requiresWorkPermit ? (
-          <WorkPermitApprovalFields formId="documentation-form" />
-        ) : null}
-      <ItemGroup>
-          {loaderData.people.map(({ person, worker }) => (
-            <PlannedAccessApprovalPersonCard
-              key={person.id}
-              person={person}
-              worker={worker}
-              workCategories={loaderData.workCategories}
-              allowedAreas={loaderData.allowedAreas}
-              validThrough={
-                loaderData.plannedAccess.expectedEndDatetime ??
-                loaderData.plannedAccess.expectedStartDatetime
-              }
-              actionPath={loaderData.approvePath}
-              workerPath={loaderData.workerPath}
-              formId="documentation-form"
-               requiresWorkPermit={Boolean(loaderData.workPermitsEnabled && person.workCategory?.requiresWorkPermit)}
-               workPermitsEnabled={loaderData.workPermitsEnabled}
-            />
-          ))}
-      </ItemGroup>
-      </Form>
+      <Card>
+        <CardHeader><CardTitle>Datos de la solicitud</CardTitle></CardHeader>
+        <CardContent className="flex flex-col gap-5">
+          <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {info.map(([label, value]) => <div key={label}><dt className="text-muted-foreground">{label}</dt><dd>{value}</dd></div>)}
+            <div className="sm:col-span-2 lg:col-span-3"><dt className="text-muted-foreground">Motivo de la visita</dt><dd className="whitespace-pre-wrap wrap-break-word">{access.visitReason}</dd></div>
+          </dl>
+          <div className="flex flex-col gap-3">
+            <h3 className="font-semibold">Visitantes indicados</h3>
+            {access.plannedAccessPersons.map((person) => <dl key={person.id} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <div><dt className="text-muted-foreground">Nombre y apellidos</dt><dd>{[person.firstNameSnapshot, person.middleNameSnapshot, person.lastNameSnapshot, person.secondLastNameSnapshot].filter(Boolean).join(" ")}</dd></div>
+              <div><dt className="text-muted-foreground">DNI</dt><dd>{person.legalIdSnapshot}</dd></div>
+              <div><dt className="text-muted-foreground">Teléfono</dt><dd>{person.phoneNumber || "—"}</dd></div>
+              <div><dt className="text-muted-foreground">Área autorizada</dt><dd>{person.allowedAreaSnapshot}</dd></div>
+              <div><dt className="text-muted-foreground">Tipo de trabajo</dt><dd>{person.workCategory?.name ?? "Sin tipo de trabajo indicado"}</dd></div>
+            </dl>)}
+          </div>
+        </CardContent>
+      </Card>
+      {!access.companyId && pending ? <ValidatePlannedAccessCompanyForm
+        key={new Date(access.updatedAt).toISOString()} companyName={access.companySnapshot}
+        updatedAt={access.updatedAt} actionPath={loaderData.approvePath} /> : null}
+      <div className="flex flex-wrap items-center gap-3">
+        <h3 className="text-xl font-semibold">Decisión por visitante</h3>
+        <Badge variant="secondary">{decided} de {access.plannedAccessPersons.length} revisados</Badge>
+        {!pending ? <Badge variant={access.status === "REJECTED" ? "destructive" : "default"}>
+          {access.status === "REJECTED" ? "Solicitud rechazada" : "Revisión finalizada"}
+        </Badge> : null}
+      </div>
+      {access.plannedAccessPersons.map((person) => <PlannedAccessApprovalPersonCard
+        key={person.id} person={person} updatedAt={access.updatedAt} actionPath={loaderData.approvePath}
+        companyValidated={Boolean(access.companyId)} pending={pending} />)}
     </div>
   );
-}
-
-function formatErrors(errors: unknown) {
-  return typeof errors === "string"
-    ? errors
-    : "Revisa los datos de la solicitud.";
 }

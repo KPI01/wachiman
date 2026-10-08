@@ -53,7 +53,7 @@ export const createPlannedAccessSchema = z
     expectedStartDatetime: z.coerce.date(),
     expectedEndDatetime: optionalDate,
     companySnapshot: requiredString,
-    companyId: requiredString,
+    companyId: optionalString,
     visitReason: requiredString,
     siteId: requiredString,
     persons: z
@@ -64,7 +64,7 @@ export const createPlannedAccessSchema = z
     error: SITE_DOESNT_EXISTS,
     path: ["siteId"],
   })
-  .refine(async (data) => (await CompanyEntity.findById(data.companyId)) !== null, {
+  .refine(async (data) => !data.companyId || (await CompanyEntity.findById(data.companyId)) !== null, {
     error: "La empresa contratista seleccionada no existe.",
     path: ["companyId"],
   })
@@ -119,7 +119,7 @@ export const updatePlannedAccessSchema = z
     expectedStartDatetime: z.coerce.date(),
     expectedEndDatetime: optionalDate,
     companySnapshot: requiredString,
-    companyId: requiredString,
+    companyId: optionalString,
     visitReason: requiredString,
     siteId: requiredString,
     persons: z
@@ -130,7 +130,7 @@ export const updatePlannedAccessSchema = z
     error: SITE_DOESNT_EXISTS,
     path: ["siteId"],
   })
-  .refine(async (data) => (await CompanyEntity.findById(data.companyId)) !== null, {
+  .refine(async (data) => !data.companyId || (await CompanyEntity.findById(data.companyId)) !== null, {
     error: "La empresa contratista seleccionada no existe.",
     path: ["companyId"],
   })

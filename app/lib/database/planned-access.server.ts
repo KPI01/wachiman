@@ -1,9 +1,13 @@
-import { and, count, desc, eq, gte, ilike, inArray, isNotNull, isNull, lte, ne, or } from "drizzle-orm";
+import { and, count, desc, eq, gte, ilike, inArray, isNotNull, isNull, lte, ne, or, sql } from "drizzle-orm";
 import { db } from "../../../db/server";
 import { calculateAccessDurationMs } from "../access-duration";
 import {
   accessLogs,
+  allowedAreas,
+  auditLogs,
   companies,
+  externalWorkers,
+  plannedAccessPersonDecisions,
   plannedAccessPersons,
   plannedAccesses,
   sites,
@@ -58,7 +62,7 @@ export type CreatePlannedAccessInput = {
   expectedStartDatetime: Date;
   expectedEndDatetime?: Date;
   companySnapshot: string;
-  companyId: string;
+  companyId: string | null;
   visitReason: string;
   requestedById: string;
   departmentId: string;
@@ -96,7 +100,7 @@ export type UpdatePendingPlannedAccessInput = {
   expectedStartDatetime: Date;
   expectedEndDatetime: Date | null;
   companySnapshot: string;
-  companyId: string;
+  companyId: string | null;
   visitReason: string;
   siteId: string;
   persons: Array<{
@@ -128,7 +132,121 @@ export type OverlappingPlannedAccess = {
   plannedAccessPersons: Array<{ legalIdSnapshot: string }>;
 };
 
+function matchesUpdatedAt(expectedUpdatedAt: Date) {
+  // PostgreSQL conserva microsegundos; Date y el formulario solo conservan milisegundos.
+  return sql`date_trunc('milliseconds', ${plannedAccesses.updatedAt}) = ${expectedUpdatedAt.toISOString()}::timestamp`;
+}
+
 export class PlannedAccessEntity {
+  public static async decidePerson(data: {
+    id: string; personId: string; expectedUpdatedAt: Date;
+    decision: "APPROVED" | "DENIED"; reason?: string; authorId: string;
+    workerId?: string; categoryId?: string;
+  }) {
+    if (data.decision === "DENIED" && !data.reason?.trim()) return null;
+    return db.transaction(async (tx) => {
+      const [request] = await tx.select().from(plannedAccesses).where(and(
+        eq(plannedAccesses.id, data.id), matchesUpdatedAt(data.expectedUpdatedAt),
+        or(eq(plannedAccesses.status, "PENDING_APPROVAL"), isNull(plannedAccesses.status)),
+      )).for("update");
+      if (!request) return null;
+      const [person] = await tx.select().from(plannedAccessPersons).where(and(
+        eq(plannedAccessPersons.id, data.personId), eq(plannedAccessPersons.plannedAccessId, data.id),
+      ));
+      if (!person) return null;
+      const [previous] = await tx.select().from(plannedAccessPersonDecisions)
+        .where(eq(plannedAccessPersonDecisions.plannedAccessPersonId, person.id));
+      if (previous && previous.accessDecision !== "PENDING") return null;
+      const now = new Date();
+      if (data.decision === "APPROVED") {
+        if (!request.companyId || !data.categoryId) return null;
+        let workerId = data.workerId;
+        if (!workerId) {
+          const legalId = person.legalIdSnapshot.trim().toUpperCase();
+          const [created] = await tx.insert(externalWorkers).values({
+            firstName: person.firstNameSnapshot, middleName: person.middleNameSnapshot,
+            lastName: person.lastNameSnapshot, secondLastName: person.secondLastNameSnapshot,
+            phoneNumber: person.phoneNumber, legalId,
+            companyId: request.companyId, workCategoryId: data.categoryId,
+          }).onConflictDoNothing({ target: externalWorkers.legalId }).returning();
+          const [existing] = created ? [created] : await tx.select().from(externalWorkers)
+            .where(sql`upper(${externalWorkers.legalId}) = ${legalId}`);
+          workerId = existing.id;
+        }
+        let areaId = person.allowedAreaId;
+        if (!areaId) {
+          const name = person.allowedAreaSnapshot.trim();
+          const [existing] = await tx.select().from(allowedAreas)
+            .where(sql`lower(trim(${allowedAreas.name})) = lower(${name})`).limit(1);
+          const [area] = existing ? [existing] : await tx.insert(allowedAreas)
+            .values({ name, slug: `AREA-${crypto.randomUUID()}` })
+            .onConflictDoUpdate({ target: allowedAreas.name, set: { name } }).returning();
+          areaId = area.id;
+        }
+        await tx.update(plannedAccessPersons).set({ externalWorkerId: workerId,
+          workCategoryId: data.categoryId, allowedAreaId: areaId, updatedAt: now,
+        }).where(eq(plannedAccessPersons.id, person.id));
+      }
+      const decision = {
+        plannedAccessPersonId: person.id,
+        accessDecision: data.decision,
+        workDecision: "NOT_REQUIRED" as const,
+        decisionReason: data.decision === "DENIED" ? data.reason ?? null : null,
+        decidedById: data.authorId, decidedAt: now, updatedAt: now,
+      };
+      await tx.insert(plannedAccessPersonDecisions).values(decision)
+        .onConflictDoUpdate({ target: plannedAccessPersonDecisions.plannedAccessPersonId, set: decision });
+      const decisions = await tx.select({ accessDecision: plannedAccessPersonDecisions.accessDecision,
+        reason: plannedAccessPersonDecisions.decisionReason,
+      }).from(plannedAccessPersons).leftJoin(plannedAccessPersonDecisions,
+        eq(plannedAccessPersonDecisions.plannedAccessPersonId, plannedAccessPersons.id))
+        .where(eq(plannedAccessPersons.plannedAccessId, data.id));
+      const complete = decisions.every((item) => item.accessDecision && item.accessDecision !== "PENDING");
+      const hasApproved = decisions.some((item) => item.accessDecision === "APPROVED");
+      const status = complete ? (hasApproved ? "APPROVED" : "REJECTED") : "PENDING_APPROVAL";
+      await tx.update(plannedAccesses).set({
+        status, updatedAt: now,
+        ...(complete ? { decisionById: data.authorId, decisionAt: now,
+          decisionReason: hasApproved ? null : decisions.map((item) => item.reason).filter(Boolean).join("; "),
+          approvedById: hasApproved ? data.authorId : null, approvedAt: hasApproved ? now : null,
+        } : {}),
+      }).where(eq(plannedAccesses.id, data.id));
+      await tx.insert(auditLogs).values({ entityType: "PlannedAccess", entityId: data.id,
+        action: data.decision === "APPROVED" ? "PLANNED_ACCESS_PERSON_APPROVED" : "PLANNED_ACCESS_PERSON_REJECTED",
+        changedBy: data.authorId, summary: data.decision === "APPROVED" ? "Visitante aprobado" : "Visitante rechazado",
+        metadata: { personId: person.id, accessDecision: data.decision, reason: decision.decisionReason, status },
+      });
+      return { status };
+    });
+  }
+
+  public static async validateCompany(data: {
+    id: string;
+    expectedUpdatedAt: Date;
+    companyId?: string;
+    newCompany?: Parameters<typeof import("./company.server").CompanyEntity.create>[0];
+  }) {
+    return db.transaction(async (tx) => {
+      const [pending] = await tx.select().from(plannedAccesses).where(and(
+        eq(plannedAccesses.id, data.id),
+        matchesUpdatedAt(data.expectedUpdatedAt),
+        or(eq(plannedAccesses.status, "PENDING_APPROVAL"), isNull(plannedAccesses.status)),
+        isNull(plannedAccesses.companyId),
+      )).for("update");
+      if (!pending) return null;
+      const [company] = data.newCompany
+        ? await tx.insert(companies).values(data.newCompany).returning()
+        : await tx.select().from(companies).where(eq(companies.id, data.companyId!));
+      if (!company) return null;
+      const [updated] = await tx.update(plannedAccesses).set({
+        companyId: company.id,
+        companySnapshot: company.name,
+        updatedAt: new Date(),
+      }).where(eq(plannedAccesses.id, pending.id)).returning();
+      return updated;
+    });
+  }
+
   public static async create(data: CreatePlannedAccessInput) {
     const [pa] = await db
       .insert(plannedAccesses)
@@ -445,7 +563,7 @@ export class PlannedAccessEntity {
         .where(and(
           eq(plannedAccesses.id, data.id),
           eq(plannedAccesses.status, "PENDING_APPROVAL"),
-          eq(plannedAccesses.updatedAt, data.expectedUpdatedAt),
+          matchesUpdatedAt(data.expectedUpdatedAt),
         ))
         .limit(1);
 
@@ -474,7 +592,7 @@ export class PlannedAccessEntity {
         .where(and(
           eq(plannedAccesses.id, data.id),
           eq(plannedAccesses.status, "PENDING_APPROVAL"),
-          eq(plannedAccesses.updatedAt, data.expectedUpdatedAt),
+          matchesUpdatedAt(data.expectedUpdatedAt),
         ))
         .returning({ id: plannedAccesses.id });
       if (!updated) return { kind: "conflict" as const };
@@ -530,6 +648,7 @@ export class PlannedAccessEntity {
 
   public static async approve(
     data: UpdatePlannedAccessStatusInput & {
+      expectedUpdatedAt: Date;
       personWorkCategories: Array<{ personId: string; workCategoryId: string | null; externalWorkerId: string }>;
       personAllowedAreas: Array<{ personId: string; allowedAreaId: string; allowedAreaSnapshot?: string }>;
     },
@@ -570,7 +689,9 @@ export class PlannedAccessEntity {
         .set(approvalValues)
         .where(and(
           eq(plannedAccesses.id, data.id),
-          eq(plannedAccesses.status, "PENDING_APPROVAL"),
+          or(eq(plannedAccesses.status, "PENDING_APPROVAL"), isNull(plannedAccesses.status)),
+          isNotNull(plannedAccesses.companyId),
+          matchesUpdatedAt(data.expectedUpdatedAt),
         ))
         .returning();
       if (!pa) return undefined;

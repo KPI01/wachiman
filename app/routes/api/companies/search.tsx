@@ -1,5 +1,5 @@
 import { validateUserRole } from "~/lib/auth.server";
-import { CompanyEntity } from "~/lib/database/company.server";
+import { searchCompanies } from "~/lib/services/company.server";
 
 export async function loader({ request }: { request: Request }) {
   await validateUserRole(request, [
@@ -16,5 +16,5 @@ export async function loader({ request }: { request: Request }) {
     return Response.json([]);
   }
 
-  return Response.json(await CompanyEntity.searchByName(query));
+  return Response.json(await searchCompanies(query));
 }

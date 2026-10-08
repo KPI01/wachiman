@@ -6,6 +6,21 @@ export async function getManyCompanies() {
   return CompanyEntity.findMany();
 }
 
+export async function searchCompanies(query: string) {
+  return CompanyEntity.searchByName(query);
+}
+
+export async function resolvePlannedAccessCompany(name: string, companyId?: string) {
+  if (companyId) {
+    const company = await CompanyEntity.findById(companyId);
+    if (!company) throw new Error("La empresa seleccionada ya no existe.");
+    return { companyId: company.id, companySnapshot: company.name };
+  }
+  const matches = await CompanyEntity.findNameMatches(name);
+  const company = matches.length === 1 ? matches[0] : null;
+  return { companyId: company?.id ?? null, companySnapshot: company?.name ?? name.trim() };
+}
+
 export async function createCompany(input: Record<string, unknown>) {
   const parsed = await createCompanySchema.safeParseAsync(input);
   if (!parsed.success) {

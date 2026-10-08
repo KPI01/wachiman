@@ -69,6 +69,9 @@ export async function createAndApproveWorkPermitActivity(
   if (options.lockedSiteId && plannedAccess.siteId !== options.lockedSiteId) {
     return { success: false, errors: "No tienes permisos para esta solicitud." };
   }
+  if (!plannedAccess.companyId) {
+    return { success: false, errors: "Valida y asocia la empresa antes de aprobar la solicitud." };
+  }
 
   const parsedDecisions = decisionsInput.map((decision) =>
     personDecisionSchema.safeParse(decision),

@@ -199,6 +199,9 @@ export default function PlannedAccessDetailsSheet({
                 <dl className="grid gap-4 sm:grid-cols-2">
                   <DetailField label="Empresa">
                     {plannedAccess.company?.name ?? plannedAccess.companySnapshot}
+                    {!plannedAccess.companyId && (plannedAccess.status ?? "PENDING_APPROVAL") === "PENDING_APPROVAL" ? (
+                      <Badge variant="outline">Empresa pendiente de validar</Badge>
+                    ) : null}
                   </DetailField>
                   <DetailField label="CIF">
                     {plannedAccess.company?.cif ?? "—"}

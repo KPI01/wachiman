@@ -209,6 +209,11 @@ export const plannedAccessColumns = (
     includeSite = true,
   }: { includeApprovedBy?: boolean; includeSite?: boolean } = {},
 ) => [
+    plannedAccessColHelper.accessor("createdAt", {
+      header: "Fecha de creación",
+      cell: ({ getValue }) =>
+        formatTimestamp({ date: getValue(), template: "dd/MM/yyyy HH:mm" }),
+    }),
     plannedAccessColHelper.accessor("expectedStartDatetime", {
       header: "Inicio previsto",
       cell: ({ getValue }) =>
@@ -251,6 +256,14 @@ export const plannedAccessColumns = (
     }),
     plannedAccessColHelper.accessor("companySnapshot", {
       header: "Empresa",
+      cell: ({ getValue, row }) => (
+        <div className="flex flex-col items-start gap-1">
+          <span>{row.original.company?.name ?? getValue()}</span>
+          {!row.original.companyId && (row.original.status ?? "PENDING_APPROVAL") === "PENDING_APPROVAL" ? (
+            <Badge variant="outline">Empresa pendiente de validar</Badge>
+          ) : null}
+        </div>
+      ),
     }),
     plannedAccessColHelper.accessor(getPersonsDetails, {
       id: "personsDetails",

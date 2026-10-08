@@ -280,7 +280,7 @@ export default function PlannedAccessForm({
     (visitors.length === 0 ? (serverVisitorsErrors?.[0] ?? null) : null);
 
   useEffect(() => {
-    if (fetcher.state !== "idle" || !fetcher.data || fetcher.data.errors) {
+    if (fetcher.state !== "idle" || fetcher.data?.success !== true || fetcher.data.errors) {
       return;
     }
 
@@ -500,14 +500,13 @@ export default function PlannedAccessForm({
         <FieldWrapper
           label="Empresa *"
           htmlFor="companySnapshot"
-          errors={getFieldErrors(fetcher.data?.errors, "companySnapshot")}
+          errors={getFieldErrors(fetcher.data?.errors, "companySnapshot") ?? getFieldErrors(fetcher.data?.errors, "companyId")}
         >
           <CompanyCombobox
             id="companySnapshot"
             name="companySnapshot"
             required
-            requireSelection
-            placeholder="Busca y selecciona una empresa..."
+            placeholder="Busca una empresa o escribe su nombre..."
             value={companySnapshot}
             onValueChange={setCompanySnapshot}
             onCompanyIdChange={(id) => setCompanyId(id ?? "")}

@@ -246,6 +246,7 @@ function PlannedAccessesToday({
             const workPermit = workPermits.find((item) => item.personId === person.id)?.workPermit;
             const missingWorkPermit = Boolean(
               workPermitsEnabled &&
+                person.decision?.workDecision !== "NOT_REQUIRED" &&
                 person.workCategory?.requiresWorkPermit &&
                 !workPermit,
             );
@@ -305,7 +306,7 @@ function PlannedAccessesToday({
                   company={plannedAccess.company ?? undefined}
                   workPermit={workPermit}
                   requiresWorkPermit={Boolean(
-                    workPermitsEnabled && person.workCategory?.requiresWorkPermit,
+                    workPermitsEnabled && person.decision?.workDecision !== "NOT_REQUIRED" && person.workCategory?.requiresWorkPermit,
                   )}
                   dailyRiskAcknowledgements={dailyRiskAcknowledgements}
                 />

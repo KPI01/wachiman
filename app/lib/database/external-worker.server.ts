@@ -1,4 +1,4 @@
-import { and, desc, eq, gte, ilike, inArray, like, or, ne, sql } from "drizzle-orm";
+import { and, desc, eq, gte, ilike, inArray, or, ne, sql } from "drizzle-orm";
 import { db } from "../../../db/server";
 import {
   externalWorkers,
@@ -210,9 +210,9 @@ export class ExternalWorkerEntity {
     const searchTerm = `%${normalizedQuery}%`;
     const rows = await db.query.externalWorkers.findMany({
       where: or(
-        like(externalWorkers.legalId, searchTerm),
-        like(externalWorkers.firstName, searchTerm),
-        like(externalWorkers.lastName, searchTerm),
+        ilike(externalWorkers.legalId, searchTerm),
+        ilike(externalWorkers.firstName, searchTerm),
+        ilike(externalWorkers.lastName, searchTerm),
       ),
       with: {
         company: { columns: { id: true, name: true } },

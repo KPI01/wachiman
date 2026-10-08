@@ -465,6 +465,8 @@ async function main() {
     expectedEndDatetime.setHours(expectedEndDatetime.getHours() + 2 + (index % 6));
     const createdAt = new Date(expectedStartDatetime);
     createdAt.setDate(createdAt.getDate() - 1 - (index % 12));
+    // Una visita futura ya debe estar creada; no adelantar la creación de datos demo.
+    if (createdAt > now) createdAt.setTime(yesterdayMidnight.getTime());
     const status = plannedStatuses[index % plannedStatuses.length];
     const companyId = companyIds[(index * 7) % companyIds.length];
     const decisionReason = status === "REJECTED"
