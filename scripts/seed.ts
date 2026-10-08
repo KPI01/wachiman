@@ -85,6 +85,7 @@ async function main() {
 
   await db.insert(allowedAreas).values({
     id: "area-office-basic",
+    siteId: "site-1",
     name: "Oficina",
     slug: "OFICINA",
   }).onConflictDoNothing();
@@ -128,10 +129,11 @@ async function main() {
   ]).onConflictDoNothing();
 
   await db.insert(allowedAreas).values([
-    { id: "area-plant", name: "Planta de producción", slug: "PLANTA-PRODUCCION" },
-    { id: "area-warehouse", name: "Almacén", slug: "ALMACEN" },
-    { id: "area-office", name: "Oficinas", slug: "OFICINAS" },
-    { id: "area-loading", name: "Zona de carga", slug: "ZONA-CARGA" },
+    { id: "area-plant", siteId: "site-1", name: "Planta de producción", slug: "PLANTA-PRODUCCION" },
+    { id: "area-warehouse", siteId: "site-1", name: "Almacén", slug: "ALMACEN" },
+    { id: "area-office", siteId: "site-2", name: "Oficinas", slug: "OFICINAS" },
+    { id: "area-office-site-1", siteId: "site-1", name: "Oficinas", slug: "OFICINAS" },
+    { id: "area-loading", siteId: "site-1", name: "Zona de carga", slug: "ZONA-CARGA" },
   ]).onConflictDoNothing();
 
   await db.insert(users).values([
@@ -251,7 +253,7 @@ async function main() {
       secondLastNameSnapshot: "Lopez",
       legalIdSnapshot: "11223344C",
       allowedAreaSnapshot: "Oficinas",
-      allowedAreaId: "area-office",
+      allowedAreaId: "area-office-site-1",
       approvedBySnapshot: "Carlos Segura",
       withVehicle: false,
       visitReason: "Trabajos de soldadura",
@@ -370,24 +372,18 @@ async function main() {
   const categoryIds = ["wc-0", "wc-1", "wc-2", "wc-3", "wc-4", "wc-5", ...demoCategoryRows.map((category) => category.id)];
 
   const demoAreaNames = ["Taller mecánico", "Laboratorio", "Muelles de carga", "Sala de máquinas", "Aparcamiento", "Zona de obras"];
-  const demoAreaRows = demoAreaNames.map((name, index) => ({
-    id: demoId("demo-area-", index + 1),
+  const demoAreaRows = siteIds.flatMap((siteId) => demoAreaNames.map((name, index) => ({
+    id: `${demoId("demo-area-", index + 1)}-${siteId}`,
+    siteId,
     name,
     slug: `DEMO-AREA-${String(index + 1).padStart(2, "0")}`,
-  }));
+  })));
   await db.insert(allowedAreas).values(demoAreaRows).onConflictDoNothing();
-  const areaIds = [
-    "area-office-basic", "area-plant", "area-warehouse", "area-office", "area-loading",
-    ...demoAreaRows.map((area) => area.id),
-  ];
-  const areaNameById: Record<string, string> = {
-    "area-office-basic": "Oficina",
-    "area-plant": "Planta de producción",
-    "area-warehouse": "Almacén",
-    "area-office": "Oficinas",
-    "area-loading": "Zona de carga",
-  };
-  for (const area of demoAreaRows) areaNameById[area.id] = area.name;
+  const seededAreas = await db.select().from(allowedAreas);
+  const areaIdsBySite = Object.fromEntries(siteIds.map((siteId) => [siteId,
+    seededAreas.filter((area) => area.siteId === siteId).map((area) => area.id),
+  ]));
+  const areaNameById = Object.fromEntries(seededAreas.map((area) => [area.id, area.name]));
 
   const demoRoles = [
     "ACCESS_OPERATOR", "ACCESS_MONITOR", "SECURITY_MANAGER",
@@ -514,6 +510,7 @@ async function main() {
     const people: Array<typeof plannedAccessPersons.$inferInsert> = [];
     for (let personIndex = 0; personIndex < personCount; personIndex += 1) {
       const worker = availableWorkers[(index + personIndex * 7) % availableWorkers.length];
+      const areaIds = areaIdsBySite[plan.siteId];
       const areaId = areaIds[(index * 3 + personIndex) % areaIds.length];
       const person = {
         id: `${demoId("demo-plan-person-", index + 1)}-${personIndex + 1}`,
@@ -588,6 +585,7 @@ async function main() {
     const companyId = linkedPlan?.companyId ?? worker.companyId;
     const companyName = companyNameById[companyId] ?? "Empresa de pruebas";
     const siteId = linkedPlan?.siteId ?? siteIds[(index * 5) % siteIds.length];
+    const areaIds = areaIdsBySite[siteId];
     const areaId = linkedPerson?.allowedAreaId ?? areaIds[(index * 7) % areaIds.length];
     const withVehicle = index % 5 === 0;
     const createdById = operatorIds[index % operatorIds.length];

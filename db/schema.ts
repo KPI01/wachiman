@@ -98,11 +98,15 @@ export const workCategories = pgTable("work_categories", {
 
 export const allowedAreas = pgTable("allowed_areas", {
   id: text("id").primaryKey().$default(makeId),
-  name: text("name").notNull().unique(),
-  slug: text("slug").notNull().unique(),
+  siteId: text("site_id").notNull().references(() => sites.id),
+  name: text("name").notNull(),
+  slug: text("slug").notNull(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
-});
+}, (table) => [
+  uniqueIndex("allowed_areas_site_name_idx").on(table.siteId, table.name),
+  uniqueIndex("allowed_areas_site_slug_idx").on(table.siteId, table.slug),
+]);
 
 // ───── External Workers ──────────────────────────────
 
@@ -464,6 +468,7 @@ export type WorkPermitSignature = typeof workPermitSignatures.$inferSelect;
 // ───── Relations ─────────────────────────────────────
 
 export const sitesRelations = relations(sites, ({ many }) => ({
+  allowedAreas: many(allowedAreas),
   users: many(users),
   accessLogs: many(accessLogs),
   plannedAccesses: many(plannedAccesses),
@@ -515,7 +520,8 @@ export const workCategoriesRelations = relations(workCategories, ({ many }) => (
   workPermits: many(workPermits),
 }));
 
-export const allowedAreasRelations = relations(allowedAreas, ({ many }) => ({
+export const allowedAreasRelations = relations(allowedAreas, ({ one, many }) => ({
+  site: one(sites, { fields: [allowedAreas.siteId], references: [sites.id] }),
   plannedAccessPersons: many(plannedAccessPersons),
   accessLogs: many(accessLogs),
 }));

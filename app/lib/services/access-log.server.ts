@@ -158,6 +158,9 @@ export async function createAccessLog(
   if (!allowedArea) {
     return { success: false, errors: "El área autorizada seleccionada no existe." };
   }
+  if (allowedArea.siteId !== siteId) {
+    return { success: false, errors: "El área autorizada debe pertenecer al centro del acceso." };
+  }
 
   const [site, company, holder] = await Promise.all([
     SiteEntity.findById(siteId),
@@ -635,6 +638,9 @@ export async function updateAccessLog(
   const allowedArea = await AllowedAreaEntity.findById(data.allowedAreaId);
   if (!allowedArea) {
     return { success: false as const, errors: "El área autorizada seleccionada no existe." };
+  }
+  if (allowedArea.siteId !== current.siteId) {
+    return { success: false as const, errors: "El área autorizada debe pertenecer al centro del acceso." };
   }
   if (
     current.entryTimestamp.getTime() !== expectedEntryTimestamp.getTime() ||

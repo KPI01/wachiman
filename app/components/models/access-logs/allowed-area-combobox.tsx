@@ -99,7 +99,7 @@ export default function AllowedAreaCombobox({
       clearTimeout(timeoutId);
       controller.abort();
     };
-  }, [query]);
+  }, [query, options]);
 
   useEffect(() => {
     if (selectedName) setQuery(selectedName);
@@ -178,7 +178,7 @@ export default function AllowedAreaCombobox({
               setShowSuggestions(true);
             }}
             onBlur={() => {
-              if (requireSelection && !selectedValueRef.current) {
+              if (requireSelection && !value) {
                 inputRef.current?.setCustomValidity(
                   query.trim()
                     ? "Selecciona un área autorizada de la lista."

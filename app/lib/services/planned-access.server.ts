@@ -179,7 +179,7 @@ export async function createPlannedAccess(
   input: Record<string, unknown>,
   options: PlannedAccessAuthorOptions,
 ) {
-  const parsed = await createPlannedAccessSchema.safeParseAsync(input);
+  const parsed = await createPlannedAccessSchema.safeParseAsync({ ...input, siteId: options.lockedSiteId ?? input.siteId });
 
   if (!parsed.success) {
     return { success: false, errors: z.treeifyError(parsed.error) };
@@ -669,8 +669,8 @@ export async function updatePlannedAccessStatus(
       const allowedArea = allowedAreaId
         ? await AllowedAreaEntity.findById(allowedAreaId)
         : null;
-      if (!allowedArea) {
-        validationErrors.push(`El área autorizada para ${worker.firstName} ${worker.lastName} no existe o no fue seleccionada.`);
+      if (!allowedArea || allowedArea.siteId !== plannedAccess.siteId) {
+        validationErrors.push(`El área autorizada para ${worker.firstName} ${worker.lastName} debe pertenecer al centro de la solicitud.`);
         continue;
       }
 
@@ -887,7 +887,7 @@ export async function createAccessLogFromPlannedAccess(
     };
   }
 
-  if (!person.allowedArea) {
+  if (!person.allowedArea || person.allowedArea.siteId !== plannedAccess.siteId) {
     return {
       success: false,
       errors: "La persona no tiene un área autorizada definida en la solicitud planificada.",

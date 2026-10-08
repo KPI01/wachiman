@@ -53,7 +53,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 
   const [workCategories, allowedAreas] = await Promise.all([
     getManyWorkCategories(),
-    getManyAllowedAreas(),
+    getManyAllowedAreas(site.id),
   ]);
   const plannedAccesses = getManyPlannedAccesses({
     ...getPlannedAccessTableFilters(request),

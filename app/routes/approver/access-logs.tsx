@@ -93,7 +93,7 @@ export async function loader({ request }: Route.LoaderArgs) {
     };
   }
 
-  const allowedAreas = await getManyAllowedAreas();
+  const allowedAreas = await getManyAllowedAreas(sessionSite.id);
   const accessLogs = getManyAccessLogs(input);
 
   return {

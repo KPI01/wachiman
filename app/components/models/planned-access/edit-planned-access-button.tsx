@@ -12,7 +12,7 @@ export default function EditPlannedAccessButton({
   plannedAccess: PlannedAccessListItem;
   sites: Array<Pick<Site, "id" | "name">>;
   workCategories: Array<Pick<WorkCategory, "id" | "name">>;
-  allowedAreas: Array<Pick<AllowedArea, "id" | "name">>;
+  allowedAreas: Array<Pick<AllowedArea, "id" | "name" | "siteId">>;
   actionPath: string;
 }) {
   return (

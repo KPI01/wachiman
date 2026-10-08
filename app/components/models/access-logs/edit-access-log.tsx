@@ -93,7 +93,7 @@ export default function EditAccessLog({
   allowedAreas,
 }: {
   accessLog: AccessLogListItem;
-  allowedAreas: Array<Pick<AllowedArea, "id" | "name">>;
+  allowedAreas: Array<Pick<AllowedArea, "id" | "name" | "siteId">>;
 }) {
   const fetcher = useFetcher<FetcherData>();
   const [open, setOpen] = useState(false);
@@ -483,6 +483,7 @@ export default function EditAccessLog({
           errors={getFieldErrors(fetcher.data?.errors, "allowedAreaId")}
         >
           <AllowedAreaCombobox
+            options={allowedAreas.filter((area) => area.siteId === accessLog.siteId)}
             id={`${formId}-area`}
             name="allowedAreaId"
             value={values.allowedAreaId}

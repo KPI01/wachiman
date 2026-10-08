@@ -11,7 +11,7 @@ export default function CreatePlannedAccessForm({
 }: {
   sites: Array<{ id: string; name: string }>;
   workCategories: Array<Pick<WorkCategory, "id" | "name">>;
-  allowedAreas: Array<Pick<AllowedArea, "id" | "name">>;
+  allowedAreas: Array<Pick<AllowedArea, "id" | "name" | "siteId">>;
   actionPath?: string;
   lockedSiteId?: string;
 }) {

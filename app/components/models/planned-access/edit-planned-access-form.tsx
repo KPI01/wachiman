@@ -45,7 +45,7 @@ export default function EditPlannedAccessForm({
   plannedAccess: PlannedAccessListItem;
   sites: Array<{ id: string; name: string }>;
   workCategories: Array<Pick<WorkCategory, "id" | "name">>;
-  allowedAreas: Array<Pick<AllowedArea, "id" | "name">>;
+  allowedAreas: Array<Pick<AllowedArea, "id" | "name" | "siteId">>;
   actionPath: string;
   canChangeSite?: boolean;
   inline?: boolean;

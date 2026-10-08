@@ -4,6 +4,7 @@ import { PlannedAccessEntity } from "../database/planned-access.server";
 import { UserEntity } from "../database/user.server";
 import { ExternalWorkerEntity } from "../database/external-worker.server";
 import { WorkCategoryEntity } from "../database/work-category.server";
+import { AllowedAreaEntity } from "../database/allowed-area.server";
 
 const reviewSchema = z.object({
   id: requiredString,
@@ -50,6 +51,12 @@ export async function reviewPlannedAccessPerson(input: Record<string, unknown>, 
     }
     if (!person.allowedAreaId && !person.allowedAreaSnapshot.trim()) {
       return { success: false, errors: "La persona no tiene un área autorizada indicada." };
+    }
+    if (person.allowedAreaId) {
+      const area = await AllowedAreaEntity.findById(person.allowedAreaId);
+      if (!area || area.siteId !== request.siteId) {
+        return { success: false, errors: "El área autorizada debe pertenecer al centro de la solicitud." };
+      }
     }
   }
   const result = await PlannedAccessEntity.decidePerson({

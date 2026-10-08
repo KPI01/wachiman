@@ -136,7 +136,7 @@ export default function CreateVehicleAccessLogForm({
   buttonClassName = "ms-auto",
 }: {
   sites: SiteOption[];
-  allowedAreas: Array<Pick<AllowedArea, "id" | "name">>;
+  allowedAreas: Array<Pick<AllowedArea, "id" | "name" | "siteId">>;
   actionPath: string;
   lockedSiteId?: string;
   holder?: { legalName: string; taxId: string; fiscalAddress: string };
@@ -463,6 +463,7 @@ export default function CreateVehicleAccessLogForm({
                 value={siteId}
                 onValueChange={(value) => {
                   setSiteId(value);
+                  setAllowedAreaId("");
                   invalidateSignatures();
                 }}
                 disabled={Boolean(lockedSiteId)}
@@ -594,7 +595,9 @@ export default function CreateVehicleAccessLogForm({
             >
               <AllowedAreaCombobox
                 name="vehicle-area"
-                options={allowedAreas}
+                key={siteId}
+                options={allowedAreas.filter((area) => area.siteId === siteId)}
+                selectedName={allowedAreas.find((area) => area.id === allowedAreaId)?.name}
                 value={allowedAreaId}
                 onValueChange={(value) => {
                   setAllowedAreaId(value);

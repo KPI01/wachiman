@@ -110,7 +110,7 @@ export default function PlannedAccessDetailsSheet({
   showSiteRiskInformation?: boolean;
   sites?: Array<Pick<Site, "id" | "name">>;
   workCategories?: Array<Pick<WorkCategory, "id" | "name">>;
-  allowedAreas?: Array<Pick<AllowedArea, "id" | "name">>;
+  allowedAreas?: Array<Pick<AllowedArea, "id" | "name" | "siteId">>;
 }) {
   const [editingAccessId, setEditingAccessId] = useState<string | null>(null);
   const status = plannedAccess?.status ?? "PENDING_APPROVAL";

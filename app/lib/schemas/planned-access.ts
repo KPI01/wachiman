@@ -6,7 +6,6 @@ import { ExternalWorkerEntity } from "../database/external-worker.server";
 import { CompanyEntity } from "../database/company.server";
 import { optionalString, requiredString } from "./generic";
 import {
-  ALLOWED_AREA_DOESNT_EXISTS,
   SITE_DOESNT_EXISTS,
   WORK_CATEGORY_DOESNT_EXISTS,
 } from "./messages";
@@ -38,11 +37,12 @@ const plannedAccessPersonSchema = z.object({
 
 async function validatePersonCatalogs(
   persons: Array<{ workCategoryId?: string; allowedAreaId?: string }>,
+  siteId: string,
 ) {
   const results = await Promise.all(
     persons.flatMap((person) => [
       person.workCategoryId ? WorkCategoryEntity.findById(person.workCategoryId) : null,
-      person.allowedAreaId ? AllowedAreaEntity.findById(person.allowedAreaId) : null,
+      person.allowedAreaId ? AllowedAreaEntity.findById(person.allowedAreaId).then((area) => area?.siteId === siteId) : null,
     ]).filter((result) => result !== null),
   );
   return results.every(Boolean);
@@ -68,8 +68,8 @@ export const createPlannedAccessSchema = z
     error: "La empresa contratista seleccionada no existe.",
     path: ["companyId"],
   })
-  .refine(async (data) => validatePersonCatalogs(data.persons), {
-    error: `${WORK_CATEGORY_DOESNT_EXISTS} ${ALLOWED_AREA_DOESNT_EXISTS}`,
+  .refine(async (data) => validatePersonCatalogs(data.persons, data.siteId), {
+    error: `${WORK_CATEGORY_DOESNT_EXISTS} El área autorizada debe pertenecer al centro de la solicitud.`,
     path: ["persons"],
   })
   .refine(
@@ -134,8 +134,8 @@ export const updatePlannedAccessSchema = z
     error: "La empresa contratista seleccionada no existe.",
     path: ["companyId"],
   })
-  .refine(async (data) => validatePersonCatalogs(data.persons), {
-    error: `${WORK_CATEGORY_DOESNT_EXISTS} ${ALLOWED_AREA_DOESNT_EXISTS}`,
+  .refine(async (data) => validatePersonCatalogs(data.persons, data.siteId), {
+    error: `${WORK_CATEGORY_DOESNT_EXISTS} El área autorizada debe pertenecer al centro de la solicitud.`,
     path: ["persons"],
   })
   .superRefine((data, context) => {

@@ -35,7 +35,7 @@ export type PlannedAccessListItem = typeof plannedAccesses.$inferSelect & {
       requiresWorkPermit: boolean | null;
       riskInformation?: string | null;
     } | null;
-    allowedArea?: { id: string; name: string } | null;
+    allowedArea?: { id: string; name: string; siteId: string } | null;
     decision?: {
       accessDecision: "PENDING" | "APPROVED" | "DENIED";
       workDecision: "NOT_REQUIRED" | "PENDING" | "APPROVED" | "DENIED";
@@ -160,6 +160,12 @@ export class PlannedAccessEntity {
       const now = new Date();
       if (data.decision === "APPROVED") {
         if (!request.companyId || !data.categoryId) return null;
+        if (person.allowedAreaId) {
+          const [area] = await tx.select().from(allowedAreas).where(and(
+            eq(allowedAreas.id, person.allowedAreaId), eq(allowedAreas.siteId, request.siteId),
+          ));
+          if (!area) return null;
+        }
         let workerId = data.workerId;
         if (!workerId) {
           const legalId = person.legalIdSnapshot.trim().toUpperCase();
@@ -177,10 +183,10 @@ export class PlannedAccessEntity {
         if (!areaId) {
           const name = person.allowedAreaSnapshot.trim();
           const [existing] = await tx.select().from(allowedAreas)
-            .where(sql`lower(trim(${allowedAreas.name})) = lower(${name})`).limit(1);
+            .where(and(eq(allowedAreas.siteId, request.siteId), sql`lower(trim(${allowedAreas.name})) = lower(${name})`)).limit(1);
           const [area] = existing ? [existing] : await tx.insert(allowedAreas)
-            .values({ name, slug: `AREA-${crypto.randomUUID()}` })
-            .onConflictDoUpdate({ target: allowedAreas.name, set: { name } }).returning();
+            .values({ name, siteId: request.siteId, slug: `AREA-${crypto.randomUUID()}` })
+            .onConflictDoUpdate({ target: [allowedAreas.siteId, allowedAreas.name], set: { name } }).returning();
           areaId = area.id;
         }
         await tx.update(plannedAccessPersons).set({ externalWorkerId: workerId,
@@ -405,7 +411,7 @@ export class PlannedAccessEntity {
                 riskInformation: true,
               },
             },
-             allowedArea: { columns: { id: true, name: true } },
+             allowedArea: { columns: { id: true, name: true, siteId: true } },
              decision: true,
           },
         },
@@ -445,7 +451,7 @@ export class PlannedAccessEntity {
                 riskInformation: true,
               },
             },
-             allowedArea: { columns: { id: true, name: true } },
+             allowedArea: { columns: { id: true, name: true, siteId: true } },
              decision: true,
           },
         },

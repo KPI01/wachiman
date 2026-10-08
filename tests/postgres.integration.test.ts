@@ -10,6 +10,8 @@ import { PlannedAccessEntity } from "../app/lib/database/planned-access.server";
 import { AccessLogEntity } from "../app/lib/database/access-log.server";
 import { ExternalWorkerEntity } from "../app/lib/database/external-worker.server";
 import { reviewPlannedAccessPerson } from "../app/lib/services/planned-access-review.server";
+import { AllowedAreaEntity } from "../app/lib/database/allowed-area.server";
+import { readFile } from "node:fs/promises";
 
 const databaseUrl = process.env.DATABASE_URL_TEST;
 const enabled = Boolean(databaseUrl && new URL(databaseUrl).pathname.endsWith("_test"));
@@ -84,7 +86,7 @@ integration("persistencia y restauración PostgreSQL", () => {
   it("busca en todos los catálogos de combobox sin distinguir mayúsculas y minúsculas", async () => {
     await database.insert(schema.companies).values({ id: "search-company", name: "Empresa Mixta", slug: "SEARCH" });
     await database.insert(schema.workCategories).values({ id: "search-category", name: "Pruebas" });
-    await database.insert(schema.allowedAreas).values({ id: "search-area", name: "Almacén", slug: "SEARCH" });
+    await database.insert(schema.allowedAreas).values({ id: "search-area", name: "Almacén", slug: "SEARCH", siteId: "site-target" });
     await database.insert(schema.users).values({ id: "search-user", fullName: "Pruebas", username: "search-user",
       password: "test", siteId: "site-target", departmentId: "dept-test" });
     await database.insert(schema.externalWorkers).values({ id: "search-worker", firstName: "Ana", lastName: "García",
@@ -137,6 +139,8 @@ integration("persistencia y restauración PostgreSQL", () => {
     expect((await PlannedAccessEntity.findById(newPending!.id))?.company?.cif).toBe("B87654321");
   });
   it("guarda decisiones directas por persona sin documentos y exige motivo al rechazar", async () => {
+    await database.insert(schema.allowedAreas).values({ id: "other-center-review-area", siteId: "site-collision",
+      name: "Área nueva de revisión", slug: "REVISION" });
     await database.insert(schema.users).values({ id: "review-admin", fullName: "Administrador", username: "review-admin",
       password: "test", role: "ADMIN", siteId: "site-target", departmentId: "dept-test" });
     await database.insert(schema.workCategories).values({ id: "review-category", name: "Trabajo con requisitos",
@@ -157,6 +161,8 @@ integration("persistencia y restauración PostgreSQL", () => {
     expect(approved.decision).toMatchObject({ accessDecision: "APPROVED", workDecision: "NOT_REQUIRED" });
     expect(approved.externalWorkerId).toBeTruthy();
     expect(approved.allowedAreaId).toBeTruthy();
+    expect(approved.allowedArea?.siteId).toBe("site-target");
+    expect(approved.allowedAreaId).not.toBe("other-center-review-area");
     expect(await reviewPlannedAccessPerson({ id: request!.id, personId: second.id, expectedUpdatedAt: current.updatedAt,
       decision: "DENIED", reason: " " }, options)).toMatchObject({ success: false });
     expect(await reviewPlannedAccessPerson({ id: request!.id, personId: second.id, expectedUpdatedAt: request!.updatedAt,
@@ -169,5 +175,72 @@ integration("persistencia y restauración PostgreSQL", () => {
     expect(await ExternalWorkerEntity.findByLegalId("REVIEW-B")).toBeNull();
     expect(await reviewPlannedAccessPerson({ id: request!.id, personId: second.id, expectedUpdatedAt: final.updatedAt,
       decision: "APPROVED" }, options)).toMatchObject({ success: false });
+  });
+
+  it("permite nombres y slugs iguales en centros distintos y filtra sus catálogos", async () => {
+    await database.insert(schema.allowedAreas).values([
+      { id: "scoped-a", name: "Cámara 5", slug: "CAMARA-5", siteId: "site-target" },
+      { id: "scoped-b", name: "Cámara 5", slug: "CAMARA-5", siteId: "site-collision" },
+    ]);
+    expect((await AllowedAreaEntity.findMany("site-target")).every((area) => area.siteId === "site-target")).toBe(true);
+    expect(await AllowedAreaEntity.search("cámara", "site-collision")).toEqual([{ id: "scoped-b", name: "Cámara 5" }]);
+    await expect(database.insert(schema.allowedAreas).values({ name: "Cámara 5", slug: "OTRO", siteId: "site-target" }))
+      .rejects.toMatchObject({ cause: { code: "23505" } });
+  });
+
+  it("impide aprobar un visitante con un área que pertenece a otra planta", async () => {
+    const request = await PlannedAccessEntity.create({ companyId: "company-validation", companySnapshot: "Técnica",
+      visitReason: "Área ajena", expectedStartDatetime: new Date(), requestedById: "review-admin",
+      siteId: "site-target", departmentId: "dept-test", persons: [
+        { firstNameSnapshot: "Elena", lastNameSnapshot: "Prueba", legalIdSnapshot: "OTHER-CENTER-REVIEW",
+          workCategoryId: "review-category", allowedAreaSnapshot: "Cámara 5", allowedAreaId: "scoped-b" },
+      ] });
+    expect(await reviewPlannedAccessPerson({ id: request!.id, personId: request!.plannedAccessPersons[0].id,
+      expectedUpdatedAt: request!.updatedAt, decision: "APPROVED" }, { authorUsername: "review-admin" }))
+      .toMatchObject({ success: false, errors: expect.stringContaining("centro") });
+    expect(await ExternalWorkerEntity.findByLegalId("OTHER-CENTER-REVIEW")).toBeNull();
+  });
+
+  it("migra el catálogo global conservando las referencias y los nombres históricos por centro", async () => {
+    await client.query("BEGIN");
+    try {
+      await client.query(`
+        CREATE SCHEMA migration_areas_test;
+        SET LOCAL search_path TO migration_areas_test;
+        CREATE TABLE sites (id text PRIMARY KEY, created_at timestamp NOT NULL DEFAULT now());
+        CREATE TABLE allowed_areas (id text PRIMARY KEY, name text NOT NULL, slug text NOT NULL,
+          created_at timestamp NOT NULL DEFAULT now(), updated_at timestamp NOT NULL DEFAULT now(),
+          CONSTRAINT allowed_areas_name_unique UNIQUE (name), CONSTRAINT allowed_areas_slug_unique UNIQUE (slug));
+        CREATE TABLE planned_accesses (id text PRIMARY KEY, site_id text NOT NULL REFERENCES sites);
+        CREATE TABLE planned_access_persons (id text PRIMARY KEY, planned_access_id text NOT NULL REFERENCES planned_accesses,
+          allowed_area_id text REFERENCES allowed_areas, allowed_area_snapshot text);
+        CREATE TABLE access_logs (id text PRIMARY KEY, site_id text NOT NULL REFERENCES sites,
+          allowed_area_id text REFERENCES allowed_areas, allowed_area_snapshot text);
+        INSERT INTO sites (id) VALUES ('planta-a'), ('planta-b');
+        INSERT INTO allowed_areas (id, name, slug) VALUES ('legacy-area', 'Almacén', 'ALMACEN');
+        INSERT INTO planned_accesses VALUES ('plan-a', 'planta-a'), ('plan-b', 'planta-b');
+        INSERT INTO planned_access_persons VALUES ('person-a', 'plan-a', 'legacy-area', 'Nombre histórico'),
+          ('person-b', 'plan-b', 'legacy-area', 'Nombre histórico');
+        INSERT INTO access_logs VALUES ('log-a', 'planta-a', 'legacy-area', 'Nombre histórico'),
+          ('log-b', 'planta-b', 'legacy-area', 'Nombre histórico');
+      `);
+      const migration = await readFile("db/migrations-postgres/0003_areas_por_centro.sql", "utf8");
+      await client.query(migration.replace('"public"."sites"', '"migration_areas_test"."sites"'));
+      expect((await client.query("SELECT site_id, name FROM allowed_areas ORDER BY site_id")).rows).toEqual([
+        { site_id: "planta-a", name: "Almacén" }, { site_id: "planta-b", name: "Almacén" },
+      ]);
+      expect((await client.query(`SELECT log.site_id, area.site_id AS area_site_id, log.allowed_area_snapshot
+        FROM access_logs log JOIN allowed_areas area ON log.allowed_area_id = area.id ORDER BY log.site_id`)).rows).toEqual([
+        { site_id: "planta-a", area_site_id: "planta-a", allowed_area_snapshot: "Nombre histórico" },
+        { site_id: "planta-b", area_site_id: "planta-b", allowed_area_snapshot: "Nombre histórico" },
+      ]);
+      const people = await client.query(`SELECT request.site_id, area.site_id AS area_site_id, person.allowed_area_snapshot
+        FROM planned_access_persons person JOIN planned_accesses request ON person.planned_access_id = request.id
+        JOIN allowed_areas area ON person.allowed_area_id = area.id ORDER BY request.site_id`);
+      expect(people.rows.every((row) => row.site_id === row.area_site_id && row.allowed_area_snapshot === "Nombre histórico")).toBe(true);
+      expect(people.rows).toHaveLength(2);
+    } finally {
+      await client.query("ROLLBACK");
+    }
   });
 });

@@ -8,7 +8,7 @@ export class SiteEntity {
     return site;
   }
 
-  public static async findById(id: string) {
+  public static async findById(id: string): Promise<typeof sites.$inferSelect | null> {
     const site = await db
       .select()
       .from(sites)

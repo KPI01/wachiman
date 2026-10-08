@@ -42,7 +42,7 @@ beforeEach(() => {
   vi.spyOn(CompanyEntity, "findOrCreateByName").mockResolvedValue(company as never);
   vi.spyOn(UserEntity, "getByUsername").mockResolvedValue({ id: "user-1", role: "ADMIN", departmentId: "dept-1" } as never);
   vi.spyOn(SiteEntity, "findById").mockResolvedValue({ id: "site-1" } as never);
-  vi.spyOn(AllowedAreaEntity, "findById").mockResolvedValue({ id: "area-1" } as never);
+  vi.spyOn(AllowedAreaEntity, "findById").mockResolvedValue({ id: "area-1", siteId: "site-1" } as never);
   vi.spyOn(PlannedAccessEntity, "findOverlappingPlannedAccess").mockResolvedValue([]);
   vi.spyOn(PlannedAccessEntity, "findOverlappingForPerson").mockResolvedValue([]);
   vi.spyOn(PlannedAccessEntity, "findById").mockResolvedValue(pending as never);

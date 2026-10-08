@@ -7,15 +7,18 @@ import { Input } from "~/components/ui/input";
 import FieldWrapper from "~/components/ui/wrappers/field-wrapper";
 import type { AllowedArea } from "../../../../db/schema";
 import { getFieldErrors } from "~/lib/utils/zod-errors";
+import { FieldGroup } from "~/components/ui/field";
 
 export default function AllowedAreaDetailsForm({
   allowedArea,
+  siteName,
   actionPath = "/admin/allowed-areas",
   open,
   onOpenChange,
   showTrigger = true,
 }: {
   allowedArea: AllowedArea;
+  siteName: string;
   actionPath?: string;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
@@ -50,6 +53,10 @@ export default function AllowedAreaDetailsForm({
       <fetcher.Form id={formId} method="patch" action={actionPath} className="grid gap-4 md:grid-cols-2">
         <h3 className="text-sm font-semibold md:col-span-2">Área autorizada</h3>
         <Input name="id" defaultValue={allowedArea.id} type="hidden" />
+        <FieldGroup className="md:col-span-2">
+          <FieldWrapper label="Centro" htmlFor={`allowed-area-site-${allowedArea.id}`}>
+            <Input id={`allowed-area-site-${allowedArea.id}`} value={siteName} readOnly />
+          </FieldWrapper>
         <FieldWrapper
           label="Nombre"
           htmlFor={`allowed-area-name-${allowedArea.id}`}
@@ -59,9 +66,11 @@ export default function AllowedAreaDetailsForm({
             id={`allowed-area-name-${allowedArea.id}`}
             name="name"
             defaultValue={allowedArea.name}
+            aria-invalid={Boolean(getFieldErrors(fetcher.data?.errors, "name"))}
             required
           />
         </FieldWrapper>
+        </FieldGroup>
       </fetcher.Form>
     </EntityDetailsDialog>
   );

@@ -81,7 +81,7 @@ export async function loader({ request }: Route.LoaderArgs) {
       expectedDate: new Date(),
     }),
     getOpenAccessLogs({ siteId: sessionSite.id }),
-    getManyAllowedAreas(),
+    getManyAllowedAreas(sessionSite.id),
     getGlobalAppSettings(),
     SiteEntity.findById(sessionSite.id),
     getManyCompanies(),

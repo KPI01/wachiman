@@ -70,7 +70,7 @@ export type PlannedAccessFormValues = {
 export type PlannedAccessFormProps = {
   sites: PlannedAccessSiteOption[];
   workCategories: Array<Pick<WorkCategory, "id" | "name">>;
-  allowedAreas: Array<Pick<AllowedArea, "id" | "name">>;
+  allowedAreas: Array<Pick<AllowedArea, "id" | "name" | "siteId">>;
   actionPath?: string;
   lockedSiteId?: string;
   initialValues?: PlannedAccessFormValues;
@@ -271,7 +271,8 @@ export default function PlannedAccessForm({
   const onInlineSuccessRef = useRef(onInlineSuccess);
   onInlineSuccessRef.current = onInlineSuccess;
 
-  const selectedSiteId = lockedSiteId ?? initialValues?.siteId ?? sites[0]?.id;
+  const [selectedSiteId, setSelectedSiteId] = useState(lockedSiteId ?? initialValues?.siteId ?? sites[0]?.id);
+  const siteAreas = allowedAreas.filter((area) => area.siteId === selectedSiteId);
   const globalError =
     typeof fetcher.data?.errors === "string" ? fetcher.data.errors : null;
   const serverVisitorsErrors = getFieldErrors(fetcher.data?.errors, "persons");
@@ -395,6 +396,7 @@ export default function PlannedAccessForm({
   }, []);
 
   function resetVisitorState() {
+    setSelectedSiteId(lockedSiteId ?? initialValues?.siteId ?? sites[0]?.id);
     setDatePickerResetKey((currentKey) => currentKey + 1);
     setVisitors(initialValues?.visitors ?? []);
     setNextVisitorId(1);
@@ -413,6 +415,11 @@ export default function PlannedAccessForm({
       ...currentDraft,
       [field]: value,
     }));
+  }
+
+  function handleVisitorAreaChange(id: number | string, field: "allowedAreaId" | "allowedAreaSnapshot", value: string) {
+    setVisitors((current) => current.map((visitor) => visitor.id === id ? { ...visitor, [field]: value } : visitor));
+    setLocalVisitorsError(null);
   }
 
   function handleAddVisitor() {
@@ -443,12 +450,12 @@ export default function PlannedAccessForm({
       action={actionPath}
       className="grid min-h-0 flex-1 gap-x-8 gap-y-5 overflow-y-auto px-6 py-5 md:grid-cols-2"
         onSubmit={(event) => {
-          if (visitors.length > 0) {
+          if (visitors.length > 0 && visitors.every((visitor) => visitor.allowedAreaSnapshot.trim())) {
             return;
           }
 
           event.preventDefault();
-          setLocalVisitorsError("Debe agregar al menos un visitante.");
+          setLocalVisitorsError(visitors.length ? "Indica un área del centro para cada visitante." : "Debe agregar al menos un visitante.");
         }}
       >
         {Object.entries(hiddenFields ?? {}).map(([name, value]) => (
@@ -480,7 +487,13 @@ export default function PlannedAccessForm({
           ) : null}
           <Select
             name="siteId"
-            defaultValue={selectedSiteId}
+            value={selectedSiteId ?? ""}
+            onValueChange={(value) => {
+              setSelectedSiteId(value);
+              setVisitorDraft((current) => ({ ...current, allowedAreaId: "", allowedAreaSnapshot: "" }));
+              setVisitors((current) => current.map((visitor) => ({ ...visitor, allowedAreaId: "", allowedAreaSnapshot: "" })));
+              if (visitors.length) setLocalVisitorsError("Indica las áreas de los visitantes para el nuevo centro.");
+            }}
             disabled={!sites.length || !!lockedSiteId}
           >
             <SelectTrigger className="w-full">
@@ -709,6 +722,8 @@ export default function PlannedAccessForm({
                   }
                 >
                   <AllowedAreaCombobox
+                    key={selectedSiteId}
+                    options={siteAreas}
                     id="visitor-allowed-area"
                     name=""
                     value={visitorDraft.allowedAreaId}
@@ -898,6 +913,19 @@ export default function PlannedAccessForm({
                         <TrashIcon />
                       </Button>
                     </div>
+                    <FieldWrapper label="Área autorizada" htmlFor={`visitor-area-${visitor.id}-search`}>
+                      <AllowedAreaCombobox
+                        key={selectedSiteId}
+                        id={`visitor-area-${visitor.id}`}
+                        options={siteAreas}
+                        value={visitor.allowedAreaId}
+                        selectedName={visitor.allowedAreaSnapshot}
+                        onValueChange={(value) => handleVisitorAreaChange(visitor.id, "allowedAreaId", value)}
+                        onNameChange={(value) => handleVisitorAreaChange(visitor.id, "allowedAreaSnapshot", value)}
+                        placeholder="Escribe o selecciona un área del centro..."
+                        required
+                      />
+                    </FieldWrapper>
                   {visitorErrors ? (
                       <p className="mt-2 text-sm text-destructive">
                         {visitorErrors[0]}

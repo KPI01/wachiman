@@ -41,7 +41,7 @@ type AccessLogSiteOption = Pick<Site, "id" | "name" | "address" | "riskInformati
 
 type CreateAccessLogProps = {
   sites: AccessLogSiteOption[];
-  allowedAreas: Array<Pick<AllowedArea, "id" | "name">>;
+  allowedAreas: Array<Pick<AllowedArea, "id" | "name" | "siteId">>;
   actionPath: string;
   lockedSiteId?: string;
   buttonLabel?: string;
@@ -496,7 +496,7 @@ export default function CreateAccessLog({
                 <Select
                   name={lockedSiteId ? undefined : "siteId"}
                    value={selectedSiteId ?? ""}
-                   onValueChange={setSelectedSiteId}
+                   onValueChange={(value) => { setSelectedSiteId(value); setAllowedAreaId(""); }}
                   disabled={Boolean(lockedSiteId) || !sites.length}
                 >
                   <SelectTrigger className="w-full">
@@ -672,7 +672,9 @@ export default function CreateAccessLog({
             >
               <AllowedAreaCombobox
                 name="allowedAreaId"
-                options={allowedAreas}
+                key={selectedSiteId}
+                options={allowedAreas.filter((area) => area.siteId === selectedSiteId)}
+                selectedName={allowedAreas.find((area) => area.id === allowedAreaId)?.name}
                 value={allowedAreaId}
                 onValueChange={setAllowedAreaId}
                 required
