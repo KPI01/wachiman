@@ -876,10 +876,6 @@ export async function createAccessLogFromPlannedAccess(
       : "El acceso de esta persona está pendiente de aprobación." };
   }
 
-  if (plannedAccess.plannedAccessPersons.some((person) => person.decision && person.decision.accessDecision !== "PENDING")) {
-    return { success: false, errors: "No se puede editar un acceso planificado cuya revisión por visitante ya ha comenzado." };
-  }
-
   if (!person.externalWorkerId) {
     return {
       success: false,
