@@ -35,7 +35,7 @@ const PAGE_TITLES: Record<string, string> = {
   "/admin/sites": "Centros",
   "/admin/departments": "Departamentos",
   "/admin/access-logs": "Registros de acceso",
-  "/admin/planned-access": "Solicitudes de acceso",
+  "/admin/planned-access": "Accesos planificados",
   "/admin/external-workers": "Trabajadores externos",
   "/admin/companies": "Empresas",
   "/admin/work-categories": "Tipos de trabajo",
@@ -46,17 +46,17 @@ const PAGE_TITLES: Record<string, string> = {
   "/security": "Panel de seguridad",
   "/security/sites": "Centros",
   "/security/access-logs": "Registros de acceso",
-  "/security/planned-access": "Solicitudes de acceso",
+  "/security/planned-access": "Accesos planificados",
   "/security/external-workers": "Trabajadores externos",
   "/security/companies": "Empresas",
   "/security/holder-company": "Empresa titular",
   "/security/work-categories": "Tipos de trabajo",
   "/security/allowed-areas": "Áreas autorizadas",
   "/security/audit-log": "Auditoría",
-  "/requester": "Solicitudes de acceso",
-  "/requester/planned-access": "Solicitudes de acceso",
-  "/approver": "Solicitudes de acceso",
-  "/approver/planned-access": "Solicitudes de acceso",
+  "/requester": "Accesos planificados",
+  "/requester/planned-access": "Accesos planificados",
+  "/approver": "Accesos planificados",
+  "/approver/planned-access": "Accesos planificados",
   "/approver/access-logs": "Registros de acceso",
   "/approver/external-workers": "Trabajadores externos",
   "/approver/companies": "Empresas",
@@ -76,7 +76,7 @@ function getPageTitle(pathname: string) {
     return "Registro de acceso";
   }
   if (/^\/(admin|security|approver)\/planned-access\/[^/]+\/approve$/.test(normalizedPath)) {
-    return "Aprobar solicitud de acceso";
+    return "Aprobar acceso planificado";
   }
   if (/^\/(admin|security|approver)\/external-worker\/[^/]+$/.test(normalizedPath)) {
     return "Ficha del trabajador externo";

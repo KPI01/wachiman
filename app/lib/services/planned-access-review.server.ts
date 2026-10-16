@@ -24,19 +24,19 @@ export async function reviewPlannedAccessPerson(input: Record<string, unknown>, 
 }) {
   const author = await UserEntity.getByUsername(options.authorUsername);
   if (!author || !["ADMIN", "SECURITY_MANAGER", "ACCESS_APPROVER"].includes(author.role ?? "")) {
-    return { success: false, errors: "No tienes permisos para revisar solicitudes." };
+    return { success: false, errors: "No tienes permisos para revisar accesos planificados." };
   }
   const parsed = reviewSchema.safeParse(input);
   if (!parsed.success) return { success: false, errors: z.treeifyError(parsed.error) };
   const request = await PlannedAccessEntity.findById(parsed.data.id);
   if (!request || (options.lockedSiteId && request.siteId !== options.lockedSiteId)) {
-    return { success: false, errors: "No tienes permisos para esta solicitud." };
+    return { success: false, errors: "No tienes permisos para este acceso planificado." };
   }
   if ((request.status ?? "PENDING_APPROVAL") !== "PENDING_APPROVAL") {
-    return { success: false, errors: "La revisión de esta solicitud ya ha finalizado." };
+    return { success: false, errors: "La revisión de este acceso planificado ya ha finalizado." };
   }
   const person = request.plannedAccessPersons.find((item) => item.id === parsed.data.personId);
-  if (!person) return { success: false, errors: "La persona no pertenece a esta solicitud." };
+  if (!person) return { success: false, errors: "La persona no pertenece a este acceso planificado." };
   if (person.decision && person.decision.accessDecision !== "PENDING") {
     return { success: false, errors: "Esta persona ya tiene una decisión registrada." };
   }
@@ -55,7 +55,7 @@ export async function reviewPlannedAccessPerson(input: Record<string, unknown>, 
     if (person.allowedAreaId) {
       const area = await AllowedAreaEntity.findById(person.allowedAreaId);
       if (!area || area.siteId !== request.siteId) {
-        return { success: false, errors: "El área autorizada debe pertenecer al centro de la solicitud." };
+        return { success: false, errors: "El área autorizada debe pertenecer al centro del acceso planificado." };
       }
     }
   }
@@ -65,6 +65,6 @@ export async function reviewPlannedAccessPerson(input: Record<string, unknown>, 
     workerId: worker?.id,
     categoryId,
   });
-  if (!result) return { success: false, errors: "La solicitud ha cambiado. Recarga la página antes de continuar." };
+  if (!result) return { success: false, errors: "El acceso planificado ha cambiado. Recarga la página antes de continuar." };
   return { success: true, status: result.status };
 }

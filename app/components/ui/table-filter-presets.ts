@@ -156,7 +156,7 @@ export const REQUESTER_PLANNED_ACCESS_ADVANCED_FILTERS: DataTableAdvancedFilter[
     type: "date-time-range",
     quickFilterParams: ["expectedPreset"],
   },
-  { param: "requestedByQuery", label: "Usuario que creó la solicitud", type: "text" },
+  { param: "requestedByQuery", label: "Usuario que creó el acceso planificado", type: "text" },
   { param: "visitorQuery", label: "Datos del visitante", type: "text" },
   { param: "companyQuery", label: "Empresa", type: "text" },
 ];

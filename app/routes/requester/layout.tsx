@@ -9,7 +9,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 export default function RequesterLayout({ loaderData }: Route.ComponentProps) {
   return (
     <OperationalShell
-      title="Solicitudes de acceso"
+      title="Accesos planificados"
       user={loaderData}
     />
   );

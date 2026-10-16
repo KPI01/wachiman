@@ -132,10 +132,10 @@ export async function validatePlannedAccessCompany(
   if (!parsed.success) return { success: false, errors: z.treeifyError(parsed.error) };
   const plannedAccess = await PlannedAccessEntity.findById(parsed.data.id);
   if (!plannedAccess || (options.lockedSiteId && plannedAccess.siteId !== options.lockedSiteId)) {
-    return { success: false, errors: "No tienes permisos para esta solicitud." };
+    return { success: false, errors: "No tienes permisos para este acceso planificado." };
   }
   if (plannedAccess.companyId || (plannedAccess.status ?? "PENDING_APPROVAL") !== "PENDING_APPROVAL") {
-    return { success: false, errors: "La solicitud ya no tiene una empresa pendiente de validar." };
+    return { success: false, errors: "El acceso planificado ya no tiene una empresa pendiente de validar." };
   }
   let newCompany: Parameters<typeof CompanyEntity.create>[0] | undefined;
   if (parsed.data.mode === "new") {
@@ -164,11 +164,11 @@ export async function validatePlannedAccessCompany(
     }
     throw error;
   }
-  if (!updated) return { success: false, errors: "La solicitud ha cambiado. Recarga la página antes de validar la empresa." };
+  if (!updated) return { success: false, errors: "El acceso planificado ha cambiado. Recarga la página antes de validar la empresa." };
   await AuditLogEntity.create({
     entityType: "PlannedAccess", entityId: updated.id,
     action: "PLANNED_ACCESS_COMPANY_VALIDATED", changedBy: author.id,
-    summary: "Empresa de la solicitud validada y asociada",
+    summary: "Empresa del acceso planificado validada y asociada",
     metadata: { originalCompanyName: plannedAccess.companySnapshot, companyId: updated.companyId,
       companyName: updated.companySnapshot, createdCompany: Boolean(newCompany) },
   });
@@ -216,7 +216,7 @@ export async function createPlannedAccess(
 
       return {
         success: false,
-        errors: `Ya existe una solicitud planificada para "${existing.companySnapshot}" con las mismas personas en el rango ${startStr} - ${endStr}.`,
+        errors: `Ya existe un acceso planificado para "${existing.companySnapshot}" con las mismas personas en el rango ${startStr} - ${endStr}.`,
       };
     }
   }
@@ -236,7 +236,7 @@ export async function createPlannedAccess(
         : "sin fecha de fin definida";
 
       personErrors.push(
-        `La persona con DNI ${legalId} ya está registrada en otra solicitud planificada para "${existing.companySnapshot}" (${startStr} - ${endStr}).`,
+        `La persona con DNI ${legalId} ya está registrada en otro acceso planificado para "${existing.companySnapshot}" (${startStr} - ${endStr}).`,
       );
     }
   }
@@ -263,7 +263,7 @@ export async function createPlannedAccess(
         entityId: plannedAccess.id,
         action: "PLANNED_ACCESS_CREATED",
         changedBy: author.id,
-        summary: "Solicitud de acceso planificado creada",
+        summary: "Acceso planificado creado",
         metadata: {
           siteId,
           companySnapshot: plannedAccess.companySnapshot,
@@ -306,26 +306,26 @@ export async function updatePlannedAccess(
 
   const plannedAccess = await PlannedAccessEntity.findById(parsed.data.id);
   if (!plannedAccess) {
-    return { success: false, errors: "La solicitud planificada no existe." };
+    return { success: false, errors: "El acceso planificado no existe." };
   }
 
   if (plannedAccess.status !== "PENDING_APPROVAL") {
     return {
       success: false,
-      errors: "Solo se pueden editar solicitudes pendientes de aprobación.",
+      errors: "Solo se pueden editar accesos planificados pendientes de aprobación.",
     };
   }
 
   if (options.lockedSiteId && plannedAccess.siteId !== options.lockedSiteId) {
-    return { success: false, errors: "No tienes permisos para esta solicitud." };
+    return { success: false, errors: "No tienes permisos para este acceso planificado." };
   }
 
   const isPrivileged = author.role === "ADMIN" || author.role === "SECURITY_MANAGER";
   if (!isPrivileged && plannedAccess.requestedById !== author.id) {
-    return { success: false, errors: "Solo puedes editar tus propias solicitudes." };
+    return { success: false, errors: "Solo puedes editar tus propios accesos planificados." };
   }
   if (!isPrivileged && plannedAccess.departmentId !== author.departmentId) {
-    return { success: false, errors: "No puedes editar solicitudes de otro departamento." };
+    return { success: false, errors: "No puedes editar accesos planificados de otro departamento." };
   }
 
   const canChangeSite = isPrivileged && !options.lockedSiteId;
@@ -333,7 +333,7 @@ export async function updatePlannedAccess(
     ? parsed.data.siteId
     : (options.lockedSiteId ?? plannedAccess.siteId);
   if (parsed.data.siteId !== siteId) {
-    return { success: false, errors: "No puedes cambiar el centro de esta solicitud." };
+    return { success: false, errors: "No puedes cambiar el centro de este acceso planificado." };
   }
 
   const existingPersonIds = new Set(
@@ -345,7 +345,7 @@ export async function updatePlannedAccess(
   if (unknownPerson) {
     return {
       success: false,
-      errors: "Una de las personas no pertenece a esta solicitud.",
+      errors: "Una de las personas no pertenece a este acceso planificado.",
     };
   }
 
@@ -364,7 +364,7 @@ export async function updatePlannedAccess(
     if (sharedLegalId) {
       return {
         success: false,
-        errors: `Ya existe una solicitud planificada para "${existing.companySnapshot}" con las mismas personas en el rango ${formatPlannedDate(existing.expectedStartDatetime)} - ${existing.expectedEndDatetime ? formatPlannedDate(existing.expectedEndDatetime) : "sin fecha de fin definida"}.`,
+        errors: `Ya existe un acceso planificado para "${existing.companySnapshot}" con las mismas personas en el rango ${formatPlannedDate(existing.expectedStartDatetime)} - ${existing.expectedEndDatetime ? formatPlannedDate(existing.expectedEndDatetime) : "sin fecha de fin definida"}.`,
       };
     }
   }
@@ -379,7 +379,7 @@ export async function updatePlannedAccess(
     );
     for (const existing of overlappingForPerson) {
       personErrors.push(
-        `La persona con DNI ${legalId} ya está registrada en otra solicitud planificada para "${existing.companySnapshot}" (${formatPlannedDate(existing.expectedStartDatetime)} - ${existing.expectedEndDatetime ? formatPlannedDate(existing.expectedEndDatetime) : "sin fecha de fin definida"}).`,
+        `La persona con DNI ${legalId} ya está registrada en otro acceso planificado para "${existing.companySnapshot}" (${formatPlannedDate(existing.expectedStartDatetime)} - ${existing.expectedEndDatetime ? formatPlannedDate(existing.expectedEndDatetime) : "sin fecha de fin definida"}).`,
       );
     }
   }
@@ -392,21 +392,21 @@ export async function updatePlannedAccess(
     expectedEndDatetime: parsed.data.expectedEndDatetime ?? null,
   });
   if (result.kind === "conflict") {
-    return { success: false, errors: "La solicitud cambió o dejó de estar pendiente. Recarga la página e inténtalo de nuevo." };
+    return { success: false, errors: "El acceso planificado cambió o dejó de estar pendiente. Recarga la página e inténtalo de nuevo." };
   }
   if (result.kind === "linked-person") {
     return { success: false, errors: "No puedes eliminar una persona que ya tiene un ingreso registrado." };
   }
 
   const updated = await PlannedAccessEntity.findById(result.id);
-  if (!updated) return { success: false, errors: "La solicitud no pudo actualizarse." };
+  if (!updated) return { success: false, errors: "El acceso planificado no pudo actualizarse." };
 
   await AuditLogEntity.create({
     entityType: "PlannedAccess",
     entityId: updated.id,
     action: "PLANNED_ACCESS_UPDATED",
     changedBy: author.id,
-    summary: "Solicitud de acceso planificado actualizada",
+    summary: "Acceso planificado actualizado",
     metadata: {
       previousUpdatedAt: plannedAccess.updatedAt,
       before: {
@@ -464,16 +464,16 @@ export async function uploadPlannedAccessPersonDocument(
   if (!author) return { success: false as const, errors: "unauthorized" };
 
   const plannedAccess = await PlannedAccessEntity.findById(plannedAccessId);
-  if (!plannedAccess) return { success: false as const, errors: "La solicitud no existe." };
+  if (!plannedAccess) return { success: false as const, errors: "El acceso planificado no existe." };
   if (plannedAccess.status !== "PENDING_APPROVAL") {
-    return { success: false as const, errors: "Solo puedes cargar documentación de solicitudes pendientes." };
+    return { success: false as const, errors: "Solo puedes cargar documentación de accesos planificados pendientes." };
   }
   if (options.lockedSiteId && plannedAccess.siteId !== options.lockedSiteId) {
-    return { success: false as const, errors: "No tienes permisos para esta solicitud." };
+    return { success: false as const, errors: "No tienes permisos para este acceso planificado." };
   }
 
   const person = plannedAccess.plannedAccessPersons.find((item) => item.id === personId);
-  if (!person) return { success: false as const, errors: "La persona no pertenece a esta solicitud." };
+  if (!person) return { success: false as const, errors: "La persona no pertenece a este acceso planificado." };
 
   const categoryId = input.workCategoryId || person.workCategoryId;
   let worker = person.externalWorkerId
@@ -546,20 +546,20 @@ export async function updatePlannedAccessStatus(
   }
 
   if (parsed.data.status !== "CANCELED" && !options.canApprove) {
-    return { success: false, errors: "No tienes permisos para aprobar solicitudes." };
+    return { success: false, errors: "No tienes permisos para aprobar accesos planificados." };
   }
 
   const existingPlannedAccess = await PlannedAccessEntity.findById(parsed.data.id);
   if (!existingPlannedAccess) {
-    return { success: false, errors: "La solicitud planificada no existe." };
+    return { success: false, errors: "El acceso planificado no existe." };
   }
 
   if (options.lockedSiteId && existingPlannedAccess.siteId !== options.lockedSiteId) {
-    return { success: false, errors: "No tienes permisos para esta solicitud." };
+    return { success: false, errors: "No tienes permisos para este acceso planificado." };
   }
 
   if (options.requestedById && existingPlannedAccess.requestedById !== options.requestedById) {
-    return { success: false, errors: "Solo puedes modificar tus propias solicitudes." };
+    return { success: false, errors: "Solo puedes modificar tus propios accesos planificados." };
   }
 
   // Older rows may have a null status because the column predates its default.
@@ -583,14 +583,14 @@ export async function updatePlannedAccessStatus(
       entityId: existingPlannedAccess.id,
       action: "SELF_APPROVAL_BLOCKED",
       changedBy: author.id,
-      summary: "Se bloqueó una decisión sobre una solicitud propia",
+      summary: "Se bloqueó una decisión sobre un acceso planificado propio",
       metadata: { attemptedStatus: parsed.data.status },
     });
     return {
       success: false,
       errors: parsed.data.status === "REJECTED"
-        ? "No puedes rechazar una solicitud creada por ti."
-        : "No puedes aprobar una solicitud propia con este rol.",
+        ? "No puedes rechazar un acceso planificado creado por ti."
+        : "No puedes aprobar un acceso planificado propio con este rol.",
     };
   }
 
@@ -598,15 +598,15 @@ export async function updatePlannedAccessStatus(
     const plannedAccess = existingPlannedAccess;
 
     if (!plannedAccess) {
-      return { success: false, errors: "La solicitud planificada no existe." };
+      return { success: false, errors: "El acceso planificado no existe." };
     }
 
     if (currentStatus !== "PENDING_APPROVAL") {
-      return { success: false, errors: "La solicitud ya no está pendiente de aprobación." };
+      return { success: false, errors: "El acceso planificado ya no está pendiente de aprobación." };
     }
 
     const company = plannedAccess.companyId ? await CompanyEntity.findById(plannedAccess.companyId) : null;
-    if (!company) return { success: false, errors: "Valida y asocia la empresa antes de aprobar la solicitud." };
+    if (!company) return { success: false, errors: "Valida y asocia la empresa antes de aprobar el acceso planificado." };
 
     const selectedCategories = parsed.data.personWorkCategories ?? {};
     const selectedAreas = parsed.data.personAllowedAreas ?? {};
@@ -627,7 +627,7 @@ export async function updatePlannedAccessStatus(
       if (!worker && person.externalWorkerId) {
         const linkedWorker = await ExternalWorkerEntity.findById(person.externalWorkerId);
         if (linkedWorker && normalizeLegalId(linkedWorker.legalId) !== legalId) {
-          validationErrors.push(`El trabajador vinculado a ${person.firstNameSnapshot} ${person.lastNameSnapshot} tiene un DNI diferente al de la solicitud.`);
+          validationErrors.push(`El trabajador vinculado a ${person.firstNameSnapshot} ${person.lastNameSnapshot} tiene un DNI diferente al del acceso planificado.`);
           continue;
         }
         worker = linkedWorker;
@@ -670,7 +670,7 @@ export async function updatePlannedAccessStatus(
         ? await AllowedAreaEntity.findById(allowedAreaId)
         : null;
       if (!allowedArea || allowedArea.siteId !== plannedAccess.siteId) {
-        validationErrors.push(`El área autorizada para ${worker.firstName} ${worker.lastName} debe pertenecer al centro de la solicitud.`);
+        validationErrors.push(`El área autorizada para ${worker.firstName} ${worker.lastName} debe pertenecer al centro del acceso planificado.`);
         continue;
       }
 
@@ -733,7 +733,7 @@ export async function updatePlannedAccessStatus(
     });
 
     if (!approved) {
-      return { success: false, errors: "La solicitud ya no está pendiente de aprobación." };
+      return { success: false, errors: "El acceso planificado ya no está pendiente de aprobación." };
     }
 
     await AuditLogEntity.create({
@@ -741,7 +741,7 @@ export async function updatePlannedAccessStatus(
       entityId: approved.id,
       action: "PLANNED_ACCESS_APPROVED",
       changedBy: author.id,
-      summary: "Solicitud de acceso planificado aprobada",
+      summary: "Acceso planificado aprobado",
       metadata: {
         reason: parsed.data.decisionReason ?? null,
         selfApproval: isOwnRequest,
@@ -768,7 +768,7 @@ export async function updatePlannedAccessStatus(
   });
 
   if (!updated) {
-    return { success: false, errors: "La solicitud no pudo actualizarse." };
+    return { success: false, errors: "El acceso planificado no pudo actualizarse." };
   }
 
   await AuditLogEntity.create({
@@ -779,8 +779,8 @@ export async function updatePlannedAccessStatus(
       : "PLANNED_ACCESS_CANCELED",
     changedBy: author.id,
     summary: parsed.data.status === "REJECTED"
-      ? "Solicitud de acceso planificado rechazada"
-      : "Solicitud de acceso planificado cancelada",
+      ? "Acceso planificado rechazado"
+      : "Acceso planificado cancelado",
     metadata: {
       previousStatus: currentStatus,
       reason: parsed.data.decisionReason,
@@ -813,13 +813,13 @@ export async function createAccessLogFromPlannedAccess(
   );
 
   if (!plannedAccess) {
-    return { success: false, errors: "La solicitud planificada no existe." };
+    return { success: false, errors: "El acceso planificado no existe." };
   }
 
   if (plannedAccess.siteId !== options.lockedSiteId) {
     return {
       success: false,
-      errors: "La solicitud no pertenece al centro actual.",
+      errors: "El acceso planificado no pertenece al centro actual.",
     };
   }
 
@@ -853,7 +853,7 @@ export async function createAccessLogFromPlannedAccess(
   ) {
     return {
       success: false,
-      errors: "La solicitud planificada no corresponde al intervalo actual.",
+      errors: "El acceso planificado no corresponde al intervalo actual.",
     };
   }
 
@@ -865,7 +865,7 @@ export async function createAccessLogFromPlannedAccess(
   if (!person) {
     return {
       success: false,
-      errors: "La persona no pertenece a esta solicitud planificada.",
+      errors: "La persona no pertenece a este acceso planificado.",
     };
   }
 
@@ -877,7 +877,7 @@ export async function createAccessLogFromPlannedAccess(
   }
 
   if (plannedAccess.plannedAccessPersons.some((person) => person.decision && person.decision.accessDecision !== "PENDING")) {
-    return { success: false, errors: "No se puede editar una solicitud cuya revisión por visitante ya ha comenzado." };
+    return { success: false, errors: "No se puede editar un acceso planificado cuya revisión por visitante ya ha comenzado." };
   }
 
   if (!person.externalWorkerId) {
@@ -890,7 +890,7 @@ export async function createAccessLogFromPlannedAccess(
   if (!person.allowedArea || person.allowedArea.siteId !== plannedAccess.siteId) {
     return {
       success: false,
-      errors: "La persona no tiene un área autorizada definida en la solicitud planificada.",
+      errors: "La persona no tiene un área autorizada definida en el acceso planificado.",
     };
   }
 

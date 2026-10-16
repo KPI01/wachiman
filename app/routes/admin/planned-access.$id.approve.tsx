@@ -16,8 +16,8 @@ export async function loader({ request, params }: Route.LoaderArgs) {
   const sessionSite = user.role === "ACCESS_APPROVER" ? await getSessionSite(request) : null;
   if (user.role === "ACCESS_APPROVER" && !sessionSite) throw data("Selecciona un centro", { status: 403 });
   const { plannedAccess } = await getPlannedAccessApprovalData(params.id);
-  if (!plannedAccess) throw data("Solicitud no encontrada", { status: 404 });
-  if (sessionSite && plannedAccess.siteId !== sessionSite.id) throw data("No tienes permisos para esta solicitud", { status: 403 });
+  if (!plannedAccess) throw data("Acceso planificado no encontrado", { status: 404 });
+  if (sessionSite && plannedAccess.siteId !== sessionSite.id) throw data("No tienes permisos para este acceso planificado", { status: 403 });
   const listPath = user.role === "ADMIN" ? "/admin/planned-access" : user.role === "SECURITY_MANAGER" ? "/security/planned-access" : "/approver/planned-access";
   return { plannedAccess, listPath, approvePath: `${listPath}/${params.id}/approve` };
 }
@@ -56,11 +56,11 @@ export default function ApprovePlannedAccess({ loaderData }: Route.ComponentProp
   return (
     <div className="flex w-full flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-3xl font-bold">Revisar solicitud</h2>
-        <Button asChild variant="outline"><Link to={loaderData.listPath}>Volver a solicitudes</Link></Button>
+        <h2 className="text-3xl font-bold">Revisar acceso planificado</h2>
+        <Button asChild variant="outline"><Link to={loaderData.listPath}>Volver a accesos planificados</Link></Button>
       </div>
       <Card>
-        <CardHeader><CardTitle>Datos de la solicitud</CardTitle></CardHeader>
+        <CardHeader><CardTitle>Datos del acceso planificado</CardTitle></CardHeader>
         <CardContent className="flex flex-col gap-5">
           <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {info.map(([label, value]) => <div key={label}><dt className="text-muted-foreground">{label}</dt><dd>{value}</dd></div>)}
@@ -85,7 +85,7 @@ export default function ApprovePlannedAccess({ loaderData }: Route.ComponentProp
         <h3 className="text-xl font-semibold">Decisión por visitante</h3>
         <Badge variant="secondary">{decided} de {access.plannedAccessPersons.length} revisados</Badge>
         {!pending ? <Badge variant={access.status === "REJECTED" ? "destructive" : "default"}>
-          {access.status === "REJECTED" ? "Solicitud rechazada" : "Revisión finalizada"}
+          {access.status === "REJECTED" ? "Acceso planificado rechazado" : "Revisión finalizada"}
         </Badge> : null}
       </div>
       {access.plannedAccessPersons.map((person) => <PlannedAccessApprovalPersonCard

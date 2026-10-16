@@ -88,7 +88,7 @@ export function getPlannedAccessRowLabel(
     date: plannedAccess.expectedStartDatetime,
     template: "dd/MM/yyyy HH:mm",
   });
-  return `Abrir detalles de solicitud de ${plannedAccess.companySnapshot}, ${start}`;
+  return `Abrir detalles de acceso planificado de ${plannedAccess.companySnapshot}, ${start}`;
 }
 
 export default function PlannedAccessDetailsSheet({
@@ -136,7 +136,7 @@ export default function PlannedAccessDetailsSheet({
             <DialogHeader className="shrink-0 gap-2 border-b px-6 py-5 pr-14">
               <div className="flex flex-wrap items-center gap-2">
                 <DialogTitle className="text-xl">
-                  {isEditing ? "Editar solicitud de acceso" : "Detalles de solicitud"}
+                  {isEditing ? "Editar acceso planificado" : "Detalles de acceso planificado"}
                 </DialogTitle>
                 <Badge variant={STATUS_VARIANTS[status]}>
                   {STATUS_LABELS[status]}
@@ -195,7 +195,7 @@ export default function PlannedAccessDetailsSheet({
               </section>
 
               <section className="space-y-3 border-t pt-5">
-                <h3 className="text-sm font-semibold">Empresa y solicitud</h3>
+                <h3 className="text-sm font-semibold">Empresa y acceso planificado</h3>
                 <dl className="grid gap-4 sm:grid-cols-2">
                   <DetailField label="Empresa">
                     {plannedAccess.company?.name ?? plannedAccess.companySnapshot}
@@ -366,7 +366,7 @@ export default function PlannedAccessDetailsSheet({
                 />
               ) : (
                 <p className="text-sm text-muted-foreground">
-                  No hay acciones disponibles para esta solicitud.
+                  No hay acciones disponibles para este acceso planificado.
                 </p>
               )}
             </div> : null}

@@ -53,7 +53,7 @@ beforeEach(() => {
   vi.spyOn(AuditLogEntity, "create").mockResolvedValue({} as never);
 });
 
-describe("empresas en solicitudes de acceso", () => {
+describe("empresas en accesos planificados", () => {
   it("reconoce diferencias de mayúsculas, tildes, espacios y puntos, pero conserva errores ortográficos", () => {
     expect(normalizeCompanyName("  TÉCNICA   S.L. ")).toBe(normalizeCompanyName("tecnica sl"));
     expect(normalizeCompanyName("Empresa Prueeva")).not.toBe(normalizeCompanyName("Empresa Prueba"));

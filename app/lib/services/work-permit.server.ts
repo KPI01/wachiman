@@ -65,12 +65,12 @@ export async function createAndApproveWorkPermitActivity(
 
   const plannedAccessId = String(input.plannedAccessId ?? "");
   const plannedAccess = await PlannedAccessEntity.findById(plannedAccessId);
-  if (!plannedAccess) return { success: false, errors: "La solicitud no existe." };
+  if (!plannedAccess) return { success: false, errors: "El acceso planificado no existe." };
   if (options.lockedSiteId && plannedAccess.siteId !== options.lockedSiteId) {
-    return { success: false, errors: "No tienes permisos para esta solicitud." };
+    return { success: false, errors: "No tienes permisos para este acceso planificado." };
   }
   if (!plannedAccess.companyId) {
-    return { success: false, errors: "Valida y asocia la empresa antes de aprobar la solicitud." };
+    return { success: false, errors: "Valida y asocia la empresa antes de aprobar el acceso planificado." };
   }
 
   const parsedDecisions = decisionsInput.map((decision) =>
@@ -111,7 +111,7 @@ export async function createAndApproveWorkPermitActivity(
 
   for (const decision of decisions) {
     const person = personById.get(decision.plannedAccessPersonId);
-    if (!person) return { success: false, errors: "Una de las personas no pertenece a la solicitud." };
+    if (!person) return { success: false, errors: "Una de las personas no pertenece al acceso planificado." };
     const requiresPersonPermit = Boolean(categoryByPersonId.get(person.id)?.requiresWorkPermit);
     if (decision.accessDecision === "PENDING" || decision.workDecision === "PENDING") {
       return { success: false, errors: `Debes completar la decisión de ${person.firstNameSnapshot}.` };
@@ -231,7 +231,7 @@ export async function createAndApproveWorkPermitActivity(
 
   for (const decision of decisions) {
     const person = personById.get(decision.plannedAccessPersonId);
-    if (!person) return { success: false, errors: "Una de las personas no pertenece a la solicitud." };
+    if (!person) return { success: false, errors: "Una de las personas no pertenece al acceso planificado." };
     const category = categoryByPersonId.get(person.id);
     const requiresPersonPermit = Boolean(category?.requiresWorkPermit);
     const permit = permitByPersonId.get(person.id);

@@ -473,7 +473,7 @@ export default function PlannedAccessForm({
             <AlertTriangleIcon />
             <AlertTitle>No hay centros disponibles</AlertTitle>
             <AlertDescription>
-              Crea un centro antes de registrar solicitudes de acceso.
+              Crea un centro antes de registrar accesos planificados.
             </AlertDescription>
           </Alert>
         ) : null}
@@ -497,7 +497,7 @@ export default function PlannedAccessForm({
             disabled={!sites.length || !!lockedSiteId}
           >
             <SelectTrigger className="w-full">
-              <SelectValue placeholder="Centro para la solicitud..." />
+              <SelectValue placeholder="Centro para el acceso planificado..." />
             </SelectTrigger>
             <SelectContent position="popper">
               <SelectGroup>
@@ -936,7 +936,7 @@ export default function PlannedAccessForm({
               })
             ) : (
               <div className="rounded-md border border-dashed p-4 text-sm text-muted-foreground">
-                Agrega visitantes con el boton + para completar la solicitud.
+                Agrega visitantes con el boton + para completar el acceso planificado.
               </div>
             )}
           </div>

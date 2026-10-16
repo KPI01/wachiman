@@ -69,16 +69,16 @@ export default function EditPlannedAccessForm({
       buttonLabel={<PencilIcon aria-hidden="true" />}
       buttonVariant="ghost"
       buttonSize="icon-sm"
-      buttonAriaLabel="Editar solicitud de acceso"
-      buttonTooltip="Editar solicitud de acceso"
+      buttonAriaLabel="Editar acceso planificado"
+      buttonTooltip="Editar acceso planificado"
       title={
         <span className="text-2xl font-semibold">
-          Editar Solicitud de Acceso
+          Editar acceso planificado
         </span>
       }
-      description="Actualiza la información mientras la solicitud siga pendiente de aprobación."
+      description="Actualiza la información mientras el acceso planificado siga pendiente de aprobación."
       submitLabel="Guardar cambios"
-      successMessage="Solicitud de acceso actualizada"
+      successMessage="Acceso planificado actualizado"
       inline={inline}
       onInlineCancel={onCancel}
       onInlineSuccess={onSuccess}

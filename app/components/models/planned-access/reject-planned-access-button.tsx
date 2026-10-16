@@ -27,7 +27,7 @@ export default function RejectPlannedAccessButton(props: Props) {
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <TableActionButton
-          label="Rechazar solicitud"
+          label="Rechazar acceso planificado"
           icon={CircleXIcon}
           variant="destructive"
         />
@@ -57,17 +57,17 @@ function RejectPlannedAccessForm({
     if (!fetcher.data || handledDataRef.current === fetcher.data) return;
     handledDataRef.current = fetcher.data;
     if (fetcher.data.success) {
-      toast.success("Solicitud rechazada correctamente");
+      toast.success("Acceso planificado rechazado correctamente");
       onSuccess();
     } else if (fetcher.data.errors) {
-      toast.error(`No se pudo rechazar la solicitud: ${getActionErrorMessage(fetcher.data.errors)}`);
+      toast.error(`No se pudo rechazar el acceso planificado: ${getActionErrorMessage(fetcher.data.errors)}`);
     }
   }, [fetcher.data, fetcher.state, onSuccess]);
 
   return (
     <>
       <PopoverHeader>
-        <PopoverTitle>Rechazar solicitud</PopoverTitle>
+        <PopoverTitle>Rechazar acceso planificado</PopoverTitle>
       </PopoverHeader>
       <fetcher.Form
         id={formId}

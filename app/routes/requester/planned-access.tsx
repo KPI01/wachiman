@@ -117,7 +117,7 @@ export default function RequesterPlannedAccess({
     <div className="grid gap-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
-          <h2 className="text-2xl font-bold sm:text-3xl">Solicitudes de acceso</h2>
+          <h2 className="text-2xl font-bold sm:text-3xl">Accesos planificados</h2>
         </div>
         <CreatePlannedAccessForm
           sites={[loaderData.site]}
@@ -142,8 +142,8 @@ export default function RequesterPlannedAccess({
         fitColumns
         refreshIntervalMs={5_000}
         empty={{
-          title: "No hay solicitudes de acceso",
-          description: "Las solicitudes de acceso de tu departamento apareceran aqui.",
+          title: "No hay accesos planificados",
+          description: "Los accesos planificados de tu departamento apareceran aqui.",
         }}
         filterPlaceholder="Escribe aqui para empezar a buscar..."
       />

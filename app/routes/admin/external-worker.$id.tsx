@@ -201,7 +201,7 @@ export default function ExternalWorkerDetail({
 
       <div>
         <h3 className="mb-3 text-xl font-semibold">
-          Solicitudes Planificadas (ultimas 50)
+          Accesos planificados (ultimas 50)
         </h3>
         <div className="rounded-md border">
           <Table>
@@ -219,7 +219,7 @@ export default function ExternalWorkerDetail({
               {worker.plannedAccessPersons.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} className="text-center text-muted-foreground">
-                    Sin solicitudes planificadas
+                    Sin accesos planificados
                   </TableCell>
                 </TableRow>
               ) : (

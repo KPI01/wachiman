@@ -69,7 +69,7 @@ export const createPlannedAccessSchema = z
     path: ["companyId"],
   })
   .refine(async (data) => validatePersonCatalogs(data.persons, data.siteId), {
-    error: `${WORK_CATEGORY_DOESNT_EXISTS} El área autorizada debe pertenecer al centro de la solicitud.`,
+    error: `${WORK_CATEGORY_DOESNT_EXISTS} El área autorizada debe pertenecer al centro del acceso planificado.`,
     path: ["persons"],
   })
   .refine(
@@ -104,7 +104,7 @@ export const createPlannedAccessSchema = z
       if (seenLegalIds.has(person.legalIdSnapshot)) {
         context.addIssue({
           code: "custom",
-          message: "Esta persona ya fue agregada a la solicitud.",
+          message: "Esta persona ya fue agregada al acceso planificado.",
           path: ["persons", index, "legalIdSnapshot"],
         });
       }
@@ -135,7 +135,7 @@ export const updatePlannedAccessSchema = z
     path: ["companyId"],
   })
   .refine(async (data) => validatePersonCatalogs(data.persons, data.siteId), {
-    error: `${WORK_CATEGORY_DOESNT_EXISTS} El área autorizada debe pertenecer al centro de la solicitud.`,
+    error: `${WORK_CATEGORY_DOESNT_EXISTS} El área autorizada debe pertenecer al centro del acceso planificado.`,
     path: ["persons"],
   })
   .superRefine((data, context) => {
@@ -155,7 +155,7 @@ export const updatePlannedAccessSchema = z
       if (seenLegalIds.has(person.legalIdSnapshot)) {
         context.addIssue({
           code: "custom",
-          message: "Esta persona ya fue agregada a la solicitud.",
+          message: "Esta persona ya fue agregada al acceso planificado.",
           path: ["persons", index, "legalIdSnapshot"],
         });
       }

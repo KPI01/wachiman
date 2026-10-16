@@ -71,7 +71,7 @@ const FIELD_LABELS: Record<string, string> = {
   recordType: "Tipo de registro",
   secondLastNameSnapshot: "Segundo apellido",
   secondLastName: "Segundo apellido",
-  selfApproval: "Solicitud propia",
+  selfApproval: "Acceso planificado propio",
   siteId: "Centro (ID)",
   status: "Estado",
   validUntil: "Fecha de vencimiento",

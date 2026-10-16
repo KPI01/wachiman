@@ -19,7 +19,7 @@ export const WIDGET_REGISTRY: Record<WidgetId, WidgetDefinition> = {
   },
   "planned-access-status": {
     id: "planned-access-status",
-    title: "Solicitudes por estado",
+    title: "Accesos planificados por estado",
     component: PlannedAccessStatusWidget,
     defaultLayout: { i: "planned-access-status", x: 4, y: 0, w: 2, h: 4 },
     constraints: { minW: 1, minH: 4 },
@@ -43,7 +43,7 @@ export const WIDGET_REGISTRY: Record<WidgetId, WidgetDefinition> = {
   },
   "requester-planned-status": {
     id: "requester-planned-status",
-    title: "Mis solicitudes por estado",
+    title: "Mis accesos planificados por estado",
     component: RequesterPlannedStatusWidget,
     defaultLayout: { i: "requester-planned-status", x: 0, y: 0, w: 3, h: 3 },
     constraints: { minW: 2, minH: 3 },
@@ -51,7 +51,7 @@ export const WIDGET_REGISTRY: Record<WidgetId, WidgetDefinition> = {
   },
   "requester-people-inside": {
     id: "requester-people-inside",
-    title: "Personas dentro (mis solicitudes)",
+    title: "Personas dentro (mis accesos planificados)",
     component: RequesterPeopleInsideWidget,
     defaultLayout: { i: "requester-people-inside", x: 3, y: 0, w: 3, h: 8 },
     constraints: { minW: 2, minH: 6 },

@@ -87,7 +87,7 @@ export default function SecurityPlannedAccess({
   return (
     <div className="grid gap-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h2 className="text-2xl font-bold sm:text-3xl">Solicitudes de acceso</h2>
+        <h2 className="text-2xl font-bold sm:text-3xl">Accesos planificados</h2>
         <CreatePlannedAccessForm
           sites={loaderData.sites ?? []}
           workCategories={loaderData.workCategories ?? []}
@@ -111,8 +111,8 @@ export default function SecurityPlannedAccess({
         serverFiltering
         refreshIntervalMs={5_000}
         empty={{
-          title: "No hay solicitudes de acceso",
-          description: "Las solicitudes de acceso apareceran aqui.",
+          title: "No hay accesos planificados",
+          description: "Los accesos planificados apareceran aqui.",
         }}
         filterPlaceholder="Escribe aqui para empezar a buscar..."
       />

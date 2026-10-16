@@ -12,7 +12,7 @@ export default function ApprovePlannedAccessButton({
 }: Props) {
   return (
     <TableActionButton
-      label="Revisar y aprobar solicitud"
+      label="Revisar y aprobar acceso planificado"
       icon={CheckIcon}
       to={`${actionPath}/${plannedAccessId}/approve`}
     />

@@ -89,7 +89,7 @@ export default function PlannedAccessIndex({
   return (
     <div className="grid space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h2 className="text-2xl sm:text-3xl font-bold">Solicitudes de acceso</h2>
+        <h2 className="text-2xl sm:text-3xl font-bold">Accesos planificados</h2>
 
          <CreatePlannedAccessForm
            sites={loaderData.sites ?? []}
@@ -113,8 +113,8 @@ export default function PlannedAccessIndex({
         serverFiltering
         refreshIntervalMs={5_000}
         empty={{
-          title: "No hay solicitudes de acceso",
-          description: "Las solicitudes de acceso creadas apareceran aqui.",
+          title: "No hay accesos planificados",
+          description: "Los accesos planificados creados apareceran aqui.",
         }}
         filterPlaceholder="Escribe aqui para empezar a buscar..."
       />

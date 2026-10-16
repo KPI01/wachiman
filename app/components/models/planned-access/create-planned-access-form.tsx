@@ -26,13 +26,13 @@ export default function CreatePlannedAccessForm({
       buttonLabel={
         <>
           <PlusIcon data-icon="inline-start" />
-          Nueva solicitud
+          Nuevo acceso planificado
         </>
       }
-      title={<span className="font-semibold">Nueva Solicitud de Acceso</span>}
+      title={<span className="font-semibold">Nuevo acceso planificado</span>}
       description="Ingresa la informacion de la visita planificada. Los campos con (*) son obligatorios."
       submitLabel="Enviar"
-      successMessage="Solicitud de acceso creada"
+      successMessage="Acceso planificado creado"
       resetOnSuccess
     />
   );

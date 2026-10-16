@@ -27,7 +27,7 @@ export default function CancelPlannedAccessButton(props: Props) {
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <TableActionButton
-          label="Cancelar solicitud"
+          label="Cancelar acceso planificado"
           icon={BanIcon}
           variant="outline"
         />
@@ -57,17 +57,17 @@ function CancelPlannedAccessForm({
     if (!fetcher.data || handledDataRef.current === fetcher.data) return;
     handledDataRef.current = fetcher.data;
     if (fetcher.data.success) {
-      toast.success("Solicitud cancelada correctamente");
+      toast.success("Acceso planificado cancelado correctamente");
       onSuccess();
     } else if (fetcher.data.errors) {
-      toast.error(`No se pudo cancelar la solicitud: ${getActionErrorMessage(fetcher.data.errors)}`);
+      toast.error(`No se pudo cancelar el acceso planificado: ${getActionErrorMessage(fetcher.data.errors)}`);
     }
   }, [fetcher.data, fetcher.state, onSuccess]);
 
   return (
     <>
       <PopoverHeader>
-        <PopoverTitle>Cancelar solicitud</PopoverTitle>
+        <PopoverTitle>Cancelar acceso planificado</PopoverTitle>
       </PopoverHeader>
       <fetcher.Form
         id={formId}

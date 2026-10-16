@@ -251,8 +251,8 @@ export default function EditAccessLog({
             {/* Comentado: el flujo de documentación ya no se muestra. */}
             {/* Verifica la documentación original antes de continuar. */}
             Editar este
-            registro no cambia la ficha maestra del trabajador ni una solicitud
-            planificada vinculada.
+            registro no cambia la ficha maestra del trabajador ni un acceso planificado
+            vinculado.
           </AlertDescription>
         </Alert>
       ) : null}

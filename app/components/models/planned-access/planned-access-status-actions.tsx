@@ -35,8 +35,8 @@ export default function PlannedAccessStatusActions({
           type="button"
           variant="ghost"
           size="icon-sm"
-          aria-label="Editar solicitud de acceso"
-          title="Editar solicitud de acceso"
+          aria-label="Editar acceso planificado"
+          title="Editar acceso planificado"
           onClick={onEdit}
         >
           <PencilIcon aria-hidden="true" />

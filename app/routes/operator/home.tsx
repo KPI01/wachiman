@@ -221,7 +221,7 @@ function PlannedAccessesToday({
           <EmptyHeader>
             <EmptyTitle>No hay accesos planificados aprobados</EmptyTitle>
             <EmptyDescription>
-              Las solicitudes aprobadas para el dia actual apareceran aqui.
+              Los accesos planificados aprobados para el dia actual apareceran aqui.
             </EmptyDescription>
           </EmptyHeader>
         </Empty>

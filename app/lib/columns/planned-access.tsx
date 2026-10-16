@@ -131,7 +131,7 @@ function VisitorsDetailsPopover({
           variant="ghost"
           size="icon-xs"
           className="text-muted-foreground"
-          aria-label="Ver visitantes de la solicitud"
+          aria-label="Ver visitantes del acceso planificado"
           onClick={(event) => event.stopPropagation()}
           onPointerEnter={openPopover}
           onPointerLeave={scheduleClose}
@@ -148,7 +148,7 @@ function VisitorsDetailsPopover({
         onPointerLeave={scheduleClose}
       >
         <PopoverHeader>
-          <PopoverTitle>Personas incluidas en la solicitud</PopoverTitle>
+          <PopoverTitle>Personas incluidas en el acceso planificado</PopoverTitle>
         </PopoverHeader>
         <div className="mt-2 max-h-[min(60vh,24rem)] overflow-auto">
           <table className="w-full text-left text-xs">

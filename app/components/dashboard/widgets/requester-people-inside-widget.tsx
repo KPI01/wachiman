@@ -105,7 +105,7 @@ export function RequesterPeopleInsideWidget({
           </EmptyMedia>
           <EmptyTitle>Nadie dentro</EmptyTitle>
           <EmptyDescription>
-            No hay personas dentro de las instalaciones vinculadas a solicitudes
+            No hay personas dentro de las instalaciones vinculadas a accesos planificados
             de tu departamento.
           </EmptyDescription>
         </Empty>
