@@ -38,6 +38,7 @@ export default [
     route("external-workers", "routes/admin/external-workers.tsx"),
     route("external-worker/:id", "routes/admin/external-worker.$id.tsx"),
     route("companies", "routes/admin/companies.tsx"),
+    route("data-import", "routes/admin/data-import.tsx"),
      route("work-categories", "routes/admin/work-categories.tsx"),
      route("allowed-areas", "routes/admin/allowed-areas.tsx"),
     route("audit-log", "routes/admin/audit-log.tsx"),

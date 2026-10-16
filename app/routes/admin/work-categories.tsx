@@ -13,6 +13,7 @@ import { Separator } from "~/components/ui/separator";
 import { catalogRecentFilter } from "~/components/ui/table-filter-presets";
 import { useState } from "react";
 import WorkCategoryDetailsForm from "~/components/models/work-category/work-category-details-form";
+import CatalogImportLink from "~/components/models/shared/catalog-import-link";
 
 export async function loader({ request }: Route.LoaderArgs) {
   await validateUserRole(request, [
@@ -62,7 +63,7 @@ export default function WorkCategoriesIndex({
     <div className="flex flex-col gap-y-4">
       <div className="flex">
         <h2 className="text-3xl font-bold">Tipos de trabajo</h2>
-        <CreateWorkCategoryForm errors={actionData?.errors} />
+        <div className="ml-auto flex flex-wrap gap-2"><CatalogImportLink type="workCategories" /><CreateWorkCategoryForm errors={actionData?.errors} /></div>
       </div>
       <DataTable
         columns={workCategoryColumns}

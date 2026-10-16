@@ -12,6 +12,7 @@ import {
   Settings2Icon,
   ShieldCheckIcon,
   TagsIcon,
+  UploadIcon,
   UsersIcon,
 } from "lucide-react";
 import type { UserRole } from "../../db/enums";
@@ -36,6 +37,7 @@ export const ROLE_NAVIGATION: Record<UserRole, SidebarLinkItem[]> = {
         item("Empresa titular", "/admin/holder-company", Building2Icon),
         item("Tipos de trabajo", "/admin/work-categories", TagsIcon),
         item("Áreas autorizadas", "/admin/allowed-areas", TagsIcon),
+        item("Importar datos", "/admin/data-import", UploadIcon),
       ],
     },
     {
@@ -50,7 +52,7 @@ export const ROLE_NAVIGATION: Record<UserRole, SidebarLinkItem[]> = {
       label: "Eventos",
       children: [
         item("Registros de acceso", "/admin/access-logs", KeyRoundIcon),
-        item("Solicitudes de acceso", "/admin/planned-access", ClipboardListIcon),
+        item("Accesos planificados", "/admin/planned-access", ClipboardListIcon),
         item("Auditoría", "/admin/audit-log", HistoryIcon),
       ],
     },
@@ -86,7 +88,7 @@ export const ROLE_NAVIGATION: Record<UserRole, SidebarLinkItem[]> = {
       label: "Eventos",
       children: [
         item("Registros de acceso", "/security/access-logs", KeyRoundIcon),
-        item("Solicitudes de acceso", "/security/planned-access", ClipboardListIcon),
+        item("Accesos planificados", "/security/planned-access", ClipboardListIcon),
         item("Auditoría", "/security/audit-log", HistoryIcon),
       ],
     },
@@ -112,13 +114,13 @@ export const ROLE_NAVIGATION: Record<UserRole, SidebarLinkItem[]> = {
     {
       label: "Eventos",
       children: [
-        item("Solicitudes de acceso", "/approver/planned-access", ClipboardCheckIcon),
+        item("Accesos planificados", "/approver/planned-access", ClipboardCheckIcon),
         item("Registros de acceso", "/approver/access-logs", KeyRoundIcon),
       ],
     },
   ],
   ACCESS_REQUESTER: [
-    item("Solicitudes de acceso", "/requester/planned-access", ClipboardListIcon),
+    item("Accesos planificados", "/requester/planned-access", ClipboardListIcon),
   ],
   ACCESS_OPERATOR: [item("Inicio", "/operator", GaugeIcon)],
   ACCESS_MONITOR: [item("Inicio", "/monitor", ShieldCheckIcon)],
