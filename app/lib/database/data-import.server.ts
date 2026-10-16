@@ -2,6 +2,7 @@ import { and, eq, gte, inArray, isNull, lte, or, sql } from "drizzle-orm";
 import { db } from "../../../db/server";
 import {
   allowedAreas,
+  appSettings,
   auditLogs,
   companies,
   externalWorkers,
@@ -54,9 +55,9 @@ function issue(row: ImportRecord, reason: string, label = row.worker || row.comp
   return { rowNumber: row.rowNumber, label, reason };
 }
 
-function getDateRange(date: string) {
+function getDateRange(date: string, earlyArrivalToleranceMinutes: number) {
   const [year, month, day] = date.split("-").map(Number);
-  const start = new Date(Date.UTC(year, month - 1, day, 1, 0, 0, 0));
+  const start = new Date(Date.UTC(year, month - 1, day, 0, earlyArrivalToleranceMinutes, 0, 0));
   const end = new Date(Date.UTC(year, month - 1, day, 23, 59, 59, 999));
   return { start, end };
 }
@@ -155,7 +156,8 @@ export class DataImportEntity {
   }
 
   public static async previewPlannedAccessRecords(input: { records: ImportRecord[]; siteId: string; date: string }) {
-    const { start, end } = getDateRange(input.date);
+    const [settings] = await db.select({ earlyArrivalToleranceMinutes: appSettings.earlyArrivalToleranceMinutes }).from(appSettings).limit(1);
+    const { start, end } = getDateRange(input.date, settings?.earlyArrivalToleranceMinutes ?? 60);
     const snapshot = await this.loadSnapshot(db, input.siteId, start, end);
     return analyzeRows({ ...snapshot, ...input });
   }
@@ -187,9 +189,10 @@ export class DataImportEntity {
     departmentId: string;
     fileName: string;
   }) {
-    const { start, end } = getDateRange(input.date);
     return db.transaction(async (tx) => {
       await tx.execute(sql`select pg_advisory_xact_lock(731944205)`);
+      const [settings] = await tx.select({ earlyArrivalToleranceMinutes: appSettings.earlyArrivalToleranceMinutes }).from(appSettings).limit(1);
+      const { start, end } = getDateRange(input.date, settings?.earlyArrivalToleranceMinutes ?? 60);
       const snapshot = await this.loadSnapshot(tx as unknown as typeof db, input.siteId, start, end);
       const analysis = analyzeRows({ ...snapshot, records: input.records, siteId: input.siteId, date: input.date });
       const companyByName = new Map(snapshot.companies.map((company) => [normalizeCompany(company.name), company]));
