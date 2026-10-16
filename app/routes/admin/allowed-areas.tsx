@@ -15,7 +15,6 @@ import AllowedAreaDetailsForm from "~/components/models/allowed-area/allowed-are
 import { getManySites } from "~/lib/services/sites.server";
 import { getSessionSite } from "~/lib/session.server";
 import { useLocation } from "react-router";
-import CatalogImportLink from "~/components/models/shared/catalog-import-link";
 
 export async function loader({ request }: Route.LoaderArgs) {
   const user = await validateUserRole(request, ["ADMIN", "SECURITY_MANAGER", "ACCESS_APPROVER"]);
@@ -47,7 +46,7 @@ export default function AllowedAreasIndex({ loaderData, actionData }: Route.Comp
     <div className="flex flex-col gap-4">
       <div className="flex">
         <h2 className="text-3xl font-bold">Áreas autorizadas</h2>
-        <div className="ml-auto flex flex-wrap gap-2"><CatalogImportLink type="allowedAreas" /><CreateAllowedAreaForm sites={loaderData.sites} errors={actionData?.errors} actionPath={pathname} /></div>
+        <div className="ml-auto flex flex-wrap gap-2"><CreateAllowedAreaForm sites={loaderData.sites} errors={actionData?.errors} actionPath={pathname} /></div>
       </div>
       <DataTable
         columns={allowedAreaColumns}

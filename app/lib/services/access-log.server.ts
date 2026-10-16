@@ -64,7 +64,7 @@ type CreateAccessLogInputType = {
   siteId: string;
   createdById: string;
   allowedAreaName: string;
-  company: NonNullable<Awaited<ReturnType<typeof CompanyEntity.findById>>>;
+  company: Awaited<ReturnType<typeof CompanyEntity.findById>>;
   site: NonNullable<Awaited<ReturnType<typeof SiteEntity.findById>>>;
   holder: NonNullable<Awaited<ReturnType<typeof AppSettingsEntity.getGlobal>>>;
   workCategoryName?: string | null;
@@ -100,7 +100,7 @@ async function buildCreateAccessLogInput({
     allowedAreaSnapshot: allowedAreaName,
     siteId,
     createdById,
-    companyId: company.id,
+    companyId: company?.id,
     riskAcknowledgedAt: new Date(),
     riskAcknowledgementSnapshot: {
       holderLegalName: holder.holderLegalName,
@@ -108,13 +108,11 @@ async function buildCreateAccessLogInput({
       holderFiscalAddress: holder.holderFiscalAddress,
       siteName: site.name,
       siteAddress: site.address,
-      riskInformation: site.riskInformation,
-      riskInformationVersion: site.riskInformationVersion,
       workCategoryName: workCategoryName ?? null,
       workCategoryRiskInformation: workCategoryRiskInformation ?? null,
-      companyName: company.name,
-      companyCif: company.cif,
-      companyAddress: company.address,
+      companyName: company?.name ?? data.companyNameSnapshot,
+      companyCif: company?.cif ?? "",
+      companyAddress: company?.address ?? "",
       acknowledgedAt: new Date().toISOString(),
     },
     entrySignatureEnvelope: await encryptValue(JSON.stringify(entrySignaturePayload)),
@@ -164,16 +162,19 @@ export async function createAccessLog(
 
   const [site, company, holder] = await Promise.all([
     SiteEntity.findById(siteId),
-    CompanyEntity.findById(data.companyId),
+    data.companyId ? CompanyEntity.findById(data.companyId) : Promise.resolve(null),
     AppSettingsEntity.getGlobal(),
   ]);
-  if (!site || !site.riskInformation || !holder?.holderLegalName || !holder.holderTaxId || !holder.holderFiscalAddress) {
-    return { success: false, errors: "El centro y la empresa titular deben tener configurada la información de riesgos." };
+  if (!site || !holder?.holderLegalName || !holder.holderTaxId || !holder.holderFiscalAddress) {
+    return { success: false, errors: "El centro y la empresa titular deben tener configurados sus datos legales." };
   }
-  if (!company || !company.cif || !company.address) {
+  if (data.companyId && !company) {
+    return { success: false, errors: "La empresa seleccionada ya no existe." };
+  }
+  if (company && (!company.cif || !company.address)) {
     return { success: false, errors: "La empresa contratista debe tener razón social, CIF y dirección configurados." };
   }
-  if (company.name.trim().toUpperCase() !== data.companyNameSnapshot.trim().toUpperCase()) {
+  if (company && company.name.trim().toUpperCase() !== data.companyNameSnapshot.trim().toUpperCase()) {
     return { success: false, errors: "La empresa seleccionada no coincide con sus datos." };
   }
 

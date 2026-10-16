@@ -812,8 +812,6 @@ export default function CreateVehicleAccessLogForm({
               holderFiscalAddress={holder?.fiscalAddress ?? ""}
               siteName={selectedSite?.name ?? ""}
               siteAddress={selectedSite?.address}
-              facilityRiskInformation={selectedSite?.riskInformation}
-              facilityRiskInformationVersion={selectedSite?.riskInformationVersion}
               companyName={selectedCompany?.name ?? companyName}
               companyCif={selectedCompany?.cif ?? ""}
               companyAddress={selectedCompany?.address ?? ""}
@@ -831,7 +829,7 @@ export default function CreateVehicleAccessLogForm({
               />
               <span>
                 Confirmo que he leído este documento y que he sido informado de
-                los riesgos e instrucciones preventivas indicados.
+                las instrucciones preventivas indicadas.
               </span>
             </label>
           </div>

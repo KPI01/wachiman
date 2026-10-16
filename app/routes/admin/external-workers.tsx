@@ -16,7 +16,6 @@ import { getManyWorkCategories } from "~/lib/services/work-category.server";
 import { EXTERNAL_WORKER_QUICK_FILTERS } from "~/components/ui/table-filter-presets";
 import { isTableOnlyDataRequest } from "~/lib/table-query.server";
 import ExternalWorkerDetailsForm from "~/components/models/external-worker/external-worker-details-form";
-import CatalogImportLink from "~/components/models/shared/catalog-import-link";
 
 export async function loader({ request }: Route.LoaderArgs) {
   const user = await validateUserRole(request, [
@@ -94,7 +93,7 @@ export default function ExternalWorkersIndex({
     <div className="flex flex-col gap-y-4">
       <div className="flex">
         <h2 className="text-3xl font-bold">Trabajadores Externos</h2>
-        <div className="ml-auto flex flex-wrap gap-2"><CatalogImportLink type="workers" /><CreateExternalWorkerForm
+        <div className="ml-auto flex flex-wrap gap-2"><CreateExternalWorkerForm
           errors={actionData?.errors}
           companies={loaderData.companies}
           workCategories={loaderData.workCategories}

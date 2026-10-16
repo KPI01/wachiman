@@ -13,7 +13,6 @@ import { Separator } from "~/components/ui/separator";
 import { catalogRecentFilter } from "~/components/ui/table-filter-presets";
 import { useState } from "react";
 import CompanyDetailsForm from "~/components/models/company/company-details-form";
-import CatalogImportLink from "~/components/models/shared/catalog-import-link";
 
 export async function loader({ request }: Route.LoaderArgs) {
   await validateUserRole(request, [
@@ -63,7 +62,7 @@ export default function CompaniesIndex({
     <div className="flex flex-col gap-y-4">
       <div className="flex">
         <h2 className="text-3xl font-bold">Empresas</h2>
-        <div className="ml-auto flex flex-wrap gap-2"><CatalogImportLink type="companies" /><CreateCompanyForm errors={actionData?.errors} /></div>
+        <div className="ml-auto flex flex-wrap gap-2"><CreateCompanyForm errors={actionData?.errors} /></div>
       </div>
       <DataTable
         columns={companyColumns}

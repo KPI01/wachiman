@@ -658,7 +658,7 @@ export default function CreateAccessLog({
                 name="companyNameSnapshot"
                 options={companies}
                 required
-                requireSelection
+                placeholder="Busca una empresa o escribe su nombre..."
                 value={companyNameValue}
                 onValueChange={setCompanyNameValue}
                 onCompanyIdChange={setCompanyId}
@@ -717,8 +717,6 @@ export default function CreateAccessLog({
               holderFiscalAddress={holder?.fiscalAddress ?? ""}
               siteName={selectedSite?.name ?? ""}
               siteAddress={selectedSite?.address}
-              facilityRiskInformation={selectedSite?.riskInformation}
-              facilityRiskInformationVersion={selectedSite?.riskInformationVersion}
               companyName={companyNameValue}
               companyCif={companies.find((company) => company.id === companyId)?.cif ?? ""}
               companyAddress={companies.find((company) => company.id === companyId)?.address ?? ""}
@@ -736,14 +734,14 @@ export default function CreateAccessLog({
                 checked={riskAcknowledged}
                 onCheckedChange={(checked) => setRiskAcknowledged(checked === true)}
               />
-              <span>Confirmo que he leído este documento y que he sido informado de los riesgos e instrucciones preventivas indicados.</span>
+              <span>Confirmo que he leído este documento y que he sido informado de las instrucciones preventivas indicadas.</span>
             </label>
           </div>
         ) : step === "permit" && workPermitsEnabled ? (
           <div className="md:col-span-2 space-y-4">
             {selectedWorkCategoryRiskInformation || selectedWorkCategoryName || selectedSite?.riskInformation ? (
               <>
-                {permitForSignature ? <WorkPermitPreview workPermit={permitForSignature} /> : <WorkRiskPreview siteName={selectedSite?.name ?? "Centro de trabajo"} siteAddress={selectedSite?.address} facilityRiskInformation={selectedSite?.riskInformation} workCategoryName={selectedWorkCategoryName} workCategoryRiskInformation={selectedWorkCategoryRiskInformation} companyName={companyNameValue} workerName={[getDraftValue("firstNameSnapshot"), getDraftValue("middleNameSnapshot"), getDraftValue("lastNameSnapshot"), getDraftValue("secondLastNameSnapshot")].filter(Boolean).join(" ")} legalId={legalIdValue} />}
+                {permitForSignature ? <WorkPermitPreview workPermit={permitForSignature} /> : <WorkRiskPreview siteName={selectedSite?.name ?? "Centro de trabajo"} siteAddress={selectedSite?.address} workCategoryName={selectedWorkCategoryName} workCategoryRiskInformation={selectedWorkCategoryRiskInformation} companyName={companyNameValue} workerName={[getDraftValue("firstNameSnapshot"), getDraftValue("middleNameSnapshot"), getDraftValue("lastNameSnapshot"), getDraftValue("secondLastNameSnapshot")].filter(Boolean).join(" ")} legalId={legalIdValue} />}
                 {permitForSignature ? <AccessLogSignature key={`permit-signature-${open}`} initialStrokes={getSignatureStrokes(permitSignaturePayload)} onSignatureChange={setHasPermitSignature} onSignaturePayloadChange={setPermitSignaturePayload} /> : null}
               </>
             ) : (

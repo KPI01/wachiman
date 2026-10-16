@@ -32,10 +32,10 @@ export const createAccessLogSchema = z
     entrySignaturePayload: signaturePayloadFromStringSchema,
     riskInformationAcknowledged: z.preprocess(
       (value) => value === "true" || value === "on",
-      z.literal(true, { error: "Debes confirmar que has sido informado de los riesgos." }),
+      z.literal(true, { error: "Debes confirmar que has leído este documento." }),
     ),
     companyNameSnapshot: requiredString,
-    companyId: requiredString,
+    companyId: optionalString,
     firstNameSnapshot: requiredString,
     middleNameSnapshot: optionalString,
     lastNameSnapshot: requiredString,

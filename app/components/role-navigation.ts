@@ -37,7 +37,6 @@ export const ROLE_NAVIGATION: Record<UserRole, SidebarLinkItem[]> = {
         item("Empresa titular", "/admin/holder-company", Building2Icon),
         item("Tipos de trabajo", "/admin/work-categories", TagsIcon),
         item("Áreas autorizadas", "/admin/allowed-areas", TagsIcon),
-        item("Importar datos", "/admin/data-import", UploadIcon),
       ],
     },
     {
@@ -53,6 +52,7 @@ export const ROLE_NAVIGATION: Record<UserRole, SidebarLinkItem[]> = {
       children: [
         item("Registros de acceso", "/admin/access-logs", KeyRoundIcon),
         item("Accesos planificados", "/admin/planned-access", ClipboardListIcon),
+        item("Importar accesos planificados", "/admin/data-import", UploadIcon),
         item("Auditoría", "/admin/audit-log", HistoryIcon),
       ],
     },

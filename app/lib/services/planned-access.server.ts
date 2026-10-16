@@ -968,8 +968,6 @@ export async function createAccessLogFromPlannedAccess(
       holderFiscalAddress: holder.holderFiscalAddress,
       siteName: site.name,
       siteAddress: site.address,
-      riskInformation: site.riskInformation,
-      riskInformationVersion: site.riskInformationVersion,
       workCategoryName: person.workCategory?.name ?? null,
       workCategoryRiskInformation: person.workCategory?.riskInformation ?? null,
       companyName: company.name,

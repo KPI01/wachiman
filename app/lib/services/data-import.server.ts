@@ -1,5 +1,5 @@
 import * as XLSX from "xlsx";
-import { DataImportEntity, type ImportIssue, type ImportRecord, type ImportType } from "../database/data-import.server";
+import { DataImportEntity, type ImportIssue, type ImportRecord } from "../database/data-import.server";
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
 const MAX_ROWS = 10_000;
@@ -72,105 +72,30 @@ function parseWorkbook(buffer: ArrayBuffer): ImportRecord[] {
   return records;
 }
 
-function selectRecords(type: ImportType, records: ImportRecord[]) {
+function selectRows(records: ImportRecord[]) {
   const valid: ImportRecord[] = [];
   const issues: ImportIssue[] = [];
-  const seen = new Set<string>();
-
-  for (const record of records) {
-    let key = "";
-    let label = "Fila";
-    let missing: string[] = [];
-    if (type === "companies") {
-      key = normalize(record.company);
-      label = record.company || `Fila ${record.rowNumber}`;
-      if (!key) missing = ["Falta la empresa."];
-    } else if (type === "workCategories") {
-      key = normalize(record.task);
-      label = record.task || `Fila ${record.rowNumber}`;
-      if (!key) missing = ["Falta la tarea de trabajo."];
-    } else if (type === "allowedAreas") {
-      key = normalize(record.area);
-      label = record.area || `Fila ${record.rowNumber}`;
-      if (!key) missing = ["Falta el lugar de trabajo autorizado."];
-    } else {
-      key = record.legalId.trim().toUpperCase();
-      label = record.worker || `Fila ${record.rowNumber}`;
-      if (!record.company) missing.push("Falta la empresa.");
-      if (!record.worker) missing.push("Falta el trabajador.");
-      if (!key) missing.push("Falta el DNI.");
-      if (!record.task) missing.push("Falta la tarea de trabajo.");
-    }
-
+  const seenLegalIds = new Set<string>();
+  for (const row of records) {
+    const missing: string[] = [];
+    if (!row.company) missing.push("Falta la empresa.");
+    if (!row.worker) missing.push("Falta el trabajador.");
+    if (!row.legalId) missing.push("Falta el DNI/NIE.");
+    if (!row.area) missing.push("Falta el lugar de trabajo autorizado.");
+    if (!row.task) missing.push("Falta la tarea a realizar.");
     if (missing.length) {
-      issues.push({ rowNumber: record.rowNumber, label, reason: missing.join(" ") });
+      issues.push({ rowNumber: row.rowNumber, label: row.worker || row.company || `Fila ${row.rowNumber}`, reason: missing.join(" ") });
       continue;
     }
-    if (seen.has(key)) {
-      issues.push({ rowNumber: record.rowNumber, label, reason: "Registro repetido dentro del archivo; se usará la primera fila." });
+    const legalId = row.legalId.trim().toUpperCase();
+    if (seenLegalIds.has(legalId)) {
+      issues.push({ rowNumber: row.rowNumber, label: row.worker, reason: "DNI repetido en el archivo; se omitirá esta fila." });
       continue;
     }
-    seen.add(key);
-    valid.push(record);
+    seenLegalIds.add(legalId);
+    valid.push({ ...row, legalId });
   }
   return { valid, issues };
-}
-
-export async function getDataImportSites() {
-  return DataImportEntity.getSites();
-}
-
-export async function previewDataImport(input: {
-  file: File;
-  type: ImportType;
-  siteId?: string;
-}) {
-  validateFile(input.file);
-  if (input.type === "allowedAreas" && !input.siteId) throw new Error("Selecciona el centro al que pertenecen las áreas.");
-  const rows = parseWorkbook(await input.file.arrayBuffer());
-  const analysis = selectRecords(input.type, rows);
-  const conflicts = await DataImportEntity.previewRecords({ type: input.type, records: analysis.valid, siteId: input.siteId });
-  return {
-    totalRows: rows.length,
-    importable: conflicts.accepted.length,
-    issues: [...analysis.issues, ...conflicts.issues],
-    records: conflicts.accepted.slice(0, 100),
-    truncated: conflicts.accepted.length > 100,
-  };
-}
-
-export async function importData(input: {
-  file: File;
-  type: ImportType;
-  siteId?: string;
-  changedBy: string;
-  workCategoryRequirements?: Record<string, {
-    requiresTraining: boolean;
-    requiresSpecialPermission: boolean;
-    requiresWorkPermit: boolean;
-  }>;
-}) {
-  validateFile(input.file);
-  if (input.type === "allowedAreas" && !input.siteId) throw new Error("Selecciona el centro al que pertenecen las áreas.");
-  const rows = parseWorkbook(await input.file.arrayBuffer());
-  const analysis = selectRecords(input.type, rows);
-  const conflicts = await DataImportEntity.previewRecords({ type: input.type, records: analysis.valid, siteId: input.siteId });
-  const fileIssues = [...analysis.issues, ...conflicts.issues];
-  if (!conflicts.accepted.length) {
-    return { imported: 0, skipped: fileIssues.length, createdDependencies: 0, issues: fileIssues };
-  }
-  const result = await DataImportEntity.importRecords({
-    type: input.type,
-    records: conflicts.accepted,
-    siteId: input.siteId,
-    changedBy: input.changedBy,
-    workCategoryRequirements: input.workCategoryRequirements,
-  });
-  return {
-    ...result,
-    skipped: result.skipped + fileIssues.length,
-    issues: [...fileIssues, ...result.issues],
-  };
 }
 
 function validateFile(file: File) {
@@ -181,6 +106,60 @@ function validateFile(file: File) {
   }
 }
 
-export function isImportType(value: FormDataEntryValue | null): value is ImportType {
-  return value === "companies" || value === "workers" || value === "workCategories" || value === "allowedAreas";
+function validateDate(date: string) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new Error("Selecciona la fecha del acceso planificado.");
+  const [year, month, day] = date.split("-").map(Number);
+  const parsed = new Date(Date.UTC(year, month - 1, day));
+  if (parsed.getUTCFullYear() !== year || parsed.getUTCMonth() !== month - 1 || parsed.getUTCDate() !== day) {
+    throw new Error("La fecha indicada no es válida.");
+  }
+}
+
+async function parseInput(input: { file: File; siteId: string; date: string }) {
+  validateFile(input.file);
+  validateDate(input.date);
+  if (!(await DataImportEntity.getSites()).some((site) => site.id === input.siteId)) {
+    throw new Error("Selecciona un centro de trabajo válido.");
+  }
+  const rows = parseWorkbook(await input.file.arrayBuffer());
+  if (!rows.length) throw new Error("No se encontraron filas con las columnas esperadas.");
+  return { rows, analysis: selectRows(rows) };
+}
+
+export async function getDataImportSites() {
+  return DataImportEntity.getSites();
+}
+
+export async function previewDataImport(input: { file: File; siteId: string; date: string }) {
+  const { rows, analysis } = await parseInput(input);
+  const conflicts = await DataImportEntity.previewPlannedAccessRecords({
+    records: analysis.valid, siteId: input.siteId, date: input.date,
+  });
+  return {
+    totalRows: rows.length,
+    importable: conflicts.accepted.length,
+    issues: [...analysis.issues, ...conflicts.issues],
+    records: conflicts.accepted.slice(0, 100),
+    truncated: conflicts.accepted.length > 100,
+    date: input.date,
+  };
+}
+
+export async function importData(input: {
+  file: File;
+  siteId: string;
+  date: string;
+  changedBy: string;
+  departmentId: string;
+}) {
+  const { analysis } = await parseInput(input);
+  const result = await DataImportEntity.importPlannedAccessRecords({
+    records: analysis.valid,
+    siteId: input.siteId,
+    date: input.date,
+    changedBy: input.changedBy,
+    departmentId: input.departmentId,
+    fileName: input.file.name,
+  });
+  return { ...result, skipped: result.skipped + analysis.issues.length, issues: [...analysis.issues, ...result.issues] };
 }

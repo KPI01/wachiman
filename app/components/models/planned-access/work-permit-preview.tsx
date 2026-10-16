@@ -50,7 +50,6 @@ export default function WorkPermitPreview({ workPermit }: WorkPermitPreviewProps
       <WorkRiskPreview
         siteName={activity.site?.name ?? "Centro de trabajo"}
         siteAddress={activity.site?.address}
-        facilityRiskInformation={activity.facilityRiskSnapshot}
         workCategoryName={workPermit.workCategoryName ?? workPermit.workCategory?.name}
         workCategoryRiskInformation={workPermit.workCategoryRiskSnapshot ?? legacyRiskInformation}
         companyName={activity.companySnapshot}

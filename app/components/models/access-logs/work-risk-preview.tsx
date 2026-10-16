@@ -1,7 +1,6 @@
 type WorkRiskPreviewProps = {
   siteName: string;
   siteAddress?: string | null;
-  facilityRiskInformation?: string | null;
   workCategoryName?: string | null;
   workCategoryRiskInformation?: string | null;
   companyName?: string | null;
@@ -14,7 +13,6 @@ type WorkRiskPreviewProps = {
 export default function WorkRiskPreview({
   siteName,
   siteAddress,
-  facilityRiskInformation,
   workCategoryName,
   workCategoryRiskInformation,
   companyName,
@@ -59,11 +57,6 @@ export default function WorkRiskPreview({
             <p className="mt-2 whitespace-pre-wrap">{workArea}</p>
           </div>
         ) : null}
-      </section>
-
-      <section>
-        <h3 className="mb-2 text-lg font-semibold">Riesgos generales del centro</h3>
-        <p className="whitespace-pre-wrap leading-7">{facilityRiskInformation || "No hay riesgos generales configurados para este centro."}</p>
       </section>
 
       {workCategoryRiskInformation ? (

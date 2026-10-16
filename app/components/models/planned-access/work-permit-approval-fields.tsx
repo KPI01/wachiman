@@ -12,7 +12,7 @@ export default function WorkPermitApprovalFields({
       <div>
         <h3 className="text-lg font-semibold">Permiso de trabajo</h3>
         <p className="text-sm text-muted-foreground">
-          Estos datos se combinarán con la información general de riesgos del centro.
+          Estos datos documentan los trabajos, las medidas preventivas y los medios necesarios.
         </p>
       </div>
       <input type="hidden" name="formId" value={formId} />
