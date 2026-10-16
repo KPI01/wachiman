@@ -917,8 +917,12 @@ export async function createAccessLogFromPlannedAccess(
     plannedAccess.companyId ? CompanyEntity.findById(plannedAccess.companyId) : Promise.resolve(null),
     AppSettingsEntity.getGlobal(),
   ]);
-  if (!site?.riskInformation || !company || !company.cif || !company.address || !holder?.holderLegalName || !holder.holderTaxId || !holder.holderFiscalAddress) {
-    return { success: false, errors: "El centro y la empresa deben tener configurada la información necesaria para firmar." };
+  if (!site) return { success: false, errors: "El centro del acceso planificado ya no existe." };
+  if (!company) return { success: false, errors: "La empresa contratista debe estar asociada al acceso planificado." };
+  if (!company.cif.trim()) return { success: false, errors: "Completa el CIF de la empresa contratista antes de solicitar la firma." };
+  if (!company.address?.trim()) return { success: false, errors: "Completa el domicilio de la empresa contratista antes de solicitar la firma." };
+  if (!holder?.holderLegalName || !holder.holderTaxId || !holder.holderFiscalAddress) {
+    return { success: false, errors: "Completa los datos legales de la empresa titular antes de solicitar la firma." };
   }
 
   // Comentado: el ingreso al centro ya no valida documentación.
