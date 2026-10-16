@@ -47,17 +47,17 @@ pnpm env:set-session-secret
 
 ## Despliegue con Compose
 
-1. Copia `.env.production.example` a `.env.production`.
+1. Copia `.env.production.example` a `.env` si vas a preparar una instalación nueva. Para desarrollo, usa `.env.local.example`.
 2. Define una contraseña PostgreSQL segura y configura `ENCRYPTION_KEY`, `SESSION_SECRET` y `ADMIN_PASSWORD`.
 3. Crea la carpeta `branding/` si almacenarás allí los recursos de marca.
 4. Arranca los servicios:
 
 ```bash
-docker compose up -d --build
-docker compose ps
+podman compose -p control-accesos-fruveco -f docker-compose.yml up -d --build
+podman compose -p control-accesos-fruveco -f docker-compose.yml ps
 ```
 
-Compose espera a que PostgreSQL esté saludable, aplica migraciones y crea el usuario inicial sin reemplazar las contraseñas o datos existentes. PostgreSQL tiene un volumen persistente y solo se publica en loopback; la aplicación atiende en el puerto 3000.
+Compose usa `.env` para ambos servicios, espera a que PostgreSQL esté saludable, aplica migraciones y crea el usuario inicial sin reemplazar las contraseñas o datos existentes. La aplicación conecta con PostgreSQL por la red interna de Compose; publica en `127.0.0.1:3000` y conserva los adjuntos en `UPLOADS_BASE_PATH`.
 
 Para detener la aplicación sin borrar datos: `docker compose down`. No añadas `--volumes` salvo que quieras eliminar la base de datos y los adjuntos persistentes.
 

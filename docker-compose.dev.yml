@@ -3,7 +3,7 @@ services:
     image: postgres:18.4-alpine
     restart: unless-stopped
     env_file:
-      - .env.production
+      - .env
     volumes:
       - postgres_data:/var/lib/postgresql
     network_mode: host
@@ -25,4 +25,4 @@ services:
 
 volumes:
   postgres_data:
-    name: control-accesos_postgres_data
+    name: control-accesos_dev_postgres_data

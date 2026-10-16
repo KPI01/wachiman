@@ -22,6 +22,8 @@ COPY --from=build /app/db ./db
 COPY --from=build /app/scripts/healthcheck.mjs ./scripts/healthcheck.mjs
 COPY --from=build /app/scripts/seed.ts ./scripts/seed.ts
 COPY --from=build /app/app/lib/hash.server.ts ./app/lib/hash.server.ts
+COPY --from=build /app/app/lib/crypt.server.ts ./app/lib/crypt.server.ts
+COPY --from=build /app/app/lib/env.server.ts ./app/lib/env.server.ts
 COPY --from=build /app/app/lib/username.ts ./app/lib/username.ts
 COPY --from=build /app/scripts/migrate.mjs ./scripts/migrate.mjs
 EXPOSE 3000
