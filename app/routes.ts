@@ -66,6 +66,7 @@ export default [
     route("external-workers", "routes/security/external-workers.tsx"),
     route("external-worker/:id", "routes/security/external-worker.$id.tsx"),
     route("companies", "routes/security/companies.tsx"),
+    route("data-import", "routes/security/data-import.tsx"),
     route("holder-company", "routes/security/holder-company.tsx"),
      route("work-categories", "routes/security/work-categories.tsx"),
      route("allowed-areas", "routes/security/allowed-areas.tsx"),

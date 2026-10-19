@@ -89,6 +89,7 @@ export const ROLE_NAVIGATION: Record<UserRole, SidebarLinkItem[]> = {
       children: [
         item("Registros de acceso", "/security/access-logs", KeyRoundIcon),
         item("Accesos planificados", "/security/planned-access", ClipboardListIcon),
+        item("Importar accesos planificados", "/security/data-import", UploadIcon),
         item("Auditoría", "/security/audit-log", HistoryIcon),
       ],
     },

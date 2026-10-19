@@ -35,13 +35,17 @@ function inferDateFromFileName(fileName: string) {
 }
 
 export async function loader({ request }: Route.LoaderArgs) {
-  await validateUserRole(request, "ADMIN");
+  const user = await validateUserRole(request, ["ADMIN", "SECURITY_MANAGER"]);
   const sites = await getDataImportSites();
-  return { sites, initialSiteId: sites.find((site) => site.name.toLocaleLowerCase("es").includes("el raal"))?.id ?? sites[0]?.id ?? "" };
+  return {
+    sites,
+    initialSiteId: sites.find((site) => site.name.toLocaleLowerCase("es").includes("el raal"))?.id ?? sites[0]?.id ?? "",
+    plannedAccessPath: user.role === "ADMIN" ? "/admin/planned-access" : "/security/planned-access",
+  };
 }
 
 export async function action({ request }: Route.ActionArgs) {
-  const user = await validateUserRole(request, "ADMIN");
+  const user = await validateUserRole(request, ["ADMIN", "SECURITY_MANAGER"]);
   const formData = await request.formData();
   const file = formData.get("file");
   const siteId = String(formData.get("siteId") ?? "");
@@ -105,7 +109,7 @@ export default function DataImportPage({ loaderData }: Route.ComponentProps) {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <Button asChild variant="ghost" size="sm" className="mb-2 -ml-2">
-            <Link to="/admin/planned-access"><ArrowLeft /> Volver a accesos planificados</Link>
+            <Link to={loaderData.plannedAccessPath}><ArrowLeft /> Volver a accesos planificados</Link>
           </Button>
           <h1 className="text-3xl font-bold">Importar accesos planificados</h1>
           <p className="mt-1 text-muted-foreground">Carga un Excel de accesos diarios y prepara una solicitud por empresa.</p>
