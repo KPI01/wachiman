@@ -175,7 +175,9 @@ function createEditableActionsColumn(
     header: "Acciones",
     cell: ({ row }) => (
       <div className="flex justify-end gap-1">
-        <EditAccessLog accessLog={row.original} allowedAreas={allowedAreas} />
+        {!row.original.plannedAccessId && !row.original.plannedAccessPersonId ? (
+          <EditAccessLog accessLog={row.original} allowedAreas={allowedAreas} />
+        ) : null}
         {!row.original.exitTimestamp ? (
           <MarkAccessLogExit
             accessLogId={row.original.id}
