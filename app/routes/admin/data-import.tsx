@@ -76,8 +76,9 @@ export default function DataImportPage({ loaderData }: Route.ComponentProps) {
   const [siteId, setSiteId] = useState(loaderData.initialSiteId);
   const [date, setDate] = useState<Date | undefined>();
   const [file, setFile] = useState<File | null>(null);
+  const [feedbackDismissed, setFeedbackDismissed] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const data = fetcher.data;
+  const data = feedbackDismissed ? undefined : fetcher.data;
   const isBusy = fetcher.state !== "idle";
   const dateValue = date ? format(date, "yyyy-MM-dd") : "";
   const preview = data?.success && data.intent === "preview" && data.fileName === file?.name && data.preview?.date === dateValue && data.siteId === siteId
@@ -94,12 +95,14 @@ export default function DataImportPage({ loaderData }: Route.ComponentProps) {
 
   function selectFile(nextFile: File | null) {
     setFile(nextFile);
+    setFeedbackDismissed(true);
     const inferredDate = nextFile ? inferDateFromFileName(nextFile.name) : "";
     setDate(inferredDate ? parseISO(inferredDate) : undefined);
   }
 
   function submit(intent: "preview" | "import") {
     if (!file || !siteId || !dateValue) return;
+    setFeedbackDismissed(false);
     const formData = new FormData();
     formData.append("file", file);
     formData.append("siteId", siteId);
@@ -109,7 +112,7 @@ export default function DataImportPage({ loaderData }: Route.ComponentProps) {
   }
 
   return (
-    <main className="mx-auto flex w-full max-w-6xl flex-col gap-6 pb-8">
+    <main className="mx-auto flex w-full max-w-7xl flex-col gap-6 pb-8">
       <header className="flex flex-col gap-3">
         <Button asChild variant="ghost" size="sm" className="-ml-2 w-fit">
           <Link to={loaderData.plannedAccessPath}><ArrowLeft data-icon="inline-start" /> Volver a accesos planificados</Link>
@@ -131,7 +134,7 @@ export default function DataImportPage({ loaderData }: Route.ComponentProps) {
           <FieldGroup className="grid gap-x-6 gap-y-5 md:grid-cols-2">
             <Field>
               <FieldLabel htmlFor="import-site">Centro de trabajo</FieldLabel>
-              <Select value={siteId} onValueChange={(value) => setSiteId(value ?? "")}>
+              <Select value={siteId} onValueChange={(value) => { setSiteId(value ?? ""); setFeedbackDismissed(true); }}>
                 <SelectTrigger id="import-site" className="w-full"><SelectValue placeholder="Seleccionar centro" /></SelectTrigger>
                 <SelectContent>
                   {loaderData.sites.map((site) => <SelectItem key={site.id} value={site.id}>{site.name}</SelectItem>)}
@@ -143,7 +146,7 @@ export default function DataImportPage({ loaderData }: Route.ComponentProps) {
               <DatePicker
                 id="planned-date"
                 value={date ?? null}
-                onChange={setDate}
+                onChange={(value) => { setDate(value); setFeedbackDismissed(true); }}
                 required
                 className="w-full"
                 placeholder="DD/MM/AAAA"
@@ -235,7 +238,7 @@ export default function DataImportPage({ loaderData }: Route.ComponentProps) {
             ) : null}
             <div className="flex justify-end border-t pt-4">
               <Button type="button" disabled={!preview.importable || isBusy} onClick={() => submit("import")}>
-                <Upload data-icon="inline-start" /> {isBusy && fetcher.formData?.get("intent") === "import" ? "Importando…" : `Crear ${preview.importable} accesos planificados`}
+                <Upload data-icon="inline-start" /> {isBusy && fetcher.formData?.get("intent") === "import" ? "Importando…" : "Crear accesos planificados"}
               </Button>
             </div>
           </CardContent>
