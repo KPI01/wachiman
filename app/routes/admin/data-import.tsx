@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { format, parseISO } from "date-fns";
 import { Link, useFetcher } from "react-router";
 import { ArrowLeft, FileSpreadsheet, Upload } from "lucide-react";
 import type { Route } from "./+types/data-import";
@@ -6,11 +7,12 @@ import { validateUserRole } from "~/lib/auth.server";
 import { getDataImportSites, importData, previewDataImport } from "~/lib/services/data-import.server";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
-import { Label } from "~/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "~/components/ui/table";
+import { DatePicker } from "~/components/ui/date-picker";
+import { Field, FieldDescription, FieldGroup, FieldLabel } from "~/components/ui/field";
 
 type PreviewData = {
   totalRows: number;
@@ -72,12 +74,13 @@ export async function action({ request }: Route.ActionArgs) {
 export default function DataImportPage({ loaderData }: Route.ComponentProps) {
   const fetcher = useFetcher<typeof action>();
   const [siteId, setSiteId] = useState(loaderData.initialSiteId);
-  const [date, setDate] = useState("");
+  const [date, setDate] = useState<Date | undefined>();
   const [file, setFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const data = fetcher.data;
   const isBusy = fetcher.state !== "idle";
-  const preview = data?.success && data.intent === "preview" && data.fileName === file?.name && data.preview?.date === date && data.siteId === siteId
+  const dateValue = date ? format(date, "yyyy-MM-dd") : "";
+  const preview = data?.success && data.intent === "preview" && data.fileName === file?.name && data.preview?.date === dateValue && data.siteId === siteId
     ? data.preview as PreviewData
     : null;
   const result = data?.success && data.intent === "import" ? data.result : null;
@@ -91,67 +94,82 @@ export default function DataImportPage({ loaderData }: Route.ComponentProps) {
 
   function selectFile(nextFile: File | null) {
     setFile(nextFile);
-    if (nextFile) setDate(inferDateFromFileName(nextFile.name));
+    const inferredDate = nextFile ? inferDateFromFileName(nextFile.name) : "";
+    setDate(inferredDate ? parseISO(inferredDate) : undefined);
   }
 
   function submit(intent: "preview" | "import") {
-    if (!file || !siteId || !date) return;
+    if (!file || !siteId || !dateValue) return;
     const formData = new FormData();
     formData.append("file", file);
     formData.append("siteId", siteId);
-    formData.append("date", date);
+    formData.append("date", dateValue);
     formData.append("intent", intent);
     fetcher.submit(formData, { method: "post", encType: "multipart/form-data" });
   }
 
   return (
-    <main className="mx-auto flex w-full max-w-5xl flex-col gap-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <Button asChild variant="ghost" size="sm" className="mb-2 -ml-2">
-            <Link to={loaderData.plannedAccessPath}><ArrowLeft /> Volver a accesos planificados</Link>
-          </Button>
-          <h1 className="text-3xl font-bold">Importar accesos planificados</h1>
-          <p className="mt-1 text-muted-foreground">Carga un Excel de accesos diarios y prepara una solicitud por empresa.</p>
+    <main className="mx-auto flex w-full max-w-6xl flex-col gap-6 pb-8">
+      <header className="flex flex-col gap-3">
+        <Button asChild variant="ghost" size="sm" className="-ml-2 w-fit">
+          <Link to={loaderData.plannedAccessPath}><ArrowLeft data-icon="inline-start" /> Volver a accesos planificados</Link>
+        </Button>
+        <div className="flex flex-col gap-1">
+          <h1 className="text-3xl font-bold tracking-tight">Importar accesos planificados</h1>
+          <p className="max-w-3xl text-muted-foreground">Carga un Excel de accesos diarios. Revisa las filas detectadas y crea un acceso planificado por empresa.</p>
         </div>
-      </div>
+      </header>
 
       <Card>
         <CardHeader>
-          <CardTitle>Archivo de accesos diarios</CardTitle>
+          <CardTitle>1. Archivo y datos del acceso</CardTitle>
           <CardDescription>
-            Se reconocen las columnas Empresa, Trabajador, DNI, Lugar de trabajo autorizado y Tareas a realizar. Para cada empresa se crea un acceso planificado pendiente de aprobación. Las empresas, personas, categorías de trabajo y áreas se asocian con el catálogo o se crean si faltan. Las filas incompletas o conflictivas se omiten sin duplicar registros.
+            El sistema reconoce Empresa, Trabajador, DNI, Lugar de trabajo autorizado y Tareas a realizar. Asocia o crea los registros de catálogo que falten y omite las filas incompletas o conflictivas para evitar duplicados.
           </CardDescription>
         </CardHeader>
-        <CardContent className="flex flex-col gap-5">
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="import-site">Centro de trabajo</Label>
+        <CardContent className="flex flex-col gap-6">
+          <FieldGroup className="grid gap-x-6 gap-y-5 md:grid-cols-2">
+            <Field>
+              <FieldLabel htmlFor="import-site">Centro de trabajo</FieldLabel>
               <Select value={siteId} onValueChange={(value) => setSiteId(value ?? "")}>
-                <SelectTrigger id="import-site"><SelectValue placeholder="Seleccionar centro" /></SelectTrigger>
+                <SelectTrigger id="import-site" className="w-full"><SelectValue placeholder="Seleccionar centro" /></SelectTrigger>
                 <SelectContent>
                   {loaderData.sites.map((site) => <SelectItem key={site.id} value={site.id}>{site.name}</SelectItem>)}
                 </SelectContent>
               </Select>
-            </div>
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="planned-date">Fecha de los accesos</Label>
-              <Input id="planned-date" type="date" value={date} onChange={(event) => setDate(event.currentTarget.value)} required />
-              <p className="text-xs text-muted-foreground">Se detecta si el nombre del archivo incluye una fecha como 17-10-26; revísala antes de continuar.</p>
-            </div>
-          </div>
+            </Field>
+            <Field>
+              <FieldLabel htmlFor="planned-date">Fecha de los accesos</FieldLabel>
+              <DatePicker
+                id="planned-date"
+                value={date ?? null}
+                onChange={setDate}
+                required
+                className="w-full"
+                placeholder="DD/MM/AAAA"
+              />
+              <FieldDescription>Si el nombre del archivo incluye una fecha, se completa automáticamente. Revísala antes de continuar.</FieldDescription>
+            </Field>
+            <Field className="md:col-span-2">
+              <FieldLabel htmlFor="import-file">Archivo Excel o CSV</FieldLabel>
+              <Input
+                ref={fileInputRef}
+                id="import-file"
+                type="file"
+                accept=".xlsx,.xls,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv"
+                onChange={(event) => selectFile(event.currentTarget.files?.[0] ?? null)}
+              />
+              <FieldDescription>Formato esperado: una fila por trabajador con su empresa, DNI, área y tarea.</FieldDescription>
+            </Field>
+          </FieldGroup>
 
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="import-file">Archivo Excel o CSV</Label>
-            <Input
-              ref={fileInputRef}
-              id="import-file"
-              type="file"
-              accept=".xlsx,.xls,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv"
-              onChange={(event) => selectFile(event.currentTarget.files?.[0] ?? null)}
-            />
-            {file ? <span className="text-sm text-muted-foreground">{file.name} · {(file.size / 1024).toFixed(0)} KB</span> : null}
-          </div>
+          {file ? (
+            <div className="flex flex-wrap items-center gap-2 rounded-md border bg-muted/30 px-3 py-2 text-sm">
+              <FileSpreadsheet aria-hidden="true" className="text-muted-foreground" />
+              <span className="font-medium">{file.name}</span>
+              <span className="text-muted-foreground">{(file.size / 1024).toFixed(0)} KB</span>
+            </div>
+          ) : null}
 
           {data && !data.success ? (
             <Alert variant="destructive"><AlertTitle>No se pudo procesar</AlertTitle><AlertDescription>{data.error}</AlertDescription></Alert>
@@ -165,12 +183,9 @@ export default function DataImportPage({ loaderData }: Route.ComponentProps) {
             </Alert>
           ) : null}
 
-          <div className="flex flex-wrap gap-2">
-            <Button type="button" variant="outline" disabled={!file || !siteId || !date || isBusy} onClick={() => submit("preview")}>
-              <FileSpreadsheet /> {isBusy && fetcher.formData?.get("intent") === "preview" ? "Leyendo archivo…" : "Mostrar vista previa"}
-            </Button>
-            <Button type="button" disabled={!file || !siteId || !date || !preview?.importable || isBusy} onClick={() => submit("import")}>
-              <Upload /> {isBusy && fetcher.formData?.get("intent") === "import" ? "Importando…" : "Crear accesos planificados"}
+          <div className="flex justify-end border-t pt-4">
+            <Button type="button" variant="outline" disabled={!file || !siteId || !dateValue || isBusy} onClick={() => submit("preview")}>
+              <FileSpreadsheet data-icon="inline-start" /> {isBusy && fetcher.formData?.get("intent") === "preview" ? "Leyendo archivo…" : "Mostrar vista previa"}
             </Button>
           </div>
         </CardContent>
@@ -179,36 +194,50 @@ export default function DataImportPage({ loaderData }: Route.ComponentProps) {
       {preview ? (
         <Card>
           <CardHeader>
-            <CardTitle>Vista previa · {preview.date}</CardTitle>
+            <CardTitle>2. Revisar importación</CardTitle>
             <CardDescription>
-              {preview.importable} filas preparadas de {preview.totalRows}; se agruparán por empresa en accesos planificados. {preview.issues.length} filas se omitirán.
+              Fecha del acceso: {format(parseISO(preview.date), "dd/MM/yyyy")}. Los registros válidos se agruparán por empresa. {preview.issues.length} filas se omitirán por estar incompletas o en conflicto.
             </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-5">
+            <div className="flex flex-wrap gap-x-6 gap-y-2 rounded-md bg-muted/40 px-4 py-3 text-sm">
+              <p><span className="font-semibold">{preview.importable}</span> filas listas para importar</p>
+              <p><span className="font-semibold">{preview.totalRows}</span> filas leídas</p>
+              <p><span className="font-semibold">{preview.issues.length}</span> filas que se omitirán</p>
+            </div>
             {preview.records.length ? (
-              <Table>
-                <TableHeader><TableRow>
-                  <TableHead>Fila</TableHead><TableHead>Empresa</TableHead><TableHead>Trabajador</TableHead><TableHead>DNI/NIE</TableHead><TableHead>Área</TableHead><TableHead>Tarea</TableHead>
-                </TableRow></TableHeader>
-                <TableBody>
-                  {preview.records.map((row) => <TableRow key={`${row.rowNumber}-${row.legalId}`}>
-                    <TableCell>{row.rowNumber}</TableCell><TableCell>{row.company}</TableCell><TableCell>{row.worker}</TableCell><TableCell>{row.legalId}</TableCell><TableCell>{row.area}</TableCell><TableCell>{row.task}</TableCell>
-                  </TableRow>)}
-                </TableBody>
-              </Table>
+              <div className="overflow-x-auto rounded-md border">
+                <Table>
+                  <TableHeader><TableRow>
+                    <TableHead>Fila</TableHead><TableHead>Empresa</TableHead><TableHead>Trabajador</TableHead><TableHead>DNI/NIE</TableHead><TableHead>Área autorizada</TableHead><TableHead>Tarea</TableHead>
+                  </TableRow></TableHeader>
+                  <TableBody>
+                    {preview.records.map((row) => <TableRow key={`${row.rowNumber}-${row.legalId}`}>
+                      <TableCell>{row.rowNumber}</TableCell><TableCell>{row.company}</TableCell><TableCell>{row.worker}</TableCell><TableCell>{row.legalId}</TableCell><TableCell>{row.area}</TableCell><TableCell>{row.task}</TableCell>
+                    </TableRow>)}
+                  </TableBody>
+                </Table>
+              </div>
             ) : <p className="text-sm text-muted-foreground">No hay filas válidas para importar.</p>}
             {preview.truncated ? <p className="text-sm text-muted-foreground">Se muestran las primeras 100 filas válidas.</p> : null}
             {preview.issues.length ? (
               <div className="flex flex-col gap-2">
                 <h3 className="font-semibold">Filas que se omitirán</h3>
-                <Table>
-                  <TableHeader><TableRow><TableHead>Fila</TableHead><TableHead>Registro</TableHead><TableHead>Motivo</TableHead></TableRow></TableHeader>
-                  <TableBody>{preview.issues.map((item, index) => <TableRow key={`${item.rowNumber}-${index}`}>
-                    <TableCell>{item.rowNumber}</TableCell><TableCell>{item.label}</TableCell><TableCell>{item.reason}</TableCell>
-                  </TableRow>)}</TableBody>
-                </Table>
+                <div className="overflow-x-auto rounded-md border">
+                  <Table>
+                    <TableHeader><TableRow><TableHead>Fila</TableHead><TableHead>Registro</TableHead><TableHead>Motivo</TableHead></TableRow></TableHeader>
+                    <TableBody>{preview.issues.map((item, index) => <TableRow key={`${item.rowNumber}-${index}`}>
+                      <TableCell>{item.rowNumber}</TableCell><TableCell>{item.label}</TableCell><TableCell>{item.reason}</TableCell>
+                    </TableRow>)}</TableBody>
+                  </Table>
+                </div>
               </div>
             ) : null}
+            <div className="flex justify-end border-t pt-4">
+              <Button type="button" disabled={!preview.importable || isBusy} onClick={() => submit("import")}>
+                <Upload data-icon="inline-start" /> {isBusy && fetcher.formData?.get("intent") === "import" ? "Importando…" : `Crear ${preview.importable} accesos planificados`}
+              </Button>
+            </div>
           </CardContent>
         </Card>
       ) : null}
